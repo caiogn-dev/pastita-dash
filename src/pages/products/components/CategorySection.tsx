@@ -23,10 +23,11 @@ interface Props {
   onToggleCollapse: () => void;
   onTogglePause: (active: boolean) => void;
   onRename?: (name: string) => void | Promise<void>;
+  onDelete?: () => void;
   onAddItem: (categoryId: string | null) => void;
   onOpenMontador?: () => void;
 }
-export const CategorySection: React.FC<Props> = ({ group, collapsed, rowHandlers, reorderMode, onToggleCollapse, onTogglePause, onRename, onAddItem, onOpenMontador }) => {
+export const CategorySection: React.FC<Props> = ({ group, collapsed, rowHandlers, reorderMode, onToggleCollapse, onTogglePause, onRename, onAddItem, onOpenMontador, onDelete }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: group.id ?? '__uncategorized__',
     data: { type: 'category', category: group.id },
@@ -40,7 +41,7 @@ export const CategorySection: React.FC<Props> = ({ group, collapsed, rowHandlers
   ) : undefined;
   return (
   <section ref={sortable ? setNodeRef : undefined} style={style} className="mb-4 rounded-lg border bg-surface-token">
-    <CategoryHeader group={group} collapsed={collapsed} onToggleCollapse={onToggleCollapse} onTogglePause={onTogglePause} onRename={onRename} onOpenMontador={onOpenMontador} dragHandle={dragHandle} />
+    <CategoryHeader group={group} collapsed={collapsed} onToggleCollapse={onToggleCollapse} onTogglePause={onTogglePause} onRename={onRename} onOpenMontador={onOpenMontador} onDelete={onDelete} dragHandle={dragHandle} />
     {!collapsed && (
       <>
         <SortableContext items={group.products.map((p) => p.id)} strategy={verticalListSortingStrategy}>

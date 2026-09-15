@@ -1468,6 +1468,27 @@ export const updateCustomer = async (id: string, data: Partial<StoreCustomer> & 
   }
 };
 
+/** Onde o produto aparece — mostrado ANTES de excluir. */
+export const getProductUso = async (id: string): Promise<{ combos: number; pedidos: number }> => {
+  const response = await api.get(`${BASE_URL}/products/${id}/uso/`);
+  return response.data;
+};
+
+/** Exclui o produto. Pedidos antigos mantêm o nome do item; sai dos combos. */
+export const deleteStoreProduct = async (id: string): Promise<void> => {
+  await api.delete(`${BASE_URL}/products/${id}/`);
+};
+
+/** Tira o cliente da loja (e os endereços salvos). Pedidos, cashback e fidelidade ficam. */
+export const deleteCustomer = async (id: string): Promise<void> => {
+  try {
+    await api.delete(`${BASE_URL}/customers/${id}/`);
+  } catch (error) {
+    logger.error('Failed to delete customer', error);
+    throw error;
+  }
+};
+
 export const getCustomerOrders = async (id: string): Promise<StoreOrder[]> => {
   try {
     const response = await api.get(`${BASE_URL}/customers/${id}/orders/`);

@@ -1,7 +1,8 @@
 import React, { memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, MoreVertical } from 'lucide-react';
+import { GripVertical } from 'lucide-react';
+import { RowActions } from '../../../components/ui/RowActions';
 import type { Product } from '../../../services/products';
 import { InlineStockStepper } from './InlineStockStepper';
 import { InlinePriceField } from './InlinePriceField';
@@ -34,7 +35,16 @@ const ProductRowBase: React.FC<Props> = ({ product, onOpen, onStock, onPrice, on
       <InlinePriceField value={product.price} onCommit={(v) => onPrice(product.id, v)} />
       <StatusToggle active={product.status === 'active'} onChange={(a) => onStatus(product.id, a)} />
       <FeaturedToggle featured={!!product.featured} onChange={(f) => onFeatured(product.id, f)} />
-      <button aria-label="menu" onClick={() => onMenuAction(product.id, 'edit')}><MoreVertical size={16} /></button>
+      {/* O mesmo menu das outras listas. Antes era um ícone que só abria a
+          edição — não havia como duplicar nem excluir produto pela tela. */}
+      <RowActions
+        rotulo={`Ações de ${product.name}`}
+        acoes={[
+          { rotulo: 'Editar', onClick: () => onMenuAction(product.id, 'edit') },
+          { rotulo: 'Duplicar', onClick: () => onMenuAction(product.id, 'duplicate') },
+          { rotulo: 'Excluir', onClick: () => onMenuAction(product.id, 'delete') },
+        ]}
+      />
     </div>
   );
 };

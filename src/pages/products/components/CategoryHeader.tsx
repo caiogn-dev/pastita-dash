@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, Pencil, SlidersHorizontal, Check, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pencil, SlidersHorizontal, Check, X, Trash2 } from 'lucide-react';
 import { StatusToggle } from './InlineToggle';
 import type { CategoryGroup } from '../hooks/useProductsGrouped';
 
@@ -10,9 +10,11 @@ interface Props {
   onTogglePause: (active: boolean) => void;
   onRename?: (name: string) => void | Promise<void>;
   onOpenMontador?: () => void;
+  /** Excluir a categoria (o pai confirma). Os produtos ficam em "Sem categoria". */
+  onDelete?: () => void;
   dragHandle?: React.ReactNode;
 }
-export const CategoryHeader: React.FC<Props> = ({ group, collapsed, onToggleCollapse, onTogglePause, onRename, onOpenMontador, dragHandle }) => {
+export const CategoryHeader: React.FC<Props> = ({ group, collapsed, onToggleCollapse, onTogglePause, onRename, onOpenMontador, onDelete, dragHandle }) => {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(group.name);
   const [saving, setSaving] = useState(false);
@@ -72,6 +74,17 @@ export const CategoryHeader: React.FC<Props> = ({ group, collapsed, onToggleColl
             className="text-fg-muted-token hover:text-brand"
           >
             <SlidersHorizontal size={14} />
+          </button>
+        )}
+        {group.id && onDelete && (
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label={`Excluir categoria ${group.name}`}
+            title="Excluir categoria"
+            className="text-fg-muted-token hover:text-[var(--danger)]"
+          >
+            <Trash2 size={14} />
           </button>
         )}
       </div>

@@ -39,7 +39,7 @@ jest.mock('react-router-dom', () => ({
 }));
 jest.mock('react-hot-toast', () => ({ __esModule: true, default: { success: jest.fn(), error: jest.fn() } }));
 
-import { CustomerFormDrawer } from '../CustomersPage';
+import { CustomerDrawer, CustomerFormDrawer } from '../CustomersPage';
 import * as storesApi from '../../../services/storesApi';
 
 const CLIENTE_COM_3_ENDERECOS = {
@@ -154,4 +154,15 @@ it('novo endereço entra no que é salvo', async () => {
   const [, payload] = (storesApi.updateCustomer as jest.Mock).mock.calls[0];
   expect(payload.address_list).toHaveLength(4);
   expect(payload.address_list[3]).toEqual(expect.objectContaining({ street: 'Rua Quatro', is_default: false }));
+});
+
+it('ficha: telefone liga, endereço abre no mapa e Excluir chama quem cuida', () => {
+  const onDelete = jest.fn();
+  render(
+    <CustomerDrawer customer={CLIENTE_COM_3_ENDERECOS} onClose={jest.fn()} onEdit={jest.fn()} onDelete={onDelete} />,
+  );
+  expect(document.querySelector('a[href="tel:+5511975373744"]')).not.toBeNull();
+  expect(document.querySelectorAll('a[href^="https://www.google.com/maps/search/"]')).toHaveLength(3);
+  fireEvent.click(screen.getByRole('button', { name: /^excluir$/i }));
+  expect(onDelete).toHaveBeenCalledWith(CLIENTE_COM_3_ENDERECOS);
 });

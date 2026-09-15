@@ -21,6 +21,7 @@ import { CategorySection } from './components/CategorySection';
 import { AddCategoryModal } from './components/AddCategoryModal';
 import { MontadorModal, type ConfigMontador } from './components/MontadorModal';
 import { ProductFormModal } from './ProductFormModal';
+import { useConfirm } from '../../hooks/useConfirm';
 import { PageShell } from '../../components/ui';
 
 export const ProductsPage: React.FC = () => {
@@ -130,9 +131,53 @@ export const ProductsPage: React.FC = () => {
   // Handlers estáveis: onOpen só usa o setter (estável); onMenuAction precisa de
   // `products` fresco, então entra nas deps. mut.* já são useCallback estáveis.
   const onOpen = useCallback((p: Product) => setModalProduct(p), []);
-  const onMenuAction = useCallback((id: string, action: string) => {
-    if (action === 'edit') setModalProduct(products.find((p) => p.id === id) ?? null);
-  }, [products]);
+  const [ConfirmDialog, confirmar] = useConfirm();
+
+  /**
+   * Editar, duplicar e excluir — o menu de cada produto.
+   *
+   * Excluir não quebra o histórico (o pedido guarda o nome do item), mas tira
+   * o produto de todo combo em silêncio. Por isso a confirmação mostra onde ele
+   * aparece e lembra que pausar esconde sem apagar.
+   */
+  const onMenuAction = useCallback(async (id: string, action: string) => {
+    const alvo = products.find((p) => p.id === id);
+    if (!alvo) return;
+    if (action === 'edit') { setModalProduct(alvo); return; }
+    if (action === 'duplicate') {
+      try {
+        const data = (await storesApi.duplicateProduct(id)) as unknown as Product;
+        setProducts((ps) => [...ps, data]);
+        toast.success(`"${alvo.name}" duplicado`);
+      } catch {
+        toast.error('Não foi possível duplicar o produto');
+      }
+      return;
+    }
+    if (action === 'delete') {
+      const partes: string[] = [];
+      try {
+        const data = await storesApi.getProductUso(id);
+        if (data.combos) partes.push(`Sai de ${data.combos} combo${data.combos > 1 ? 's' : ''}.`);
+        if (data.pedidos) partes.push(`${data.pedidos} pedido${data.pedidos > 1 ? 's' : ''} antigo${data.pedidos > 1 ? 's' : ''} continua${data.pedidos > 1 ? 'm' : ''} com o nome do item.`);
+      } catch { /* sem o uso, confirma do mesmo jeito */ }
+      partes.push('Para tirar só do cardápio por um tempo, desative em vez de excluir.');
+      const ok = await confirmar({
+        title: `Excluir "${alvo.name}"?`,
+        message: partes.join(' '),
+        confirmText: 'Excluir produto',
+        variant: 'danger',
+      });
+      if (!ok) return;
+      try {
+        await storesApi.deleteStoreProduct(id);
+        setProducts((ps) => ps.filter((p) => p.id !== id));
+        toast.success('Produto excluído');
+      } catch {
+        toast.error('Não foi possível excluir o produto');
+      }
+    }
+  }, [products, confirmar]);
 
   // Objeto memoizado: literal recriado a cada render quebrava o React.memo do
   // ProductRow downstream. Agora a referência só muda quando um handler muda.
@@ -205,6 +250,7 @@ export const ProductsPage: React.FC = () => {
         }))}
       />
 
+      {ConfirmDialog}
       <DndContext sensors={sensors} onDragEnd={onDragEnd}>
         <SortableContext items={categoryIds} strategy={verticalListSortingStrategy}>
         {groups.map((g) => (
@@ -233,6 +279,28 @@ export const ProductsPage: React.FC = () => {
                 } catch (e) {
                   onError(e);
                 }
+              }
+            }}
+            onDelete={async () => {
+              const cat = categories.find((c) => c.id === g.id);
+              if (!cat) return;
+              const n = g.products.length;
+              const ok = await confirmar({
+                title: `Excluir a categoria "${cat.name}"?`,
+                message: n
+                  ? `${n} produto${n > 1 ? 's' : ''} fica${n > 1 ? 'm' : ''} em "Sem categoria" — nenhum produto é apagado.`
+                  : 'A categoria está vazia.',
+                confirmText: 'Excluir categoria',
+                variant: 'danger',
+              });
+              if (!ok) return;
+              try {
+                await storesApi.deleteCategory(String(g.id));
+                setCategories((cs) => cs.filter((c) => c.id !== g.id));
+                setProducts((ps) => ps.map((p) => (p.category === g.id ? { ...p, category: null as unknown as Product['category'] } : p)));
+                toast.success('Categoria excluída');
+              } catch {
+                toast.error('Não foi possível excluir a categoria');
               }
             }}
             onRename={async (name) => {

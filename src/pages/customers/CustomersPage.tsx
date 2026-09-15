@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   ArrowPathIcon,
@@ -29,11 +29,12 @@ import {
 import { insightsDeClientes } from './insightsDeClientes';
 import { rotuloDeDias, rotuloDePerfil, type TomDeCrm } from './rotulosDeCrm';
 import { getErrorMessage } from '../../services';
-import { StoreCustomer, StoreCustomerAddress, createCustomer, updateCustomer } from '../../services/storesApi';
+import { StoreCustomer, StoreCustomerAddress, createCustomer, deleteCustomer, getCustomer, updateCustomer } from '../../services/storesApi';
 import { useStore, useDebounce } from '../../hooks';
 import { useCustomers } from '../../hooks/queries/useCustomers';
 import { useCustomerStats } from '../../hooks/queries/useCustomerStats';
 import { useCustomerOrders } from '../../hooks/queries/useCustomerOrders';
+import { useConfirm } from '../../hooks/useConfirm';
 import { getAvatarColor, getInitials } from '../../utils/avatar';
 import { publicEmail } from '../../utils/internalEmail';
 import { buscaInicialDaUrl } from './buscaPelaUrl';
@@ -485,6 +486,13 @@ export function linhaDoEndereco(a: StoreCustomerAddress): string {
   return [a.street?.trim(), a.number?.trim() ? `nº ${a.number.trim()}` : ''].filter(Boolean).join(', ');
 }
 
+/** Link do Google Maps para o endereço — o entregador abre direto no celular. */
+export function mapaDoEndereco(a: StoreCustomerAddress): string {
+  const texto = [linhaDoEndereco(a).replace('nº ', ''), a.neighborhood, a.city, a.state, a.zip_code]
+    .map((v) => (v ?? '').trim()).filter(Boolean).join(', ');
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(texto)}`;
+}
+
 /** "Recepção · Centro · Palmas-TO" */
 export function complementoDoEndereco(a: StoreCustomerAddress): string {
   const cidade = [a.city?.trim(), a.state?.trim()].filter(Boolean).join('-');
@@ -515,10 +523,12 @@ interface CustomerDrawerProps {
   saldo?: CashbackClienteRow | null;
   /** Avisa o pai que o saldo mudou, para ele refazer a consulta. */
   onAjustado?: () => void;
+  /** Excluir o cliente (o pai confirma e remove). Sem ele, o botão não aparece. */
+  onDelete?: (customer: StoreCustomer) => void;
 }
 
 export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
-  customer, onClose, onEdit, segmento = null, saldo = null, onAjustado,
+  customer, onClose, onEdit, segmento = null, saldo = null, onAjustado, onDelete,
 }) => {
   const { storeId, storeSlug } = useStore();
   const storeQuery = storeSlug || storeId;
@@ -674,7 +684,12 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
                 <div className="flex items-center gap-3 px-4 py-3">
                   <PhoneIcon className="h-4 w-4 text-fg-muted-token shrink-0" />
                   <span className="text-sm text-fg-token">
-                    {formatPhone(customer.whatsapp || customer.phone)}
+                    <a
+                      href={`tel:+${(customer.whatsapp || customer.phone || '').replace(/\D/g, '')}`}
+                      className="hover:underline"
+                    >
+                      {formatPhone(customer.whatsapp || customer.phone)}
+                    </a>
                   </span>
                 </div>
               )}
@@ -731,7 +746,15 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
                     <MapPinIcon className="h-4 w-4 text-fg-muted-token shrink-0 mt-0.5" />
                     <span className="text-sm text-fg-token">
                       <span className="flex items-center gap-2">
-                        {linhaDoEndereco(a) || '—'}
+                        <a
+                          href={mapaDoEndereco(a)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:underline"
+                          title="Abrir no mapa"
+                        >
+                          {linhaDoEndereco(a) || '—'}
+                        </a>
                         {a.is_default && <Badge tone="success">Padrão</Badge>}
                       </span>
                       {complementoDoEndereco(a) && (
@@ -931,6 +954,11 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
               Editar
             </Button>
           )}
+          {onDelete && (
+            <Button variant="danger" className="justify-center" onClick={() => onDelete(customer)}>
+              Excluir
+            </Button>
+          )}
           {cleanPhone && (
             <Button
               className="flex-1 justify-center"
@@ -1033,6 +1061,49 @@ export const CustomersPage: React.FC = () => {
 
   const navigate = useNavigate();
   const [selectedCustomer, setSelectedCustomer] = useState<StoreCustomer | null>(null);
+  /**
+   * A ficha tem endereço: `?cliente=<id>`. Link colado no WhatsApp, vindo de um
+   * relatório ou de um pedido abre a pessoa direto, e o "voltar" do navegador
+   * fecha a ficha em vez de sair da página.
+   */
+  const abrirFicha = useCallback((c: StoreCustomer | null) => {
+    setSelectedCustomer(c);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (c) next.set('cliente', c.id); else next.delete('cliente');
+      return next;
+    });
+  }, [setSearchParams]);
+  const clienteDaUrl = searchParams.get('cliente');
+  useEffect(() => {
+    if (!clienteDaUrl) { setSelectedCustomer(null); return; }
+    if (selectedCustomer?.id === clienteDaUrl) return;
+    const lista = (customersQuery.data as { results?: StoreCustomer[] } | undefined)?.results ?? [];
+    const naLista = lista.find((c) => c.id === clienteDaUrl);
+    if (naLista) { setSelectedCustomer(naLista); return; }
+    getCustomer(clienteDaUrl).then(setSelectedCustomer).catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clienteDaUrl]);
+
+  const [ConfirmDialog, confirmar] = useConfirm();
+  const excluirCliente = useCallback(async (c: StoreCustomer) => {
+    const ok = await confirmar({
+      title: `Excluir ${c.user_name || 'este cliente'}?`,
+      message: 'Sai da lista de clientes da loja, junto com os endereços salvos. Pedidos, cashback e fidelidade continuam no histórico.',
+      confirmText: 'Excluir cliente',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await deleteCustomer(c.id);
+      toast.success('Cliente excluído');
+      abrirFicha(null);
+      customersQuery.refetch();
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmar, abrirFicha]);
   // RFM buscado UMA vez para a página, e só quando existe ficha aberta: é o
   // único lugar que usa o segmento, e a lista não deve pagar a consulta.
   const rfm = useAnalyticsReport<RfmReport>(
@@ -1139,7 +1210,7 @@ export const CustomersPage: React.FC = () => {
         itens={customers}
         chave={(c) => String(c.id)}
         rotuloDaLinha={(c) => `Abrir ${c.user_name || 'cliente'}`}
-        onAbrir={setSelectedCustomer}
+        onAbrir={abrirFicha}
         carregando={customersQuery.isFetching}
         vazio={{
           titulo: 'Nenhum cliente encontrado',
@@ -1290,7 +1361,7 @@ export const CustomersPage: React.FC = () => {
               <RowActions
                 rotulo={`Ações de ${c.user_name || 'cliente'}`}
                 acoes={[
-                  { rotulo: 'Ver detalhes', onClick: () => setSelectedCustomer(c) },
+                  { rotulo: 'Ver detalhes', onClick: () => abrirFicha(c) },
                   {
                     rotulo: 'Editar',
                     onClick: () => {
@@ -1306,6 +1377,7 @@ export const CustomersPage: React.FC = () => {
                         `/inbox/whatsapp?search=${(c.whatsapp || c.phone || '').replace(/\D/g, '')}`,
                       ),
                   },
+                  { rotulo: 'Excluir', onClick: () => excluirCliente(c) },
                 ]}
               />
             ),
@@ -1315,9 +1387,11 @@ export const CustomersPage: React.FC = () => {
 
     </PageShell>
 
+    {ConfirmDialog}
     <CustomerDrawer
       customer={selectedCustomer}
-      onClose={() => setSelectedCustomer(null)}
+      onClose={() => abrirFicha(null)}
+      onDelete={excluirCliente}
       onEdit={(c) => { setEditingCustomer(c); setFormOpen(true); }}
       segmento={segmentoDoSelecionado}
       saldo={saldoDoSelecionado}
