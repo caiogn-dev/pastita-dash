@@ -549,6 +549,13 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
   const { openOrder } = useOrderDetailModal();
 
   const loadingOrders = ordersQuery.isLoading && ordersQuery.fetchStatus !== 'idle';
+  // Falha ao buscar os pedidos SEM nada em cache. O histórico e os três KPIs
+  // do topo saem todos daqui; sem esta guarda, a lista virava `[]` e a ficha
+  // exibia "Gasto total R$ 0,00 · Pedidos 0" + "Nenhum pedido encontrado" —
+  // exatamente o engano de "zeros" do incidente do Vinicius acima, só que
+  // nascido de uma falha de rede/500 em vez de contador defasado. Com dado em
+  // cache (falha só ao atualizar), mantém os números anteriores.
+  const pedidosFalharam = ordersQuery.isError && ordersQuery.data === undefined;
 
   /**
    * Os indicadores saem dos MESMOS pedidos que a tabela abaixo mostra.
@@ -660,16 +667,20 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
           <div className="px-4 py-3 text-center">
             <p className="overline mb-1">Gasto total</p>
             <p className="text-lg font-bold text-brand-ink">
-              {formatCurrency(resumoDosPedidos.gasto)}
+              {pedidosFalharam ? '—' : formatCurrency(resumoDosPedidos.gasto)}
             </p>
           </div>
           <div className="px-4 py-3 text-center">
             <p className="overline mb-1">Pedidos</p>
-            <p className="text-lg font-bold text-fg-token">{resumoDosPedidos.pedidos}</p>
+            <p className="text-lg font-bold text-fg-token">
+              {pedidosFalharam ? '—' : resumoDosPedidos.pedidos}
+            </p>
           </div>
           <div className="px-4 py-3 text-center">
             <p className="overline mb-1">Ticket médio</p>
-            <p className="text-lg font-bold text-fg-token">{formatCurrency(resumoDosPedidos.ticket)}</p>
+            <p className="text-lg font-bold text-fg-token">
+              {pedidosFalharam ? '—' : formatCurrency(resumoDosPedidos.ticket)}
+            </p>
           </div>
         </div>
 
@@ -877,6 +888,14 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
             ) : loadingOrders ? (
               <div className="flex justify-center py-8">
                 <Loading size="sm" />
+              </div>
+            ) : pedidosFalharam ? (
+              <div className="text-center py-8 rounded border border-dashed border-border-token">
+                <ExclamationTriangleIcon className="h-7 w-7 mx-auto mb-2 text-[var(--warning)]" />
+                <p className="text-sm text-fg-token mb-3">Não foi possível carregar os pedidos</p>
+                <Button size="sm" variant="outline" onClick={() => ordersQuery.refetch()}>
+                  Tentar novamente
+                </Button>
               </div>
             ) : orders.length === 0 ? (
               <div className="text-center py-8 rounded border border-dashed border-border-token">
