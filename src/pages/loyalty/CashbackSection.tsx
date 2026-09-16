@@ -46,13 +46,19 @@ interface Props {
   ligado: boolean;
   onLigado: (v: boolean) => void;
   storeSlug: string;
+  /**
+   * Qual pedaço mostrar. A página virou abas (`PageTabs`): os números ficam
+   * fora das abas, a configuração numa aba e a fila de quem perde saldo
+   * noutra. Antes tudo saía junto, numa coluna só.
+   */
+  parte?: 'numeros' | 'config' | 'clientes';
   onAjustou?: () => void;
 }
 
 export const CashbackSection: React.FC<Props> = ({
   dados, carregando, percent, referralPercent, expiryDays,
   onPercent, onReferralPercent, onExpiryDays, onSalvar, salvando, ligado, onLigado,
-  storeSlug, onAjustou,
+  storeSlug, onAjustou, parte = 'config',
 }) => {
   // Crédito manual: cortesia, reparação, brinde. Antes disto só existia pelo
   // shell de produção, que é como se perde dinheiro sem rastro.
@@ -92,7 +98,7 @@ export const CashbackSection: React.FC<Props> = ({
 
   return (
     <div className="space-y-4">
-      {ligado && (
+      {parte === 'numeros' && ligado && (
         <KpiGrid
           titulo="Como está o cashback"
           itens={[
@@ -143,9 +149,7 @@ export const CashbackSection: React.FC<Props> = ({
         />
       )}
 
-      {/* Configurar à esquerda, agir à direita: a regra do cashback e a lista
-          de quem perde saldo primeiro lado a lado, em vez de uma tela de rolagem. */}
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] xl:items-start">
+      {parte === 'config' && (
       <Card title="Cashback">
         <form className="space-y-4" onSubmit={onSalvar}>
           <label className="flex cursor-pointer items-start justify-between gap-4 rounded border border-border-token bg-surface-2 p-3">
@@ -166,7 +170,7 @@ export const CashbackSection: React.FC<Props> = ({
             />
           </label>
 
-          <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-3">
             <Input
               id="cashback-percent"
               label="Volta em cada compra (%)"
@@ -211,8 +215,9 @@ export const CashbackSection: React.FC<Props> = ({
           <Button type="submit" isLoading={salvando}>Salvar cashback</Button>
         </form>
       </Card>
+      )}
 
-      {ligado && (
+      {parte === 'clientes' && ligado && (
         <Card
           title="Quem perde saldo primeiro"
           subtitle="Ordenado por vencimento, não por valor: a pergunta aqui é a quem mandar mensagem hoje."
@@ -322,7 +327,6 @@ export const CashbackSection: React.FC<Props> = ({
           )}
         </Card>
       )}
-      </div>
     </div>
   );
 };

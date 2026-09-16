@@ -50,6 +50,11 @@ const renderPage = () =>
     </MemoryRouter>
   );
 
+/** A página virou abas (`PageTabs`): lista de clientes e cupom moram em abas
+ *  próprias, então o teste abre a aba antes de procurar o que está nela. */
+const abrirAba = async (nome: RegExp) =>
+  userEvent.click(await screen.findByRole('tab', { name: nome }));
+
 beforeEach(() => {
   jest.clearAllMocks();
   localStorage.clear();
@@ -82,6 +87,7 @@ describe('FidelidadePage', () => {
   it('carrega config e lista clientes', async () => {
     renderPage();
     expect(await screen.findByDisplayValue('10')).toBeInTheDocument();
+    await abrirAba(/cartões dos clientes/i);
     // `findAllByText`: a lista comum desenha cartão (celular) e tabela
     // (desktop) a partir da MESMA definição de coluna, e o jsdom não aplica
     // CSS — as duas aparecem. No navegador, `md:hidden` esconde a que não é
@@ -107,7 +113,7 @@ describe('FidelidadePage', () => {
       page([{ id: 'uuid-1', slug: 'ce-saladas', name: 'Cê Saladas', metadata: { loyalty_salads_required: 10 } }])
     );
     renderPage();
-    await screen.findAllByText('Ana');
+    await screen.findByDisplayValue('10');
     expect(screen.getByRole('checkbox', { name: /programa ativo/i })).toBeChecked();
   });
 
@@ -135,7 +141,7 @@ describe('FidelidadePage', () => {
   it('cria cupom de boas-vindas em 1 clique', async () => {
     (couponsService.createCoupon as jest.Mock).mockResolvedValue({ id: 'c1', code: 'BEMVINDO10' });
     renderPage();
-    await screen.findAllByText('Ana');
+    await abrirAba(/cupom de boas-vindas/i);
     await userEvent.click(screen.getByRole('button', { name: /criar cupom de boas-vindas/i }));
     await waitFor(() => expect(couponsService.createCoupon).toHaveBeenCalledWith(
       expect.objectContaining({ code: 'BEMVINDO10', first_order_only: true, is_featured: true, discount_type: 'percentage' })
@@ -201,6 +207,7 @@ describe('FidelidadePage — escolha do programa', () => {
       ],
     });
     renderPage();
+    await abrirAba(/saldo dos clientes/i);
     expect(await screen.findByText('(63) 99954-7790')).toBeInTheDocument();
     expect(screen.getByText('vence em 3 dias')).toBeInTheDocument();
   });
@@ -274,7 +281,7 @@ describe('FidelidadePage — um programa desliga o outro (mão dupla)', () => {
     const resposta = Promise.resolve(cashbackLigado);
     (cashbackService.get as jest.Mock).mockReturnValue(resposta);
     renderPage();
-    await screen.findAllByText('Ana');
+    await screen.findByDisplayValue('10');
     // Garante que o efeito do cashback já resolveu antes de olhar o seletor.
     await act(async () => { await resposta; });
 

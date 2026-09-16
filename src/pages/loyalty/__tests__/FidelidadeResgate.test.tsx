@@ -70,6 +70,9 @@ beforeEach(() => {
 /** A `Tabela` desenha a MESMA linha duas vezes: `<table>` no desktop e
  *  cartões no celular. Ancorar na `<tr>` evita o "found multiple elements". */
 const linhaDaAline = async (nome = 'Aline Nasche') => {
+  // A lista de cartões vive na aba "Cartões dos clientes" desde que a página
+  // virou seções (PageTabs). Clicar de novo numa aba já aberta não faz nada.
+  await userEvent.click(await screen.findByRole('tab', { name: /cartões dos clientes/i }));
   const achados = await screen.findAllByText(nome);
   const linha = achados.map((n) => n.closest('tr')).find(Boolean);
   return linha as HTMLElement;
