@@ -163,12 +163,8 @@ const FidelidadePage: React.FC = () => {
         // A aba abre no programa que ESTÁ rodando, não no primeiro da lista:
         // quem já ligou o cashback quer ver o cashback ao entrar.
         //
-        // Mas só quando o cashback é o ÚNICO ligado. Com os dois marcados no
-        // metadata (dado sujo de antes desta trava valer nos dois sentidos),
-        // abrir no cashback fazia a escolha do dono voltar sozinha ao
-        // recarregar: ele marcava fidelidade, salvava, e a tela devolvia
-        // cashback. Nesse empate o cartão de carimbo ganha, e o próximo
-        // salvar limpa a bagunça.
+        // Com os dois ligados — que é válido desde 16/set — abre no carimbo;
+        // o dono troca de visão no seletor.
         const carimboLigado =
           ((store?.metadata as Record<string, unknown>) || {}).loyalty_enabled !== false;
         if (res.enabled && !carimboLigado) setPrograma('cashback');
@@ -198,14 +194,13 @@ const FidelidadePage: React.FC = () => {
           cashback_percent: Number(cbPercent) || 0,
           cashback_referral_percent: Number(cbIndicacao) || 0,
           cashback_expiry_days: Number(cbValidade) || 60,
-          // Um programa OU outro: ligar o cashback desliga o cartão de
-          // carimbo no mesmo save, senão o cliente acumula os dois e o
-          // desconto empilha sem ninguém decidir isso.
-          ...(cbLigado ? { loyalty_enabled: false } : {}),
+          // Só a chave do cashback. Os dois programas podem rodar juntos —
+          // decisão do dono (16/set). O backend sempre os tratou como
+          // independentes, e no checkout o cashback incide sobre o que sobra
+          // depois dos outros descontos, então os dois nunca passam do total.
         },
       });
       setStore(updated);
-      if (cbLigado) setEnabled(false);
       if (storeIdentifier) {
         setCashback(await cashbackService.get(storeIdentifier));
       }
@@ -264,15 +259,11 @@ const FidelidadePage: React.FC = () => {
           loyalty_enabled: ligado,
           loyalty_salads_required: Number(threshold),
           loyalty_qualifying_categories: qualifyingCategoryIds,
-          // Espelho do que o cashback já fazia. Sem isto os dois ficavam
-          // ligados no metadata: o cliente acumulava carimbo E saldo no mesmo
-          // pedido, e ao recarregar a tela voltava para o cashback.
-          ...(ligado ? { cashback_enabled: false } : {}),
+          // Só a chave do carimbo — ligar este não desliga o cashback.
         },
       });
       setStore(updated);
       setEnabled(ligado);
-      if (ligado) setCbLigado(false);
     } finally {
       setSaving(false);
     }
@@ -337,7 +328,9 @@ const FidelidadePage: React.FC = () => {
       titulo="Fidelidade & Cupons"
       acoes={
         <Badge tone={enabled || cbLigado ? 'success' : 'neutral'}>
-          {enabled ? 'Cartão ativo' : cbLigado ? 'Cashback ativo' : 'Nenhum programa ativo'}
+          {enabled && cbLigado
+            ? 'Cartão e cashback ativos'
+            : enabled ? 'Cartão ativo' : cbLigado ? 'Cashback ativo' : 'Nenhum programa ativo'}
         </Badge>
       }
     >
@@ -444,7 +437,7 @@ const FidelidadePage: React.FC = () => {
         abas={[
           { id: 'programa', rotulo: 'Programa' },
           { id: 'clientes', rotulo: programa === 'cashback' ? 'Saldo dos clientes' : 'Cartões dos clientes' },
-          ...(programa === 'cashback' ? [{ id: 'indicacoes', rotulo: 'Indicações' }] : []),
+          ...(programa === 'cashback' || cbLigado ? [{ id: 'indicacoes', rotulo: 'Indicações' }] : []),
           { id: 'cupom', rotulo: 'Cupom de boas-vindas' },
         ]}
       >
@@ -452,22 +445,23 @@ const FidelidadePage: React.FC = () => {
           <>
             {aba === 'programa' && (
               <div className="space-y-5">
-                {/* O dono escolhe UM. Dois programas ligados empilham desconto em cima
-                    de desconto e viram duas promessas para explicar ao mesmo cliente. */}
+                {/* Escolhe qual CONFIGURAR, não qual roda: os dois podem ficar
+                    ligados ao mesmo tempo, e quem decide é o dono da loja. Até
+                    16/set isto era "um OU outro" e salvar um desligava o outro. */}
                 <ChoiceCards<'carimbo' | 'cashback'>
-                  rotulo="Qual programa roda na sua loja"
-                  descricao="Só um fica ligado por vez. Ligar um desliga o outro no mesmo salvar."
+                  rotulo="Programas da sua loja"
+                  descricao="Os dois podem rodar juntos. Escolha qual configurar — cada um liga e desliga no próprio salvar."
                   valor={programa}
                   onChange={setPrograma}
                   opcoes={[
                     {
                       valor: 'carimbo',
-                      titulo: 'Cartão de carimbo',
+                      titulo: `Cartão de carimbo · ${enabled ? 'ligado' : 'desligado'}`,
                       descricao: `Junta ${threshold || '10'} itens, ganha 1 grátis. A recompensa é grande e demora — puxa quem já é frequente.`,
                     },
                     {
                       valor: 'cashback',
-                      titulo: 'Cashback',
+                      titulo: `Cashback · ${cbLigado ? 'ligado' : 'desligado'}`,
                       descricao: 'Volta uma parte em saldo a cada pedido. Recompensa pequena e imediata — alcança quem comprou uma vez só.',
                     },
                   ]}
@@ -745,7 +739,7 @@ const FidelidadePage: React.FC = () => {
               </>
             )}
 
-            {aba === 'indicacoes' && programa === 'cashback' && storeIdentifier && (
+            {aba === 'indicacoes' && (programa === 'cashback' || cbLigado) && storeIdentifier && (
               <IndicacoesCard storeSlug={String(storeIdentifier)} />
             )}
 

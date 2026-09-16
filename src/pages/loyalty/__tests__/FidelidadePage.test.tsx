@@ -212,7 +212,7 @@ describe('FidelidadePage — escolha do programa', () => {
     expect(screen.getByText('vence em 3 dias')).toBeInTheDocument();
   });
 
-  it('ligar o cashback desliga o cartão de carimbo no mesmo salvar', async () => {
+  it('ligar o cashback NÃO desliga o cartão de carimbo', async () => {
     (cashbackService.get as jest.Mock).mockResolvedValue({
       enabled: false, percent: '3', referral_percent: '5', expiry_days: 60,
       resumo: {
@@ -233,11 +233,17 @@ describe('FidelidadePage — escolha do programa', () => {
     expect(payload.metadata.cashback_enabled).toBe(true);
     expect(payload.metadata.cashback_percent).toBe(3);
     expect(payload.metadata.cashback_referral_percent).toBe(5);
-    expect(payload.metadata.loyalty_enabled).toBe(false);
+    // 16/set: o dono decide rodar os dois. O salvar do cashback não toca na
+    // chave do carimbo — ela segue com o que estava gravado.
+    expect(payload.metadata.loyalty_enabled).toBe(true);
   });
 });
 
-describe('FidelidadePage — um programa desliga o outro (mão dupla)', () => {
+describe('FidelidadePage — os dois programas rodam juntos, o dono decide', () => {
+  // Até 16/set a tela tinha uma trava "um programa OU outro": salvar um
+  // desligava o outro no mesmo PATCH. O dono ligava o cashback, recarregava e
+  // via a fidelidade desligada (e vice-versa). O backend sempre tratou os dois
+  // como independentes — a trava era só desta tela.
   const cashbackLigado = {
     enabled: true, percent: '3', referral_percent: '5', expiry_days: 60,
     resumo: {
@@ -246,11 +252,15 @@ describe('FidelidadePage — um programa desliga o outro (mão dupla)', () => {
     },
     count: 0, results: [],
   };
+  const lojaComOsDois = {
+    ...store,
+    metadata: { ...store.metadata, loyalty_enabled: true, cashback_enabled: true },
+  };
 
-  it('salvar o cartão de carimbo desliga o cashback no mesmo salvar', async () => {
-    // Sem isto os dois ficam ligados no metadata: o cliente ganha carimbo E
-    // saldo no mesmo pedido, e ao recarregar a tela volta para o cashback.
-    (updateStore as jest.Mock).mockResolvedValue(store);
+  it('salvar o cartão de carimbo NÃO desliga o cashback', async () => {
+    (getStores as jest.Mock).mockResolvedValue(page([lojaComOsDois]));
+    (cashbackService.get as jest.Mock).mockResolvedValue(cashbackLigado);
+    (updateStore as jest.Mock).mockResolvedValue(lojaComOsDois);
     renderPage();
 
     await userEvent.click(await screen.findByRole('button', { name: /^Salvar$/i }));
@@ -258,7 +268,7 @@ describe('FidelidadePage — um programa desliga o outro (mão dupla)', () => {
     await waitFor(() => expect(updateStore).toHaveBeenCalled());
     const [, payload] = (updateStore as jest.Mock).mock.calls.at(-1)!;
     expect(payload.metadata.loyalty_enabled).toBe(true);
-    expect(payload.metadata.cashback_enabled).toBe(false);
+    expect(payload.metadata.cashback_enabled).toBe(true);
   });
 
   it('desligar o carimbo não mexe no cashback', async () => {
@@ -274,23 +284,55 @@ describe('FidelidadePage — um programa desliga o outro (mão dupla)', () => {
     expect(payload.metadata.cashback_enabled).toBeUndefined();
   });
 
-  it('com os dois ligados no banco, abre no carimbo — não sequestra para o cashback', async () => {
-    // Dado sujo herdado: cashback ligado E loyalty ligado. A tela abria no
-    // cashback e o dono, que tinha acabado de ligar a fidelidade, via a
-    // escolha dele voltar sozinha.
+  it('com os dois ligados, o selo diz que os dois estão ativos', async () => {
+    (getStores as jest.Mock).mockResolvedValue(page([lojaComOsDois]));
     const resposta = Promise.resolve(cashbackLigado);
     (cashbackService.get as jest.Mock).mockReturnValue(resposta);
     renderPage();
     await screen.findByDisplayValue('10');
-    // Garante que o efeito do cashback já resolveu antes de olhar o seletor.
+    await act(async () => { await resposta; });
+
+    expect(await screen.findByText('Cartão e cashback ativos')).toBeInTheDocument();
+  });
+
+  it('com os dois ligados, cada cartão de escolha mostra que está ligado', async () => {
+    (getStores as jest.Mock).mockResolvedValue(page([lojaComOsDois]));
+    const resposta = Promise.resolve(cashbackLigado);
+    (cashbackService.get as jest.Mock).mockReturnValue(resposta);
+    renderPage();
+    await screen.findByDisplayValue('10');
+    await act(async () => { await resposta; });
+
+    // "· ligado" com o separador: /ligado/ sozinho casaria com "desligado".
+    expect(await screen.findByRole('radio', { name: /Cartão de carimbo · ligado/i })).toBeInTheDocument();
+    expect(await screen.findByRole('radio', { name: /Cashback · ligado/i })).toBeInTheDocument();
+  });
+
+  it('com os dois ligados, abre na configuração do carimbo', async () => {
+    (getStores as jest.Mock).mockResolvedValue(page([lojaComOsDois]));
+    const resposta = Promise.resolve(cashbackLigado);
+    (cashbackService.get as jest.Mock).mockReturnValue(resposta);
+    renderPage();
+    await screen.findByDisplayValue('10');
     await act(async () => { await resposta; });
 
     expect(screen.getByRole('radio', { name: /Cartão de carimbo/i })).toBeChecked();
   });
 
-  it('botão "Ativar programa" salva de verdade, não só marca na tela', async () => {
+  it('com o cashback ligado, a aba Indicações existe mesmo olhando o carimbo', async () => {
+    (getStores as jest.Mock).mockResolvedValue(page([lojaComOsDois]));
+    const resposta = Promise.resolve(cashbackLigado);
+    (cashbackService.get as jest.Mock).mockReturnValue(resposta);
+    renderPage();
+    await screen.findByDisplayValue('10');
+    await act(async () => { await resposta; });
+
+    expect(await screen.findByRole('tab', { name: /Indicações/i })).toBeInTheDocument();
+  });
+
+  it('botão "Ativar programa" salva de verdade e não desliga o cashback', async () => {
     (getStores as jest.Mock).mockResolvedValue(
-      page([{ ...store, metadata: { ...store.metadata, loyalty_enabled: false } }])
+      page([{ ...store, metadata: { ...store.metadata, loyalty_enabled: false, cashback_enabled: true } }])
     );
     (updateStore as jest.Mock).mockResolvedValue(store);
     renderPage();
@@ -300,6 +342,6 @@ describe('FidelidadePage — um programa desliga o outro (mão dupla)', () => {
     await waitFor(() => expect(updateStore).toHaveBeenCalled());
     const [, payload] = (updateStore as jest.Mock).mock.calls.at(-1)!;
     expect(payload.metadata.loyalty_enabled).toBe(true);
-    expect(payload.metadata.cashback_enabled).toBe(false);
+    expect(payload.metadata.cashback_enabled).toBe(true);
   });
 });
