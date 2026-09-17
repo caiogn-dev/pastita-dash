@@ -100,11 +100,17 @@ const MAX_CONVERSAS_EM_MEMORIA = 8;
  * A recência é a ordem de inserção das chaves. `{...cache, [id]: v}` não serve:
  * chave que já existe conserva a posição antiga, então reabrir uma conversa não
  * a tornava recente e ela seria despejada mesmo estando em uso.
+ *
+ * `protegida` é a conversa aberta na tela: nunca é despejada, mesmo que o
+ * tráfego ao vivo de outras conversas a empurre para fora das N mais recentes.
+ * Despejá-la esvaziaria o histórico que o atendente está lendo naquele momento
+ * (a tela lê o cache por id). Custa no máximo uma entrada a mais que o teto.
  */
 function podarCache(
   cache: Record<string, Message[]>,
   atual: string,
-  messages: Message[]
+  messages: Message[],
+  protegida?: string | null
 ): Record<string, Message[]> {
   const reordenado: Record<string, Message[]> = {};
   for (const id of Object.keys(cache)) if (id !== atual) reordenado[id] = cache[id];
@@ -113,8 +119,11 @@ function podarCache(
   const ids = Object.keys(reordenado);
   if (ids.length <= MAX_CONVERSAS_EM_MEMORIA) return reordenado;
 
+  const manter = new Set(ids.slice(ids.length - MAX_CONVERSAS_EM_MEMORIA));
+  if (protegida && reordenado[protegida]) manter.add(protegida);
+
   const podado: Record<string, Message[]> = {};
-  for (const id of ids.slice(ids.length - MAX_CONVERSAS_EM_MEMORIA)) podado[id] = reordenado[id];
+  for (const id of ids) if (manter.has(id)) podado[id] = reordenado[id];  // preserva a recência
   return podado;
 }
 
@@ -225,12 +234,18 @@ export const useChatStore = create<ChatState>()(
           );
           
           if (isDuplicate) return state;
-          
+
+          // Mesmo teto do `setMessages`: o caminho ao vivo dispara para QUALQUER
+          // conversa (o socket do painel é multi-conta), então sem podar aqui o
+          // cache crescia sem limite ao longo do turno. A conversa aberta fica
+          // protegida do despejo.
           return {
-            messagesCache: {
-              ...state.messagesCache,
-              [conversationId]: [...existing, message]
-            }
+            messagesCache: podarCache(
+              state.messagesCache,
+              conversationId,
+              [...existing, message],
+              state.selectedConversationId
+            )
           };
         });
       },

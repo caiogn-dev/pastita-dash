@@ -3,7 +3,53 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-09-17)
+
+- `npm ci`: ok. Base do PR: `origin/main` em `6ebb19b`.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1796 testes / 298 suítes verdes** (era 1792/298; +4 desta fatia).
+- `npm run lint`: **4 erros pré-existentes** (`Unused eslint-disable directive` em
+  `OrdersHeatMap.tsx`, `sidebarColuna.test.tsx`, `pagamentoAMenorAoVivo.test.tsx`)
+  + 266 warnings; **nenhum introduzido por esta fatia** (arquivos tocados com 0
+  erros/0 warnings). Anotado como candidato de limpeza numa fatia dedicada.
+
+## Histórico
+
+### 2026-09-17 — Vazamento de memória: `addMessage` do inbox não respeitava o teto do cache
+- **Medido:** o `chatStore` (`src/stores/chatStore.ts`) limita quantas conversas
+  mantêm mensagens em memória via `podarCache()` + `MAX_CONVERSAS_EM_MEMORIA = 8`.
+  Esse teto só era aplicado no `setMessages` (abrir a conversa). O caminho AO VIVO,
+  `addMessage`, usava um spread cru (`{...cache, [id]: [...existing, message]}`) e
+  **nunca despejava nada**. Como `addMessage` é chamado a CADA evento
+  `message_received`/`message_sent` do WebSocket, para QUALQUER conversa, **antes**
+  de qualquer checagem (`WhatsAppWsContext.tsx:201,242`) — e o socket do painel é
+  **multi-conta** (ouve todas as lojas do dono) — o `messagesCache` acumulava uma
+  entrada por conversa que recebeu mensagem ao vivo, inclusive as que o atendente
+  nunca abriu. Num turno movimentado o painel ia ficando pesado sem sintoma óbvio:
+  exatamente o cenário que o comentário do próprio `MAX_CONVERSAS_EM_MEMORIA`
+  descreve, só que o teto era furado no caminho mais quente.
+- **Mudado (`chatStore.ts`):**
+  - `addMessage` passa a podar pelo mesmo `podarCache` do `setMessages` (dedupe
+    preservado). O cache do inbox ao vivo volta a ser limitado.
+  - `podarCache` ganhou um parâmetro opcional `protegida`: a **conversa aberta**
+    (`selectedConversationId`) nunca é despejada, mesmo que o tráfego ao vivo de
+    outras conversas a empurre para fora das 8 mais recentes. Sem isso, a correção
+    esvaziaria o histórico que o atendente está lendo (a tela lê o cache por id).
+    Custo: no máximo uma entrada além do teto.
+- **Teste (TDD, `chatStore.test.ts` — novo bloco "teto do cache no caminho AO
+  VIVO"):** escrito **vermelho antes** (12 conversas ao vivo → 12 entradas > 8),
+  **verde depois**. 4 casos: (1) `addMessage` respeita o teto; (2) não despeja a
+  conversa aberta sob tráfego de fundo (comprovado vermelho ao remover a proteção);
+  (3) `addMessage` na conversa aberta acrescenta e a mantém como a mais recente;
+  (4) dedupe do WS preservado (mesmo id duas vezes não duplica).
+- **Antes/depois:** `npm test` 1792/298 → **1796/298**; `tsc --noEmit` limpo e
+  `eslint` sem erros/warnings nos arquivos tocados, nos dois lados. Só produção
+  alterada; comportamento visível idêntico no uso normal (≤ 8 conversas ativas),
+  muda apenas o despejo de conversas de fundo que não deviam persistir.
+
+_(Baselines e histórico anteriores mantidos abaixo.)_
+
+## Baseline anterior (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
   transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
