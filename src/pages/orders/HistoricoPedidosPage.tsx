@@ -131,6 +131,18 @@ export const HistoricoPedidosPage: React.FC = () => {
   const pedidos = listaQuery.data?.results ?? [];
   const total = listaQuery.data?.count ?? 0;
   const resumo = resumoQuery.data;
+
+  /* Soma as linhas que estão na tela, em centavos. Somar os `number` de cada
+     linha acumularia erro de ponto flutuante e mostraria um total que não é a
+     soma visível — o defeito que este bloco existe para consertar. */
+  const totalRecebido =
+    (resumo?.por_pagamento ?? []).reduce(
+      (centavos, q) => centavos + Math.round(Number(q.total) * 100),
+      0,
+    ) / 100;
+  /* Sem frete no período (só retirada/balcão), a subtração seria uma linha de
+     zero e o "=" sugeriria um desconto que não existe. */
+  const temFrete = Math.round(Number(resumo?.frete ?? 0) * 100) > 0;
   const invertida = janelaInvertida(janela);
 
   // Anterior/próximo dentro do modal seguem a ORDEM DA LISTA filtrada. Sem
@@ -372,6 +384,38 @@ export const HistoricoPedidosPage: React.FC = () => {
                 </p>
               </div>
             ))}
+          </div>
+
+          {/* O fecho da conta. Sem ele a tela mostrava duas somas que não
+              batiam — caixa R$ 5.277,59 aqui, faturamento R$ 4.626,75 no card
+              ao lado — e escondia a única peça que as liga: o frete. Duas
+              verdades sem a conta à vista leem como erro do sistema, e foi
+              exatamente essa a dúvida do dono em 17/set. */}
+          <div className="mt-4 pt-3 border-t border-border-token space-y-1.5">
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="text-sm text-fg-muted-token">Total recebido</span>
+              <span className="text-sm font-semibold text-fg-token tabular-nums">
+                {formatCurrency(totalRecebido)}
+              </span>
+            </div>
+            {temFrete && (
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="text-sm text-fg-muted-token">
+                  &minus; Frete <span className="text-xs">(repasse ao entregador)</span>
+                </span>
+                <span className="text-sm text-fg-muted-token tabular-nums">
+                  {formatCurrency(resumo.frete)}
+                </span>
+              </div>
+            )}
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="text-sm font-semibold text-fg-token">
+                {temFrete ? '= Faturamento' : 'Faturamento'}
+              </span>
+              <span className="text-base font-bold text-brand-ink tabular-nums">
+                {formatCurrency(resumo.faturamento)}
+              </span>
+            </div>
           </div>
         </Card>
       )}

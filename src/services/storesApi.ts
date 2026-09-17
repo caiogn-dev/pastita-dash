@@ -1165,6 +1165,12 @@ export interface ResumoDePedidos {
   cancelados: number;
   pedidos_faturados: number;
   faturamento: string;
+  /**
+   * Repasse ao entregador dos pedidos que faturaram. Não é venda da loja — é a
+   * diferença entre o que entrou no caixa e o que a loja faturou, e é o que
+   * fecha a conta entre a quebra por pagamento e o KPI de faturamento.
+   */
+  frete: string;
   /** `null` quando nada faturou — "R$ 0,00" leria como venda de graça. */
   ticket_medio: string | null;
   por_pagamento: QuebraDeResumo[];
