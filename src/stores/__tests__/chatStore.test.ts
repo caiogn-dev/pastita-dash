@@ -151,3 +151,60 @@ describe('teto do cache de mensagens', () => {
     expect(useChatStore.getState().messagesCache.c8).toHaveLength(2);
   });
 });
+
+describe('teto do cache no caminho AO VIVO (addMessage)', () => {
+  /**
+   * O teto do cache só era aplicado no `setMessages` (abrir a conversa). O
+   * `addMessage` — disparado a CADA evento `message_received`/`message_sent` do
+   * WebSocket, para QUALQUER conversa, antes de qualquer checagem (o socket do
+   * painel é multi-conta) — usava um spread cru e nunca despejava nada. Num
+   * turno movimentado o `messagesCache` acumulava uma entrada por conversa que
+   * recebeu mensagem ao vivo, mesmo as que o atendente nunca abriu: exatamente
+   * o vazamento que o `MAX_CONVERSAS_EM_MEMORIA` existia para impedir.
+   */
+  const msg = (id: string) => ({ id, content: id, created_at: '2026-09-17T10:00:00Z' } as never);
+
+  beforeEach(() => {
+    useChatStore.setState({ messagesCache: {}, selectedConversationId: null } as never);
+  });
+
+  it('addMessage respeita o teto — conversas ao vivo não acumulam sem limite', () => {
+    const s = useChatStore.getState();
+    for (let i = 1; i <= 12; i += 1) s.addMessage(`live${i}`, msg(`m${i}`));
+    const cache = useChatStore.getState().messagesCache;
+    expect(Object.keys(cache).length).toBeLessThanOrEqual(8);
+    expect(cache.live1).toBeUndefined();  // a primeira (mais antiga) saiu
+    expect(cache.live12).toBeDefined();   // a última fica
+  });
+
+  it('addMessage não despeja a conversa ABERTA mesmo sob tráfego ao vivo de outras', () => {
+    useChatStore.setState({ messagesCache: {}, selectedConversationId: 'aberta' } as never);
+    const s = useChatStore.getState();
+    // A aberta é carregada primeiro (fica como a mais antiga a partir daqui).
+    s.setMessages('aberta', [msg('m0')]);
+    // Tráfego de fundo de 10 outras conversas passaria do teto e, sem proteção,
+    // despejaria a aberta — esvaziando a tela que o atendente está lendo.
+    for (let i = 1; i <= 10; i += 1) s.addMessage(`bg${i}`, msg(`bg${i}`));
+    const cache = useChatStore.getState().messagesCache;
+    expect(cache.aberta).toBeDefined();
+    expect(cache.aberta).toHaveLength(1);
+  });
+
+  it('addMessage numa conversa aberta acrescenta e a mantém como a mais recente', () => {
+    useChatStore.setState({ messagesCache: {}, selectedConversationId: 'aberta' } as never);
+    const s = useChatStore.getState();
+    s.setMessages('aberta', [msg('m0')]);
+    s.addMessage('aberta', msg('m1'));  // chegou uma nova na conversa aberta
+    const cache = useChatStore.getState().messagesCache;
+    expect(cache.aberta.map((m) => m.id)).toEqual(['m0', 'm1']);
+    // Última chave = mais recente: a aberta não é candidata a despejo.
+    expect(Object.keys(cache).at(-1)).toBe('aberta');
+  });
+
+  it('addMessage preserva o dedupe (mesma mensagem duas vezes não duplica)', () => {
+    const s = useChatStore.getState();
+    s.addMessage('c1', msg('a'));
+    s.addMessage('c1', msg('a'));  // eco do WS repetindo o mesmo id
+    expect(useChatStore.getState().messagesCache.c1).toHaveLength(1);
+  });
+});
