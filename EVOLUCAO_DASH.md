@@ -3,6 +3,52 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-09-18)
+
+- `git fetch origin` + `git checkout -B loop-base origin/main` + `npm ci`: ok.
+  Base: `origin/main` em `6ebb19b`.
+- `npx tsc --noEmit`: **limpo** (antes e depois).
+- `npm test`: **1792/298 → 1795/299** verdes (+3 testes / +1 suíte desta fatia).
+- `npm run lint`: gate em 400 warnings; **266 warnings + 4 errors PRÉ-EXISTENTES**
+  (`Unused eslint-disable directive` em `sidebarColuna.test.tsx`, `OrdersHeatMap.tsx`
+  ×2 e `pagamentoAMenorAoVivo.test.tsx`) — NÃO tocados por esta fatia. Os arquivos
+  desta fatia passam com **0 erros / 0 warnings**.
+- PRs `bot/` abertos no gate: #199 (ficha do cliente) e #200 (teto de cache do
+  inbox) — 2 < 3, então o gate anti-acúmulo permitiu esta fatia. Nenhum dos dois
+  cobre o card de avaliações da home.
+
+## Histórico
+
+### 2026-09-18 — UX/Resiliência: card de avaliações da home não inventa "0 avaliações" quando a consulta falha
+- **Medido:** varredura de páginas orientadas a `useQuery` que só tratam o
+  `isLoading`. `reports/` já está coberto (todo `SectionCard` recebe `error`/`onRetry`);
+  as páginas de `automation/` que usam `useState`+`toast.error` guardam os KPIs atrás
+  de `{stats && …}`. O buraco de maior valor estava na **home** (`DashboardPage.tsx`):
+  o card **"O que os clientes acharam"** vinha de `useAvaliacoesDaLoja`, destruturado
+  só como `{ data, isLoading }` — o `isError` **nunca era lido**. Numa falha de
+  rede/500 sem cache, `avaliacoes` fica `undefined`, `leituraDeAvaliacoes(undefined)`
+  devolve `{ vazio:true, nota:null, total:0, contexto:'Ninguém avaliou ainda.' }`, e a
+  home — a tela que o dono abre todo dia — afirmava **"Nota média —", "0 avaliações",
+  "Ninguém avaliou ainda."**, dizendo que ninguém avaliou a loja quando na verdade a
+  consulta é que caiu. Mesmo engano de "zeros" já corrigido em Pagamentos/Clientes,
+  agora no card mais visível do painel.
+- **Mudado (`DashboardPage.tsx`, só o card de avaliações):** o hook passa a expor
+  `isError` e `refetch`. Quando falha **sem cache** (`isError && !avaliacoes`), o
+  corpo do card mostra um erro acionável (`role="alert"` + "Não foi possível carregar
+  as avaliações" + **"Tentar novamente"** → `refetch()`), no mesmo estilo do alerta
+  de erro geral do dashboard, em vez dos zeros enganosos. **Com cache** (falha só ao
+  atualizar) mantém os números anteriores; **vazio real** (sucesso, loja sem avaliação)
+  segue mostrando "Ninguém avaliou ainda.".
+- **Teste (TDD):** novo `src/pages/dashboard/__tests__/DashboardAvaliacoesErro.test.tsx`
+  (3 casos, escrito **vermelho antes, verde depois**): (1) falha sem cache → erro
+  acionável e retry chama `refetch`, sem "Ninguém avaliou ainda"/"0 avaliações";
+  (2) erro com cache → mantém a nota do cache, sem estado de erro; (3) sucesso sem
+  avaliações → mostra o vazio real, não o erro. Mock controlável do
+  `useAvaliacoesDaLoja` (padrão do `CustomersKpiError.test.tsx`).
+- **Antes/depois:** `npm test` 1792/298 → **1795/299**; `tsc --noEmit` limpo nos dois
+  lados; lint dos arquivos tocados 0 erros/0 warnings. Só produção alterada: ramo de
+  erro + indicador; caminho feliz inalterado. Risco baixo.
+
 ## Baseline atual (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas

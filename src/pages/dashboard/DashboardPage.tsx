@@ -175,7 +175,12 @@ export const DashboardPage: React.FC = () => {
 
   // Avaliações dos últimos 30 dias. O endpoint já existia e alimentava só a
   // aba de relatório — que o dono raramente abre.
-  const { data: avaliacoes, isLoading: avaliacoesLoading } = useAvaliacoesDaLoja(storeSlug || storeId);
+  const {
+    data: avaliacoes,
+    isLoading: avaliacoesLoading,
+    isError: avaliacoesErro,
+    refetch: recarregarAvaliacoes,
+  } = useAvaliacoesDaLoja(storeSlug || storeId);
   const leitura = useMemo(() => leituraDeAvaliacoes(avaliacoes), [avaliacoes]);
 
   const loadData = useCallback(async () => {
@@ -669,6 +674,30 @@ export const DashboardPage: React.FC = () => {
 
         {avaliacoesLoading && !avaliacoes ? (
           <div className="flex justify-center items-center h-28"><Loading /></div>
+        ) : avaliacoesErro && !avaliacoes ? (
+          // Sem esta guarda, uma falha de rede cairia no `leituraDeAvaliacoes(undefined)`
+          // e a home diria "Nota média —", "0 avaliações", "Ninguém avaliou ainda" —
+          // afirmando que a loja não tem avaliação quando na verdade a consulta caiu.
+          <div role="alert" className="flex flex-wrap items-center gap-3 px-5 py-4">
+            <ExclamationTriangleIcon className="h-5 w-5 shrink-0 text-red-500 dark:text-red-400" />
+            <div className="flex-1">
+              <span className="text-sm font-semibold text-fg-token">
+                Não foi possível carregar as avaliações
+              </span>
+              <p className="text-xs text-fg-muted-token mt-0.5">
+                Verifique sua conexão e tente novamente.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => recarregarAvaliacoes()}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg
+                         bg-red-600 hover:bg-red-700 text-white transition-colors"
+            >
+              <ArrowPathIcon className="h-3.5 w-3.5" />
+              Tentar novamente
+            </button>
+          </div>
         ) : (
           <div className="flex flex-wrap items-start gap-x-10 gap-y-4 px-5 py-4">
             <div>
