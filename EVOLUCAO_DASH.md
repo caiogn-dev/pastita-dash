@@ -3,7 +3,47 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
-## Baseline atual (2026-08-08)
+## Baseline atual (2026-09-16)
+
+- `npm ci`: ok. Base do PR: `origin/main` em `2cc22ac`.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1792 testes / 299 suítes verdes** (era 1789/298; +3/+1 desta fatia).
+- `npm run lint`: **4 erros pré-existentes** (`Unused eslint-disable directive` em
+  `OrdersHeatMap.tsx`, `sidebarColuna.test.tsx`, `pagamentoAMenorAoVivo.test.tsx`)
+  + 266 warnings; nenhum introduzido por esta fatia (arquivos tocados com 0 erros).
+  Anotado como candidato de limpeza numa próxima fatia dedicada.
+
+## Histórico
+
+### 2026-09-16 — UX/Resiliência: ficha do cliente não vira "nunca comprou" quando os pedidos falham
+- **Medido:** no `CustomerDrawer` (`src/pages/customers/CustomersPage.tsx`) o
+  histórico de pedidos E os três KPIs do topo (**Gasto total**, **Pedidos**,
+  **Ticket médio**) saem todos de `useCustomerOrders`. Só o `isLoading` era
+  tratado: quando `/stores/orders/?customer=<phone>` caía (rede/500) **sem cache**,
+  `orders` virava `[]` e a ficha mostrava **"Gasto total R$ 0,00 · Pedidos 0"** +
+  **"Nenhum pedido encontrado"** — dizendo ao lojista que um cliente real nunca
+  comprou. É o mesmo engano de "zeros" que o próprio comentário do código relata
+  (incidente do Vinicius: "0 pedidos, R$ 0,00" com um pedido de R$ 36,99 logo
+  abaixo), agora nascido de uma falha silenciosa em vez de contador defasado.
+- **Mudado (`CustomersPage.tsx`, mesmo padrão de `HistoricoPedidosPage`):** novo
+  flag `pedidosFalharam = ordersQuery.isError && ordersQuery.data === undefined`.
+  Na falha sem cache: (1) os KPIs mostram **"—"** em vez dos zeros enganosos;
+  (2) a seção de histórico mostra um erro acionável ("Não foi possível carregar os
+  pedidos" + botão **"Tentar novamente"** que chama `ordersQuery.refetch()`) no
+  lugar de "Nenhum pedido encontrado". Com dado em cache (falha só ao atualizar),
+  mantém os números anteriores.
+- **Teste (TDD):** novo `__tests__/CustomerDrawerPedidosErro.test.tsx` (3 casos),
+  escrito **vermelho antes, verde depois**: (1) falha sem cache → erro acionável e
+  retry chama `refetch`, sem "Nenhum pedido encontrado"; (2) falha sem cache → KPI
+  "Gasto total" mostra "—", não "R$ 0,00"; (3) sucesso → KPIs e histórico reais,
+  sem estado de erro.
+- **Antes/depois:** `npm test` 1789/298 → **1792/299**; `tsc --noEmit` limpo nos
+  dois lados; `eslint` sem erros nos arquivos tocados. Só produção alterada:
+  ramo de erro + indicador indeterminado, risco baixo.
+
+_(Baselines e histórico anteriores mantidos abaixo.)_
+
+## Baseline anterior (2026-08-08)
 
 - `npm ci`: ok. `npm audit`: **8 vulnerabilidades** (3 moderate, 5 high), todas
   transitivas de `react-router`/`react-router-dom`; `npm audit fix` sem `--force`
