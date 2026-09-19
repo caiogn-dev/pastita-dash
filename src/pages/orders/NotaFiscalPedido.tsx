@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Modal } from '../../components/common';
-import { DocumentTextIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, ArrowTopRightOnSquareIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { ordersService, getErrorMessage } from '../../services';
 import type { NotaFiscal } from '../../services/orders';
@@ -98,6 +98,7 @@ export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, sto
   const [habilitado, setHabilitado] = useState(false);
   const [documentos, setDocumentos] = useState<NotaFiscal[]>([]);
   const [carregado, setCarregado] = useState(false);
+  const [falhou, setFalhou] = useState(false);
   const [emitindo, setEmitindo] = useState<'65' | '55' | null>(null);
   const [cancelando, setCancelando] = useState(false);
   const [documento, setDocumento] = useState('');
@@ -109,8 +110,10 @@ export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, sto
       const resposta = await ordersService.consultarNfce(orderId, storeSlug);
       setHabilitado(resposta.habilitado);
       setDocumentos(resposta.documentos);
+      setFalhou(false);
     } catch (erro) {
       logger.error('Erro ao consultar notas do pedido:', erro);
+      setFalhou(true);
     } finally {
       setCarregado(true);
     }
@@ -165,7 +168,22 @@ export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, sto
     }
   };
 
-  if (!carregado || !habilitado) return null;
+  if (!carregado) return null;
+
+  // Sumir aqui esconderia nota AUTORIZADA atrás de um erro de rede — o dono
+  // acharia que o pedido não tem nota e poderia emitir outra.
+  if (falhou) {
+    return (
+      <div className="inline-flex items-center gap-2 text-xs text-amber-500">
+        Não foi possível consultar a nota fiscal deste pedido.
+        <button type="button" onClick={carregar} className="underline">
+          Tentar de novo
+        </button>
+      </div>
+    );
+  }
+
+  if (!habilitado) return null;
 
   const tipoDigitado = classificarDocumento(documento);
   const jaEmitida = (modelo: '65' | '55') =>
@@ -242,6 +260,18 @@ export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, sto
                   >
                     <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
                     Abrir {modelo === '55' ? 'DANFE' : 'cupom (DANFE)'}
+                  </a>
+                )}
+                {nota.xml_url && (
+                  <a
+                    href={nota.xml_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
+                    className="flex items-center gap-1 text-[var(--brand)] hover:underline"
+                  >
+                    <ArrowDownTrayIcon className="h-3.5 w-3.5" />
+                    Baixar XML (para o contador)
                   </a>
                 )}
                 {podeCancelar && cancelandoModelo !== modelo && (
