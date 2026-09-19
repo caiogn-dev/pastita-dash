@@ -3,6 +3,60 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-09-19)
+
+- `git fetch origin` + `git checkout -B loop-base origin/main` + `npm ci`: ok.
+  Base do PR: `origin/main` em `6635f6c`.
+- `npx tsc --noEmit`: **limpo** (antes e depois).
+- `npm test`: **1806/301 → 1809/301** verdes (+3 testes desta fatia, incl. o
+  reforço do estado de retry apontado na revisão do Codex).
+- `npm run lint`: gate em 400 warnings; **4 erros PRÉ-EXISTENTES**
+  (`Unused eslint-disable directive` em `OrdersHeatMap.tsx`, `sidebarColuna.test.tsx`,
+  `pagamentoAMenorAoVivo.test.tsx`) — NÃO tocados por esta fatia. Produção tocada
+  (`ProductsPage.tsx`) com **0 erros / 0 warnings**; o teste adiciona 4 warnings de
+  `no-explicit-any` seguindo o idioma `(storesApi.X as any)` já usado no arquivo
+  (266 → 270 warnings, muito abaixo do gate).
+- Gate anti-acúmulo: **0 PRs `bot/` abertos**; nenhum PR aberto/fechado recente cobre
+  a falha silenciosa da busca de produtos no Cardápio.
+
+### 2026-09-19 — UX/Resiliência: Cardápio não vira "cardápio vazio" quando a busca de produtos falha
+- **Medido:** `ProductsPage` (`src/pages/products/ProductsPage.tsx`) serve os produtos
+  por `useProducts` (react-query) e só destruturava `data`/`isLoading` — o `isError`
+  **nunca era lido**. Numa falha de rede/500 **sem cache**, `productsQuery.data` fica
+  `undefined`, `products` continua `[]`, e o gate `initialLoading` (que exige
+  `categories.length === 0 && products.length === 0`) já cai para `false` assim que as
+  categorias carregam (fetch manual à parte). Resultado: a tela renderizava as
+  **categorias sem nenhum item** — um cardápio "vazio" que diz ao lojista que o
+  cardápio sumiu, quando na verdade foi a consulta que caiu. Mesmo engano de
+  "vazios/zeros enganosos" já corrigido em Clientes/Pagamentos/home, agora na tela de
+  gestão de produtos mais usada. `ProductsPage` era candidato nomeado no backlog desde
+  a varredura de KPIs derivados de query.
+- **Mudado (`ProductsPage.tsx`, mesmo padrão de Clientes):** novo flag
+  `produtosFalharam = productsQuery.isError && productsQuery.data === undefined`.
+  Na falha sem cache, no lugar do `InsightList` + lista arrastável mostra um
+  `EmptyState` acionável ("Não foi possível carregar o cardápio" + botão **"Tentar
+  novamente"** que chama `productsQuery.refetch()`), deixando claro que **nada foi
+  apagado**. Com dado em cache (falha só ao atualizar) mantém o cardápio anterior na
+  tela. Toolbar, filtros e modais seguem disponíveis; DnD/edição inline intactos.
+- **Teste (TDD, `__tests__/ProductsPage.test.tsx` — novo bloco):** escrito **vermelho
+  antes, verde depois**. 2 casos: (1) `getProducts` rejeita sem cache → erro acionável
+  e o produto real (`Arroz`) **não** aparece; (2) "Tentar novamente" refaz a busca
+  (`getProducts` chamado de novo).
+- **Reforço (revisão do Codex, P2):** ao clicar "Tentar novamente", o React Query
+  tira a query de `error` e a devolve para `pending` (`isError` vira `false`) ainda
+  **sem dados**; com as categorias já carregadas, o `initialLoading` também segue
+  `false`, então a versão inicial reexpunha o cardápio vazio durante todo o refetch
+  (que pode se arrastar por timeouts/retries). Corrigido: estado derivado de
+  `productsQuery.data === undefined` — `produtosCarregando` (busca em voo, inclui o
+  retry) mostra um `Loading` no lugar do menu; `produtosFalharam` (erro **e** sem
+  refetch em voo) mostra o erro acionável. Em nenhum dos dois se renderiza o cardápio
+  enganoso. +1 teste (estado coberto durante o refetch), vermelho antes do reforço.
+- **Antes/depois:** `npm test` 1806/301 → **1809/301**; `tsc --noEmit` limpo nos dois
+  lados; `eslint` **0 erros/0 warnings** no arquivo de produção tocado. Só produção
+  alterada: carregando/erro no lugar do estado vazio enganoso, risco baixo.
+
+_(Baselines e histórico anteriores mantidos abaixo.)_
+
 ## Baseline atual (2026-09-16)
 
 - `npm ci`: ok. Base do PR: `origin/main` em `2cc22ac`.
