@@ -4,7 +4,8 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import * as storesApi from '../../services/storesApi';
 import type { StoreCategory, StoreProductType } from '../../services/storesApi';
 import type { Product } from '../../services/products';
-import { InsightList } from '../../components/ui';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { Button, EmptyState, InsightList, PageShell } from '../../components/ui';
 import { insightsDeCardapio } from './insightsDeCardapio';
 import { useStore } from '../../hooks/useStore';
 // react-hot-toast e NÃO useToast: aquele hook guarda os toasts num useState
@@ -22,7 +23,6 @@ import { AddCategoryModal } from './components/AddCategoryModal';
 import { MontadorModal, type ConfigMontador } from './components/MontadorModal';
 import { ProductFormModal } from './ProductFormModal';
 import { useConfirm } from '../../hooks/useConfirm';
-import { PageShell } from '../../components/ui';
 
 export const ProductsPage: React.FC = () => {
   const { storeId } = useStore();
@@ -213,6 +213,12 @@ export const ProductsPage: React.FC = () => {
   // de chamada entre renders e o React quebra — foi o que aconteceu aqui.
   const insights = useMemo(() => insightsDeCardapio(products as never), [products]);
 
+  // Falha na busca de produtos SEM cache: `productsQuery.data` fica undefined e
+  // `products` continua []. Sem tratar isso, a tela mostrava as categorias sem
+  // nenhum item — um cardápio "vazio" que na verdade é uma consulta que caiu.
+  // Com dado em cache (falha só ao atualizar) mantém o cardápio anterior na tela.
+  const produtosFalharam = productsQuery.isError && productsQuery.data === undefined;
+
   if (initialLoading) return <div>Carregando…</div>;
 
   return (
@@ -235,6 +241,19 @@ export const ProductsPage: React.FC = () => {
         />
       }
     >
+      {produtosFalharam ? (
+        <EmptyState
+          icone={<ExclamationTriangleIcon className="h-8 w-8 text-[var(--warning)]" />}
+          titulo="Não foi possível carregar o cardápio"
+          descricao="Os produtos não puderam ser carregados. Isso não apagou nada — é só a consulta que falhou."
+          acao={
+            <Button variant="outline" onClick={() => productsQuery.refetch()}>
+              Tentar novamente
+            </Button>
+          }
+        />
+      ) : (
+        <>
       {/* Diagnóstico antes da lista.
           203 linhas de produto respondem "o que eu vendo"; nenhuma responde
           "o que eu faço com o cardápio esta semana". Item sem estoque, sem
@@ -330,6 +349,8 @@ export const ProductsPage: React.FC = () => {
         ))}
         </SortableContext>
       </DndContext>
+        </>
+      )}
       <AddCategoryModal
         isOpen={addCatOpen}
         saving={addCatSaving}
