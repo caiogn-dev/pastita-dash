@@ -1,7 +1,38 @@
 import api, { normalizePaginatedEnvelope } from './api';
 import { Conversation, ConversationNote, PaginatedResponse, Message, UniversalConversation } from '../types';
 
+/** Um cliente na fila humana — montado no backend a partir da conversa. */
+export interface ItemDaFilaHumana {
+  id: string;
+  telefone: string;
+  nome: string;
+  /** "Respondido pelo WhatsApp do celular", "A IA não conseguiu responder"… */
+  motivo: string;
+  humano_desde: string | null;
+  cliente_escreveu_em: string | null;
+  /** 0 quando ninguém está esperando (atendimento em andamento). */
+  minutos_esperando: number;
+  ultima_mensagem: string;
+}
+
+export interface FilaHumana {
+  /** Cliente escreveu depois da nossa última resposta — mais antigo primeiro. */
+  esperando: ItemDaFilaHumana[];
+  /** Alguém atendeu hoje e não há mensagem pendente do cliente. */
+  em_atendimento: ItemDaFilaHumana[];
+  total_esperando: number;
+  total_em_atendimento: number;
+}
+
 export const conversationsService = {
+  /** Fila humana da loja: quem espera uma pessoa responder. */
+  getFilaHumana: async (store?: string): Promise<FilaHumana> => {
+    const response = await api.get<FilaHumana>('/conversations/fila-humana/', {
+      params: store ? { store } : undefined,
+    });
+    return response.data;
+  },
+
   getConversations: async (
     params?: Record<string, string | number | undefined>,
     signal?: AbortSignal

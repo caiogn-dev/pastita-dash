@@ -1,167 +1,208 @@
 /**
- * HandoverRequestsPage - Solicitações de handover (sem Chakra UI)
+ * Fila humana — quem está esperando uma pessoa responder.
+ *
+ * Até 19/09/2026 esta página lia `HandoverRequest`, uma tabela com ZERO
+ * linhas desde sempre: nada no sistema a preenchia quando a conversa passava
+ * para atendimento humano. A página vivia vazia enquanto clientes esperavam
+ * (7 naquele dia, e 57 que tinham ficado sem resposta há mais de um dia).
+ *
+ * Agora a fila sai da própria conversa (`/conversations/fila-humana/`): modo
+ * humano + o cliente escreveu depois da nossa última resposta = esperando.
+ * Resolver devolve a conversa ao bot.
  */
-import React, { useState, useEffect, useCallback } from 'react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ArrowPathIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { Badge, BadgeVariant, Button } from '../../components/common';
-import { handoverService, HandoverRequest } from '../../services/handover';
-import { PageShell } from '../../components/ui';
-import { Loading } from '../../components/common';
+import { ArrowPathIcon, CheckIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
+import { conversationsService, type FilaHumana, type ItemDaFilaHumana } from '../../services/conversations';
+import { useStore } from '../../hooks/useStore';
+import { EmptyState, PageShell } from '../../components/ui';
+import { separarPorEspera, tempoDeEspera } from './filaHumana';
 
-const PRIORITY_VARIANT: Record<HandoverRequest['priority'], BadgeVariant> = {
-  low: 'gray', medium: 'info', high: 'warning', urgent: 'danger',
-};
-const STATUS_VARIANT: Record<HandoverRequest['status'], BadgeVariant> = {
-  pending: 'warning', approved: 'success', rejected: 'danger', expired: 'gray',
+const REFRESCO_MS = 30_000;
+
+interface LinhaProps {
+  item: ItemDaFilaHumana;
+  resolvendo: boolean;
+  onResolver: (id: string) => void;
+}
+
+const LinhaDaFila: React.FC<LinhaProps> = ({ item, resolvendo, onResolver }) => (
+  <li className="flex flex-wrap items-start gap-4 px-5 py-4 border-b border-border-token last:border-b-0">
+    <div className="min-w-0 flex-1">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <span className="font-semibold text-fg-token">{item.nome}</span>
+        <span className="text-xs text-fg-muted-token">{item.telefone}</span>
+      </div>
+      <p className="mt-1 text-xs text-fg-muted-token">{item.motivo}</p>
+      {item.ultima_mensagem && (
+        <p className="mt-2 text-sm text-fg-token truncate">“{item.ultima_mensagem}”</p>
+      )}
+    </div>
+    {item.minutos_esperando > 0 && (
+      <div className="text-right shrink-0">
+        <p className="overline">esperando</p>
+        <p className="text-sm font-semibold text-fg-token">{tempoDeEspera(item.minutos_esperando)}</p>
+      </div>
+    )}
+    <div className="flex gap-2 shrink-0">
+      <Link
+        to={`/inbox/whatsapp?conversation=${item.id}`}
+        className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold bg-brand text-on-brand hover:bg-brand-hover"
+      >
+        <ChatBubbleLeftRightIcon className="h-4 w-4" aria-hidden />
+        Responder
+      </Link>
+      <button
+        type="button"
+        onClick={() => onResolver(item.id)}
+        disabled={resolvendo}
+        title="O atendimento acabou: a conversa volta para o bot"
+        className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold border border-border-token text-fg-token hover:bg-surface-muted-token disabled:opacity-50"
+      >
+        <CheckIcon className="h-4 w-4" aria-hidden />
+        Resolver
+      </button>
+    </div>
+  </li>
+);
+
+interface SecaoProps {
+  titulo: string;
+  descricao: string;
+  itens: ItemDaFilaHumana[];
+  resolvendoId: string | null;
+  onResolver: (id: string) => void;
+}
+
+const Secao: React.FC<SecaoProps> = ({ titulo, descricao, itens, resolvendoId, onResolver }) => {
+  if (itens.length === 0) return null;
+  return (
+    <section className="rounded-xl border border-border-token bg-surface-token">
+      <header className="px-5 py-3 border-b border-border-token">
+        <h2 className="text-sm font-semibold text-fg-token">
+          {titulo} <span className="text-fg-muted-token">({itens.length})</span>
+        </h2>
+        <p className="text-xs text-fg-muted-token mt-0.5">{descricao}</p>
+      </header>
+      <ul>
+        {itens.map((item) => (
+          <LinhaDaFila
+            key={item.id}
+            item={item}
+            resolvendo={resolvendoId === item.id}
+            onResolver={onResolver}
+          />
+        ))}
+      </ul>
+    </section>
+  );
 };
 
 export const HandoverRequestsPage: React.FC = () => {
-  const [requests, setRequests] = useState<HandoverRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [processingId, setProcessingId] = useState<string | null>(null);
+  const { storeSlug } = useStore();
+  const [fila, setFila] = useState<FilaHumana | null>(null);
+  const [erro, setErro] = useState(false);
+  const [carregando, setCarregando] = useState(true);
+  const [resolvendoId, setResolvendoId] = useState<string | null>(null);
 
-  const loadRequests = useCallback(async () => {
-    setIsLoading(true);
+  const carregar = useCallback(async () => {
     try {
-      const data = await handoverService.getRequests();
-      setRequests(data);
-    } catch { toast.error('Erro ao carregar solicitações de handover'); }
-    finally { setIsLoading(false); }
-  }, []);
+      setFila(await conversationsService.getFilaHumana(storeSlug || undefined));
+      setErro(false);
+    } catch {
+      // Falha não pode virar "ninguém esperando": seria a mesma mentira da
+      // página antiga, que vivia vazia com clientes aguardando.
+      setErro(true);
+    } finally {
+      setCarregando(false);
+    }
+  }, [storeSlug]);
 
   useEffect(() => {
-    loadRequests();
-    const interval = setInterval(loadRequests, 30000);
-    return () => clearInterval(interval);
-  }, [loadRequests]);
+    carregar();
+    const t = setInterval(carregar, REFRESCO_MS);
+    return () => clearInterval(t);
+  }, [carregar]);
 
-  const handleApprove = async (id: string) => {
-    setProcessingId(id);
+  const resolver = async (id: string) => {
+    setResolvendoId(id);
     try {
-      await handoverService.approveRequest(id);
-      toast.success('Solicitação aprovada — conversa transferida para atendimento humano');
-      setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'approved' as const } : r));
-    } catch { toast.error('Erro ao aprovar solicitação'); }
-    finally { setProcessingId(null); }
+      await conversationsService.resolveConversation(id);
+      setFila((atual) => atual && {
+        ...atual,
+        esperando: atual.esperando.filter((i) => i.id !== id),
+        em_atendimento: atual.em_atendimento.filter((i) => i.id !== id),
+      });
+      toast.success('Resolvida — a conversa voltou para o bot');
+    } catch {
+      toast.error('Não foi possível resolver a conversa');
+    } finally {
+      setResolvendoId(null);
+    }
   };
 
-  const handleReject = async (id: string) => {
-    setProcessingId(id);
-    try {
-      await handoverService.rejectRequest(id);
-      toast.success('Solicitação rejeitada');
-      setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'rejected' as const } : r));
-    } catch { toast.error('Erro ao rejeitar solicitação'); }
-    finally { setProcessingId(null); }
-  };
-
-  const pending = requests.filter(r => r.status === 'pending');
-  const resolved = requests.filter(r => r.status !== 'pending');
+  const { agora, semResposta } = separarPorEspera(fila?.esperando ?? []);
+  const vazia = !!fila && fila.esperando.length === 0 && fila.em_atendimento.length === 0;
 
   return (
     <PageShell
-      titulo="Pedidos de atendimento humano"
-      acoes={
+      titulo="Fila humana"
+      descricao="Clientes esperando uma pessoa responder. Quem é atendido por humano volta para o bot no dia seguinte — ou quando você resolve."
+      acoes={(
         <button
-        onClick={loadRequests}
-        disabled={isLoading}
-        className="p-2 rounded-lg hover:bg-bg-hover transition-colors text-fg-muted disabled:opacity-50"
-        aria-label="Atualizar"
+          type="button"
+          onClick={() => { setCarregando(true); carregar(); }}
+          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm border border-border-token text-fg-token"
         >
-        <ArrowPathIcon className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+          <ArrowPathIcon className="h-4 w-4" aria-hidden />
+          Atualizar
         </button>
-      }
+      )}
     >
+      {carregando && !fila && !erro && (
+        <p className="text-sm text-fg-muted-token">Carregando a fila…</p>
+      )}
 
-      {isLoading && requests.length === 0 ? (
-        <div className="flex justify-center py-12">
-          <Loading size="lg" rotulo="Carregando pedidos de atendimento" />
+      {erro && (
+        <div role="alert" className="rounded-xl border border-border-token px-5 py-4 flex items-center gap-3">
+          <span className="text-sm text-fg-token flex-1">Não foi possível carregar a fila. Os clientes podem estar esperando — tente de novo.</span>
+          <button type="button" onClick={() => carregar()} className="text-sm font-semibold underline">
+            Tentar novamente
+          </button>
         </div>
-      ) : (
-        <div className="flex flex-col gap-6">
-          {/* Pending */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <h2 className="text-base font-semibold text-fg-primary">Pendentes</h2>
-              {pending.length > 0 && (
-                <span className="px-2 py-0.5 bg-warning-soft text-warning-token text-xs font-bold rounded-full">{pending.length}</span>
-              )}
-            </div>
+      )}
 
-            {pending.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-40 gap-2 text-[var(--fg-muted,#9ca3af)]">
-                <p className="text-sm">Nenhuma solicitação de handover</p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {pending.map(req => (
-                  <div key={req.id} className="p-4 bg-bg-card border border-border-primary rounded-xl shadow-sm">
-                    <div className="flex justify-between items-start gap-4">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-semibold text-fg-primary">
-                            Conversa: <span className="font-mono text-xs text-fg-muted">{req.conversation}</span>
-                          </span>
-                          <Badge variant={PRIORITY_VARIANT[req.priority]} size="sm">{req.priority_display || req.priority}</Badge>
-                        </div>
-                        {req.reason && <p className="text-sm text-fg-muted">Motivo: {req.reason}</p>}
-                        <p className="text-xs text-fg-muted">
-                          Solicitado em {format(new Date(req.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                          {req.expires_at && <> — Expira em {format(new Date(req.expires_at), 'HH:mm', { locale: ptBR })}</>}
-                        </p>
-                      </div>
-                      <div className="flex gap-2 flex-shrink-0">
-                        <Button
-                          size="sm"
-                          onClick={() => handleApprove(req.id)}
-                          isLoading={processingId === req.id}
-                          disabled={processingId !== null && processingId !== req.id}
-                          leftIcon={<CheckIcon className="w-4 h-4" />}
-                        >
-                          Aprovar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          onClick={() => handleReject(req.id)}
-                          isLoading={processingId === req.id}
-                          disabled={processingId !== null && processingId !== req.id}
-                          leftIcon={<XMarkIcon className="w-4 h-4" />}
-                        >
-                          Rejeitar
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+      {!erro && vazia && (
+        <EmptyState
+          titulo="Ninguém esperando"
+          descricao="Quando um cliente escrever numa conversa em atendimento humano e ainda não tiver resposta, ele aparece aqui."
+        />
+      )}
 
-          {/* Resolved */}
-          {resolved.length > 0 && (
-            <div>
-              <h2 className="text-base font-semibold text-fg-muted mb-3">Histórico Recente</h2>
-              <div className="flex flex-col gap-2">
-                {resolved.slice(0, 10).map(req => (
-                  <div key={req.id} className="p-3 bg-bg-subtle border border-border-primary rounded-lg opacity-80">
-                    <div className="flex justify-between items-center">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-xs text-fg-muted">{req.conversation}</span>
-                        <Badge variant={STATUS_VARIANT[req.status]} size="sm">{req.status_display || req.status}</Badge>
-                        <Badge variant={PRIORITY_VARIANT[req.priority]} size="sm">{req.priority_display || req.priority}</Badge>
-                      </div>
-                      <span className="text-xs text-fg-muted">{format(new Date(req.created_at), 'dd/MM HH:mm', { locale: ptBR })}</span>
-                    </div>
-                    {req.reason && <p className="text-xs text-fg-muted mt-1">{req.reason}</p>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+      {!erro && fila && (
+        <div className="space-y-5">
+          <Secao
+            titulo="Esperando resposta"
+            descricao="O cliente escreveu e ninguém respondeu ainda. Quem espera há mais tempo vem primeiro."
+            itens={agora}
+            resolvendoId={resolvendoId}
+            onResolver={resolver}
+          />
+          <Secao
+            titulo="Sem resposta há mais de 1 dia"
+            descricao="Mandaram mensagem e nunca foram respondidos. Vale chamar de volta — ou resolver para o bot assumir."
+            itens={semResposta}
+            resolvendoId={resolvendoId}
+            onResolver={resolver}
+          />
+          <Secao
+            titulo="Em atendimento hoje"
+            descricao="Alguém já respondeu hoje. Amanhã a conversa volta para o bot."
+            itens={fila.em_atendimento}
+            resolvendoId={resolvendoId}
+            onResolver={resolver}
+          />
         </div>
       )}
     </PageShell>
