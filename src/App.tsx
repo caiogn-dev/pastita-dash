@@ -106,6 +106,7 @@ const ConnectionsPage = lazy(() => import('./pages/messaging/ConnectionsPage').t
 
 // WhatsApp Pages
 const HandoverRequestsPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.HandoverRequestsPage })));
+const InstagramCallbackPage = lazy(() => import('./pages/instagram/InstagramCallbackPage'));
 const AvisosAutomaticosPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.AvisosAutomaticosPage })));
 
 // Protected Route wrapper
@@ -171,6 +172,13 @@ const AppContent: React.FC = () => {
         </Suspense>
       } />
       <Route path="/signup" element={<Navigate to="/cadastro" replace />} />
+
+      {/* Fim do login com Instagram: roda dentro da janelinha e só avisa a tela Conexões. */}
+      <Route path="/instagram/callback" element={
+        <Suspense fallback={<FullPageLoading />}>
+          <InstagramCallbackPage />
+        </Suspense>
+      } />
 
       {/* KDS fullscreen — sem sidebar, para a tela da cozinha */}
       <Route path="/stores/:storeId/kds" element={

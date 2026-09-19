@@ -14,6 +14,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import * as whatsappService from '../../services/whatsapp';
 import { authService } from '../../services/auth';
+import { FacebookMark, WhatsAppIcon } from '../brand/BrandIcons';
 
 const FB_APP_ID = import.meta.env.VITE_META_APP_ID || '2233885800471071';
 const ES_CONFIG_ID = import.meta.env.VITE_META_ES_CONFIG_ID || '1695683531769984';
@@ -56,9 +57,18 @@ function loadFbSdk(): Promise<void> {
 interface Props {
   storeId?: string;
   onConnected?: () => void;
+  /** Texto do botão. O padrão serve quando o botão aparece sozinho. */
+  rotulo?: string;
+  /**
+   * `whatsapp`: botão com o ícone do WhatsApp (cartão da tela Conexões).
+   * `facebook`: botão azul "Continuar com o Facebook" — é o login que abre.
+   */
+  variante?: 'whatsapp' | 'facebook';
 }
 
-export const ConnectWhatsAppButton: React.FC<Props> = ({ storeId, onConnected }) => {
+export const ConnectWhatsAppButton: React.FC<Props> = ({
+  storeId, onConnected, rotulo, variante = 'whatsapp',
+}) => {
   const sessionRef = useRef<{ waba_id?: string; phone_number_id?: string }>({});
   const [loading, setLoading] = useState(false);
 
@@ -166,15 +176,19 @@ export const ConnectWhatsAppButton: React.FC<Props> = ({ storeId, onConnected })
     });
   };
 
+  const facebook = variante === 'facebook';
   return (
     <button
       type="button"
       onClick={launch}
       disabled={loading}
-      className="inline-flex items-center gap-2 rounded-md bg-[#1877f2] px-4 h-10 text-sm font-bold text-white hover:bg-[#166fe0] transition-colors disabled:opacity-60"
+      aria-busy={loading}
+      className={facebook
+        ? 'inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#1877F2] px-5 h-12 text-base font-semibold text-white hover:bg-[#166FE0] transition-colors disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1877F2]'
+        : 'inline-flex items-center justify-center gap-2.5 rounded-xl border border-border-token bg-surface-token px-4 h-11 text-sm font-semibold text-fg-token hover:bg-surface-muted-token transition-colors disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'}
     >
-      <span aria-hidden>🟢</span>{' '}
-      {loading ? 'Conectando…' : 'Conectar WhatsApp (oficial)'}
+      {facebook ? <FacebookMark size={20} /> : <WhatsAppIcon size={24} />}
+      {loading ? 'Conectando…' : (rotulo || (facebook ? 'Continuar com o Facebook' : 'Conectar o WhatsApp'))}
     </button>
   );
 };

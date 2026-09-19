@@ -1,642 +1,417 @@
 /**
- * ConnectionsPage - Conexões de mensagens (sem Chakra UI)
+ * Conexões — onde o lojista liga o WhatsApp e o Instagram da loja.
+ *
+ * É tela de PRODUTO, não de suporte: o lojista entra com a conta dele pelo
+ * login oficial (WhatsApp pelo Facebook, com coexistência — ele continua
+ * usando o app no celular; Instagram pelo login do Instagram) e lê o estado em
+ * português de gente. Até 19/09 ela pedia Phone Number ID, token e WABA,
+ * mostrava Messenger e escondia o Instagram. O que é técnico ficou numa seção
+ * só para quem administra a plataforma.
  */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useConfirm } from '../../hooks';
-import {
-  PlusIcon, PencilIcon, TrashIcon,
-  CheckCircleIcon, XCircleIcon, ChatBubbleLeftIcon,
-  LinkIcon, QrCodeIcon, ArrowPathIcon, ChartBarIcon,
-} from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Button, Badge } from '../../components/common';
+import { useConfirm } from '../../hooks';
 import * as whatsappService from '../../services/whatsapp';
-import { getErrorMessage } from '../../services';
-import { ConnectWhatsAppButton } from '../../components/whatsapp/ConnectWhatsAppButton';
-import { messengerService } from '../../services/messenger';
 import { instagramAccountService } from '../../services/instagram';
 import { channelsApi } from '../../features/channels';
-import { Switch } from '../../components/common';
-import { PageShell, SearchInput, Modal, ModalFooter, KpiGrid } from '../../components/ui';
-import { Loading } from '../../components/common';
+import { ConnectWhatsAppButton } from '../../components/whatsapp/ConnectWhatsAppButton';
+import { InstagramIcon, WhatsAppIcon } from '../../components/brand/BrandIcons';
+import { PageShell } from '../../components/ui';
+import { useAuthStore } from '../../stores/authStore';
 
-// ─── Platform config ──────────────────────────────────────────────────────────
+// ─── Tipos ────────────────────────────────────────────────────────────────────
 
-interface PlatformField { name: string; label: string; type: string; required: boolean; placeholder: string; }
-interface PlatformConfig { name: string; icon: string; description: string; fields: PlatformField[]; disabled?: boolean; }
-
-const PLATFORMS: Record<string, PlatformConfig> = {
-  whatsapp: {
-    name: 'WhatsApp', icon: '📱',
-    description: 'Conecte sua conta WhatsApp Business',
-    fields: [
-      { name: 'name', label: 'Nome da Conexão', type: 'text', required: true, placeholder: 'Ex: Loja Principal' },
-      { name: 'phone_number', label: 'Número de Telefone', type: 'tel', required: true, placeholder: 'Ex: +55 63 99138-6719' },
-      { name: 'phone_number_id', label: 'Phone Number ID (Meta)', type: 'text', required: true, placeholder: 'Ex: 123456789012345' },
-      { name: 'waba_id', label: 'WABA ID (opcional)', type: 'text', required: false, placeholder: 'Ex: 987654321098765' },
-      { name: 'access_token', label: 'Access Token', type: 'password', required: true, placeholder: 'Token de acesso da API do WhatsApp' },
-      { name: 'webhook_verify_token', label: 'Webhook Verify Token (opcional)', type: 'password', required: false, placeholder: 'Token para verificação do webhook' },
-    ],
-  },
-  messenger: {
-    name: 'Messenger', icon: '💬',
-    description: 'Conecte sua página do Facebook Messenger',
-    fields: [
-      { name: 'name', label: 'Nome da Conexão', type: 'text', required: true, placeholder: 'Ex: Página da Loja' },
-      { name: 'page_id', label: 'Page ID', type: 'text', required: true, placeholder: 'Ex: 123456789012345' },
-      { name: 'page_name', label: 'Nome da Página', type: 'text', required: true, placeholder: 'Ex: Loja Oficial' },
-      { name: 'page_access_token', label: 'Page Access Token', type: 'password', required: true, placeholder: 'Token de acesso da página' },
-    ],
-  },
-  instagram: {
-    name: 'Instagram', icon: '📸',
-    description: 'Conecte sua conta profissional via Facebook OAuth',
-    fields: [],
-  },
-};
-
-const OAUTH_PLATFORMS = new Set(['instagram']);
-
-interface Connection {
+interface ContaWhatsApp {
   id: string;
-  platform: 'whatsapp' | 'messenger' | 'instagram';
-  name: string;
-  status: 'active' | 'inactive' | 'connecting' | 'error';
-  is_active: boolean;
-  webhook_verified?: boolean;
+  name?: string;
+  display_phone_number?: string;
   phone_number?: string;
-  page_name?: string;
-  page_id?: string;
-  username?: string;
-  profile_picture_url?: string;
-  created_at: string;
+  status?: string;
+  is_active?: boolean;
+  metadata?: {
+    coex?: { connected?: boolean };
+    qualidade?: { evento?: string };
+  };
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+interface ContaInstagram {
+  id: string;
+  name?: string;
+  handle?: string;
+  isActive?: boolean;
+}
 
-const getStatusVariant = (status: string, isActive: boolean) => {
-  if (!isActive) return 'gray';
-  if (status === 'active' || status === 'connected') return 'success';
-  if (status === 'connecting') return 'warning';
-  if (status === 'error') return 'danger';
-  return 'gray';
+type Estado = 'funcionando' | 'desconectado' | 'pausado';
+
+const QUALIDADE_RUIM = new Set(['FLAGGED', 'DOWNGRADE']);
+const QUALIDADE_BOA = new Set(['UNFLAGGED', 'UPGRADE', 'ONBOARDING']);
+
+export function estadoDoWhatsApp(conta: ContaWhatsApp): Estado {
+  if (!conta.is_active) return 'pausado';
+  if (conta.metadata?.coex?.connected === false) return 'desconectado';
+  return conta.status === 'active' ? 'funcionando' : 'pausado';
+}
+
+const SELO: Record<Estado, { rotulo: string; classe: string; ponto: string }> = {
+  funcionando: { rotulo: 'Funcionando', classe: 'bg-success-soft text-success-token', ponto: 'bg-success-token' },
+  desconectado: { rotulo: 'Desconectado no celular', classe: 'bg-danger-soft text-danger-token', ponto: 'bg-danger-token' },
+  pausado: { rotulo: 'Pausado', classe: 'bg-surface-muted-token text-fg-muted-token', ponto: 'bg-fg-muted-token' },
 };
 
-const getStatusLabel = (status: string, isActive: boolean) => {
-  if (!isActive) return 'Desativado';
-  if (status === 'active' || status === 'connected') return 'Conectado';
-  if (status === 'connecting') return 'Conectando...';
-  if (status === 'error') return 'Erro';
-  return 'Inativo';
-};
+// ─── Peças ────────────────────────────────────────────────────────────────────
 
-const initials = (name: string) => name.split('').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+const Selo: React.FC<{ estado: Estado }> = ({ estado }) => (
+  <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${SELO[estado].classe}`}>
+    <span className={`h-2 w-2 rounded-full ${SELO[estado].ponto}`} aria-hidden />
+    {SELO[estado].rotulo}
+  </span>
+);
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+const Beneficio: React.FC<{ titulo: string; children: React.ReactNode }> = ({ titulo, children }) => (
+  <li className="flex gap-3 text-sm leading-relaxed text-fg-token">
+    <svg width="20" height="20" viewBox="0 0 24 24" className="mt-0.5 shrink-0 text-success-token" aria-hidden>
+      <path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+    <span><strong className="font-semibold">{titulo}</strong> {children}</span>
+  </li>
+);
+
+const Cartao: React.FC<{
+  icone: React.ReactNode;
+  titulo: string;
+  subtitulo: string;
+  selo?: React.ReactNode;
+  children: React.ReactNode;
+}> = ({ icone, titulo, subtitulo, selo, children }) => (
+  <section className="flex flex-col gap-5 rounded-2xl border border-border-token bg-surface-token p-6">
+    <header className="flex items-center gap-3.5">
+      {icone}
+      <div className="min-w-0 flex-1">
+        <h2 className="text-lg font-bold text-fg-token">{titulo}</h2>
+        <p className="truncate text-sm text-fg-muted-token">{subtitulo}</p>
+      </div>
+      {selo}
+    </header>
+    {children}
+  </section>
+);
+
+const botaoSecundario =
+  'inline-flex h-11 items-center rounded-xl border border-border-token bg-surface-token px-4 text-sm font-semibold text-fg-token hover:bg-surface-muted-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
+const botaoPrimario =
+  'inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand';
+const botaoDiscreto =
+  'inline-flex h-11 items-center rounded-xl px-3 text-sm font-semibold text-fg-muted-token hover:text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
+
+// ─── Tela ─────────────────────────────────────────────────────────────────────
 
 export default function ConnectionsPage() {
   const [ConfirmDialog, confirm] = useConfirm();
-  const [connections, setConnections] = useState<Connection[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingConnection, setEditingConnection] = useState<Connection | null>(null);
-  const [formData, setFormData] = useState<Record<string, string>>({});
-  const [submitting, setSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
-  const [qrDialogOpen, setQrDialogOpen] = useState(false);
-  const [qrCode, setQrCode] = useState<string | null>(null);
-  const instagramPopupRef = useRef<Window | null>(null);
-  const instagramMessageHandlerRef = useRef<((event: MessageEvent) => void) | null>(null);
+  const usuario = useAuthStore((s) => s.user) as { is_superuser?: boolean; is_staff?: boolean } | null;
+  const administrador = !!(usuario?.is_superuser || usuario?.is_staff);
 
-  useEffect(() => {
-    loadConnections();
-    return () => {
-      // Limpar listener de OAuth do Instagram se o componente desmontar durante o fluxo
-      if (instagramMessageHandlerRef.current) {
-        window.removeEventListener('message', instagramMessageHandlerRef.current);
-        instagramMessageHandlerRef.current = null;
-      }
-      if (instagramPopupRef.current && !instagramPopupRef.current.closed) {
-        instagramPopupRef.current.close();
-      }
-    };
+  const [whatsapps, setWhatsapps] = useState<ContaWhatsApp[]>([]);
+  const [instagrams, setInstagrams] = useState<ContaInstagram[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(false);
+  const [instagramIndisponivel, setInstagramIndisponivel] = useState(false);
+  const [conectandoInstagram, setConectandoInstagram] = useState(false);
+  const limparLoginInstagram = useRef<(() => void) | null>(null);
+
+  const carregar = useCallback(async () => {
+    const [wa, ig] = await Promise.allSettled([
+      whatsappService.getAccounts(),
+      channelsApi.listAccounts('instagram'),
+    ]);
+    if (wa.status === 'fulfilled') {
+      const d = wa.value.data as { results?: ContaWhatsApp[] } | ContaWhatsApp[];
+      setWhatsapps(Array.isArray(d) ? d : d?.results || []);
+    }
+    if (ig.status === 'fulfilled') setInstagrams(ig.value as ContaInstagram[]);
+    // Falha ao carregar não pode virar "nada conectado" — o lojista tentaria
+    // conectar de novo algo que já está ligado.
+    setErro(wa.status === 'rejected');
+    setCarregando(false);
   }, []);
 
-  // Clean up OAuth popup event listener and close popup on unmount
   useEffect(() => {
-    return () => {
-      if (instagramMessageHandlerRef.current) {
-        window.removeEventListener('message', instagramMessageHandlerRef.current);
-        instagramMessageHandlerRef.current = null;
-      }
-      if (instagramPopupRef.current && !instagramPopupRef.current.closed) {
-        instagramPopupRef.current.close();
-      }
-    };
-  }, []);
+    carregar();
+    if (new URLSearchParams(window.location.search).get('instagram') === 'conectado') {
+      toast.success('Instagram conectado!');
+    }
+    return () => limparLoginInstagram.current?.();
+  }, [carregar]);
 
-  const loadConnections = async () => {
-    try {
-      setLoading(true);
-      const [whatsappRes, messengerRes, instagramRes] = await Promise.allSettled([
-        whatsappService.getAccounts(),
-        messengerService.getAccounts(),
-        channelsApi.listAccounts('instagram'),
-      ]);
-      const all: Connection[] = [];
-      if (whatsappRes.status === 'fulfilled') {
-        const d = whatsappRes.value.data as any;
-        (d?.results || d || []).forEach((acc: any) => all.push({ ...acc, platform: 'whatsapp', phone_number: acc.phone_number || acc.display_phone_number }));
-      }
-      if (messengerRes.status === 'fulfilled') {
-        const d = messengerRes.value.data as any;
-        // Serializer do Messenger expõe page_name (não `name`); sem isso conn.name
-        // ficava undefined → initials(undefined).split() quebrava a grade inteira.
-        (d?.results || d || []).forEach((acc: any) => all.push({ ...acc, platform: 'messenger', name: acc.name || acc.page_name }));
-      }
-      if (instagramRes.status === 'fulfilled') {
-        instagramRes.value.forEach(acc => all.push({
-          id: acc.id,
-          platform: 'instagram',
-          name: acc.name,
-          status: acc.isActive ? 'active' : 'inactive',
-          is_active: acc.isActive,
-          webhook_verified: acc.webhookVerified,
-          username: acc.handle,
-          profile_picture_url: acc.avatarUrl,
-          page_id: acc.externalId,
-          created_at: acc.lastSyncAt || '',
-        }));
-      }
-      setConnections(all);
-      setError(null);
-    } catch { setError('Erro ao carregar conexões'); }
-    finally { setLoading(false); }
-  };
-
-  const handleInstagramConnect = () => {
-    const popup = window.open('about:blank', 'instagram_oauth', 'width=600,height=700,scrollbars=yes,resizable=yes');
-    instagramPopupRef.current = popup;
-
+  // ── Instagram: login numa janelinha; /instagram/callback avisa o fim ──
+  const entrarComInstagram = () => {
+    const popup = window.open('about:blank', 'instagram_oauth', 'width=600,height=720,scrollbars=yes,resizable=yes');
     if (!popup) {
-      toast.error('Popup bloqueado. Permita popups para conectar o Instagram.');
+      toast.error('O navegador bloqueou a janela do Instagram. Libere pop-ups para este site e tente de novo.');
       return;
     }
+    limparLoginInstagram.current?.();
+    setConectandoInstagram(true);
+    let terminou = false;
 
-    // Clean up any previous listener
-    if (instagramMessageHandlerRef.current) {
-      window.removeEventListener('message', instagramMessageHandlerRef.current);
-      instagramMessageHandlerRef.current = null;
-    }
-
-    let completed = false;
-
-    const cleanup = () => {
-      window.removeEventListener('message', handleMessage);
-      instagramMessageHandlerRef.current = null;
-      clearInterval(closedPollInterval);
-    };
-
-    const handleMessage = (event: MessageEvent) => {
+    const aoReceber = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
-      if ((event.data as { type?: string })?.type !== 'instagram_oauth') return;
-
-      completed = true;
-      cleanup();
-
-      const payload = event.data as { success?: boolean; error?: string };
-      if (payload.success) {
-        toast.success('Instagram conectado com sucesso');
-        void loadConnections();
+      const dados = event.data as { type?: string; success?: boolean; error?: string };
+      if (dados?.type !== 'instagram_oauth') return;
+      terminou = true;
+      limpar();
+      if (dados.success) {
+        toast.success('Instagram conectado!');
+        carregar();
       } else {
-        toast.error(payload.error || 'Erro ao conectar Instagram');
+        toast.error(dados.error || 'Não foi possível conectar o Instagram.');
       }
     };
-
-    // Detect manual popup close before OAuth completes
-    const closedPollInterval = window.setInterval(() => {
-      if (popup.closed && !completed) {
-        cleanup();
-        toast.error('Conexão cancelada. Feche e tente novamente.');
-      }
+    const vigia = window.setInterval(() => {
+      if (popup.closed && !terminou) limpar();
     }, 500);
-
-    instagramMessageHandlerRef.current = handleMessage;
-    window.addEventListener('message', handleMessage);
+    const limpar = () => {
+      window.removeEventListener('message', aoReceber);
+      window.clearInterval(vigia);
+      setConectandoInstagram(false);
+      limparLoginInstagram.current = null;
+    };
+    limparLoginInstagram.current = limpar;
+    window.addEventListener('message', aoReceber);
 
     channelsApi.getInstagramConnectUrl()
-      .then(url => {
-        if (!popup.closed) popup.location.href = url;
-      })
-      .catch(error => {
-        cleanup();
+      .then((url) => { if (!popup.closed) popup.location.href = url; })
+      .catch((e: { response?: { status?: number; data?: { codigo?: string } } }) => {
+        limpar();
         popup.close();
-        toast.error(error?.response?.data?.error || 'Erro ao gerar URL de conexão do Instagram');
+        if (e?.response?.data?.codigo === 'instagram_indisponivel') {
+          setInstagramIndisponivel(true);
+          return;
+        }
+        toast.error('Não foi possível abrir o login do Instagram. Tente de novo.');
       });
   };
 
-  const openDialog = (platform?: string, conn?: Connection) => {
-    if (platform === 'instagram' && !conn) {
-      handleInstagramConnect();
-      return;
-    }
-    setEditingConnection(conn || null);
-    setSelectedPlatform(platform || conn?.platform || null);
-    setFormData(conn ? { name: conn.name || '', ...(conn.phone_number && { phone_number: conn.phone_number }), ...(conn.page_id && { page_id: conn.page_id }), ...(conn.page_name && { page_name: conn.page_name }) } : {});
-    setDialogOpen(true);
-  };
-  const closeDialog = () => { setDialogOpen(false); setEditingConnection(null); setSelectedPlatform(null); setFormData({}); };
-
-  const handleSubmit = async () => {
-    if (!selectedPlatform) return;
-    const cfg = PLATFORMS[selectedPlatform];
-    for (const f of cfg.fields.filter(f => f.required)) {
-      if (!formData[f.name]) { toast.error(`Campo obrigatório: ${f.label}`); return; }
-    }
-    try {
-      setSubmitting(true);
-      if (editingConnection) {
-        if (selectedPlatform === 'whatsapp') await whatsappService.updateAccount(editingConnection.id, formData as any);
-        else if (selectedPlatform === 'messenger') await messengerService.updateAccount(editingConnection.id, formData as any);
-        else if (selectedPlatform === 'instagram') await instagramAccountService.update(editingConnection.id, { is_active: formData.is_active !== 'false' } as any);
-        toast.success('Conexão atualizada!');
-      } else {
-        if (selectedPlatform === 'whatsapp') await whatsappService.createAccount(formData as any);
-        else if (selectedPlatform === 'messenger') await messengerService.createAccount(formData as any);
-        else if (selectedPlatform === 'instagram') {
-          handleInstagramConnect();
-          closeDialog();
-          return;
-        }
-        toast.success('Conexão criada!');
-      }
-      closeDialog();
-      loadConnections();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || 'Erro ao salvar conexão');
-    } finally { setSubmitting(false); }
-  };
-
-  /**
-   * Sincronizar modelos de mensagem com a Meta.
-   *
-   * Era a ÚNICA coisa que `/accounts` fazia e esta tela não — em todo o
-   * resto ela já era superset (multi-plataforma, QR Code, CRUD completo).
-   * Trazer a ação para cá é o que permitiu apagar a tela duplicada em vez de
-   * manter duas listas da mesma conta de WhatsApp, cada uma sabendo metade.
-   */
-  const handleSyncTemplates = async (conn: Connection) => {
-    try {
-      const result = await whatsappService.syncTemplates(conn.id);
-      toast.success((result as any)?.data?.message || 'Modelos sincronizados!');
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    }
-  };
-
-  const handleDelete = async (conn: Connection) => {
-    const confirmed = await confirm({
-      title: 'Excluir conexão',
-      message: `Excluir conexão "${conn.name}"?`,
+  // ── Desconectar: pausa, não apaga — as conversas continuam guardadas ──
+  const desconectarWhatsApp = async (conta: ContaWhatsApp) => {
+    const ok = await confirm({
+      title: 'Desconectar o WhatsApp?',
+      message: 'A loja para de enviar e receber mensagens por aqui. As conversas ficam guardadas e você pode reativar quando quiser.',
     });
-    if (!confirmed) return;
+    if (!ok) return;
     try {
-      if (conn.platform === 'whatsapp') await whatsappService.deleteAccount(conn.id);
-      else if (conn.platform === 'messenger') await messengerService.deleteAccount(conn.id);
-      else if (conn.platform === 'instagram') await instagramAccountService.delete(conn.id);
-      toast.success('Conexão excluída!');
-      loadConnections();
-    } catch { toast.error('Erro ao excluir conexão'); }
+      await whatsappService.deactivateAccount(conta.id);
+      toast.success('WhatsApp desconectado.');
+      carregar();
+    } catch {
+      toast.error('Não foi possível desconectar. Tente de novo.');
+    }
   };
 
-  const handleToggleActive = async (conn: Connection) => {
+  const reativarWhatsApp = async (conta: ContaWhatsApp) => {
     try {
-      const newStatus = !conn.is_active;
-      if (conn.platform === 'whatsapp') {
-        if (newStatus) await whatsappService.activateAccount(conn.id);
-        else await whatsappService.deactivateAccount(conn.id);
-      } else if (conn.platform === 'messenger') {
-        await messengerService.updateAccount(conn.id, { is_active: newStatus });
-      } else if (conn.platform === 'instagram') {
-        await instagramAccountService.update(conn.id, { is_active: newStatus } as any);
-      }
-      toast.success(`Conexão ${newStatus ? 'ativada' : 'desativada'}!`);
-      loadConnections();
-    } catch { toast.error('Erro ao alterar status'); }
+      await whatsappService.activateAccount(conta.id);
+      toast.success('WhatsApp reativado.');
+      carregar();
+    } catch {
+      toast.error('Não foi possível reativar. Tente de novo.');
+    }
   };
 
-  const handleShowQR = async (conn: Connection) => {
-    setQrCode(null);
-    setQrDialogOpen(true);
+  const desconectarInstagram = async (conta: ContaInstagram) => {
+    const ok = await confirm({
+      title: 'Desconectar o Instagram?',
+      message: 'O direct e os comentários param de chegar aqui. Você pode conectar de novo quando quiser.',
+    });
+    if (!ok) return;
     try {
-      const res = await whatsappService.getQRCode(conn.id);
-      setQrCode(res.data.qr_code || res.data.qr);
-    } catch { toast.error('Erro ao carregar QR Code'); }
+      await instagramAccountService.update(conta.id, { is_active: false } as never);
+      toast.success('Instagram desconectado.');
+      carregar();
+    } catch {
+      toast.error('Não foi possível desconectar. Tente de novo.');
+    }
   };
 
-  const handleVerifyWebhook = async (conn: Connection) => {
+  const sincronizarModelos = async (conta: ContaWhatsApp) => {
     try {
-      await messengerService.verifyWebhook(conn.id);
-      toast.success('Webhook verificado!');
-      loadConnections();
-    } catch { toast.error('Erro ao verificar webhook'); }
+      await whatsappService.syncTemplates(conta.id);
+      toast.success('Modelos sincronizados.');
+    } catch {
+      toast.error('Falha ao sincronizar modelos.');
+    }
   };
 
-  const filtered = connections.filter((c) => {
-    if (activeTab !== 'all' && c.platform !== activeTab) return false;
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return c.name?.toLowerCase().includes(q)
-      || c.phone_number?.toLowerCase().includes(q)
-      || c.page_name?.toLowerCase().includes(q)
-      || c.page_id?.toLowerCase().includes(q)
-      || c.username?.toLowerCase().includes(q);
+  // ── Avisos: só o que o lojista precisa saber e fazer ──
+  const avisos: { id: string; tom: 'perigo' | 'atencao'; texto: React.ReactNode }[] = [];
+  whatsapps.forEach((conta) => {
+    if (estadoDoWhatsApp(conta) === 'desconectado') {
+      avisos.push({
+        id: `coex-${conta.id}`,
+        tom: 'perigo',
+        texto: 'O WhatsApp da loja foi desconectado no celular. Enquanto isso, nenhuma mensagem sai nem chega por aqui — conecte de novo, leva 1 minuto.',
+      });
+    }
+    if (QUALIDADE_RUIM.has(conta.metadata?.qualidade?.evento || '')) {
+      avisos.push({
+        id: `qualidade-${conta.id}`,
+        tom: 'atencao',
+        texto: 'Alguns clientes bloquearam ou denunciaram mensagens da loja. Mande menos promoções por uns dias para a reputação voltar ao normal.',
+      });
+    }
   });
 
-  // Canais do produto = APENAS WhatsApp + Email; Instagram/Messenger fora da superfície.
-  const TABS = [
-    { value: 'all', label: `Todas (${connections.length})` },
-    { value: 'whatsapp', label: `📱 WhatsApp (${connections.filter(c => c.platform === 'whatsapp').length})` },
-  ];
+  const instagramAtivo = instagrams.find((c) => c.isActive);
 
   return (
     <PageShell
-      className="mx-auto max-w-7xl"
-      titulo="Conexões de mensagens"
-      acoes={<Button onClick={() => openDialog()} leftIcon={<PlusIcon className="w-5 h-5" />}>Nova Conexão</Button>}
-      filtros={
-            <SearchInput
-              className="w-64"
-              aria-label="Buscar conexões"
-              placeholder="Buscar conexões…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-      }
+      className="mx-auto max-w-6xl"
+      titulo="Conexões"
+      descricao="Ligue o WhatsApp e o Instagram da sua loja. É só entrar com a sua conta e autorizar — seus clientes continuam falando com você no mesmo número."
     >
-
-      <KpiGrid
-        itens={[
-          {
-            label: 'WhatsApp',
-            value: connections.filter((c) => c.platform === 'whatsapp').length,
-            definicao: 'Números de WhatsApp conectados a esta conta.',
-          },
-          {
-            label: 'Ativas',
-            value: connections.filter((c) => c.is_active).length,
-            definicao: 'Conexões funcionando — é por elas que a mensagem entra e sai.',
-            tone: 'success',
-            icone: <CheckCircleIcon />,
-          },
-        ]}
-      />
-
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-border-primary mb-6">
-        {TABS.map(t => (
-          <button key={t.value} onClick={() => setActiveTab(t.value)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === t.value ? 'border-brand text-brand-ink' : 'border-transparent text-fg-muted hover:text-fg-primary'}`}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div className="flex items-center gap-3 p-4 mb-6 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-          <XCircleIcon className="w-5 h-5 text-red-600 flex-shrink-0" />
-          <span className="text-sm text-red-700 dark:text-red-300">{error}</span>
+      {erro && (
+        <div role="alert" className="mb-6 flex items-center gap-3 rounded-xl border border-border-token bg-danger-soft px-5 py-4">
+          <span className="flex-1 text-sm text-fg-token">Não conseguimos carregar suas conexões agora.</span>
+          <button type="button" onClick={() => carregar()} className="text-sm font-semibold underline">Tentar de novo</button>
         </div>
       )}
 
-      {/* Content */}
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-16 gap-4">
-          <Loading size="lg" />
-          <p className="text-fg-muted">Carregando conexões...</p>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="bg-bg-card border border-border-primary rounded-xl p-16 text-center">
-          <ChatBubbleLeftIcon className="w-16 h-16 text-fg-muted mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-fg-muted mb-2">
-            {searchQuery ? 'Nenhuma conexão encontrada' : 'Nenhuma conexão configurada'}
-          </h3>
-          <p className="text-sm text-fg-muted mb-6 max-w-md mx-auto">
-            {searchQuery ? 'Tente ajustar sua busca ou filtros' : 'Adicione uma conexão de WhatsApp, Instagram ou Messenger para começar'}
-          </p>
-          {!searchQuery && <Button onClick={() => openDialog()} leftIcon={<PlusIcon className="w-4 h-4" />}>Adicionar Conexão</Button>}
-        </div>
+      {carregando ? (
+        <p role="status" className="text-sm text-fg-muted-token">Carregando suas conexões…</p>
       ) : (
-        <div className="grid grid-cols-3 max-lg:grid-cols-2 max-md:grid-cols-1 gap-6">
-          {filtered.map((conn) => (
-            <div key={conn.id} className="bg-bg-card border border-border-primary rounded-xl p-5 hover:shadow-lg transition-shadow">
-              {/* Card header */}
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                  {conn.profile_picture_url ? (
-                    <img src={conn.profile_picture_url} alt="" className="w-10 h-10 rounded-full object-cover" loading="lazy" decoding="async" />
-                  ) : (
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white ${conn.platform === 'whatsapp' ? 'bg-green-500' : conn.platform === 'instagram' ? 'bg-pink-500' : 'bg-blue-500'}`}>
-                      {initials(conn.name)}
-                    </div>
-                  )}
-                  <div>
-                    <p className="font-semibold text-fg-primary truncate max-w-[140px]">{conn.name}</p>
-                    <p className="text-xs text-fg-muted">{PLATFORMS[conn.platform].icon} {PLATFORMS[conn.platform].name}</p>
-                  </div>
+        <div className="flex flex-col gap-6">
+          <div className="grid gap-5 lg:grid-cols-2">
+            {/* ── WhatsApp ── */}
+            {whatsapps.length === 0 && !erro && (
+              <Cartao icone={<WhatsAppIcon size={48} />} titulo="WhatsApp" subtitulo="Ainda não conectado">
+                <ul className="flex flex-col gap-3">
+                  <Beneficio titulo="Seus clientes recebem sozinhos">a confirmação do pedido, o PIX e cada mudança de status.</Beneficio>
+                  <Beneficio titulo="Você continua usando o app">WhatsApp Business no celular — as conversas aparecem nos dois.</Beneficio>
+                  <Beneficio titulo="Um número só.">Nada muda para os seus clientes.</Beneficio>
+                </ul>
+                <div className="mt-auto flex flex-col gap-2">
+                  <ConnectWhatsAppButton onConnected={carregar} />
+                  <p className="text-xs text-fg-muted-token">Você entra com o Facebook, escolhe o número da loja e confirma no celular.</p>
                 </div>
-                <Switch
-                  size="sm"
-                  checked={conn.is_active}
-                  onChange={() => handleToggleActive(conn)}
-                  ariaLabel={`${conn.is_active ? 'Desativar' : 'Ativar'} conexão ${conn.name}`}
-                />
-              </div>
+              </Cartao>
+            )}
 
-              {/* Badges */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant={getStatusVariant(conn.status, conn.is_active) as any}>{getStatusLabel(conn.status, conn.is_active)}</Badge>
-                {conn.webhook_verified !== undefined && (
-                  <Badge variant={conn.webhook_verified ? 'success' : 'warning'}>{conn.webhook_verified ? 'Webhook OK' : 'Webhook Pendente'}</Badge>
-                )}
-              </div>
+            {whatsapps.map((conta) => {
+              const estado = estadoDoWhatsApp(conta);
+              const qualidade = conta.metadata?.qualidade?.evento || '';
+              return (
+                <Cartao
+                  key={conta.id}
+                  icone={<WhatsAppIcon size={48} />}
+                  titulo="WhatsApp"
+                  subtitulo={[conta.name, conta.display_phone_number || conta.phone_number].filter(Boolean).join(' · ')}
+                  selo={<Selo estado={estado} />}
+                >
+                  <ul className="flex flex-col gap-3">
+                    <Beneficio titulo="Seus clientes recebem sozinhos">a confirmação do pedido, o PIX e cada mudança de status.</Beneficio>
+                    <Beneficio titulo="Você continua usando o app">WhatsApp Business no celular — as conversas aparecem nos dois.</Beneficio>
+                    {QUALIDADE_BOA.has(qualidade) && (
+                      <Beneficio titulo="Reputação do número: boa.">A Meta avalia se os clientes gostam das mensagens da loja.</Beneficio>
+                    )}
+                  </ul>
+                  <div className="mt-auto flex flex-wrap items-center gap-2">
+                    {estado === 'desconectado' && <ConnectWhatsAppButton rotulo="Conectar de novo" onConnected={carregar} />}
+                    {estado === 'pausado' && (
+                      <button type="button" className={botaoPrimario} onClick={() => reativarWhatsApp(conta)}>Reativar</button>
+                    )}
+                    {estado === 'funcionando' && (
+                      <>
+                        <Link to="/inbox/whatsapp" className={botaoPrimario}>Abrir conversas</Link>
+                        <Link to="/whatsapp/avisos" className={botaoSecundario}>Mensagens automáticas</Link>
+                      </>
+                    )}
+                    {estado !== 'pausado' && (
+                      <button type="button" className={botaoDiscreto} onClick={() => desconectarWhatsApp(conta)}>Desconectar</button>
+                    )}
+                  </div>
+                </Cartao>
+              );
+            })}
 
-              {/* Info */}
-              <div className="text-sm text-fg-muted mb-4 flex flex-col gap-0.5">
-                {conn.phone_number && <span>📞 {conn.phone_number}</span>}
-                {conn.username && <span>@{conn.username}</span>}
-                {conn.page_name && <span>📄 {conn.page_name}</span>}
-                {conn.page_id && <span className="text-xs">ID: {conn.page_id}</span>}
-              </div>
+            {/* ── Instagram ── */}
+            {instagramAtivo ? (
+              <Cartao
+                icone={<InstagramIcon size={48} />}
+                titulo="Instagram"
+                subtitulo={instagramAtivo.name || 'Conta profissional'}
+                selo={<Selo estado="funcionando" />}
+              >
+                <p className="text-sm font-semibold text-fg-token">@{instagramAtivo.handle}</p>
+                <ul className="flex flex-col gap-3">
+                  <Beneficio titulo="Direct no mesmo lugar">que o WhatsApp — responda tudo numa tela só.</Beneficio>
+                  <Beneficio titulo="Comentários chegam aqui,">prontos para campanhas do tipo “comenta e recebe no direct”.</Beneficio>
+                </ul>
+                <div className="mt-auto flex flex-wrap items-center gap-2">
+                  <Link to="/inbox/conversas" className={botaoPrimario}>Abrir conversas</Link>
+                  <button type="button" className={botaoDiscreto} onClick={() => desconectarInstagram(instagramAtivo)}>Desconectar</button>
+                </div>
+              </Cartao>
+            ) : (
+              <Cartao icone={<InstagramIcon size={48} />} titulo="Instagram" subtitulo="Ainda não conectado">
+                <ul className="flex flex-col gap-3">
+                  <Beneficio titulo="Direct no mesmo lugar">que o WhatsApp — responda tudo numa tela só.</Beneficio>
+                  <Beneficio titulo="“Comenta e recebe no direct”:">quem comenta a palavra no post ganha o cupom ou o cardápio na hora.</Beneficio>
+                  <Beneficio titulo="Sorteios e concursos">com regras: marcar amigos, um comentário por pessoa, palavra certa.</Beneficio>
+                </ul>
+                <div className="mt-auto flex flex-col gap-2">
+                  {instagramIndisponivel ? (
+                    <p role="status" className="rounded-xl bg-warning-soft px-4 py-3 text-sm text-fg-token">
+                      Em breve: estamos liberando a conexão do Instagram para as lojas. Avisamos você por aqui.
+                    </p>
+                  ) : (
+                    <button type="button" className={`${botaoPrimario} h-12 text-base`} onClick={entrarComInstagram} disabled={conectandoInstagram}>
+                      <InstagramIcon size={22} />
+                      {conectandoInstagram ? 'Aguardando o Instagram…' : 'Entrar com o Instagram'}
+                    </button>
+                  )}
+                  <p className="text-center text-xs text-fg-muted-token">
+                    Precisa ser conta profissional (comercial ou criador). Dá para mudar no app em 1 minuto.
+                  </p>
+                </div>
+              </Cartao>
+            )}
+          </div>
 
-              {/* Actions */}
-              <div className="border-t border-border-primary pt-3 flex justify-end gap-1">
-                {conn.platform === 'whatsapp' && !conn.is_active && (
-                  <button onClick={() => handleShowQR(conn)} title="Conectar via QR Code" className="p-1.5 rounded hover:bg-bg-hover text-green-600 transition-colors">
-                    <QrCodeIcon className="w-4 h-4" />
-                  </button>
-                )}
-                {conn.platform === 'messenger' && !conn.webhook_verified && (
-                  <button onClick={() => handleVerifyWebhook(conn)} title="Verificar Webhook" className="p-1.5 rounded hover:bg-bg-hover text-blue-600 transition-colors">
-                    <LinkIcon className="w-4 h-4" />
-                  </button>
-                )}
-                {conn.platform === 'instagram' ? (
-                  <button onClick={handleInstagramConnect} title="Reconectar Instagram" className="p-1.5 rounded hover:bg-bg-hover text-pink-600 transition-colors">
-                    <LinkIcon className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <button onClick={() => openDialog(conn.platform, conn)} title="Editar" className="p-1.5 rounded hover:bg-bg-hover text-fg-muted transition-colors">
-                    <PencilIcon className="w-4 h-4" />
-                  </button>
-                )}
-                {conn.platform === 'whatsapp' && (
-                  /* Aprofundamento: perfil do negócio na Meta, estatísticas de
-                     mensagens, modelos e rotação de token. Essa tela existia e
-                     só era alcançada pela lista duplicada que acabou de sair —
-                     sem este link ela viraria órfã de verdade. */
-                  <Link
-                    to={`/accounts/${conn.id}`}
-                    title="Detalhes da conta (modelos, estatísticas, token)"
-                    className="p-1.5 rounded hover:bg-bg-hover text-fg-muted transition-colors"
-                  >
-                    <ChartBarIcon className="w-4 h-4" />
-                  </Link>
-                )}
-                {conn.platform === 'whatsapp' && (
-                  <button
-                    onClick={() => handleSyncTemplates(conn)}
-                    title="Sincronizar modelos com a Meta"
-                    className="p-1.5 rounded hover:bg-bg-hover text-fg-muted transition-colors"
-                  >
-                    <ArrowPathIcon className="w-4 h-4" />
-                  </button>
-                )}
-                <button onClick={() => handleDelete(conn)} title="Excluir" className="p-1.5 rounded hover:bg-bg-hover text-red-500 transition-colors">
-                  <TrashIcon className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
+          {/* ── Avisos ── */}
+          <section className="rounded-2xl border border-border-token bg-surface-token px-6 py-5" aria-labelledby="avisos-titulo">
+            <h2 id="avisos-titulo" className="mb-2 text-base font-bold text-fg-token">Avisos</h2>
+            {avisos.length === 0 ? (
+              <p className="text-sm text-fg-muted-token">Nenhum aviso. Está tudo funcionando.</p>
+            ) : (
+              <ul>
+                {avisos.map((a) => (
+                  <li key={a.id} className="flex items-start gap-3.5 border-t border-border-token py-3 first:border-t-0">
+                    <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${a.tom === 'perigo' ? 'bg-danger-token' : 'bg-warning-token'}`} aria-hidden />
+                    <p className="text-sm text-fg-token">{a.texto}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* ── Só para quem administra a plataforma ── */}
+          {administrador && whatsapps.length > 0 && (
+            <details className="rounded-2xl border border-dashed border-border-token px-6 py-4">
+              <summary className="cursor-pointer text-sm font-semibold text-fg-muted-token">Administração da plataforma</summary>
+              <ul className="mt-3 flex flex-col gap-2">
+                {whatsapps.map((conta) => (
+                  <li key={conta.id} className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="min-w-[10rem] font-medium text-fg-token">{conta.name}</span>
+                    <Link to={`/accounts/${conta.id}`} className={botaoSecundario}>Detalhes técnicos</Link>
+                    <button type="button" className={botaoSecundario} onClick={() => sincronizarModelos(conta)}>Sincronizar modelos</button>
+                    <Link to="/whatsapp/diagnostics" className={botaoSecundario}>Diagnóstico</Link>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
         </div>
       )}
-
-      {/* Modal: Platform selection */}
-      <Modal open={dialogOpen && !selectedPlatform} onClose={closeDialog} title="Escolher Plataforma" size="lg">
-        <p className="text-fg-muted mb-4">Selecione a plataforma de mensagens que deseja conectar:</p>
-        <div className="flex flex-col gap-3">
-          {Object.entries(PLATFORMS).filter(([key]) => key === 'whatsapp').map(([key, p]) => (
-            <button
-              key={key}
-              disabled={p.disabled}
-              onClick={() => {
-                if (p.disabled) return;
-                if (OAUTH_PLATFORMS.has(key)) {
-                  closeDialog();
-                  handleInstagramConnect();
-                  return;
-                }
-                setSelectedPlatform(key);
-              }}
-              className={`flex items-center gap-4 p-4 border-2 rounded-xl text-left transition-colors ${p.disabled ? 'opacity-50 cursor-not-allowed border-border-primary' : 'border-border-primary hover:border-brand cursor-pointer'}`}
-            >
-              <span className="text-4xl">{p.icon}</span>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-fg-primary">{p.name}</span>
-                  {p.disabled && <Badge variant="gray" size="sm">Em breve</Badge>}
-                </div>
-                <p className="text-sm text-fg-muted">{p.description}</p>
-              </div>
-              <PlusIcon className="w-5 h-5 text-fg-muted" />
-            </button>
-          ))}
-        </div>
-      </Modal>
-
-      {/* Modal: Form */}
-      <Modal
-        open={dialogOpen && !!selectedPlatform}
-        onClose={closeDialog}
-        title={editingConnection ? 'Editar Conexão' : `Nova Conexão ${PLATFORMS[selectedPlatform as keyof typeof PLATFORMS]?.name || ''}`}
-      >
-        {selectedPlatform === 'whatsapp' && !editingConnection && (
-          <div className="mb-4 p-3 rounded-lg border border-border-primary bg-bg-hover/30">
-            <p className="text-sm font-semibold text-fg-primary mb-1">Conexão rápida (recomendado)</p>
-            <p className="text-xs text-fg-muted mb-3">
-              Conecte oficialmente via Meta (Embedded Signup) — sem copiar tokens à mão.
-            </p>
-            <ConnectWhatsAppButton onConnected={() => { closeDialog(); loadConnections(); }} />
-            <p className="text-xs text-fg-muted mt-3">Ou preencha manualmente abaixo (avançado):</p>
-          </div>
-        )}
-
-        {selectedPlatform && PLATFORMS[selectedPlatform as keyof typeof PLATFORMS].fields.length > 0 && (
-          <div className="flex flex-col gap-4">
-            {PLATFORMS[selectedPlatform as keyof typeof PLATFORMS].fields.map((f) => (
-              <div key={f.name}>
-                <label className="block text-sm font-medium text-fg-secondary mb-1">
-                  {f.label}{f.required && <span className="text-red-500 ml-1">*</span>}
-                </label>
-                <input
-                  type={f.type}
-                  value={formData[f.name] || ''}
-                  onChange={(e) => setFormData({ ...formData, [f.name]: e.target.value })}
-                  placeholder={f.placeholder}
-                  disabled={!!(editingConnection && f.name === 'page_id')}
-                  className="w-full px-3 py-2 text-sm border border-border-primary rounded-lg bg-bg-card text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
-                />
-                {f.name.includes('token') && <p className="text-xs text-fg-muted mt-1">O token não será exibido novamente por segurança</p>}
-              </div>
-            ))}
-          </div>
-        )}
-        <ModalFooter>
-          <Button variant="outline" onClick={closeDialog}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit} isLoading={submitting}>
-            {editingConnection ? 'Salvar alterações' : 'Criar conexão'}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      {/* Modal: QR Code */}
-      <Modal
-        open={qrDialogOpen}
-        onClose={() => setQrDialogOpen(false)}
-        title="Conectar WhatsApp"
-        size="sm"
-      >
-        <div className="flex flex-col items-center gap-4 py-2">
-          <p className="text-center text-fg-muted text-sm">Escaneie o QR Code com seu WhatsApp para conectar</p>
-          {qrCode ? (
-            <div className="p-4 bg-surface rounded-xl">
-              {/* Render SVG as <img> to prevent script execution — never use dangerouslySetInnerHTML for untrusted SVG */}
-              <img
-                src={qrCode.trim().startsWith('<') ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrCode)}` : qrCode}
-                alt="QR Code WhatsApp"
-                className="w-48 h-48"
-              />
-            </div>
-          ) : (
-            <Loading size="lg" />
-          )}
-          <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 text-sm text-blue-700 dark:text-blue-300">
-            <span>Abra o WhatsApp → Configurações → Dispositivos Conectados → Conectar um dispositivo</span>
-          </div>
-        </div>
-        <ModalFooter>
-          <Button variant="outline" onClick={() => setQrDialogOpen(false)}>
-            Fechar
-          </Button>
-        </ModalFooter>
-      </Modal>
       {ConfirmDialog}
     </PageShell>
   );
