@@ -475,3 +475,22 @@ export const reportsService = {
 };
 
 export default reportsService;
+
+/** Carrinhos com itens parados entre 1h e `dias` dias sem virar pedido. */
+export interface CarrinhosAbandonados {
+  dias: number;
+  carrinhos: number;
+  valor_total: number;
+  /** Carrinhos de cliente logado — os únicos que dá para chamar de volta. */
+  identificados: number;
+  /** Já receberam lembrete automático de carrinho. */
+  com_lembrete: number;
+  produtos: Array<{ nome: string; carrinhos: number }>;
+}
+
+export const getCarrinhosAbandonados = async (store: string, dias = 7): Promise<CarrinhosAbandonados> => {
+  const response = await api.get<CarrinhosAbandonados>('/stores/reports/carrinhos-abandonados/', {
+    params: { store, dias },
+  });
+  return response.data;
+};

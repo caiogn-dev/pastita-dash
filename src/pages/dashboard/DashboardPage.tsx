@@ -37,6 +37,7 @@ import type { ProjectHealth } from '../../types/dashboard';
 import { STATUS_LABELS } from '../../utils/rotulosDeEstado';
 import { StarIcon } from '@heroicons/react/24/outline';
 import { useAvaliacoesDaLoja } from '../../hooks/queries/useAvaliacoesDaLoja';
+import { CarrinhosAbandonadosCard } from '../../components/dashboard/CarrinhosAbandonadosCard';
 import { leituraDeAvaliacoes } from './leituraDeAvaliacoes';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -653,6 +654,10 @@ export const DashboardPage: React.FC = () => {
         </Card>
 
       </div>
+
+      {/* ── Carrinhos abandonados ── R$ 7.782,96 em 51 carrinhos numa semana
+          (19/09), guardados em store_carts e nunca mostrados. */}
+      <CarrinhosAbandonadosCard storeSlug={storeSlug || undefined} />
 
       {/* ── Avaliações ──
           A loja tinha 4 avaliações com média 5,0 e o dono não via nenhuma: o
