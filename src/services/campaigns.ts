@@ -115,6 +115,38 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
+export type SituacaoDoDestinatario = 'leu' | 'recebeu' | 'falhou' | 'ficou_de_fora' | 'na_fila';
+
+export interface PessoaDaCampanha {
+  id: string;
+  nome: string;
+  telefone: string;
+  situacao: SituacaoDoDestinatario;
+  /** Em português: "Fora da janela de 24h…", "A Meta segurou…". */
+  motivo: string;
+  quando: string | null;
+}
+
+export interface DestinatariosDaCampanha {
+  /** Conta a campanha inteira, mesmo com filtro. */
+  resumo: Record<SituacaoDoDestinatario, number>;
+  pessoas: PessoaDaCampanha[];
+}
+
+export interface SaidaDeCampanha {
+  nome: string;
+  telefone: string;
+  quando: string;
+  /** 'button' = apertou "Parar promoções"; 'text' = escreveu; 'manual'. */
+  origem: 'button' | 'text' | 'manual';
+  texto: string;
+}
+
+export interface SaidasDaConta {
+  total: number;
+  pessoas: SaidaDeCampanha[];
+}
+
 export const campaignsService = {
   // Campaigns (WhatsApp) - usando /campaigns/ endpoint
   getCampaigns: async (params?: Record<string, string>): Promise<PaginatedResponse<Campaign>> => {
@@ -208,6 +240,22 @@ export const campaignsService = {
     completed_at: string | null;
   }> => {
     const response = await api.get(`/campaigns/campaigns/${id}/stats/`);
+    return response.data;
+  },
+
+  /** Pessoas da campanha com situação e motivo em português. */
+  getDestinatarios: async (id: string, situacao?: SituacaoDoDestinatario): Promise<DestinatariosDaCampanha> => {
+    const response = await api.get(`/campaigns/campaigns/${id}/destinatarios/`, {
+      params: situacao ? { situacao } : undefined,
+    });
+    return response.data;
+  },
+
+  /** Quem pediu para parar de receber campanhas (só leitura). */
+  getSaidas: async (accountId?: string): Promise<SaidasDaConta> => {
+    const response = await api.get('/campaigns/campaigns/saidas/', {
+      params: accountId ? { account_id: accountId } : undefined,
+    });
     return response.data;
   },
 

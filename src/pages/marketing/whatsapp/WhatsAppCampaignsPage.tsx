@@ -20,6 +20,8 @@ import { PageShell, EmptyState, KpiGrid, InsightList, Modal } from '../../../com
 import { resumoDeCampanha, insightsDeCampanhas, type TomDeMetrica } from './resumoDeCampanha';
 import { useConfirm } from '../../../hooks';
 import { campaignsService, Campaign } from '../../../services/campaigns';
+import { QuemRecebeu } from './QuemRecebeu';
+import { PediramParaParar } from './PediramParaParar';
 import logger from '../../../services/logger';
 
 // Local type definitions
@@ -186,7 +188,6 @@ export const WhatsAppCampaignsPage: React.FC = () => {
   // O custo do canal. Até 28/ago/2026 esta tela só somava o lado bom do
   // disparo: oito pessoas já tinham apertado "Parar promoções" e não havia
   // onde ver isso.
-  const totalSairam = campaigns.reduce((a, c) => a + (c.messages_opted_out ?? 0), 0);
   // `null` sem envio: "0%" acusaria um canal ruim que nem foi usado.
   const leituraMedia = totalEnviadas > 0 ? Math.round((totalLidas / totalEnviadas) * 100) : null;
 
@@ -297,19 +298,13 @@ export const WhatsAppCampaignsPage: React.FC = () => {
               {
                 label: 'Falhas',
                 value: totalFalhas,
-                definicao: 'não chegaram: número inválido ou fora da janela de 24h',
-              },
-              {
-                label: 'Pediram para parar',
-                value: totalSairam,
-                // `danger` só quando existe: um cartão vermelho zerado
-                // treinaria o olho a ignorar justamente quando deixar de ser
-                // zero.
-                tone: totalSairam > 0 ? 'danger' : undefined,
-                definicao: 'apertaram "Parar promoções" — não recebem mais campanha, mas continuam recebendo aviso de pedido',
+                definicao: 'não chegaram — o motivo de cada uma está no relatório da campanha',
               },
             ]}
           />
+          {/* O card somava um contador por campanha e mostrava 0 com 11
+              pessoas fora da lista; a fonte agora é o próprio pedido de saída. */}
+          <PediramParaParar />
           {insights.length > 0 && (
             <InsightList
               titulo="O que fazer com isso"
@@ -587,17 +582,9 @@ export const WhatsAppCampaignsPage: React.FC = () => {
               ]}
             />
 
-            {stats.messages_failed > 0 && (
-              <div className="rounded-xl border border-border-token bg-surface-2 p-4">
-                <p className="text-sm font-semibold text-[var(--danger)]">
-                  {stats.messages_failed} {stats.messages_failed === 1 ? 'mensagem falhou' : 'mensagens falharam'}
-                </p>
-                <p className="text-sm text-fg-muted-token mt-1">
-                  Quase sempre é número inválido ou contato fora da janela de 24h — vale
-                  conferir a lista antes do próximo disparo.
-                </p>
-              </div>
-            )}
+            {/* Antes: um chute ("quase sempre número inválido"). Agora a lista
+                de pessoas com o motivo real de cada uma. */}
+            {selectedCampaign && <QuemRecebeu campaignId={selectedCampaign.id} />}
 
             {stats.pending > 0 && (
               <p className="text-sm text-fg-muted-token">
