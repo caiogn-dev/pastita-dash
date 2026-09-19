@@ -24,7 +24,47 @@ export interface FilaHumana {
   total_em_atendimento: number;
 }
 
+/** Um aviso que a loja mandou sozinha (status, lembrete, avaliação…). */
+export interface AvisoAutomatico {
+  id: string;
+  quando: string;
+  tipo: string;
+  /** "Status do pedido", "Lembrete de PIX"… */
+  rotulo: string;
+  cliente: string;
+  telefone: string;
+  texto: string;
+  /** sent · delivered · read · failed · pending */
+  status: string;
+  /** Motivo da falha em português; vazio quando chegou. */
+  erro: string;
+  /** Código e texto da Meta, para suporte. */
+  erro_tecnico: string;
+  conversa_id: string | null;
+}
+
+export interface ResumoDeAvisos {
+  tipo: string;
+  rotulo: string;
+  total: number;
+  falharam: number;
+}
+
+export interface AvisosAutomaticos {
+  dias: number;
+  resumo: ResumoDeAvisos[];
+  itens: AvisoAutomatico[];
+}
+
 export const conversationsService = {
+  /** O que a loja mandou sozinha no período, com resumo por tipo. */
+  getMensagensAutomaticas: async (
+    params: { store?: string; dias: number; tipo?: string },
+  ): Promise<AvisosAutomaticos> => {
+    const response = await api.get<AvisosAutomaticos>('/conversations/mensagens-automaticas/', { params });
+    return response.data;
+  },
+
   /** Fila humana da loja: quem espera uma pessoa responder. */
   getFilaHumana: async (store?: string): Promise<FilaHumana> => {
     const response = await api.get<FilaHumana>('/conversations/fila-humana/', {

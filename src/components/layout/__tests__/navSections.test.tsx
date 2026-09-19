@@ -77,11 +77,12 @@ describe('páginas recuperadas — existiam no código e não tinham caminho nen
 });
 
 describe('atendimento deixa de ser um item solto', () => {
-  it('junta conversas, fila humana, sessões e insights', () => {
+  it('junta conversas, fila humana, avisos automáticos, sessões e insights', () => {
     const at = acha('Atendimento');
     expect(at.items.map((i) => i.href)).toEqual([
       '/inbox/whatsapp',
       '/whatsapp/handover',
+      '/whatsapp/avisos',
       '/automation/sessions',
       '/automation/conversation-insights',
     ]);

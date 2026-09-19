@@ -14,6 +14,7 @@ import {
   TicketIcon, GlobeAltIcon, ChartBarIcon, ArchiveBoxArrowDownIcon,
   UsersIcon, LightBulbIcon, RectangleStackIcon, HandRaisedIcon,
   ArrowPathRoundedSquareIcon, WrenchScrewdriverIcon, SignalIcon, ArrowTrendingUpIcon,
+  BellAlertIcon,
 } from '@heroicons/react/24/outline';
 
 export interface NavItem {
@@ -174,6 +175,8 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
       items: [
         { name: 'Conversas',    href: '/inbox/whatsapp',                     icon: ChatBubbleLeftRightIcon },
         { name: 'Fila humana',  href: '/whatsapp/handover',                  icon: HandRaisedIcon },
+        // O que a loja mandou sozinha (status, lembretes, avaliação) e se chegou.
+        { name: 'Avisos automáticos', href: '/whatsapp/avisos',              icon: BellAlertIcon },
         { name: 'Sessões',      href: '/automation/sessions',                icon: RectangleStackIcon },
         { name: 'Insights',     href: '/automation/conversation-insights',   icon: LightBulbIcon },
       ],
