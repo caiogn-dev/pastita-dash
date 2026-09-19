@@ -90,6 +90,7 @@ const parseAddress = (addr: string | Record<string, unknown> | undefined): Recor
 import { useOrderPrint } from '../../components/orders/OrderPrint';
 import { EditOrderDrawer } from '../../components/orders/EditOrderDrawer';
 import { RegistrarPagamentoModal } from '../../components/orders/RegistrarPagamentoModal';
+import { CancelarPedidoModal } from '../../components/orders/CancelarPedidoModal';
 import { saldoDoPedido, podeRegistrarPagamento } from './saldoDoPedido';
 import { useStore } from '../../hooks';
 import { marcosDoPedido, duracaoLegivel } from './marcosDoPedido';
@@ -565,11 +566,11 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
    * duplicava a máquina de estados e escondia qual status ia de fato ser
    * gravado. O passo agora vem pronto de `proximaAcao.ts`.
    */
-  const handleAction = async (novoStatus: string) => {
+  const handleAction = async (novoStatus: string, motivo?: string) => {
     if (!order) return;
     setActionLoading(novoStatus);
     try {
-      const updated: Order = await ordersService.updateStatus(order.id, novoStatus);
+      const updated: Order = await ordersService.updateStatus(order.id, novoStatus, undefined, motivo);
       if (novoStatus === 'cancelled') setShowCancelModal(false);
       setOrder(updated);
       onOrderChanged?.(updated);
@@ -1278,7 +1279,9 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
             </button>
           ) : (
             <span className="px-2 text-xs font-medium text-fg-muted-token">
-              {isCancelled ? 'Pedido cancelado' : 'Pedido concluído'}
+              {isCancelled
+                ? `Pedido cancelado${order.cancel_reason ? ` — ${order.cancel_reason}` : ''}`
+                : 'Pedido concluído'}
             </span>
           )}
         </div>
@@ -1305,33 +1308,14 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
         }}
       />
 
-      {/* Cancel Modal */}
-      <Modal
-        isOpen={showCancelModal}
+      {/* Cancelar pede o motivo — 0 dos 37 cancelados tinham motivo em 19/09. */}
+      <CancelarPedidoModal
+        open={showCancelModal}
+        orderNumber={order.order_number}
+        loading={actionLoading === 'cancelled'}
         onClose={() => setShowCancelModal(false)}
-        title="Cancelar Pedido"
-      >
-        <div className="space-y-4">
-          <p className="text-fg-muted-token">
-            Tem certeza que deseja cancelar o pedido <strong>#{order.order_number}</strong>?
-          </p>
-          <p className="text-sm text-[var(--danger)]">
-            Esta ação não pode ser desfeita.
-          </p>
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="secondary" onClick={() => setShowCancelModal(false)}>
-              Voltar
-            </Button>
-            <Button
-              variant="danger"
-              onClick={() => handleAction('cancelled')}
-              isLoading={actionLoading === 'cancelled'}
-            >
-              Confirmar Cancelamento
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        onConfirm={(motivo) => handleAction('cancelled', motivo)}
+      />
 
       {/* Uber Delivery Modal */}
       {order && (

@@ -100,12 +100,12 @@ describe('OrderDetailModal — abertura via ?pedido=', () => {
     await screen.findByText('Maria Souza');
 
     fireEvent.click(screen.getByText('Cancelar pedido'));
-    expect(await screen.findByText(/Tem certeza que deseja cancelar/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Por que o pedido/i)).toBeInTheDocument();
 
     fireEvent.keyDown(document, { key: 'Escape' });
 
     await waitFor(() =>
-      expect(screen.queryByText(/Tem certeza que deseja cancelar/i)).not.toBeInTheDocument(),
+      expect(screen.queryByText(/Por que o pedido/i)).not.toBeInTheDocument(),
     );
     // o pedido continua aberto — Escape não vazou pro modal externo
     expect(screen.getByText('Maria Souza')).toBeInTheDocument();
@@ -132,10 +132,10 @@ describe('OrderDetailModal — abertura via ?pedido=', () => {
     expect(document.body.style.overflow).toBe('hidden');
 
     fireEvent.click(screen.getByText('Cancelar pedido'));
-    await screen.findByText(/Tem certeza que deseja cancelar/i);
+    await screen.findByText(/Por que o pedido/i);
     fireEvent.click(screen.getByText('Voltar'));
     await waitFor(() =>
-      expect(screen.queryByText(/Tem certeza que deseja cancelar/i)).not.toBeInTheDocument(),
+      expect(screen.queryByText(/Por que o pedido/i)).not.toBeInTheDocument(),
     );
 
     expect(document.body.style.overflow).toBe('hidden');

@@ -408,6 +408,8 @@ export interface Order {
   shipped_at?: string | null;
   delivered_at?: string | null;
   cancelled_at?: string | null;
+  /** Por que foi cancelado (escolhido no painel ao cancelar). */
+  cancel_reason?: string | null;
   metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;

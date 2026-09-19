@@ -47,7 +47,8 @@ import {
   cancelOrder,
   StoreOrder,
 } from '../../services/storesApi';
-import { useStore, useConfirm, useOrderDetailModal } from '../../hooks';
+import { useStore, useOrderDetailModal } from '../../hooks';
+import { CancelarPedidoModal } from '../../components/orders/CancelarPedidoModal';
 import { useRealTimeOrders } from '../../hooks/useRealTimeOrders';
 import { getErrorMessage } from '../../services';
 import { useRootStore, resolveStoreKey } from '../../stores/rootStore';
@@ -401,7 +402,6 @@ const EMPTY_ORDERS: StoreOrder[] = [];
 export const OrdersPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId, storeSlug } = useStore();
-  const [ConfirmDialog, confirm] = useConfirm();
   const storeQuery = storeSlug || storeId;
 
   // ── Novo Pedido (PDV) drawer ─────────────────────────────────────────────
@@ -555,20 +555,22 @@ export const OrdersPage: React.FC = () => {
     }
   }, [patchOrder]);
 
-  const handleCancel = useCallback(async (order: StoreOrder) => {
-    const confirmed = await confirm({
-      title: 'Cancelar pedido',
-      message: `Cancelar pedido #${order.order_number}? Esta ação não pode ser desfeita.`,
-      variant: 'warning',
-    });
-    if (!confirmed) return;
+  // Cancelar pede o motivo (CancelarPedidoModal): 0 dos 37 cancelados em
+  // 30 dias tinham motivo quando isto era um "tem certeza?".
+  const [pedidoACancelar, setPedidoACancelar] = useState<StoreOrder | null>(null);
+  const handleCancel = useCallback((order: StoreOrder) => {
+    setPedidoACancelar(order);
+  }, []);
+
+  const confirmarCancelamento = useCallback(async (order: StoreOrder, motivo: string) => {
     setCancellingId(order.id);
     try {
-      await cancelOrder(order.id);
+      await cancelOrder(order.id, motivo);
+      setPedidoACancelar(null);
       patchOrder(order.id, { status: 'cancelled' });
       toast.success(`Pedido #${order.order_number} cancelado`);
     } catch (err) {
-      console.error('[OrdersPage] handleCancel:', err);
+      console.error('[OrdersPage] confirmarCancelamento:', err);
       toast.error(getErrorMessage(err) || 'Erro ao cancelar pedido');
     } finally {
       setCancellingId(null);
@@ -920,7 +922,13 @@ export const OrdersPage: React.FC = () => {
           </div>
         ) : null}
       </DragOverlay>
-      {ConfirmDialog}
+      <CancelarPedidoModal
+        open={pedidoACancelar !== null}
+        orderNumber={pedidoACancelar?.order_number ?? ''}
+        loading={pedidoACancelar !== null && cancellingId === pedidoACancelar.id}
+        onClose={() => setPedidoACancelar(null)}
+        onConfirm={(motivo) => { if (pedidoACancelar) confirmarCancelamento(pedidoACancelar, motivo); }}
+      />
 
       {/* PDV: Novo Pedido Drawer */}
       {storeSlug && (
