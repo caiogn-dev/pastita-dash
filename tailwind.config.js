@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+const config = {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -353,3 +353,30 @@ export default {
   },
   plugins: [],
 }
+
+/**
+ * Cor de tema com opacidade (`bg-brand/15`, `border-danger-token/30`) NÃO
+ * gerava CSS nenhum: no Tailwind 3 uma cor `var(--x)` não aceita o
+ * modificador `/NN`, e a classe some calada do build. Medido em 19/09/2026:
+ * ~60 usos em 30 arquivos — bordas de alerta, fundos suaves e anéis de foco
+ * que foram desenhados e nunca apareceram.
+ *
+ * `color-mix` com `<alpha-value>` faz a opacidade funcionar sem trocar a
+ * forma como as cores são declaradas. Sem modificador, o Tailwind usa 1 e a
+ * mistura devolve a própria cor.
+ */
+const comOpacidade = (valor) =>
+  typeof valor === 'string' && valor.startsWith('var(')
+    ? `color-mix(in srgb, ${valor} calc(<alpha-value> * 100%), transparent)`
+    : valor;
+
+const aplicarOpacidade = (cores) => {
+  for (const [nome, valor] of Object.entries(cores)) {
+    cores[nome] = valor && typeof valor === 'object' ? aplicarOpacidade(valor) : comOpacidade(valor);
+  }
+  return cores;
+};
+
+aplicarOpacidade(config.theme.extend.colors);
+
+export default config
