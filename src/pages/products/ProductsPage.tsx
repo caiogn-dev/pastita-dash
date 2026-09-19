@@ -6,6 +6,7 @@ import type { StoreCategory, StoreProductType } from '../../services/storesApi';
 import type { Product } from '../../services/products';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { Button, EmptyState, InsightList, PageShell } from '../../components/ui';
+import { Loading } from '../../components/common';
 import { insightsDeCardapio } from './insightsDeCardapio';
 import { useStore } from '../../hooks/useStore';
 // react-hot-toast e NÃO useToast: aquele hook guarda os toasts num useState
@@ -213,11 +214,21 @@ export const ProductsPage: React.FC = () => {
   // de chamada entre renders e o React quebra — foi o que aconteceu aqui.
   const insights = useMemo(() => insightsDeCardapio(products as never), [products]);
 
-  // Falha na busca de produtos SEM cache: `productsQuery.data` fica undefined e
-  // `products` continua []. Sem tratar isso, a tela mostrava as categorias sem
-  // nenhum item — um cardápio "vazio" que na verdade é uma consulta que caiu.
-  // Com dado em cache (falha só ao atualizar) mantém o cardápio anterior na tela.
-  const produtosFalharam = productsQuery.isError && productsQuery.data === undefined;
+  // Sem dados de produtos (nunca chegaram) — `productsQuery.data` fica undefined
+  // e `products` continua []. Sem tratar isso, a tela mostrava as categorias sem
+  // nenhum item: um cardápio "vazio" que na verdade é uma consulta que caiu.
+  // Dois estados distintos, e em NENHUM se renderiza esse cardápio enganoso:
+  //   - `produtosCarregando`: a busca está em voo. Cobre também o RETRY — ao
+  //     clicar "Tentar novamente", o React Query tira a query de `error` e a põe
+  //     de volta em `pending` (isError vira false) ainda sem dados; sem isto, o
+  //     cardápio vazio reaparecia durante todo o refetch (que pode se arrastar
+  //     por timeouts/retries).
+  //   - `produtosFalharam`: falhou e parou (erro, sem refetch em voo) → erro
+  //     acionável com retry.
+  // Com dado em cache (falha/atualização só de fundo) mantém o cardápio anterior.
+  const semProdutos = productsQuery.data === undefined;
+  const produtosCarregando = semProdutos && productsQuery.isFetching;
+  const produtosFalharam = semProdutos && productsQuery.isError && !productsQuery.isFetching;
 
   if (initialLoading) return <div>Carregando…</div>;
 
@@ -241,7 +252,11 @@ export const ProductsPage: React.FC = () => {
         />
       }
     >
-      {produtosFalharam ? (
+      {produtosCarregando ? (
+        <div className="flex justify-center py-16">
+          <Loading size="md" rotulo="Carregando o cardápio…" />
+        </div>
+      ) : produtosFalharam ? (
         <EmptyState
           icone={<ExclamationTriangleIcon className="h-8 w-8 text-[var(--warning)]" />}
           titulo="Não foi possível carregar o cardápio"
