@@ -851,7 +851,7 @@ export const OrdersPage: React.FC = () => {
                       <Icon className="h-4 w-4 opacity-90" />
                       <span className="text-xs font-bold uppercase tracking-wide">{col.label}</span>
                     </div>
-                    <span className="bg-surface/20 px-2 py-0.5 rounded-full text-xs font-bold min-w-[22px] text-center">
+                    <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold min-w-[22px] text-center">
                       {col.orders.length}
                     </span>
                   </div>

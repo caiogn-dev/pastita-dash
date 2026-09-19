@@ -531,7 +531,7 @@ const PdvBalcaoPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => pickCustomer(c)}
-                  className="w-full flex items-center justify-between gap-2 py-2.5 px-2 text-left hover:bg-black/5 dark:hover:bg-surface/5 rounded"
+                  className="w-full flex items-center justify-between gap-2 py-2.5 px-2 text-left hover:bg-black/5 dark:hover:bg-surface-2 rounded"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-medium">{c.user_name || 'Sem nome'}</span>

@@ -248,7 +248,7 @@ export default function IngredientsPage() {
             onClick={() => setAba(id)}
             className={aba === id
               ? 'bg-[var(--brand)] px-3 py-1.5 font-medium text-[var(--on-brand)]'
-              : 'px-3 py-1.5 text-fg-muted-token transition hover:bg-surface/5'}
+              : 'px-3 py-1.5 text-fg-muted-token transition hover:bg-surface-2'}
           >
             {rotulo}
           </button>
