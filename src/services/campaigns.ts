@@ -362,13 +362,40 @@ export const campaignsService = {
   getJanelaDaAudiencia: async (params?: {
     store?: string;
     em?: string;
-  }): Promise<{ dentro: number; fora: number; janela_horas: number }> => {
+  }): Promise<{
+    dentro: number;
+    fora: number;
+    janela_horas: number;
+    no_horario: number;
+    antecipados: number;
+    faixas: { hora: number; quantidade: number }[];
+  }> => {
     const response = await api.get('/campaigns/audiencia/janela/', { params });
     const d = response.data ?? {};
     return {
       dentro: Number(d.dentro ?? 0),
       fora: Number(d.fora ?? 0),
       janela_horas: Number(d.janela_horas ?? 24),
+      // A campanha não sai toda no horário: quem fecharia a janela antes
+      // recebe antes. Sem estes campos a tela promete um bloco que não existe.
+      no_horario: Number(d.no_horario ?? 0),
+      antecipados: Number(d.antecipados ?? 0),
+      faixas: Array.isArray(d.faixas) ? d.faixas : [],
+    };
+  },
+
+  /** A campanha hora a hora: o que já saiu e o que ainda falta. */
+  getFaixasDaCampanha: async (id: string): Promise<{
+    faixas: { hora: number; enviadas: number; aguardando: number }[];
+    proxima_faixa: number | null;
+    fora_da_janela: number;
+  }> => {
+    const response = await api.get(`/campaigns/campaigns/${id}/faixas/`);
+    const d = response.data ?? {};
+    return {
+      faixas: Array.isArray(d.faixas) ? d.faixas : [],
+      proxima_faixa: d.proxima_faixa ?? null,
+      fora_da_janela: Number(d.fora_da_janela ?? 0),
     };
   },
 

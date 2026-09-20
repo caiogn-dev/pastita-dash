@@ -43,6 +43,8 @@ type SystemContact = {
 };
 import logger from '../../../services/logger';
 import { avisoDaJanela, horarioParaConsulta, type ResumoDaJanela } from './janelaDe24h';
+import { LinhaDoDia } from '../../../components/campanhas/LinhaDoDia';
+import { horarioPermitido } from './linhaDoDia';
 import { precoVigenteDoProduto } from '../../../utils/precoVigente';
 import { formatCurrency } from '../../../utils/formatters';
 
@@ -1250,17 +1252,33 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
             {/* Quantos recebem de graça NESTE horário. Sem o número o dono
                 agenda no escuro: "manda às 20h" pode ser 10 pessoas ou 2, e
                 ele só descobre depois que a campanha rodou. */}
+            {!horarioPermitido(formData.scheduledAt).ok && (
+              <p role="alert" className="mt-2 text-caption text-danger-token">
+                {horarioPermitido(formData.scheduledAt).motivo}
+              </p>
+            )}
             {janela && (
               <p className="mt-2 text-caption text-fg-muted-token">
                 {avisoDaJanela(janela)}
               </p>
             )}
+            {/* A campanha grátis não sai num bloco só: quem fecharia a janela
+                de 24h antes do horário recebe antes. A linha mostra isso antes
+                de o dono confirmar. */}
+            {janela?.faixas?.length ? (
+              <div className="mt-4">
+                <LinhaDoDia faixas={janela.faixas} horarioDaCampanha={formData.scheduledAt} />
+              </div>
+            ) : null}
           </div>
           <div className="flex justify-end gap-3">
             <Button variant="secondary" onClick={() => setShowScheduleModal(false)}>
               Cancelar
             </Button>
-            <Button onClick={() => handleSendCampaign(true)} disabled={sending || !formData.scheduledAt}>
+            <Button
+              onClick={() => handleSendCampaign(true)}
+              disabled={sending || !formData.scheduledAt || !horarioPermitido(formData.scheduledAt).ok}
+            >
               {sending ? 'Agendando...' : 'Confirmar Agendamento'}
             </Button>
           </div>

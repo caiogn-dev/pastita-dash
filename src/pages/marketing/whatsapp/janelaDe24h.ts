@@ -13,6 +13,11 @@
 export interface ResumoDaJanela {
   dentro: number;
   fora: number;
+  /** Quantos recebem no horário escolhido (o resto é antecipado). */
+  no_horario?: number;
+  /** Quantos recebem ANTES, porque a janela deles fecharia primeiro. */
+  antecipados?: number;
+  faixas?: { hora: number; quantidade: number }[];
 }
 
 /**

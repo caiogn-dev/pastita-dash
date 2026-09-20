@@ -1,6 +1,7 @@
 /**
  * WhatsApp Campaigns List Page
  */
+import { CampanhaAoVivo } from '../../../components/campanhas/CampanhaAoVivo';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -376,6 +377,14 @@ export const WhatsAppCampaignsPage: React.FC = () => {
                       <ClockIcon className="w-4 h-4 inline mr-1" />
                       Agendada para {new Date(campaign.scheduled_at).toLocaleString('pt-BR')}
                     </p>
+                  )}
+
+                  {/* Campanha grátis sai em levas ao longo do dia — cada cliente
+                      no horário em que a janela dele ainda está aberta. Sem isto,
+                      "12 de 40" às 11h parece campanha travada. */}
+                  {Boolean((campaign.audience_filters as Record<string, unknown> | undefined)?.somente_janela_aberta)
+                    && ['scheduled', 'running'].includes(campaign.status) && (
+                    <CampanhaAoVivo campanhaId={campaign.id} horarioDaCampanha={campaign.scheduled_at} />
                   )}
                 </div>
 
