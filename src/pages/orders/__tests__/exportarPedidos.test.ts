@@ -113,4 +113,13 @@ describe('pedidosParaCsv', () => {
     const csv = pedidosParaCsv([pedido({ customer_name: 'Maria' })]);
     expect(csv).not.toContain("'Maria");
   });
+
+  it('CR em texto hostil é aspeado — não vira separador de registro (P1)', () => {
+    // "\r=1+2" sem vírgula/aspas: o "'" fica ANTES do CR, mas se o CR não
+    // entrar na condição de aspeamento, leitores que quebram registro no CR
+    // criam uma nova linha começando com "=" e a injeção volta. O CR precisa
+    // ser aspeado junto do LF (mesma regra do utilitário canônico csv.ts).
+    const csv = pedidosParaCsv([pedido({ customer_name: '\r=1+2' })]);
+    expect(csv).toContain(`"'\r=1+2"`);
+  });
 });

@@ -26,7 +26,11 @@ const COLUNAS = [
 function campo(valor: unknown): string {
   if (valor === null || valor === undefined) return '';
   const texto = String(valor);
-  if (/[",;\n]/.test(texto)) {
+  // CR entra na condição junto de LF: um CR "cru" fora de célula aspeada é
+  // separador de registro para vários leitores e reabriria a formula injection
+  // (o "'" fica antes do CR, mas o trecho após o CR viraria uma nova linha
+  // começando com "="). Mesma regra do utilitário canônico src/utils/csv.ts.
+  if (/[",;\n\r]/.test(texto)) {
     // Aspa interna vira aspa dupla — regra do CSV. Remover a aspa alteraria o
     // nome do cliente no arquivo.
     return `"${texto.replace(/"/g, '""')}"`;

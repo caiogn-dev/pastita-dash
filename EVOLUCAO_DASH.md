@@ -8,7 +8,7 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - `git fetch origin --prune` + `git checkout -B loop-base origin/main` + `npm ci`: ok.
   Base do PR: `origin/main` em `27b9736`.
 - `npx tsc --noEmit`: **limpo** (antes e depois).
-- `npm test`: **1863/310 → 1869/310** verdes (+6 testes desta fatia; mesma suíte).
+- `npm test`: **1863/310 → 1870/310** verdes (+7 testes desta fatia; mesma suíte).
 - `npm run lint`: **4 errors + 256 warnings PRÉ-EXISTENTES** (`Unused eslint-disable
   directive` em `OrdersHeatMap.tsx`, `sidebarColuna.test.tsx`,
   `pagamentoAMenorAoVivo.test.tsx`) — NÃO tocados por esta fatia; os arquivos desta
@@ -46,7 +46,13 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   dinheiro negativo (`-5,00`, `-3,00`) permanece numérico, sem `'`; (6) nome comum
   ("Maria") intocado. Antes da correção, 4 desses casos falhavam (2 já verdes eram os
   de regressão que provam que dinheiro não é afetado).
-- **Antes/depois:** `npm test` 1863/310 → **1869/310**; `tsc --noEmit` limpo nos dois
+- **Refino pós-review (Codex, P1):** o `campo()` deste export não aspeava CR (`\r`),
+  só `" , ; \n`. Com um nome hostil `"\r=1+2"` o `'` do `texto()` fica ANTES do CR,
+  mas o CR cru fora de célula aspeada é separador de registro para vários leitores:
+  a linha após o CR começa com `=`, e a injeção voltava. Corrigido incluindo `\r` na
+  condição de aspeamento (`/[",;\n\r]/`, mesma regra do `csv.ts`); novo 7º caso de
+  teste (`"\r=1+2"` deve sair aspeado) escrito vermelho→verde.
+- **Antes/depois:** `npm test` 1863/310 → **1870/310**; `tsc --noEmit` limpo nos dois
   lados; `eslint` 0 problemas nos arquivos tocados. Só produção alterada: sanitização
   de saída; caminho feliz idêntico (nomes/valores normais inalterados). Risco baixo.
 
