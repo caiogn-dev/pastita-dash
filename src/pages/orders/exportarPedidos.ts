@@ -34,6 +34,22 @@ function campo(valor: unknown): string {
   return texto;
 }
 
+// Gatilhos de CSV/formula injection: uma célula de TEXTO que começa com um
+// destes é executada como fórmula pelo Excel/LibreOffice/Sheets ao abrir o
+// arquivo (ex.: =HYPERLINK/cmd exfiltram dados na máquina do lojista). Nome,
+// telefone e canal chegam do cliente pelo storefront, então prefixamos "'"
+// para forçar interpretação como texto — OWASP CSV Injection. Não se aplica
+// às colunas de dinheiro (produzidas por nós): um valor negativo precisa
+// continuar numérico no Excel para o contador poder somar.
+const GATILHO_DE_FORMULA = /^[=+\-@\t\r]/;
+
+/** Campo de texto: neutraliza gatilho de fórmula e então aspeia como CSV. */
+function texto(valor: unknown): string {
+  if (valor === null || valor === undefined) return '';
+  const bruto = String(valor);
+  return campo(GATILHO_DE_FORMULA.test(bruto) ? `'${bruto}` : bruto);
+}
+
 /** Número no formato que a planilha pt-BR entende. */
 function moeda(v: number | string | null | undefined): string {
   const n = typeof v === 'string' ? Number(v) : (v ?? 0);
@@ -47,16 +63,16 @@ export function pedidosParaCsv(pedidos: StoreOrder[]): string {
     const d = new Date(p.created_at);
     const qtd = (p.items?.length ?? 0) + (p.combo_items?.length ?? 0);
     linhas.push([
-      campo(p.order_number),
+      texto(p.order_number),
       campo(d.toLocaleDateString('pt-BR')),
       campo(d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })),
-      campo(p.customer_name),
-      campo(p.customer_phone),
+      texto(p.customer_name),
+      texto(p.customer_phone),
       campo(qtd),
-      campo(p.source ?? ''),
-      campo(PAGAMENTO[p.payment_method] ?? p.payment_method ?? ''),
+      texto(p.source ?? ''),
+      texto(PAGAMENTO[p.payment_method] ?? p.payment_method ?? ''),
       campo(p.payment_status === 'paid' ? 'Sim' : 'Não'),
-      campo(STATUS[p.status] ?? p.status),
+      texto(STATUS[p.status] ?? p.status),
       campo(moeda(p.discount)),
       campo(moeda(p.delivery_fee)),
       campo(moeda(p.total)),

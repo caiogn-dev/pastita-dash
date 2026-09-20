@@ -3,6 +3,53 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-09-20)
+
+- `git fetch origin --prune` + `git checkout -B loop-base origin/main` + `npm ci`: ok.
+  Base do PR: `origin/main` em `27b9736`.
+- `npx tsc --noEmit`: **limpo** (antes e depois).
+- `npm test`: **1863/310 → 1869/310** verdes (+6 testes desta fatia; mesma suíte).
+- `npm run lint`: **4 errors + 256 warnings PRÉ-EXISTENTES** (`Unused eslint-disable
+  directive` em `OrdersHeatMap.tsx`, `sidebarColuna.test.tsx`,
+  `pagamentoAMenorAoVivo.test.tsx`) — NÃO tocados por esta fatia; os arquivos desta
+  fatia passam com **0 problemas**.
+- Gate anti-acúmulo: só o PR `bot/` #202 (erro do cardápio) estava aberto — 1 < 3.
+  Nenhum PR aberto/fechado (14 dias) cobre a injeção de fórmula no CSV do histórico.
+
+## Histórico
+
+### 2026-09-20 — Segurança: CSV do histórico de pedidos vulnerável a formula injection
+- **Medido:** o painel tem DOIS caminhos de export CSV. O canônico
+  `src/utils/csv.ts` já neutraliza **CSV/formula injection** (prefixa `'` quando uma
+  célula de TEXTO começa com `= + - @ TAB CR` — OWASP, PR #175). Mas o export do
+  **histórico de pedidos** (`src/pages/orders/exportarPedidos.ts`, usado por
+  `HistoricoPedidosPage` → botão "Exportar CSV") tem o seu PRÓPRIO `campo()`, que só
+  aspeia delimitadores (`" , ; \n`) e **não** tem essa proteção. As colunas
+  **Cliente** (`customer_name`), **Telefone** (`customer_phone`) e **Canal**
+  (`source`) chegam do cliente pelo storefront, sem sanitização. Um cliente com nome
+  `=HYPERLINK("http://evil","clique")` (ou `=cmd|...`, `+`/`-`/`@…`) faz o Excel/
+  Sheets **executar a fórmula ao abrir** o arquivo na máquina do contador/dono —
+  exfiltração/execução exatamente da classe que o #175 fechou no outro caminho, mas
+  este export ficou de fora. Nenhum teste cobria o caso.
+- **Mudado (`exportarPedidos.ts`):** novo helper `texto()` que, antes de aspear via
+  `campo()`, prefixa `'` quando o valor bruto casa `GATILHO_DE_FORMULA = /^[=+\-@\t\r]/`
+  (mesma regra do `csv.ts`). As colunas de TEXTO controladas/potencialmente hostis
+  (`order_number`, `customer_name`, `customer_phone`, `source`, rótulo de pagamento,
+  rótulo de status) passam por `texto()`. As colunas de **dinheiro**
+  (`moeda(discount|delivery_fee|total)`) e a **quantidade** seguem por `campo()`: um
+  valor negativo produzido por nós (`-5,00`) NÃO pode virar texto, senão quebraria a
+  soma do contador no Excel. Data/hora saem por `campo()` (começam com dígito).
+- **Teste (TDD, `__tests__/exportarPedidos.test.ts`):** 6 casos novos, escritos
+  **vermelhos antes, verdes depois**: (1) `=1+2` vira `'=1+2` e nenhuma célula começa
+  com `=`; (2) `=HYPERLINK(...)` neutralizado e aspeado; (3) telefone `+55…`
+  prefixado; (4) gatilhos `@` e `-` em `customer_name`/`source`; (5) **regressão:**
+  dinheiro negativo (`-5,00`, `-3,00`) permanece numérico, sem `'`; (6) nome comum
+  ("Maria") intocado. Antes da correção, 4 desses casos falhavam (2 já verdes eram os
+  de regressão que provam que dinheiro não é afetado).
+- **Antes/depois:** `npm test` 1863/310 → **1869/310**; `tsc --noEmit` limpo nos dois
+  lados; `eslint` 0 problemas nos arquivos tocados. Só produção alterada: sanitização
+  de saída; caminho feliz idêntico (nomes/valores normais inalterados). Risco baixo.
+
 ## Baseline atual (2026-09-16)
 
 - `npm ci`: ok. Base do PR: `origin/main` em `2cc22ac`.
