@@ -294,20 +294,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
           // ajuste. Recolhida a coluna vira um traço: o texto não caberia, mas
           // a separação ainda vale.
           const primeiraDoGrupo = secao.grupo && sections[indice - 1]?.grupo !== secao.grupo;
+          // O NOME do grupo saiu da coluna (decisão do dono, 21/09): texto que
+          // não é destino ocupava quatro linhas e ninguém clicava. O traço
+          // fino separa igual, e separa nos DOIS estados — recolhida, ele é a
+          // única pista de que ali muda de assunto.
           const cabecalhoDoGrupo = primeiraDoGrupo ? (
-            miolo ? (
-              <li aria-hidden className="mx-auto my-2 h-px w-6 bg-border-token" />
-            ) : (
-              <li
-                className={cn(
-                  ENTRADA,
-                  'px-2.5 pb-1 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-fg-muted-token/70',
-                  indice === 0 ? 'pt-1' : 'pt-4',
-                )}
-              >
-                {secao.grupo}
-              </li>
-            )
+            <li aria-hidden className="mx-auto my-2 h-px w-6 bg-border-token" />
           ) : null;
 
           // Seção sem filhos é um link direto — não vira botão de acordeão.
@@ -372,12 +364,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                 type="button"
                 aria-expanded={estaAberta}
                 onClick={() => {
-                  // Recolhida, abrir um grupo mostrava os filhos como ícones
-                  // mudos empilhados — você clicava em "Cardápio" e recebia
-                  // cinco quadradinhos sem nome. O gesto de abrir um grupo é
-                  // um pedido para VER o grupo: a coluna expande junto.
+                  // Recolhida, a coluna FICA recolhida. Antes este clique
+                  // trocava a preferência e a página inteira pulava 184px —
+                  // por um gesto que pedia só para ver um submenu. Agora o
+                  // submenu aparece por cima, que é a mesma espiada do hover:
+                  // mostra o grupo e devolve o espaço intacto ao sair.
                   if (recolhido) {
-                    mudarPreferencia(false);
+                    setEspiando(true);
                     setAberto(secao.label);
                     return;
                   }
