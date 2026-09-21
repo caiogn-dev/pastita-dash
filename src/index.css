@@ -178,6 +178,12 @@ body {
   color: var(--cx-foreground);
   background-color: var(--cx-background);
   font-family: inherit;
+  /* 14px, não os 16px do navegador.
+     Medição de 21/09: 262 elementos da tela de Cardápio em 16px/400 — quando
+     tudo tem o mesmo tamanho, nada tem peso e cabe menos informação por tela.
+     Quem escreve `text-base` de propósito continua em 16; quem não disse nada
+     herda o `--text-body` que a escala já definia e quase ninguém usava. */
+  font-size: var(--text-body);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -216,6 +222,14 @@ textarea::placeholder {
    por teclado ficava perdido em 9 de cada 10 controles. `:where(...)` tem
    especificidade ZERO: o componente que já define o próprio foco continua
    mandando, e nenhum call site precisa mudar. */
+@layer base {
+  /* Acima de 20px a letra "solta" do padrão faz o título parecer esticado.
+     Título aperta; corpo não. */
+  h1, h2, h3 {
+    letter-spacing: -0.02em;
+  }
+}
+
 @layer base {
   :where(button, [role="button"], a[href], summary, input, select, textarea,
          [tabindex]:not([tabindex="-1"])):focus-visible {
