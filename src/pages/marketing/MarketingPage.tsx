@@ -114,14 +114,14 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onPreview, onUse 
         
         {/* Overlay Actions */}
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-          <button
+          <button aria-label="Pré-visualizar modelo"
             onClick={onPreview}
             className="p-2 bg-surface rounded-full hover:bg-surface-2 dark:hover:bg-surface-2"
             title="Visualizar"
           >
             <EyeIcon className="w-5 h-5 text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]" />
           </button>
-          <button
+          <button aria-label="Usar este modelo"
             onClick={onUse}
             className="p-2 bg-primary-500 rounded-full hover:bg-primary-600"
             title="Usar Template"

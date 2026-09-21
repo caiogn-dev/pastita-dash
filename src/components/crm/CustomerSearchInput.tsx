@@ -63,7 +63,7 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
             )}
           </p>
         </div>
-        <button
+        <button aria-label="Limpar busca"
           type="button"
           onClick={handleClear}
           className="p-1 rounded-full text-fg-muted-token hover:text-red-500 hover:bg-danger-soft dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
