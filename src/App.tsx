@@ -34,7 +34,6 @@ const ExpedicaoPage = lazy(() => import('./pages/expedicao/ExpedicaoPage'));
 const PaymentsPage = lazy(() => import('./pages/payments/PaymentsPage').then(m => ({ default: m.PaymentsPage })));
 const PaymentLinkPage = lazy(() => import('./pages/payments/PaymentLinkPage').then(m => ({ default: m.PaymentLinkPage })));
 const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
-const PlanoPage = lazy(() => import('./pages/plano/PlanoPage').then(m => ({ default: m.PlanoPage })));
 const SubscriptionManagementPage = lazy(() => import('./pages/plano/SubscriptionManagementPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
@@ -224,7 +223,8 @@ const AppContent: React.FC = () => {
         <Route path="settings" element={<PageBoundary><SettingsPage /></PageBoundary>} />
 
         {/* Planos / assinatura */}
-        <Route path="plano" element={<PageBoundary><PlanoPage /></PageBoundary>} />
+        {/* A tela de planos virou uma só; o endereço antigo continua de pé. */}
+        <Route path="plano" element={<Navigate to="/assinatura" replace />} />
         <Route path="assinatura" element={<PageBoundary><SubscriptionManagementPage /></PageBoundary>} />
 
         {/* Link de pagamento avulso (Fase 3) */}
