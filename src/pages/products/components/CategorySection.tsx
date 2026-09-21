@@ -40,7 +40,7 @@ export const CategorySection: React.FC<Props> = ({ group, collapsed, rowHandlers
     </button>
   ) : undefined;
   return (
-  <section ref={sortable ? setNodeRef : undefined} style={style} className="mb-4 rounded-lg border bg-surface-token">
+  <section ref={sortable ? setNodeRef : undefined} style={style} className="superficie mb-4">
     <CategoryHeader group={group} collapsed={collapsed} onToggleCollapse={onToggleCollapse} onTogglePause={onTogglePause} onRename={onRename} onOpenMontador={onOpenMontador} onDelete={onDelete} dragHandle={dragHandle} />
     {!collapsed && (
       <>
