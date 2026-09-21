@@ -13,6 +13,7 @@ import {
   ClipboardDocumentListIcon, PrinterIcon, BanknotesIcon, FireIcon, CubeIcon,
   TicketIcon, GlobeAltIcon, ChartBarIcon, ArchiveBoxArrowDownIcon,
   UsersIcon, LightBulbIcon, RectangleStackIcon, HandRaisedIcon,
+  ArrowPathIcon,
   ArrowPathRoundedSquareIcon, WrenchScrewdriverIcon, SignalIcon, ArrowTrendingUpIcon,
   BellAlertIcon,
 } from '@heroicons/react/24/outline';
@@ -107,6 +108,9 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
     label: 'Marketing',
     icon: MegaphoneIcon,
     items: [
+      // Primeiro da lista de propósito: é a única tela de marketing que fala
+      // do dinheiro que já está na mesa, sem precisar criar nada.
+      { name: 'Recuperador de vendas', href: '/marketing/recuperacao',      icon: ArrowPathIcon },
       { name: 'Campanha WhatsApp',   href: '/marketing/whatsapp',           icon: DevicePhoneMobileIcon },
       { name: 'Campanha por e-mail', href: '/marketing/email/campaigns',    icon: EnvelopeIcon },
       // Promoção de comentário no Instagram: a loja responde no direct quem
