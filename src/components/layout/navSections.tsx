@@ -109,6 +109,10 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
     items: [
       { name: 'Campanha WhatsApp',   href: '/marketing/whatsapp',           icon: DevicePhoneMobileIcon },
       { name: 'Campanha por e-mail', href: '/marketing/email/campaigns',    icon: EnvelopeIcon },
+      // Promoção de comentário no Instagram: a loja responde no direct quem
+      // comentar na publicação. Entra no menu junto das outras campanhas
+      // porque é a mesma decisão do dono — "como eu chamo gente hoje?".
+      { name: 'Promoção no Instagram', href: '/marketing/instagram',        icon: MegaphoneIcon },
       // Recuperadas: existiam no código e não tinham caminho nenhum no menu.
       { name: 'E-mails automáticos', href: '/marketing/automations',        icon: ArrowPathRoundedSquareIcon },
       { name: 'Modelos de mensagem', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
