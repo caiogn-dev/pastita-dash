@@ -185,7 +185,7 @@ export const ConnectWhatsAppButton: React.FC<Props> = ({
       aria-busy={loading}
       className={facebook
         ? 'inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#1877F2] px-5 h-12 text-base font-semibold text-white hover:bg-[#166FE0] transition-colors disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1877F2]'
-        : 'inline-flex items-center justify-center gap-2.5 rounded-xl border border-border-token bg-surface-token px-4 h-11 text-sm font-semibold text-fg-token hover:bg-surface-muted-token transition-colors disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'}
+        : 'inline-flex items-center justify-center gap-2.5 superficie px-4 h-11 text-sm font-semibold text-fg-token hover:bg-surface-muted-token transition-colors disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'}
     >
       {facebook ? <FacebookMark size={20} /> : <WhatsAppIcon size={24} />}
       {loading ? 'Conectando…' : (rotulo || (facebook ? 'Continuar com o Facebook' : 'Conectar o WhatsApp'))}

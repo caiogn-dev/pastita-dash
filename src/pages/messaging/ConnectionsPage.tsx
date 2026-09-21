@@ -88,7 +88,7 @@ const Cartao: React.FC<{
   selo?: React.ReactNode;
   children: React.ReactNode;
 }> = ({ icone, titulo, subtitulo, selo, children }) => (
-  <section className="flex flex-col gap-5 rounded-2xl border border-border-token bg-surface-token p-6">
+  <section className="flex flex-col gap-5 superficie p-6">
     <header className="flex items-center gap-3.5">
       {icone}
       <div className="min-w-0 flex-1">
@@ -102,7 +102,7 @@ const Cartao: React.FC<{
 );
 
 const botaoSecundario =
-  'inline-flex h-11 items-center rounded-xl border border-border-token bg-surface-token px-4 text-sm font-semibold text-fg-token hover:bg-surface-muted-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
+  'inline-flex h-11 items-center superficie px-4 text-sm font-semibold text-fg-token hover:bg-surface-muted-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
 const botaoPrimario =
   'inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand';
 const botaoDiscreto =
@@ -406,7 +406,7 @@ export default function ConnectionsPage() {
           </div>
 
           {/* ── Avisos ── */}
-          <section className="rounded-2xl border border-border-token bg-surface-token px-6 py-5" aria-labelledby="avisos-titulo">
+          <section className="superficie px-6 py-5" aria-labelledby="avisos-titulo">
             <h2 id="avisos-titulo" className="mb-2 text-base font-bold text-fg-token">Avisos</h2>
             {avisos.length === 0 ? (
               <p className="text-sm text-fg-muted-token">Nenhum aviso. Está tudo funcionando.</p>

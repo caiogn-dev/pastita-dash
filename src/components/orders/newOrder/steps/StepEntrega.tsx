@@ -146,7 +146,7 @@ export function StepEntrega({
                   }
                 }}
                 placeholder="Endereço, ou cole o link do Google Maps que o cliente enviou"
-                className="flex-1 px-3 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token placeholder:text-fg-muted-token focus:outline-none focus:ring-1 focus:ring-brand"
+                className="flex-1 px-3 py-2 superficie text-sm text-fg-token placeholder:text-fg-muted-token focus:outline-none focus:ring-1 focus:ring-brand"
               />
               <button
                 type="button"
@@ -221,7 +221,7 @@ export function StepEntrega({
                 type="date"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token focus:outline-none focus:ring-1 focus:ring-brand"
+                className="w-full px-3 py-2 superficie text-sm text-fg-token focus:outline-none focus:ring-1 focus:ring-brand"
               />
             </div>
             <div>

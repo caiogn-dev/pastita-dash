@@ -21,9 +21,9 @@ import { frasePublica } from './promocaoDeComentario';
 import NovaPromocao from './NovaPromocao';
 import { ComentariosDoPost } from './ComentariosDoPost';
 
-const CARTAO = 'rounded-2xl border border-border-token bg-surface-token';
+const CARTAO = 'superficie';
 const CAMPO =
-  'w-full rounded-xl border border-border-token bg-surface-token px-3 py-2 text-sm text-fg-token ' +
+  'w-full superficie px-3 py-2 text-sm text-fg-token ' +
   'placeholder:text-fg-muted-token focus:border-brand focus:outline-none';
 const BOTAO_PRINCIPAL =
   'rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand disabled:opacity-50';

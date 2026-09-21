@@ -51,7 +51,7 @@ const OnboardingChecklist: FC<{ onContinue?: () => void }> = ({ onContinue }) =>
     <section
       role="region"
       aria-label="Primeiros passos"
-      className="mb-6 overflow-hidden rounded-xl border border-border-token bg-surface-token shadow-sm"
+      className="mb-6 overflow-hidden superficie shadow-sm"
     >
       <header className="flex items-center gap-4 border-b border-border-token px-5 py-4">
         <ProgressRing completed={data.completed} total={data.total} />

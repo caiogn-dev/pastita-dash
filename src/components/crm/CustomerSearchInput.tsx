@@ -78,7 +78,7 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
   return (
     <div ref={containerRef} className="relative">
       {/* Input */}
-      <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border-token bg-surface focus-within:border-brand focus-within:ring-1 focus-within:ring-brand transition-colors">
+      <div className="flex items-center gap-2 px-3 py-2 superficie focus-within:border-brand focus-within:ring-1 focus-within:ring-brand transition-colors">
         <MagnifyingGlassIcon className="h-4 w-4 text-fg-muted-token flex-shrink-0" />
         <input
           type="text"
@@ -106,7 +106,7 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
 
       {/* Dropdown */}
       {(results.length > 0 || (query.length >= 2 && !loading && results.length === 0)) && (
-        <div className="absolute z-50 top-full mt-1 left-0 right-0 rounded-xl border border-border-token bg-surface shadow-xl overflow-hidden">
+        <div className="absolute z-50 top-full mt-1 left-0 right-0 superficie shadow-xl overflow-hidden">
           {results.length === 0 ? (
             // No results — offer "new customer" option
             <button

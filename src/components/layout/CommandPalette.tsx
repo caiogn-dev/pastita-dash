@@ -125,7 +125,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         aria-modal="true"
         aria-label="Ir para"
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl overflow-hidden rounded-xl border border-border-token bg-surface shadow-2xl"
+        className="w-full max-w-xl overflow-hidden superficie shadow-2xl"
       >
         <div className="flex items-center gap-2.5 border-b border-border-token px-4">
           <MagnifyingGlassIcon className="h-5 w-5 shrink-0 text-fg-muted-token" aria-hidden />

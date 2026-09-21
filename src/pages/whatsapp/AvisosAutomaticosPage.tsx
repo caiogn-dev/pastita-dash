@@ -126,7 +126,7 @@ export const AvisosAutomaticosPage: React.FC = () => {
             aria-label="Período"
             value={dias}
             onChange={(e) => setDias(Number(e.target.value))}
-            className="rounded-lg border border-border-token bg-surface-token px-2 py-1 text-sm"
+            className="superficie px-2 py-1 text-sm"
           >
             {PERIODOS.map((p) => <option key={p.dias} value={p.dias}>{p.rotulo}</option>)}
           </select>
@@ -161,7 +161,7 @@ export const AvisosAutomaticosPage: React.FC = () => {
               />
             ))}
           </div>
-          <section className="rounded-xl border border-border-token bg-surface-token">
+          <section className="superficie">
             <ul>
               {itens.map((aviso) => <LinhaDoAviso key={aviso.id} aviso={aviso} />)}
             </ul>

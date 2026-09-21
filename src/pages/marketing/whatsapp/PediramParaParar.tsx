@@ -31,7 +31,7 @@ export const PediramParaParar: React.FC<{ accountId?: string }> = ({ accountId }
   }, [accountId]);
 
   return (
-    <div className="rounded-xl border border-border-token bg-surface px-5 py-4 flex flex-wrap items-center gap-4">
+    <div className="superficie px-5 py-4 flex flex-wrap items-center gap-4">
       <div className="flex-1 min-w-[200px]">
         <p className="overline">Pediram para parar</p>
         <p className={`text-2xl font-bold ${dados && dados.total > 0 ? 'text-danger-token' : 'text-fg-token'}`}>

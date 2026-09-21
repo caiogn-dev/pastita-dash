@@ -96,7 +96,7 @@ export function Tabela<T>({
               key={chave(item)}
               {...abrir}
               className={cn(
-                'rounded-xl border border-border-token bg-surface p-4',
+                'superficie p-4',
                 onAbrir && (abrir as { className?: string }).className,
                 classeDaLinha?.(item),
               )}

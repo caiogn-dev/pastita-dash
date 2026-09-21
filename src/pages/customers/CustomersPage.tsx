@@ -349,7 +349,7 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
             <textarea
               id="cf-notes"
               rows={3}
-              className="w-full rounded-xl border border-border-token bg-surface px-4 py-2.5 text-sm text-fg-token focus:border-brand focus:outline-none"
+              className="w-full superficie px-4 py-2.5 text-sm text-fg-token focus:border-brand focus:outline-none"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />

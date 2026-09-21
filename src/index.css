@@ -221,6 +221,20 @@ textarea::placeholder {
     @apply opacity-60 cursor-not-allowed;
   }
   
+  /* A superfície de cartão do painel.
+     75 lugares escreviam à mão `rounded-… border border-border-token
+     bg-surface…`, com quatro raios diferentes — é o que faz a tela parecer
+     montada por pessoas diferentes. Aqui a decisão é uma só: fundo, borda,
+     raio e o primeiro degrau de elevação.
+     `.superficie-alta` é a variante que se levanta (item clicável, menu). */
+  .superficie {
+    @apply rounded-xl border border-border-token bg-surface shadow-e1;
+  }
+
+  .superficie-alta {
+    @apply superficie transition-shadow hover:shadow-e2;
+  }
+
   /* Cards - CORRIGIDO: shadow valido */
   .card {
     @apply bg-white rounded-xl shadow-md border border-gray-100 p-6 transition-all duration-200;

@@ -121,7 +121,7 @@ const ExpedicaoPage: React.FC = () => {
       )}
 
       {registros.length > 1 && (
-        <ul className="mt-6 max-w-xl divide-y divide-border-token rounded-xl border border-border-token bg-surface">
+        <ul className="mt-6 max-w-xl divide-y divide-border-token superficie">
           {registros.slice(1).map((r) => (
             <li key={r.id} className="flex items-baseline gap-3 px-4 py-2 text-sm">
               <span className="text-fg-muted-token">{r.quando}</span>

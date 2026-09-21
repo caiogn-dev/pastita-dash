@@ -392,12 +392,12 @@ const CompanyProfileDetailPage: React.FC = () => {
             </div>
             {(selectedStore || selectedAccount) && (
               <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="rounded-lg border border-border-token bg-surface-2 p-4 text-sm text-fg-token">
+                <div className="superficie-2 p-4 text-sm text-fg-token">
                   <p className="font-medium text-fg-token">Loja selecionada</p>
                   <p>{selectedStore?.name || 'Nenhuma loja selecionada'}</p>
                   <p className="text-xs text-fg-muted-token">{selectedStore?.slug || ''}</p>
                 </div>
-                <div className="rounded-lg border border-border-token bg-surface-2 p-4 text-sm text-fg-token">
+                <div className="superficie-2 p-4 text-sm text-fg-token">
                   <p className="font-medium text-fg-token">Conta selecionada</p>
                   <p>{selectedAccount?.name || 'Nenhuma conta selecionada'}</p>
                   <p className="text-xs text-fg-muted-token">{selectedAccount?.phone_number || 'Sem telefone'}</p>
@@ -410,7 +410,7 @@ const CompanyProfileDetailPage: React.FC = () => {
         <div className="bg-surface border border-border-token shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-fg-token mb-4">Informações Básicas</h2>
           {!isCreateMode && profile?.store_name && (
-            <div className="mb-4 rounded-lg border border-border-token bg-surface-2 p-4 text-sm text-fg-token">
+            <div className="mb-4 superficie-2 p-4 text-sm text-fg-token">
               <p className="font-medium text-fg-token">Fonte principal do negócio</p>
               <p>{profile.store_name}</p>
               <p className="text-xs text-fg-muted-token">{profile.store_slug || 'Nenhuma loja vinculada'}</p>

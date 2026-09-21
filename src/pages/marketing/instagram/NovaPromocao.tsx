@@ -19,7 +19,7 @@ import { frasePublica } from './promocaoDeComentario';
 import { PASSOS, primeiroPassoIncompleto, type PassoId } from './passosDaPromocao';
 
 const CAMPO =
-  'w-full rounded-xl border border-border-token bg-surface-token px-3 py-2 text-sm text-fg-token ' +
+  'w-full superficie px-3 py-2 text-sm text-fg-token ' +
   'placeholder:text-fg-muted-token focus:border-brand focus:outline-none';
 const PRIMARIO = 'rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand disabled:opacity-50';
 const DISCRETO = 'rounded-xl px-3 py-2 text-sm font-medium text-fg-muted-token hover:text-fg-token';
@@ -162,7 +162,7 @@ export const NovaPromocao: React.FC<Props> = ({ contaId, onCriada, onCancelar })
 
   if (precisaReconectar) {
     return (
-      <section className="rounded-2xl border border-border-token bg-surface-token p-6">
+      <section className="superficie p-6">
         <p className="text-base font-semibold text-fg-token">O Instagram precisa ser reconectado</p>
         <p className="mt-1 text-sm text-fg-muted-token">
           A Meta recusou o acesso a esta conta, então não dá para ler as publicações. Reconecte em
@@ -173,7 +173,7 @@ export const NovaPromocao: React.FC<Props> = ({ contaId, onCriada, onCancelar })
   }
 
   return (
-    <section className="rounded-2xl border border-border-token bg-surface-token">
+    <section className="superficie">
       {/* Os três passos, sempre visíveis: a loja sabe onde está e o que falta. */}
       <ol className="flex flex-wrap gap-1 border-b border-border-token p-3">
         {PASSOS.map((p, i) => {

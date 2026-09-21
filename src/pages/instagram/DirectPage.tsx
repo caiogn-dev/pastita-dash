@@ -183,7 +183,7 @@ export const DirectPage: React.FC = () => {
               <div className="flex items-end gap-2">
                 <textarea
                   aria-label={`Mensagem para ${aberta?.participantName ?? 'o cliente'}`}
-                  className="min-h-11 flex-1 resize-none rounded-xl border border-border-token bg-surface-token px-3 py-2 text-sm text-fg-token focus:border-brand focus:outline-none disabled:opacity-60"
+                  className="min-h-11 flex-1 resize-none superficie px-3 py-2 text-sm text-fg-token focus:border-brand focus:outline-none disabled:opacity-60"
                   placeholder={janela.podeResponder ? 'Escreva uma resposta' : 'Fora da janela de resposta'}
                   value={texto}
                   disabled={!janela.podeResponder}

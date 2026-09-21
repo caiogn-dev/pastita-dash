@@ -117,7 +117,7 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
   };
 
   const inputCls =
-    'w-full px-3 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token focus:outline-none focus:border-brand';
+    'w-full px-3 py-2 superficie text-sm text-fg-token focus:outline-none focus:border-brand';
 
   return (
     <>
@@ -220,7 +220,7 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
                 <select
                   id="add-product-select"
                   aria-label="Adicionar produto"
-                  className="flex-1 px-3 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token focus:outline-none focus:border-brand disabled:opacity-60"
+                  className="flex-1 px-3 py-2 superficie text-sm text-fg-token focus:outline-none focus:border-brand disabled:opacity-60"
                   value=""
                   disabled={products.length === 0}
                   onChange={(e) => { addProduct(e.target.value); e.target.value = ''; }}
@@ -234,7 +234,7 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
                   type="number"
                   min={1}
                   aria-label="Quantidade do novo item"
-                  className="w-16 px-2 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token focus:outline-none focus:border-brand text-center"
+                  className="w-16 px-2 py-2 superficie text-sm text-fg-token focus:outline-none focus:border-brand text-center"
                   value={newItemQty}
                   onChange={(e) => setNewItemQty(Math.max(1, Number(e.target.value) || 1))}
                 />
