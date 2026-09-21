@@ -17,6 +17,8 @@ export interface PainelDeRecuperacao {
   valor_recuperado: number;
   taxa_de_recuperacao: number;
   oportunidade_perdida: number;
+  /** Carrinhos com itens e SEM telefone: o lembrete não tem para onde ir. */
+  sem_telefone: number;
 }
 
 export const recuperacaoService = {

@@ -108,6 +108,20 @@ export const RecuperacaoPage: React.FC = () => {
         <div className="flex flex-col gap-4">
           <KpiGrid itens={indicadores} />
 
+          {/* O número que explica todos os outros. Sem ele, taxa de
+              recuperação baixa parece fracasso do texto do lembrete — quando
+              o lembrete nem chegou a sair. */}
+          {dados.sem_telefone > 0 && (
+            <p className="superficie border-warning-token/40 p-4 text-body text-fg-token">
+              <strong>{dados.sem_telefone}</strong>{' '}
+              {dados.sem_telefone === 1
+                ? 'carrinho ficou sem telefone'
+                : 'carrinhos ficaram sem telefone'} — não há para onde mandar o
+              lembrete. Acontece quando a pessoa monta o carrinho e sai antes de
+              se identificar no checkout.
+            </p>
+          )}
+
           <p className="superficie p-4 text-body text-fg-token">
             No período, <strong>{dados.mensagens_enviadas}</strong>{' '}
             {dados.mensagens_enviadas === 1 ? 'lembrete saiu' : 'lembretes saíram'} pelo WhatsApp.

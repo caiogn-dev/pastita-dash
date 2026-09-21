@@ -20,7 +20,7 @@ jest.mock('../../../../hooks/useStore', () => ({
 const DADOS = {
   dias: 30, abandonados: 12, valor_abandonado: 1000, ticket_medio: 83.33,
   mensagens_enviadas: 9, recuperados: 3, valor_recuperado: 240,
-  taxa_de_recuperacao: 25, oportunidade_perdida: 760,
+  taxa_de_recuperacao: 25, oportunidade_perdida: 760, sem_telefone: 40,
 };
 
 const tela = () => render(<MemoryRouter><RecuperacaoPage /></MemoryRouter>);
@@ -48,6 +48,13 @@ it('sem carrinho abandonado, explica em vez de mostrar zeros soltos', async () =
   tela();
 
   expect(await screen.findByText(/Nenhum carrinho abandonado/)).toBeInTheDocument();
+});
+
+it('diz quantos carrinhos não tinham telefone — explica a taxa baixa', async () => {
+  tela();
+
+  expect(await screen.findByText(/não há para onde mandar o/)).toBeInTheDocument();
+  expect(screen.getByText('40')).toBeInTheDocument();
 });
 
 it('falha de carga não vira "nada aconteceu"', async () => {
