@@ -1,15 +1,18 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loading } from '../../components/common';
-import { INBOX_TABS, resolveInboxTab, rolagemDaAba } from './inboxTabs';
+import { channelsApi } from '../../features/channels';
+import { montarAbas, resolveInboxTab, rolagemDaAba } from './inboxTabs';
 
 // Conteúdo de cada aba reaproveita as páginas existentes (consolidação por rota;
 // a fusão real dos componentes vem depois).
 const WhatsAppInboxPage = lazy(() => import('../whatsapp').then((m) => ({ default: m.WhatsAppInboxPage })));
 const ConversationsPage = lazy(() => import('../conversations/ConversationsPage').then((m) => ({ default: m.ConversationsPage })));
+const DirectPage = lazy(() => import('../instagram/DirectPage'));
 
 const TAB_CONTENT: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
   whatsapp: WhatsAppInboxPage,
+  instagram: DirectPage,
   conversas: ConversationsPage,
 };
 
@@ -17,13 +20,26 @@ const TAB_CONTENT: Record<string, React.LazyExoticComponent<React.ComponentType>
 const InboxPage: React.FC = () => {
   const { tab } = useParams<{ tab: string }>();
   const navigate = useNavigate();
-  const activeTab = resolveInboxTab(tab);
+  // A aba do direct só existe para quem conectou o Instagram: ela saiu do
+  // produto em agosto justamente por aparecer vazia para todo mundo.
+  const [temInstagram, setTemInstagram] = useState(false);
+
+  useEffect(() => {
+    let vivo = true;
+    channelsApi.listAccounts('instagram')
+      .then((contas) => { if (vivo) setTemInstagram(contas.some((c) => c.isActive)); })
+      .catch(() => { /* sem Instagram é o estado normal da maioria das lojas */ });
+    return () => { vivo = false; };
+  }, []);
+
+  const abas = montarAbas({ temInstagram });
+  const activeTab = resolveInboxTab(tab, { temInstagram });
   const Content = TAB_CONTENT[activeTab];
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex shrink-0 items-center gap-1 border-b border-border-primary bg-bg-card px-4 pt-2">
-        {INBOX_TABS.map((t) => (
+        {abas.map((t) => (
           <button
             key={t.id}
             type="button"

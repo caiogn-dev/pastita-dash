@@ -347,7 +347,8 @@ export default function ConnectionsPage() {
                   <Beneficio titulo="Comentários chegam aqui,">prontos para campanhas do tipo “comenta e recebe no direct”.</Beneficio>
                 </ul>
                 <div className="mt-auto flex flex-wrap items-center gap-2">
-                  <Link to="/inbox/conversas" className={botaoPrimario}>Abrir conversas</Link>
+                  <Link to="/inbox/instagram" className={botaoPrimario}>Abrir direct</Link>
+                  <Link to="/marketing/instagram" className={botaoSecundario}>Criar promoção</Link>
                   <button type="button" className={botaoDiscreto} onClick={() => desconectarInstagram(instagramAtivo)}>Desconectar</button>
                 </div>
               </Cartao>
