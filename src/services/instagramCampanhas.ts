@@ -65,6 +65,19 @@ export interface PublicacaoDaConta {
   comentarios: number;
 }
 
+export type SituacaoDoComentario = 'recebeu' | 'participando' | 'de_fora' | 'aguardando';
+
+export interface ComentarioDoPost {
+  id: string;
+  username: string;
+  texto: string;
+  quando: string;
+  curtidas: number;
+  situacao: SituacaoDoComentario;
+  motivo: string;
+  ganhador: boolean;
+}
+
 const RAIZ = '/instagram/campanhas-de-comentario';
 
 export const instagramCampanhasService = {
@@ -104,6 +117,12 @@ export const instagramCampanhasService = {
     const response = await api.get(`${RAIZ}/${id}/participantes/`, {
       params: somenteValidos ? { validos: '1' } : undefined,
     });
+    return Array.isArray(response.data) ? response.data : [];
+  },
+
+  /** Os comentários do post agora, com o que aconteceu com cada um. */
+  comentarios: async (id: string): Promise<ComentarioDoPost[]> => {
+    const response = await api.get(`${RAIZ}/${id}/comentarios/`);
     return Array.isArray(response.data) ? response.data : [];
   },
 

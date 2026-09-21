@@ -19,6 +19,7 @@ import {
 } from '../../../services/instagramCampanhas';
 import { frasePublica } from './promocaoDeComentario';
 import NovaPromocao from './NovaPromocao';
+import { ComentariosDoPost } from './ComentariosDoPost';
 
 const CARTAO = 'rounded-2xl border border-border-token bg-surface-token';
 const CAMPO =
@@ -37,6 +38,7 @@ const Promocao: React.FC<{
   onEncerrar: (p: PromocaoDeComentario) => void;
 }> = ({ promocao, onSortear, onEncerrar }) => {
   const [placar, setPlacar] = useState<PlacarDaPromocao | null>(null);
+  const [vendoComentarios, setVendoComentarios] = useState(false);
 
   useEffect(() => {
     let vivo = true;
@@ -100,6 +102,16 @@ const Promocao: React.FC<{
           Quem ficou de fora: {placar.motivos.map((m) => `${m.quantas} ${m.motivo}`).join(' · ')}
         </p>
       )}
+
+      <button
+        type="button"
+        aria-expanded={vendoComentarios}
+        onClick={() => setVendoComentarios((v) => !v)}
+        className="mt-3 text-sm font-medium text-brand-ink hover:underline"
+      >
+        {vendoComentarios ? 'Esconder os comentários' : 'Ver os comentários do post'}
+      </button>
+      {vendoComentarios && <ComentariosDoPost campanhaId={promocao.id} />}
     </li>
   );
 };
