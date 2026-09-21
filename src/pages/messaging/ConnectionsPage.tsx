@@ -18,6 +18,7 @@ import { channelsApi } from '../../features/channels';
 import { ConnectWhatsAppButton } from '../../components/whatsapp/ConnectWhatsAppButton';
 import { InstagramIcon, WhatsAppIcon } from '../../components/brand/BrandIcons';
 import { PageShell } from '../../components/ui';
+import { estadoDoInstagram } from './estadoDoInstagram';
 import { useAuthStore } from '../../stores/authStore';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -40,6 +41,7 @@ interface ContaInstagram {
   name?: string;
   handle?: string;
   isActive?: boolean;
+  precisaReconectar?: boolean;
 }
 
 type Estado = 'funcionando' | 'desconectado' | 'pausado';
@@ -262,6 +264,7 @@ export default function ConnectionsPage() {
   });
 
   const instagramAtivo = instagrams.find((c) => c.isActive);
+  const estadoIg = instagramAtivo ? estadoDoInstagram(instagramAtivo) : null;
 
   return (
     <PageShell
@@ -339,15 +342,32 @@ export default function ConnectionsPage() {
                 icone={<InstagramIcon size={48} />}
                 titulo="Instagram"
                 subtitulo={instagramAtivo.name || 'Conta profissional'}
-                selo={<Selo estado="funcionando" />}
+                selo={<Selo estado={estadoIg ?? 'funcionando'} />}
               >
                 <p className="text-sm font-semibold text-fg-token">@{instagramAtivo.handle}</p>
+                {estadoIg === 'desconectado' && (
+                  <p className="rounded-xl bg-danger-soft p-3 text-sm text-danger-token">
+                    A Meta recusou o acesso desta conta — nada entra nem sai por aqui. Conecte de
+                    novo para voltar a receber o direct e os comentários.
+                  </p>
+                )}
                 <ul className="flex flex-col gap-3">
                   <Beneficio titulo="Direct no mesmo lugar">que o WhatsApp — responda tudo numa tela só.</Beneficio>
                   <Beneficio titulo="Comentários chegam aqui,">prontos para campanhas do tipo “comenta e recebe no direct”.</Beneficio>
                 </ul>
                 <div className="mt-auto flex flex-wrap items-center gap-2">
-                  <Link to="/inbox/instagram" className={botaoPrimario}>Abrir direct</Link>
+                  {estadoIg === 'desconectado' ? (
+                    <button
+                      type="button"
+                      className={botaoPrimario}
+                      disabled={conectandoInstagram}
+                      onClick={entrarComInstagram}
+                    >
+                      Conectar de novo
+                    </button>
+                  ) : (
+                    <Link to="/inbox/instagram" className={botaoPrimario}>Abrir direct</Link>
+                  )}
                   <Link to="/marketing/instagram" className={botaoSecundario}>Criar promoção</Link>
                   <button type="button" className={botaoDiscreto} onClick={() => desconectarInstagram(instagramAtivo)}>Desconectar</button>
                 </div>

@@ -55,9 +55,25 @@ export type NovaPromocao = Partial<PromocaoDeComentario> & {
   mensagem_dm: string;
 };
 
+export interface PublicacaoDaConta {
+  id: string;
+  legenda: string;
+  imagem: string | null;
+  link: string | null;
+  tipo: string;
+  quando: string;
+  comentarios: number;
+}
+
 const RAIZ = '/instagram/campanhas-de-comentario';
 
 export const instagramCampanhasService = {
+  /** As publicações da conta, direto da Meta — é o que a grade mostra. */
+  publicacoes: async (contaId: string): Promise<PublicacaoDaConta[]> => {
+    const response = await api.get(`/instagram/accounts/${contaId}/publicacoes/`);
+    return Array.isArray(response.data) ? response.data : [];
+  },
+
   listar: async (): Promise<PromocaoDeComentario[]> => {
     const response = await api.get(`${RAIZ}/`);
     return normalizePaginatedResponse<PromocaoDeComentario>(response.data);

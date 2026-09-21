@@ -17,7 +17,8 @@ import {
   type PlacarDaPromocao,
   type PromocaoDeComentario,
 } from '../../../services/instagramCampanhas';
-import { frasePublica, idDaPublicacao, problemasDaPromocao } from './promocaoDeComentario';
+import { frasePublica } from './promocaoDeComentario';
+import NovaPromocao from './NovaPromocao';
 
 const CARTAO = 'rounded-2xl border border-border-token bg-surface-token';
 const CAMPO =
@@ -27,28 +28,6 @@ const BOTAO_PRINCIPAL =
   'rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand disabled:opacity-50';
 const BOTAO_DISCRETO =
   'rounded-xl border border-border-token px-3 py-2 text-sm font-medium text-fg-token hover:bg-surface-muted-token';
-
-interface Rascunho {
-  nome: string;
-  publicacao: string;
-  palavra_chave: string;
-  mensagem_dm: string;
-  resposta_publica: string;
-  exige_marcar_amigos: number;
-  exige_seguir: boolean;
-  tipo: 'CUPOM' | 'SORTEIO';
-}
-
-const VAZIO: Rascunho = {
-  nome: '',
-  publicacao: '',
-  palavra_chave: '',
-  mensagem_dm: '',
-  resposta_publica: '',
-  exige_marcar_amigos: 0,
-  exige_seguir: false,
-  tipo: 'CUPOM',
-};
 
 // ── Uma promoção na lista ────────────────────────────────────────────────────
 
@@ -132,9 +111,7 @@ export const PromocaoNoInstagramPage: React.FC = () => {
   const [semConta, setSemConta] = useState(false);
   const [promocoes, setPromocoes] = useState<PromocaoDeComentario[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [rascunho, setRascunho] = useState<Rascunho>(VAZIO);
   const [criando, setCriando] = useState(false);
-  const [salvando, setSalvando] = useState(false);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -152,41 +129,6 @@ export const PromocaoNoInstagramPage: React.FC = () => {
   }, []);
 
   useEffect(() => { void carregar(); }, [carregar]);
-
-  const impedimentos = useMemo(
-    () => problemasDaPromocao({
-      nome: rascunho.nome,
-      media_id: idDaPublicacao(rascunho.publicacao),
-      mensagem_dm: rascunho.mensagem_dm,
-    }),
-    [rascunho],
-  );
-
-  const criar = async () => {
-    if (!contaId || impedimentos.length) return;
-    setSalvando(true);
-    try {
-      await instagramCampanhasService.criar({
-        account: contaId,
-        nome: rascunho.nome.trim(),
-        tipo: rascunho.tipo,
-        media_id: idDaPublicacao(rascunho.publicacao),
-        palavra_chave: rascunho.palavra_chave.trim(),
-        mensagem_dm: rascunho.mensagem_dm.trim(),
-        resposta_publica: rascunho.resposta_publica.trim(),
-        exige_marcar_amigos: rascunho.exige_marcar_amigos,
-        exige_seguir: rascunho.exige_seguir,
-      });
-      toast.success('Promoção no ar. Publique a regra na legenda do post.');
-      setRascunho(VAZIO);
-      setCriando(false);
-      await carregar();
-    } catch {
-      toast.error('Não deu para criar a promoção.');
-    } finally {
-      setSalvando(false);
-    }
-  };
 
   const sortear = async (p: PromocaoDeComentario) => {
     try {
@@ -232,119 +174,12 @@ export const PromocaoNoInstagramPage: React.FC = () => {
         />
       ) : (
         <div className="flex flex-col gap-6">
-          {criando && (
-            <section className={`${CARTAO} p-5`}>
-              <h2 className="text-base font-semibold text-fg-token">Nova promoção</h2>
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <label className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-fg-token">Nome</span>
-                  <input
-                    className={CAMPO}
-                    placeholder="Cupom de setembro"
-                    value={rascunho.nome}
-                    onChange={(e) => setRascunho({ ...rascunho, nome: e.target.value })}
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-fg-token">Publicação</span>
-                  <input
-                    className={CAMPO}
-                    placeholder="Cole o link do post"
-                    value={rascunho.publicacao}
-                    onChange={(e) => setRascunho({ ...rascunho, publicacao: e.target.value })}
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-fg-token">Palavra da promoção</span>
-                  <input
-                    className={CAMPO}
-                    placeholder="EU QUERO (deixe vazio para aceitar qualquer comentário)"
-                    value={rascunho.palavra_chave}
-                    onChange={(e) => setRascunho({ ...rascunho, palavra_chave: e.target.value })}
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-fg-token">Tipo</span>
-                  <select
-                    className={CAMPO}
-                    value={rascunho.tipo}
-                    onChange={(e) => setRascunho({ ...rascunho, tipo: e.target.value as Rascunho['tipo'] })}
-                  >
-                    <option value="CUPOM">Todo mundo que comentar recebe</option>
-                    <option value="SORTEIO">Sorteio entre quem comentar</option>
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 md:col-span-2">
-                  <span className="text-sm font-medium text-fg-token">Mensagem que chega no direct</span>
-                  <textarea
-                    className={`${CAMPO} min-h-24`}
-                    placeholder="Oi! Seu cupom é SET10, vale até domingo 🍝"
-                    value={rascunho.mensagem_dm}
-                    onChange={(e) => setRascunho({ ...rascunho, mensagem_dm: e.target.value })}
-                  />
-                </label>
-                <label className="flex flex-col gap-1 md:col-span-2">
-                  <span className="text-sm font-medium text-fg-token">Resposta no comentário (opcional)</span>
-                  <input
-                    className={CAMPO}
-                    placeholder="Te mandei no direct! 💜"
-                    value={rascunho.resposta_publica}
-                    onChange={(e) => setRascunho({ ...rascunho, resposta_publica: e.target.value })}
-                  />
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    max={10}
-                    className={`${CAMPO} w-20`}
-                    value={rascunho.exige_marcar_amigos}
-                    onChange={(e) => setRascunho({ ...rascunho, exige_marcar_amigos: Number(e.target.value) })}
-                  />
-                  <span className="text-sm text-fg-token">amigos marcados no comentário</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={rascunho.exige_seguir}
-                    onChange={(e) => setRascunho({ ...rascunho, exige_seguir: e.target.checked })}
-                  />
-                  <span className="text-sm text-fg-token">Só vale para quem segue a loja</span>
-                </label>
-              </div>
-
-              <p className="mt-4 rounded-xl bg-surface-muted-token p-3 text-sm text-fg-token">
-                Na legenda do post, escreva: <strong>{frasePublica({
-                  palavra_chave: rascunho.palavra_chave,
-                  exige_marcar_amigos: rascunho.exige_marcar_amigos,
-                  exige_seguir: rascunho.exige_seguir,
-                })}</strong>
-              </p>
-
-              {rascunho.tipo === 'SORTEIO' && (
-                <p className="mt-2 text-xs text-fg-muted-token">
-                  Sorteio com prêmio precisa de autorização do governo. Sem ela, premie por mérito
-                  (melhor foto, melhor frase) ou dê o cupom para todo mundo que participar.
-                </p>
-              )}
-
-              {!!impedimentos.length && (
-                <ul className="mt-3 list-disc pl-5 text-sm text-danger-token">
-                  {impedimentos.map((p) => <li key={p}>{p}</li>)}
-                </ul>
-              )}
-
-              <div className="mt-4 flex justify-end">
-                <button
-                  type="button"
-                  className={BOTAO_PRINCIPAL}
-                  disabled={!!impedimentos.length || salvando}
-                  onClick={criar}
-                >
-                  {salvando ? 'Publicando…' : 'Colocar no ar'}
-                </button>
-              </div>
-            </section>
+          {criando && contaId && (
+            <NovaPromocao
+              contaId={contaId}
+              onCriada={() => { setCriando(false); void carregar(); }}
+              onCancelar={() => setCriando(false)}
+            />
           )}
 
           {carregando ? (
