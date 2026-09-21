@@ -195,13 +195,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
     return () => publicarRecuo(false);
   }, [espiada]);
 
-  // 72px e não 64: com 64 o ícone de 20px ficava com 22px de folga de cada
-  // lado, e o alvo de clique encostava na borda da tela. 72 dá respiro e
-  // permite o ícone maior sem apertar.
+  // 72px e não 64: com 64 o ícone ficava com 22px de folga de cada lado e o
+  // alvo de clique encostava na borda da tela.
   const largura = estreita ? 'w-[72px]' : 'w-64';
-  // O ícone também é movimento: sem a transição ele TROCA de tamanho num
-  // frame, no meio de uma coluna que está deslizando.
-  const tamIcone = cn('transition-[width,height] duration-200', miolo ? 'h-6 w-6' : 'h-5 w-5');
+  // TAMANHO ÚNICO. O ícone crescia para 24px ao recolher, com transição de
+  // tamanho: no meio de uma coluna deslizando, o desenho também esticava — o
+  // efeito de zoom que denuncia animação feita à mão. Ícone é sinal, não
+  // decoração: mudando de tamanho conforme o estado, o olho lê como se fosse
+  // outro ícone. O que anima é a LARGURA da coluna, e só ela.
+  const tamIcone = 'h-5 w-5';
 
   return (
     // O invólucro segura o ESPAÇO da coluna na preferência do usuário. Sem ele,
