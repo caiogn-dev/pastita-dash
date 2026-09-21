@@ -4,6 +4,7 @@ import { Card, Button, Input, Loading } from '../../components/common';
 import { authService, getErrorMessage, notificationsService } from '../../services';
 import type { NotificationPreference } from '../../services/notifications';
 import { useAuthStore } from '../../stores/authStore';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { PageShell } from '../../components/ui';
 
 type NotificationSection = {
@@ -40,6 +41,40 @@ const Toggle: React.FC<ToggleProps> = ({ checked, onChange, disabled = false, la
     <div className="w-11 h-6 bg-surface-2 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand/40 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface after:border-border-token after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
   </label>
 );
+
+/**
+ * Preferências da conta: quem é você, sua senha e onde você quer ser avisado.
+ *
+ * Cuidado com o "Push": a preferência diz o QUE avisar, mas quem decide se o
+ * aviso chega neste aparelho é o navegador. Ligar a preferência sem autorizar
+ * o aparelho é esperar por uma notificação que nunca sai — por isso o estado
+ * do aparelho aparece aqui dentro, junto do botão que resolve.
+ */
+const AvisoDoAparelho: React.FC = () => {
+  const { permission, isSubscribed, isLoading, subscribe } = usePushNotifications();
+
+  if (permission === 'unsupported' || isSubscribed) return null;
+
+  if (permission === 'denied') {
+    return (
+      <p className="mt-3 text-xs text-danger-token">
+        Este navegador bloqueou os avisos deste site. Libere nas configurações do navegador para
+        voltar a receber.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg bg-surface-muted-token p-3">
+      <p className="flex-1 text-xs text-fg-muted-token">
+        Este aparelho ainda não recebe avisos. Ligue aqui para receber neste navegador.
+      </p>
+      <Button size="sm" isLoading={isLoading} onClick={() => void subscribe()}>
+        Ativar neste aparelho
+      </Button>
+    </div>
+  );
+};
 
 export const SettingsPage: React.FC = () => {
   const { user, setAuth } = useAuthStore();
@@ -213,7 +248,8 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <PageShell
-      titulo="Configurações"
+      titulo="Preferências"
+      descricao="Sua conta, sua senha e onde você quer ser avisado."
     >
       {/* Conta à esquerda, notificações à direita: três blocos empilhados
           deixavam a tela larga com uma coluna só. */}
@@ -318,6 +354,7 @@ export const SettingsPage: React.FC = () => {
                       onChange={(value) => handlePreferenceChange(section.enabledKey, value)}
                     />
                   </div>
+                  {section.id === 'push' && <AvisoDoAparelho />}
                   {section.options.length > 0 && (
                     <div className="mt-4 space-y-3">
                       {section.options.map((option) => (
