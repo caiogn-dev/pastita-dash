@@ -46,7 +46,7 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
  * `filled` não tem nem uma nem outra — existe para NÃO se destacar.
  */
 const variantClasses: Record<CardVariant, string> = {
-  default: 'bg-surface shadow-repouso',
+  default: 'bg-surface shadow-e1',
   outline: 'bg-transparent border border-border-token',
   filled: 'bg-surface-2 border-0',
 };
@@ -98,7 +98,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
           ref={ref}
           // rounded-xl (16px): card grande com canto de 10px ainda lê como
           // caixa. O arredondamento precisa acompanhar o tamanho da forma.
-          className={cn('bg-surface rounded-xl shadow-repouso', className)}
+          className={cn('bg-surface rounded-xl shadow-e1', className)}
           {...props}
         >
           {children}
@@ -119,7 +119,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
           variantClasses[resolvedVariant],
           // Sobe um degrau de elevação no hover, além da cor: movimento diz
           // "isto responde" mais rápido que mudança de tom.
-          hoverable && 'transition-all hover:bg-surface-2 hover:shadow-hover',
+          hoverable && 'transition-all hover:bg-surface-2 hover:shadow-e2',
           className
         )}
         {...props}

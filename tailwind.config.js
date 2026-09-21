@@ -7,6 +7,28 @@ const config = {
   darkMode: 'class',
   theme: {
     extend: {
+      // A cor padrão de borda do Tailwind é um cinza claro (#e5e7eb). Toda
+      // classe `border` sem cor caía nele — 91 elementos com borda clara no
+      // tema escuro, medidos em 21/09. A padrão passa a ser a nossa.
+      borderColor: {
+        DEFAULT: 'var(--border)',
+      },
+      boxShadow: {
+        // Ver o porquê dos três degraus em src/styles/tokens.css.
+        'e1': 'var(--elev-1)',
+        'e2': 'var(--elev-2)',
+        'modal': 'var(--elev-modal)',
+        // A escala do Tailwind passa a apontar para os MESMOS tokens. As 103
+        // sombras já escritas no painel (`shadow-sm`, `shadow-lg`…) usavam a
+        // receita da biblioteca — cinza-azulado de 5% de opacidade, que
+        // simplesmente não aparece em fundo escuro. Sem editar call site
+        // nenhum, todas passam a enxergar o tema.
+        'sm': 'var(--elev-1)',
+        'md': 'var(--elev-2)',
+        'lg': 'var(--elev-2)',
+        'xl': 'var(--elev-modal)',
+        '2xl': 'var(--elev-modal)',
+      },
       fontSize: {
         // Papel, não pixel. Ver a escala em src/styles/tokens.css.
         overline: ['var(--text-overline)', { letterSpacing: 'var(--tracking-overline)' }],

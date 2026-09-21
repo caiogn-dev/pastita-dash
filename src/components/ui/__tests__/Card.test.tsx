@@ -12,7 +12,7 @@ describe('Card (canônico)', () => {
     render(<Card data-testid="card">conteúdo</Card>);
     const el = screen.getByTestId('card');
     expect(el.className).toContain('bg-surface');
-    expect(el.className).toContain('shadow-repouso');
+    expect(el.className).toContain('shadow-e1');
     expect(el.className).not.toContain('border-border-token');
   });
 
