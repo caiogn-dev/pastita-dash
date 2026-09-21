@@ -7,7 +7,8 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 
 - `npm ci`: ok. Base do PR: `origin/main` em `27b9736`.
 - `npx tsc --noEmit`: **limpo**.
-- `npm test`: **1865 testes / 311 suítes verdes** (era 1863/310; +2/+1 desta fatia).
+- `npm test`: **1866 testes / 311 suítes verdes** (era 1863/310; +3/+1 desta fatia,
+  incluindo o teste de corrida do follow-up da review).
 - `npm run lint`: **4 erros pré-existentes** (`Unused eslint-disable directive` em
   `OrdersHeatMap.tsx` (×2), `sidebarColuna.test.tsx`, `pagamentoAMenorAoVivo.test.tsx`)
   + 256 warnings; **nenhum introduzido por esta fatia** (o arquivo tocado mantém só
@@ -35,9 +36,17 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   **vermelho antes, verde depois**: (1) falha sem cache → erro acionável e retry
   refaz a busca, **sem** o "Ninguém no meio de um pedido agora"; (2) sucesso →
   sessões renderizadas, sem estado de erro.
-- **Antes/depois:** `npm test` 1863/310 → **1865/311**; `tsc --noEmit` limpo nos dois
+- **Follow-up (review do Codex, P2 — corrida de requisição):** ao trocar filtros
+  rápido, várias `loadSessions` corriam em paralelo sem sequenciamento. Se a mais
+  recente resolvia vazio e uma busca antiga rejeitava depois, o `setErro(true)`
+  obsoleto vencia e trocava o vazio legítimo pelo erro acionável. Novo
+  `requisicaoRef`: cada `loadSessions` captura sua sequência e só aplica sucesso,
+  erro e o fim do `loading` se ainda for a mais recente; buscas superadas são
+  descartadas em silêncio. Novo teste de corrida ("rejeição de requisição obsoleta
+  não sobrepõe o resultado da mais recente"), vermelho antes / verde depois.
+- **Antes/depois:** `npm test` 1863/310 → **1866/311**; `tsc --noEmit` limpo nos dois
   lados; `eslint` sem erros novos no arquivo tocado. Só produção alterada: ramo de
-  erro acionável, risco baixo.
+  erro acionável + guarda de corrida, risco baixo.
 
 ## Baseline atual (2026-09-16)
 
