@@ -16,6 +16,7 @@ import {
 import { CustomerSession, CompanyProfile, SessionStatus } from '../../types';
 import { toast } from 'react-hot-toast';
 import { PageShell, Tabela, RowActions, Modal } from '../../components/ui';
+import { EmptyState } from '../../components/common';
 import { formatCurrency } from '../../utils/formatters';
 
 const statusColors: Record<SessionStatus, string> = {
@@ -36,6 +37,7 @@ const CustomerSessionsPage: React.FC = () => {
   const [sessions, setSessions] = useState<CustomerSession[]>([]);
   const [companies, setCompanies] = useState<CompanyProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(false);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [selectedSession, setSelectedSession] = useState<CustomerSession | null>(null);
@@ -68,6 +70,7 @@ const CustomerSessionsPage: React.FC = () => {
   const loadSessions = async () => {
     try {
       setLoading(true);
+      setErro(false);
       const params: Record<string, string | number> = { page, page_size: POR_PAGINA };
       if (filters.company_id) params.company_id = filters.company_id;
       if (filters.status) params.status = filters.status;
@@ -77,6 +80,10 @@ const CustomerSessionsPage: React.FC = () => {
       setSessions(response.results);
       setTotalCount(response.count);
     } catch (error) {
+      // Sem isto, a falha deixava `sessions` em `[]` e a Tabela mostrava o vazio
+      // confiante "Ninguém no meio de um pedido agora" — dizendo ao lojista que
+      // não há carrinho em andamento quando, na verdade, a busca caiu.
+      setErro(true);
       toast.error('Erro ao carregar sessões');
     } finally {
       setLoading(false);
@@ -202,6 +209,17 @@ const CustomerSessionsPage: React.FC = () => {
         </div>
       )}
 
+      {erro && sessions.length === 0 ? (
+        // Falha sem dado em cache: erro acionável no lugar do vazio enganoso.
+        // Com dado em cache (falha só ao atualizar), a Tabela abaixo continua
+        // mostrando as sessões e o `toast` avisa da falha.
+        <EmptyState
+          icon={<UserGroupIcon className="h-12 w-12" />}
+          title="Não foi possível carregar as sessões"
+          description="A conexão falhou. Isto não quer dizer que ninguém está comprando — tente de novo."
+          action={{ label: 'Tentar novamente', onClick: loadSessions }}
+        />
+      ) : (
       <Tabela<CustomerSession>
         itens={sessions}
         chave={(s) => s.id}
@@ -302,6 +320,7 @@ const CustomerSessionsPage: React.FC = () => {
           },
         ]}
       />
+      )}
 
       {/* Session Detail Modal */}
       <Modal

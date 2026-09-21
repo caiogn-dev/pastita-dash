@@ -3,6 +3,42 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-09-21)
+
+- `npm ci`: ok. Base do PR: `origin/main` em `27b9736`.
+- `npx tsc --noEmit`: **limpo**.
+- `npm test`: **1865 testes / 311 suítes verdes** (era 1863/310; +2/+1 desta fatia).
+- `npm run lint`: **4 erros pré-existentes** (`Unused eslint-disable directive` em
+  `OrdersHeatMap.tsx` (×2), `sidebarColuna.test.tsx`, `pagamentoAMenorAoVivo.test.tsx`)
+  + 256 warnings; **nenhum introduzido por esta fatia** (o arquivo tocado mantém só
+  os 2 warnings pré-existentes: `exhaustive-deps` no `useEffect` e um `any` no
+  `sendNotification`). Anotado como candidato de limpeza numa fatia dedicada.
+
+### 2026-09-21 — UX/Resiliência: sessões de clientes não viram "ninguém no meio de um pedido" quando a busca falha
+- **Medido:** `CustomerSessionsPage` (`src/pages/automation/CustomerSessionsPage.tsx`)
+  carrega as sessões por `useState`/`useEffect` chamando `customerSessionService.list`.
+  No erro (rede/500), o `catch` só disparava `toast.error('Erro ao carregar sessões')`
+  — um aviso que some em segundos — e deixava `sessions` em `[]` com `loading = false`.
+  A `Tabela` então caía no vazio **confiante** `vazio` ("**Ninguém no meio de um
+  pedido agora** · Assim que um cliente começar a montar o carrinho, ele aparece
+  aqui."), dizendo ao lojista que **não há carrinho em andamento** quando, na
+  verdade, a requisição caiu. É o mesmo engano de "vazio/zeros enganoso" que o loop
+  já corrigiu na ficha do cliente (`CustomerDrawer`) e no cardápio (PR #202).
+- **Mudado (`CustomerSessionsPage.tsx`, mesmo padrão de `ConversationInsightsPage`
+  e `HistoricoPedidosPage`):** novo flag `erro`, ligado no `catch` e desligado no
+  início de cada `loadSessions`. Quando a falha ocorre **sem dado em cache**
+  (`erro && sessions.length === 0`), a página mostra um `EmptyState` acionável
+  ("Não foi possível carregar as sessões" + botão **"Tentar novamente"** que chama
+  `loadSessions`) no lugar da `Tabela`/vazio enganoso. Com dado em cache (falha só
+  ao atualizar), a `Tabela` segue mostrando as sessões e o `toast` avisa da falha.
+- **Teste (TDD):** novo `__tests__/CustomerSessionsErro.test.tsx` (2 casos), escrito
+  **vermelho antes, verde depois**: (1) falha sem cache → erro acionável e retry
+  refaz a busca, **sem** o "Ninguém no meio de um pedido agora"; (2) sucesso →
+  sessões renderizadas, sem estado de erro.
+- **Antes/depois:** `npm test` 1863/310 → **1865/311**; `tsc --noEmit` limpo nos dois
+  lados; `eslint` sem erros novos no arquivo tocado. Só produção alterada: ramo de
+  erro acionável, risco baixo.
+
 ## Baseline atual (2026-09-16)
 
 - `npm ci`: ok. Base do PR: `origin/main` em `2cc22ac`.
