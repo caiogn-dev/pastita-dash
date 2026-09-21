@@ -88,7 +88,7 @@ export const CategoryHeader: React.FC<Props> = ({ group, collapsed, onToggleColl
           </button>
         )}
       </div>
-      {group.id && <StatusToggle active={group.is_active} onChange={onTogglePause} />}
+      {group.id && <StatusToggle active={group.is_active} nome={group.name} onChange={onTogglePause} />}
     </div>
   );
 };

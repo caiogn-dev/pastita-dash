@@ -78,11 +78,11 @@ interface TemplateCardProps {
 
 const TemplateCard: React.FC<TemplateCardProps> = ({ template, onPreview, onUse }) => {
   const typeColors: Record<string, string> = {
-    coupon: 'bg-green-100 text-green-700',
-    welcome: 'bg-blue-100 text-blue-700',
-    promotional: 'bg-orange-100 text-orange-700',
-    order_confirmation: 'bg-purple-100 text-purple-700',
-    abandoned_cart: 'bg-yellow-100 text-yellow-700',
+    coupon: 'bg-success-soft text-success-token',
+    welcome: 'bg-info-soft text-info-token',
+    promotional: 'bg-warning-soft text-warning-token',
+    order_confirmation: 'bg-info-soft text-info-token',
+    abandoned_cart: 'bg-warning-soft text-warning-token',
     newsletter: 'bg-pink-100 text-pink-700',
     transactional: 'bg-surface-2 text-fg-token',
     custom: 'bg-surface-2 text-fg-token',

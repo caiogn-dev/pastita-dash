@@ -211,6 +211,20 @@ textarea::placeholder {
 /* ============================================
    COMPONENT LAYER
    ============================================ */
+/* Foco visível, por padrão e de graça.
+   Medição de 21/09: 462 botões no painel e 35 com anel de foco — quem navega
+   por teclado ficava perdido em 9 de cada 10 controles. `:where(...)` tem
+   especificidade ZERO: o componente que já define o próprio foco continua
+   mandando, e nenhum call site precisa mudar. */
+@layer base {
+  :where(button, [role="button"], a[href], summary, input, select, textarea,
+         [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-radius: var(--raio-sm, 0.375rem);
+  }
+}
+
 @layer components {
   /* Buttons - CORRIGIDO: Classes Tailwind validas */
   .btn {

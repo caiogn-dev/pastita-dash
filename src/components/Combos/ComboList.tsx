@@ -202,7 +202,7 @@ export const ComboList: React.FC<ComboListProps> = ({
                       </button>
                       <button
                         onClick={() => onDelete(combo)}
-                        className="p-1.5 rounded text-[var(--danger)] hover:bg-red-50 transition-colors"
+                        className="p-1.5 rounded text-[var(--danger)] hover:bg-danger-soft transition-colors"
                         title="Excluir"
                       >
                         <TrashIcon className="w-4 h-4" />

@@ -33,8 +33,8 @@ const ProductRowBase: React.FC<Props> = ({ product, onOpen, onStock, onPrice, on
       <button className="flex-1 text-left" onClick={() => onOpen(product)}>{product.name}</button>
       {product.track_stock && <InlineStockStepper value={product.stock_quantity} onChange={(q) => onStock(product.id, q)} />}
       <InlinePriceField value={product.price} onCommit={(v) => onPrice(product.id, v)} />
-      <StatusToggle active={product.status === 'active'} onChange={(a) => onStatus(product.id, a)} />
-      <FeaturedToggle featured={!!product.featured} onChange={(f) => onFeatured(product.id, f)} />
+      <StatusToggle active={product.status === 'active'} nome={product.name} onChange={(a) => onStatus(product.id, a)} />
+      <FeaturedToggle featured={!!product.featured} nome={product.name} onChange={(f) => onFeatured(product.id, f)} />
       {/* O mesmo menu das outras listas. Antes era um ícone que só abria a
           edição — não havia como duplicar nem excluir produto pela tela. */}
       <RowActions

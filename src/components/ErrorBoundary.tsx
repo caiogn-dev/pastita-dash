@@ -51,7 +51,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="min-h-screen flex items-center justify-center bg-bg-token p-4">
           <div className="w-full max-w-md superficie p-8 shadow-[var(--elev-flutuante)]">
-            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mx-auto mb-4">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-danger-soft mx-auto mb-4">
               <span className="text-2xl">⚠️</span>
             </div>
 
@@ -64,7 +64,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </p>
 
             {this.state.error && (
-              <div className="bg-red-50 border border-red-200 rounded p-3 mb-4">
+              <div className="bg-danger-soft border border-red-200 rounded p-3 mb-4">
                 <p className="text-sm text-red-700 font-mono break-words">
                   {this.state.error.message}
                 </p>

@@ -66,7 +66,7 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
         <button
           type="button"
           onClick={handleClear}
-          className="p-1 rounded-full text-fg-muted-token hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
+          className="p-1 rounded-full text-fg-muted-token hover:text-red-500 hover:bg-danger-soft dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
           title="Remover cliente"
         >
           <XMarkIcon className="h-4 w-4" />

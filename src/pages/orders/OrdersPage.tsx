@@ -339,7 +339,7 @@ const OrderCardBase: React.FC<CardProps> = ({
           onClick={() => onCancel(order)}
           disabled={cancelling || isUpdating}
           title="Cancelar pedido"
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-red-100 text-red-400 hover:bg-red-50 disabled:opacity-60 dark:border-red-900/30 dark:text-red-500 transition-colors"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-red-100 text-red-400 hover:bg-danger-soft disabled:opacity-60 dark:border-red-900/30 dark:text-red-500 transition-colors"
         >
           <XMarkIcon className="h-3.5 w-3.5" />
         </button>
