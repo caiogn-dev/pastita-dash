@@ -63,10 +63,12 @@ const SELO: Record<Estado, { rotulo: string; classe: string; ponto: string }> = 
 
 // ─── Peças ────────────────────────────────────────────────────────────────────
 
-const Selo: React.FC<{ estado: Estado }> = ({ estado }) => (
+/** `rotulo` troca só o texto: "desconectado no celular" é coisa de WhatsApp
+ *  com coexistência; no Instagram a mesma cor significa outra frase. */
+const Selo: React.FC<{ estado: Estado; rotulo?: string }> = ({ estado, rotulo }) => (
   <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${SELO[estado].classe}`}>
     <span className={`h-2 w-2 rounded-full ${SELO[estado].ponto}`} aria-hidden />
-    {SELO[estado].rotulo}
+    {rotulo ?? SELO[estado].rotulo}
   </span>
 );
 
@@ -342,7 +344,12 @@ export default function ConnectionsPage() {
                 icone={<InstagramIcon size={48} />}
                 titulo="Instagram"
                 subtitulo={instagramAtivo.name || 'Conta profissional'}
-                selo={<Selo estado={estadoIg ?? 'funcionando'} />}
+                selo={(
+                  <Selo
+                    estado={estadoIg ?? 'funcionando'}
+                    rotulo={estadoIg === 'desconectado' ? 'Precisa reconectar' : undefined}
+                  />
+                )}
               >
                 <p className="text-sm font-semibold text-fg-token">@{instagramAtivo.handle}</p>
                 {estadoIg === 'desconectado' && (
