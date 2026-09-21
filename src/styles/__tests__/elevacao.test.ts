@@ -1,16 +1,19 @@
 /**
- * Elevação: o painel era 100% chapado.
+ * Elevação: um sistema só, e que realmente pinta.
  *
- * Medição de 21/09 na tela de Cardápio em produção: 560 elementos com
- * `box-shadow: none` e NENHUM com sombra. Sem elevação, card, fundo e
- * cabeçalho viram a mesma superfície — a tela parece um formulário, não um
- * produto. O painel que o dono usa como referência tem duas sombras discretas
- * (cartão `0 1px 2px rgba(16,24,40,.04)`, chip `0 1px 1px .03`) e uma maior só
- * para modal.
+ * A tela de Cardápio media 560 elementos com `box-shadow: none` e nenhum com
+ * sombra. A causa não era a classe: `shadow-repouso` existe e funciona. Era
+ * que os 75 cartões daquela tela eram montados à mão, sem classe de sombra
+ * nenhuma (ver superficie.test.ts).
  *
- * E a borda: 91 elementos usavam o CINZA PADRÃO do Tailwind (#e5e7eb) porque
- * `border` sem classe de cor cai no default da biblioteca — borda clara no
- * tema escuro. A cor padrão passa a ser a nossa.
+ * No caminho apareceram dois defeitos de verdade:
+ *
+ * 1. O `tailwind.config.js` tinha DOIS blocos `boxShadow`. Chave repetida em
+ *    objeto JS é a última que vale — o primeiro bloco era código morto e
+ *    ninguém tinha como notar.
+ * 2. A cor padrão de borda do Tailwind é um cinza claro (#e5e7eb), e 91
+ *    elementos caíam nela por usar `border` sem classe de cor: borda clara no
+ *    tema escuro.
  */
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
@@ -26,21 +29,25 @@ describe('elevação e borda', () => {
     expect(config).toMatch(/borderColor:\s*{[^}]*DEFAULT:\s*'var\(--border\)'/s);
   });
 
-  it('existem os três degraus de elevação em tokens.css', () => {
-    for (const nome of ['--elev-1', '--elev-2', '--elev-modal']) {
+  it('existe UM bloco boxShadow — dois, e o segundo apaga o primeiro', () => {
+    expect(config.match(/^\s*boxShadow:\s*{/gm) || []).toHaveLength(1);
+  });
+
+  it('os três degraus são os do sistema, e existem em tokens.css', () => {
+    for (const nome of ['--elev-repouso', '--elev-hover', '--elev-flutuante']) {
       expect(tokens).toContain(nome);
     }
   });
 
-  it('o tema escuro redefine a elevação — sombra clara some no escuro', () => {
+  it('o tema escuro tem receita própria — sombra clara some no escuro', () => {
     const escuro = tokens.slice(tokens.indexOf('.dark'));
-    expect(escuro).toContain('--elev-1');
+    expect(escuro).toContain('--elev-repouso');
   });
 
-  it('o Tailwind expõe a elevação como classe', () => {
-    expect(config).toMatch(/boxShadow:\s*{[^}]*'e1':\s*'var\(--elev-1\)'/s);
-    expect(config).toMatch(/'e2':\s*'var\(--elev-2\)'/);
-    expect(config).toMatch(/'modal':\s*'var\(--elev-modal\)'/);
+  it('a escala da biblioteca aponta para os mesmos degraus', () => {
+    expect(config).toMatch(/'sm':\s*'var\(--elev-repouso\)'/);
+    expect(config).toMatch(/'lg':\s*'var\(--elev-hover\)'/);
+    expect(config).toMatch(/'2xl':\s*'var\(--elev-flutuante\)'/);
   });
 });
 
@@ -58,30 +65,18 @@ describe('sombra fantasma', () => {
     return acc;
   };
 
-  const PERMITIDAS = new Set([
-    'shadow-e1', 'shadow-e2', 'shadow-modal',
-    'shadow-sm', 'shadow-md', 'shadow-lg', 'shadow-xl', 'shadow-2xl',
-    'shadow-none', 'shadow-inner',
-  ]);
-
   it('nenhum componente pede sombra que o Tailwind não conhece', () => {
-    // `shadow-repouso` e `shadow-hover` existiam no Card e não existiam no
-    // Tailwind: a classe ia para o HTML e não pintava nada. Foi por isso que o
-    // painel inteiro ficou chapado sem ninguém ver o erro.
+    const conhecidas = new Set(
+      [...config.matchAll(/^\s*'([a-z0-9-]+)':\s*'[^']*'/gm)].map((m) => `shadow-${m[1]}`)
+        .concat(['shadow-none', 'shadow-inner', 'shadow-DEFAULT']),
+    );
     const infratores: string[] = [];
-    for (const arq of arquivos(join(__dirname, '..', '..'))) {
-      const fonte = readFileSync(arq, 'utf8');
-      for (const m of fonte.matchAll(/(?:hover:|focus:|group-hover:)?shadow-[a-z0-9-]+/g)) {
+    for (const arq of arquivos(join(RAIZ, 'src'))) {
+      for (const m of readFileSync(arq, 'utf8').matchAll(/(?:hover:|focus:|group-hover:)?shadow-[a-z0-9-]+/g)) {
         const classe = m[0].replace(/^(hover:|focus:|group-hover:)/, '');
-        if (!PERMITIDAS.has(classe)) infratores.push(`${arq.split('/src/')[1]}: ${classe}`);
+        if (!conhecidas.has(classe)) infratores.push(`${arq.split('/src/')[1]}: ${classe}`);
       }
     }
     expect(infratores).toEqual([]);
-  });
-
-  it('a escala do Tailwind aponta para os tokens — sombra clara não some no escuro', () => {
-    expect(config).toMatch(/'sm':\s*'var\(--elev-1\)'/);
-    expect(config).toMatch(/'lg':\s*'var\(--elev-2\)'/);
-    expect(config).toMatch(/'2xl':\s*'var\(--elev-modal\)'/);
   });
 });

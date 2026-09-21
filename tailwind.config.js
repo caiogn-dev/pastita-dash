@@ -13,22 +13,6 @@ const config = {
       borderColor: {
         DEFAULT: 'var(--border)',
       },
-      boxShadow: {
-        // Ver o porquê dos três degraus em src/styles/tokens.css.
-        'e1': 'var(--elev-1)',
-        'e2': 'var(--elev-2)',
-        'modal': 'var(--elev-modal)',
-        // A escala do Tailwind passa a apontar para os MESMOS tokens. As 103
-        // sombras já escritas no painel (`shadow-sm`, `shadow-lg`…) usavam a
-        // receita da biblioteca — cinza-azulado de 5% de opacidade, que
-        // simplesmente não aparece em fundo escuro. Sem editar call site
-        // nenhum, todas passam a enxergar o tema.
-        'sm': 'var(--elev-1)',
-        'md': 'var(--elev-2)',
-        'lg': 'var(--elev-2)',
-        'xl': 'var(--elev-modal)',
-        '2xl': 'var(--elev-modal)',
-      },
       fontSize: {
         // Papel, não pixel. Ver a escala em src/styles/tokens.css.
         overline: ['var(--text-overline)', { letterSpacing: 'var(--tracking-overline)' }],
@@ -273,11 +257,23 @@ const config = {
       // ============================================
       // SHADOWS
       // ============================================
+      // ATENÇÃO: este é o ÚNICO bloco boxShadow. Havia dois no arquivo, e o
+      // segundo apagava o primeiro em silêncio — chave repetida em objeto JS
+      // é a última que vale, sem aviso de ninguém.
       boxShadow: {
         // Elevação por PAPEL, não por aparência. Ver tokens.css.
         'repouso': 'var(--elev-repouso)',
         'hover': 'var(--elev-hover)',
         'flutuante': 'var(--elev-flutuante)',
+        // A escala da biblioteca aponta para os MESMOS três degraus. As 103
+        // sombras já escritas no painel (`shadow-sm`, `shadow-lg`…) usavam a
+        // receita do Tailwind — cinza-azulado a 5%, que no fundo escuro não
+        // aparece. Agora enxergam o tema sem editar call site nenhum.
+        'sm': 'var(--elev-repouso)',
+        'md': 'var(--elev-hover)',
+        'lg': 'var(--elev-hover)',
+        'xl': 'var(--elev-flutuante)',
+        '2xl': 'var(--elev-flutuante)',
         'soft': '0 10px 30px rgba(0, 0, 0, 0.25)',
         'soft-lg': '0 20px 40px rgba(0, 0, 0, 0.30)',
         'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',

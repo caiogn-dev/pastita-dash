@@ -228,11 +228,11 @@ textarea::placeholder {
      raio e o primeiro degrau de elevação.
      `.superficie-alta` é a variante que se levanta (item clicável, menu). */
   .superficie {
-    @apply rounded-xl border border-border-token bg-surface shadow-e1;
+    @apply rounded-xl border border-border-token bg-surface shadow-repouso;
   }
 
   .superficie-alta {
-    @apply superficie transition-shadow hover:shadow-e2;
+    @apply superficie transition-shadow hover:shadow-hover;
   }
 
   /* Cards - CORRIGIDO: shadow valido */

@@ -34,7 +34,7 @@ describe('superfície de cartão', () => {
     expect(bloco).toContain('bg-surface');
     expect(bloco).toContain('border-border-token');
     expect(bloco).toContain('rounded-xl');
-    expect(bloco).toContain('shadow-e1');
+    expect(bloco).toContain('shadow-repouso');
   });
 
   it('ninguém remonta a superfície à mão', () => {

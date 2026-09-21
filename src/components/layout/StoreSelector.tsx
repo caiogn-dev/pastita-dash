@@ -169,7 +169,7 @@ export const StoreSelector: React.FC<StoreSelectorProps> = ({
           // entravam na faixa da coluna lateral, que pinta por cima. O clique
           // funcionava, o menu abria, e nada aparecia.
           className={cn(
-            'absolute left-0 z-50 mt-1 overflow-hidden rounded border border-border-token bg-surface shadow-e2',
+            'absolute left-0 z-50 mt-1 overflow-hidden rounded border border-border-token bg-surface shadow-flutuante',
             // Na coluna recolhida o menu não pode herdar os 72px do botão:
             // ficaria mais estreito que os nomes que precisa mostrar.
             variante === 'coluna' && estreito ? 'w-64 min-w-max' : 'w-64',

@@ -51,17 +51,6 @@
   --surface-2: #F0F0F2;
   --border: #E4E4E8;
   --border-strong: #D6D6DC;
-
-  /* Elevação — três degraus, e só três.
-     O painel era 100% chapado (560 elementos, zero sombra): sem elevação,
-     cartão, fundo e cabeçalho viram a mesma superfície. As sombras são
-     discretas de propósito; sombra grande em cartão de lista vira poluição.
-       e1  cartão em repouso
-       e2  cartão levantado (hover, item selecionável, menu flutuante)
-       modal  a única superfície que realmente sai do plano */
-  --elev-1: 0 1px 2px 0 rgb(16 24 40 / 0.06);
-  --elev-2: 0 2px 6px -1px rgb(16 24 40 / 0.10), 0 1px 2px -1px rgb(16 24 40 / 0.06);
-  --elev-modal: 0 10px 15px -3px rgb(16 24 40 / 0.14), 0 4px 6px -4px rgb(16 24 40 / 0.10);
   --fg: #2B2620;
   /* 4,53–5,23:1. Era #8A7E6C (3,44–3,98) — reprovava para texto normal, e é o
      tom de 652 usos: legenda, sub-rótulo, "vs ontem", preview de conversa. */
@@ -169,12 +158,6 @@
   --surface-2: #131009;
   --border: #2A2219;
   --border-strong: #3A2F22;
-
-  /* No escuro a sombra some se for cinza-azulada: o que dá relevo é preto
-     puro com mais opacidade. Mesmos três degraus, outra receita. */
-  --elev-1: 0 1px 2px 0 rgb(0 0 0 / 0.40);
-  --elev-2: 0 2px 6px -1px rgb(0 0 0 / 0.50), 0 1px 2px -1px rgb(0 0 0 / 0.40);
-  --elev-modal: 0 10px 15px -3px rgb(0 0 0 / 0.60), 0 4px 6px -4px rgb(0 0 0 / 0.50);
   --fg: #F5ECDE;
   --fg-muted: #A89880;
   --success: #34d399;
