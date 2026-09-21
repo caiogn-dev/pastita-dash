@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import logger from '../../services/logger';
 import {
   UserGroupIcon,
@@ -50,6 +50,12 @@ const CustomerSessionsPage: React.FC = () => {
   });
   const [showFilters, setShowFilters] = useState(false);
 
+  // Sequência da busca em voo. Ao trocar filtros rápido, várias `loadSessions`
+  // correm em paralelo; só a mais recente pode aplicar seu resultado. Sem isto,
+  // a rejeição de uma busca obsoleta ligaria `erro` e apagaria o vazio/legítimo
+  // já pintado pela busca mais nova.
+  const requisicaoRef = useRef(0);
+
   useEffect(() => {
     loadCompanies();
   }, []);
@@ -68,6 +74,7 @@ const CustomerSessionsPage: React.FC = () => {
   };
 
   const loadSessions = async () => {
+    const req = ++requisicaoRef.current;
     try {
       setLoading(true);
       setErro(false);
@@ -77,16 +84,18 @@ const CustomerSessionsPage: React.FC = () => {
       if (filters.phone_number) params.phone_number = filters.phone_number;
 
       const response = await customerSessionService.list(params);
+      if (req !== requisicaoRef.current) return; // busca superada por uma mais nova
       setSessions(response.results);
       setTotalCount(response.count);
     } catch (error) {
+      if (req !== requisicaoRef.current) return; // rejeição obsoleta: ignora
       // Sem isto, a falha deixava `sessions` em `[]` e a Tabela mostrava o vazio
       // confiante "Ninguém no meio de um pedido agora" — dizendo ao lojista que
       // não há carrinho em andamento quando, na verdade, a busca caiu.
       setErro(true);
       toast.error('Erro ao carregar sessões');
     } finally {
-      setLoading(false);
+      if (req === requisicaoRef.current) setLoading(false);
     }
   };
 

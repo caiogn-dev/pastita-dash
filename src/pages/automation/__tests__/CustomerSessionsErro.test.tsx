@@ -11,7 +11,7 @@
  * cardápio. Aqui garantimos o erro acionável (com "Tentar novamente") no lugar
  * do vazio, e que o caminho de sucesso continua mostrando as sessões reais.
  */
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 
@@ -79,6 +79,47 @@ test('falha sem cache → erro acionável, nunca o vazio enganoso de "ninguém n
   listMock.mockResolvedValueOnce({ results: [], count: 0 });
   fireEvent.click(screen.getByRole('button', { name: /tentar novamente/i }));
   await waitFor(() => expect(listMock).toHaveBeenCalledTimes(2));
+});
+
+test('rejeição de requisição obsoleta não sobrepõe o resultado da mais recente', async () => {
+  // Cenário de corrida: ao trocar filtros rápido, uma busca antiga ainda em voo
+  // rejeita DEPOIS que a mais recente já respondeu (vazio legítimo). A rejeição
+  // obsoleta não pode ligar o estado de erro e apagar o vazio válido.
+  let rejeitarObsoleta: (e: unknown) => void = () => {};
+  const obsoleta = new Promise((_, reject) => {
+    rejeitarObsoleta = reject;
+  });
+  listMock
+    .mockReturnValueOnce(obsoleta) // 1ª busca (montagem) — fica em voo e rejeita depois
+    .mockResolvedValueOnce({ results: [], count: 0 }); // 2ª busca (filtro) — a mais recente
+
+  render(
+    <MemoryRouter>
+      <CustomerSessionsPage />
+    </MemoryRouter>,
+  );
+
+  // Abre os filtros e muda o telefone → dispara a 2ª busca (a mais recente).
+  fireEvent.click(screen.getByRole('button', { name: /filtros/i }));
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: '11' } });
+
+  // A mais recente resolveu vazio → aparece o vazio legítimo.
+  expect(
+    await screen.findByText(/ninguém no meio de um pedido/i),
+  ).toBeInTheDocument();
+
+  // Agora a 1ª (obsoleta) rejeita: NÃO pode virar "erro ao carregar".
+  await act(async () => {
+    rejeitarObsoleta(new Error('500'));
+    await Promise.resolve();
+  });
+
+  expect(
+    screen.queryByText(/não foi possível carregar as sessões/i),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.getByText(/ninguém no meio de um pedido/i),
+  ).toBeInTheDocument();
 });
 
 test('sucesso → renderiza as sessões, sem estado de erro', async () => {
