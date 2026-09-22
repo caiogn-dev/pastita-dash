@@ -114,8 +114,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
             'w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg',
             'transition-all duration-150 ease-out',
             // States
-            !item.disabled && !item.danger && 'hover:bg-gray-100 dark:hover:bg-zinc-800',
-            !item.disabled && item.danger && 'hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400',
+            !item.disabled && !item.danger && 'hover:bg-surface-muted-token dark:hover:bg-zinc-800',
+            !item.disabled && item.danger && 'hover:bg-danger-soft dark:hover:bg-red-950/30 text-danger-token dark:text-red-400',
             item.disabled && 'opacity-50 cursor-not-allowed',
             // Active submenu
             isSubmenuOpen && 'bg-gray-100 dark:bg-zinc-800'
@@ -224,7 +224,7 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
         'text-sm font-medium text-gray-700 dark:text-zinc-200',
         'bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700',
         'rounded-lg shadow-sm',
-        'hover:bg-gray-50 dark:hover:bg-zinc-700',
+        'hover:bg-surface-muted-token dark:hover:bg-zinc-700',
         'focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2',
         'transition-all duration-150',
         className

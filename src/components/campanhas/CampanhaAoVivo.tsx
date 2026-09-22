@@ -40,7 +40,7 @@ export const CampanhaAoVivo: React.FC<Props> = ({ campanhaId, horarioDaCampanha 
   if (!dados || !dados.faixas.length) return null;
 
   return (
-    <div className="mt-3 rounded-xl border border-border-token bg-surface-token p-4">
+    <div className="mt-3 superficie p-4">
       <LinhaDoDia aoVivo faixas={dados.faixas} horarioDaCampanha={horarioDaCampanha} />
       <p className="mt-2 text-caption text-fg-muted-token">
         {dados.proxima_faixa !== null

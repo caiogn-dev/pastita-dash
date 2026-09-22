@@ -81,20 +81,45 @@ describe('Sidebar', () => {
     );
   });
 
-  it('recolhida, clicar num grupo EXPANDE a coluna e abre o grupo', () => {
-    // Antes, abrir um grupo com a coluna recolhida mostrava os filhos como
-    // ícones mudos empilhados: você clicava em "Cardápio" e recebia cinco
-    // quadradinhos sem nome. O gesto de abrir um grupo é um pedido para VER o
-    // grupo — a coluna precisa expandir junto.
+  it('recolhida, clicar num grupo mostra o grupo SEM mudar a largura', () => {
+    // Antes este clique trocava a preferência e a página inteira pulava 184px
+    // — por um gesto que pedia só para ver um submenu. Decisão do dono
+    // (21/09): recolhida, a coluna fica recolhida; o submenu aparece por
+    // cima, que é a mesma espiada do hover.
     renderizar();
     fireEvent.click(screen.getByRole('button', { name: /recolher menu/i }));
 
     fireEvent.click(screen.getByRole('button', { name: /Cardápio/ }));
 
-    // Expandiu: o botão de recolher voltou a existir…
-    expect(screen.getByRole('button', { name: /recolher menu/i })).toBeInTheDocument();
-    // …e os filhos aparecem com nome, não como ícone solto.
+    // O grupo abriu, com os filhos legíveis…
     expect(screen.getByRole('link', { name: /Combos/ })).toBeInTheDocument();
+    // …e a preferência continua "recolhida": o invólucro segue estreito.
+    expect(document.querySelector('.w-\\[72px\\]')).toBeTruthy();
+  });
+
+  it('recolhida, clicar de novo FECHA o grupo', () => {
+    // Bug de 21/09: o clique com a coluna recolhida forçava "abrir" em vez de
+    // alternar — o submenu descia e não voltava mais.
+    renderizar();
+    fireEvent.click(screen.getByRole('button', { name: /recolher menu/i }));
+    const grupo = screen.getByRole('button', { name: /Cardápio/ });
+
+    fireEvent.click(grupo);
+    expect(screen.getByRole('link', { name: /Combos/ })).toBeInTheDocument();
+
+    fireEvent.click(grupo);
+    expect(screen.queryByRole('link', { name: /Combos/ })).not.toBeInTheDocument();
+  });
+
+  it('recolher a coluna fecha o grupo que estava aberto', () => {
+    // Bug de 21/09: ao recolher, o submenu continuava desenhado por cima.
+    renderizar();
+    fireEvent.click(screen.getByRole('button', { name: /Cardápio/ }));
+    expect(screen.getByRole('link', { name: /Combos/ })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /recolher menu/i }));
+
+    expect(screen.queryByRole('link', { name: /Combos/ })).not.toBeInTheDocument();
   });
 
   it('recolhida, passar o mouse expande — sem precisar clicar', async () => {

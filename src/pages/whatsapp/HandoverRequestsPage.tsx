@@ -78,7 +78,7 @@ interface SecaoProps {
 const Secao: React.FC<SecaoProps> = ({ titulo, descricao, itens, resolvendoId, onResolver }) => {
   if (itens.length === 0) return null;
   return (
-    <section className="rounded-xl border border-border-token bg-surface-token">
+    <section className="superficie">
       <header className="px-5 py-3 border-b border-border-token">
         <h2 className="text-sm font-semibold text-fg-token">
           {titulo} <span className="text-fg-muted-token">({itens.length})</span>

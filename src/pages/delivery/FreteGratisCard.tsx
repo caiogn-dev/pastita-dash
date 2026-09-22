@@ -144,7 +144,7 @@ export const FreteGratisCard: React.FC<Props> = ({ metadataAtual, onSalvar }) =>
       )}
 
       {promo.ativo && problemas.length === 0 && frase && (
-        <div className="mt-4 rounded-xl border border-border-token bg-surface-2-token px-4 py-3">
+        <div className="mt-4 superficie-2-token px-4 py-3">
           <p className="text-xs uppercase tracking-wide text-fg-muted-token">O cliente vê</p>
           <p className="mt-1 text-sm font-medium text-fg-token">{frase}</p>
           {custo !== null && (

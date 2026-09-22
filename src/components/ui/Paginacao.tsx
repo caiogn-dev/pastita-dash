@@ -14,7 +14,7 @@ export interface PaginacaoProps {
 }
 
 const botao =
-  'rounded-lg border border-border-token bg-surface px-3 py-1.5 text-sm font-medium ' +
+  'superficie px-3 py-1.5 text-sm font-medium ' +
   'text-fg-token transition-colors hover:bg-surface-2 ' +
   'disabled:cursor-not-allowed disabled:opacity-40';
 

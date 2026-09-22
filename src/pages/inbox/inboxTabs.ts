@@ -1,23 +1,38 @@
-// Inbox unificado. Canais do produto = APENAS WhatsApp + Email; Instagram e
-// Messenger foram retirados da superfície. Sobram as abas de operação: o canal
-// WhatsApp e a visão unificada ("Todas").
+// Inbox unificado. Messenger segue fora da superfície do produto. O Instagram
+// voltou, mas condicionado: a aba só aparece para a loja que conectou a conta
+// — foi por aparecer para todo mundo e abrir vazia que ela saiu em agosto.
 
-export type InboxTabId = 'whatsapp' | 'conversas';
+export type InboxTabId = 'whatsapp' | 'instagram' | 'conversas';
+
+export interface EstadoDosCanais {
+  temInstagram?: boolean;
+}
 
 export interface InboxTab {
   id: InboxTabId;
   label: string;
 }
 
-const ALL_TAB_IDS: InboxTabId[] = ['whatsapp', 'conversas'];
+const ABA_DO_INSTAGRAM: InboxTab = { id: 'instagram', label: 'Direct' };
 
 export const INBOX_TABS: InboxTab[] = [
   { id: 'whatsapp', label: 'WhatsApp' },
   { id: 'conversas', label: 'Todas' },
 ];
 
-export const resolveInboxTab = (param: string | undefined | null): InboxTabId =>
-  ALL_TAB_IDS.includes(param as InboxTabId) ? (param as InboxTabId) : 'whatsapp';
+/** As abas desta loja. O Instagram entra depois do WhatsApp e antes de "Todas". */
+export function montarAbas({ temInstagram }: EstadoDosCanais = {}): InboxTab[] {
+  if (!temInstagram) return INBOX_TABS;
+  return [INBOX_TABS[0], ABA_DO_INSTAGRAM, INBOX_TABS[1]];
+}
+
+export const resolveInboxTab = (
+  param: string | undefined | null,
+  canais: EstadoDosCanais = {},
+): InboxTabId => {
+  const permitidas = montarAbas(canais).map((t) => t.id);
+  return permitidas.includes(param as InboxTabId) ? (param as InboxTabId) : 'whatsapp';
+};
 
 const LEGACY_MAP: Record<string, InboxTabId> = {
   '/whatsapp/inbox': 'whatsapp',
@@ -43,6 +58,8 @@ export type DonoDaRolagem = 'propria' | 'wrapper';
 
 const ROLAGEM: Record<InboxTabId, DonoDaRolagem> = {
   whatsapp: 'propria',
+  // O direct é um chat de altura fixa, igual ao WhatsApp: rola por dentro.
+  instagram: 'propria',
   conversas: 'wrapper',
 };
 

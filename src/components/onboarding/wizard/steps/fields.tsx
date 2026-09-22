@@ -16,7 +16,7 @@ export const Field: FC<{ label: string; children: ReactNode; hint?: string }> = 
 );
 
 const INPUT_CLS =
-  'w-full rounded-lg border border-border-token bg-surface-muted-token px-3 py-2.5 text-fg-token ' +
+  'w-full superficie-muted-token px-3 py-2.5 text-fg-token ' +
   'placeholder:text-fg-muted-token/60 outline-none transition-shadow ' +
   'focus:border-brand focus:ring-2 focus:ring-brand/30';
 
@@ -57,7 +57,7 @@ export const MoneyInput: FC<{
     onChange(norm);
   }
   return (
-    <div className="flex items-center rounded-lg border border-border-token bg-surface-muted-token transition-shadow focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/30">
+    <div className="flex items-center superficie-muted-token transition-shadow focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/30">
       <span className="select-none pl-3 pr-2 text-sm font-medium text-fg-muted-token">R$</span>
       <input
         aria-label={ariaLabel}
@@ -98,7 +98,7 @@ export const LogoDropzone: FC<{ file: File | null; onFile: (f: File | null) => v
 
   if (file && preview) {
     return (
-      <div className="flex items-center gap-4 rounded-xl border border-border-token bg-surface-muted-token p-3">
+      <div className="flex items-center gap-4 superficie-muted-token p-3">
         <img src={preview} alt="Prévia da logo" className="h-16 w-16 rounded-lg object-cover" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm text-fg-token">{file.name}</p>

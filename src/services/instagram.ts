@@ -29,6 +29,8 @@ export interface InstagramAccount {
   website?: string;
   is_active: boolean;
   is_verified: boolean;
+  /** A Meta recusou o token desta conta (code 190): o canal está mudo. */
+  precisa_reconectar?: boolean;
   last_sync_at?: string;
   created_at: string;
 }

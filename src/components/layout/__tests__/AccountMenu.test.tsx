@@ -27,7 +27,7 @@ it('reveals account links when the avatar is clicked', () => {
   fireEvent.click(screen.getByRole('button', { name: /conta/i }));
   expect(screen.getByText('Todas as Lojas')).toBeInTheDocument();
   expect(screen.getByText('Preferências')).toBeInTheDocument();
-  expect(screen.getByText('Plano')).toBeInTheDocument();
+  expect(screen.getByText('Plano e cobrança')).toBeInTheDocument();
   expect(screen.getByText('Sair')).toBeInTheDocument();
 });
 

@@ -143,7 +143,7 @@ export function RegistrarPagamentoModal({ isOpen, order, storeSlug, onClose, onR
             inputMode="decimal"
             value={valor}
             onChange={(e) => setValor(e.target.value)}
-            className="w-full rounded-lg border border-border-token bg-surface px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
+            className="w-full superficie px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
           />
           <p className="mt-1 text-xs text-fg-muted-token">
             Menos que o total deixa o pedido com saldo a receber.
@@ -159,7 +159,7 @@ export function RegistrarPagamentoModal({ isOpen, order, storeSlug, onClose, onR
             value={observacao}
             onChange={(e) => setObservacao(e.target.value)}
             placeholder="Ex.: maquininha do balcão"
-            className="w-full rounded-lg border border-border-token bg-surface px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
+            className="w-full superficie px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
           />
         </div>
 

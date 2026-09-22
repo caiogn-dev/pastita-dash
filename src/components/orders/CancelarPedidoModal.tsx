@@ -72,7 +72,7 @@ export const CancelarPedidoModal: React.FC<Props> = ({ open, orderNumber, loadin
               value={texto}
               maxLength={140}
               onChange={(e) => setTexto(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-border-token bg-surface px-3 py-2 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
+              className="mt-1 w-full superficie px-3 py-2 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
               autoFocus
             />
           </label>

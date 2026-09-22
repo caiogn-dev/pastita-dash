@@ -32,7 +32,7 @@ export interface ZonasDePrecoFixoCardProps {
 }
 
 const inputCls =
-  'w-full rounded-lg border border-border-token bg-surface px-3 py-2 text-sm text-fg-token ' +
+  'w-full superficie px-3 py-2 text-sm text-fg-token ' +
   'outline-none focus:ring-2 focus:ring-brand';
 
 export const ZonasDePrecoFixoCard: React.FC<ZonasDePrecoFixoCardProps> = ({

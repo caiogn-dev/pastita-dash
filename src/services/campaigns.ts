@@ -385,6 +385,30 @@ export const campaignsService = {
   },
 
   /** A campanha hora a hora: o que já saiu e o que ainda falta. */
+  /** O vocabulário do construtor de público: campos e operadores do servidor. */
+  camposDaAudiencia: async (): Promise<import('../pages/marketing/whatsapp/regrasDePublico').CampoDoCatalogo[]> => {
+    const response = await api.get('/campaigns/audiencia/campos/');
+    return response.data?.campos ?? [];
+  },
+
+  /** Quantas pessoas a regra alcança, com a regra escrita em português. */
+  previaPorRegra: async (
+    regra: unknown,
+    storeIds?: string[],
+  ): Promise<{ total: number; de: number; em_portugues: string; amostra: { nome: string; telefone: string }[] }> => {
+    const response = await api.post('/campaigns/audiencia/previa/', {
+      regra,
+      store_ids: storeIds,
+    });
+    const d = response.data ?? {};
+    return {
+      total: Number(d.total ?? 0),
+      de: Number(d.de ?? 0),
+      em_portugues: d.em_portugues ?? '',
+      amostra: Array.isArray(d.amostra) ? d.amostra : [],
+    };
+  },
+
   getFaixasDaCampanha: async (id: string): Promise<{
     faixas: { hora: number; enviadas: number; aguardando: number }[];
     proxima_faixa: number | null;

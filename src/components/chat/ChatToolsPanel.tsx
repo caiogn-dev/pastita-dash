@@ -1116,7 +1116,7 @@ export const ChatToolsPanel: React.FC<Props> = ({
             Ferramentas
           </button>
         </div>
-        <button className="tools-close-btn" onClick={onClose} title="Fechar painel">
+        <button aria-label="Fechar painel" className="tools-close-btn" onClick={onClose} title="Fechar painel">
           <XMarkIcon className="w-4 h-4" />
         </button>
       </div>

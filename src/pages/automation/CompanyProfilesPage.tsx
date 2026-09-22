@@ -256,14 +256,14 @@ const CompanyProfilesPage: React.FC = () => {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-3 py-1.5 rounded-lg border border-border-token bg-surface text-sm text-fg-token hover:bg-surface-2 disabled:opacity-40 transition-colors"
+              className="px-3 py-1.5 superficie text-sm text-fg-token hover:bg-surface-2 disabled:opacity-40 transition-colors"
             >
               Anterior
             </button>
             <button
               onClick={() => setPage(p => p + 1)}
               disabled={page * 20 >= totalCount}
-              className="px-3 py-1.5 rounded-lg border border-border-token bg-surface text-sm text-fg-token hover:bg-surface-2 disabled:opacity-40 transition-colors"
+              className="px-3 py-1.5 superficie text-sm text-fg-token hover:bg-surface-2 disabled:opacity-40 transition-colors"
             >
               Próximo
             </button>

@@ -5,7 +5,7 @@ import { Field } from './fields';
 const DIAS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 const TIME_CLS =
-  'w-full rounded-lg border border-border-token bg-surface-muted-token px-3 py-2.5 text-fg-token ' +
+  'w-full superficie-muted-token px-3 py-2.5 text-fg-token ' +
   'outline-none transition-shadow focus:border-brand focus:ring-2 focus:ring-brand/30';
 
 const StepHours: FC<{ storeId: string; onSaved: () => void }> = ({ storeId, onSaved }) => {

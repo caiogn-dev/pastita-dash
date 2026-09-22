@@ -207,12 +207,12 @@ export const PaymentLinkPage: React.FC = () => {
     >
 
       {!isStoreSelected && (
-        <div className="rounded-xl border border-border-token bg-surface px-4 py-3 text-sm text-fg-muted-token">
+        <div className="superficie px-4 py-3 text-sm text-fg-muted-token">
           Selecione uma loja no menu superior para gerar uma cobrança.
         </div>
       )}
 
-      <form onSubmit={handleGenerate} className="space-y-4 rounded-2xl border border-border-token bg-surface p-5">
+      <form onSubmit={handleGenerate} className="space-y-4 superficie p-5">
         {/* Vem ANTES do valor porque é ele que preenche o valor. Sem vínculo, o
             pagamento entra como cobrança solta: o dinheiro aparece, a venda
             não. Foi assim que 2 cobranças pagas de R$ 249,01 ficaram fora do
@@ -225,7 +225,7 @@ export const PaymentLinkPage: React.FC = () => {
             id="pl-order"
             value={pedidoId}
             onChange={(e) => escolherPedido(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-border-token bg-surface-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
+            className="mt-1 w-full superficie-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
           >
             <option value="">Cobrança avulsa — sem pedido</option>
             {pedidos.map((p) => (
@@ -272,7 +272,7 @@ export const PaymentLinkPage: React.FC = () => {
             inputMode="decimal"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-border-token bg-surface-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
+            className="mt-1 w-full superficie-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
             placeholder="0,00"
             required
           />
@@ -287,7 +287,7 @@ export const PaymentLinkPage: React.FC = () => {
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-border-token bg-surface-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
+            className="mt-1 w-full superficie-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
             placeholder="Ex: Sinal do evento"
           />
         </div>
@@ -302,7 +302,7 @@ export const PaymentLinkPage: React.FC = () => {
               type="text"
               value={payerName}
               onChange={(e) => setPayerName(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-border-token bg-surface-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
+              className="mt-1 w-full superficie-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
             />
           </div>
           <div>
@@ -314,7 +314,7 @@ export const PaymentLinkPage: React.FC = () => {
               type="email"
               value={payerEmail}
               onChange={(e) => setPayerEmail(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-border-token bg-surface-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
+              className="mt-1 w-full superficie-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
             />
           </div>
         </div>
@@ -329,7 +329,7 @@ export const PaymentLinkPage: React.FC = () => {
             inputMode="numeric"
             value={payerDocument}
             onChange={(e) => setPayerDocument(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-border-token bg-surface-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
+            className="mt-1 w-full superficie-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
             placeholder="000.000.000-00"
           />
           <p className="mt-1 text-xs text-fg-muted-token">
@@ -353,7 +353,7 @@ export const PaymentLinkPage: React.FC = () => {
       </form>
 
       {generated && (
-        <section className="mt-6 space-y-4 rounded-2xl border border-border-token bg-surface p-5">
+        <section className="mt-6 space-y-4 superficie p-5">
           <h2 className="text-base font-semibold text-fg-token">
             Link gerado {generated.amount != null ? `— ${formatCurrency(Number(generated.amount))}` : ''}
           </h2>
@@ -425,7 +425,7 @@ export const PaymentLinkPage: React.FC = () => {
               return (
                 <li
                   key={c.id}
-                  className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-border-token bg-surface px-4 py-3"
+                  className="flex flex-wrap items-center gap-x-4 gap-y-2 superficie px-4 py-3"
                 >
                   <div className="min-w-40 flex-1">
                     <p className="text-sm font-semibold text-fg-token">

@@ -7,6 +7,12 @@ const config = {
   darkMode: 'class',
   theme: {
     extend: {
+      // A cor padrão de borda do Tailwind é um cinza claro (#e5e7eb). Toda
+      // classe `border` sem cor caía nele — 91 elementos com borda clara no
+      // tema escuro, medidos em 21/09. A padrão passa a ser a nossa.
+      borderColor: {
+        DEFAULT: 'var(--border)',
+      },
       fontSize: {
         // Papel, não pixel. Ver a escala em src/styles/tokens.css.
         overline: ['var(--text-overline)', { letterSpacing: 'var(--tracking-overline)' }],
@@ -251,11 +257,23 @@ const config = {
       // ============================================
       // SHADOWS
       // ============================================
+      // ATENÇÃO: este é o ÚNICO bloco boxShadow. Havia dois no arquivo, e o
+      // segundo apagava o primeiro em silêncio — chave repetida em objeto JS
+      // é a última que vale, sem aviso de ninguém.
       boxShadow: {
         // Elevação por PAPEL, não por aparência. Ver tokens.css.
         'repouso': 'var(--elev-repouso)',
         'hover': 'var(--elev-hover)',
         'flutuante': 'var(--elev-flutuante)',
+        // A escala da biblioteca aponta para os MESMOS três degraus. As 103
+        // sombras já escritas no painel (`shadow-sm`, `shadow-lg`…) usavam a
+        // receita do Tailwind — cinza-azulado a 5%, que no fundo escuro não
+        // aparece. Agora enxergam o tema sem editar call site nenhum.
+        'sm': 'var(--elev-repouso)',
+        'md': 'var(--elev-hover)',
+        'lg': 'var(--elev-hover)',
+        'xl': 'var(--elev-flutuante)',
+        '2xl': 'var(--elev-flutuante)',
         'soft': '0 10px 30px rgba(0, 0, 0, 0.25)',
         'soft-lg': '0 20px 40px rgba(0, 0, 0, 0.30)',
         'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',

@@ -241,7 +241,7 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
         {step === 'phone' && (
           <div className="space-y-4">
             <div className="text-center py-4">
-              <div className="w-20 h-20 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto mb-4 bg-success-soft rounded-full flex items-center justify-center">
                 <Smartphone className="w-10 h-10 text-green-600" />
               </div>
               <p className="text-gray-600">
@@ -286,7 +286,7 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
         {step === 'code' && (
           <div className="space-y-4">
             <div className="text-center py-2">
-              <div className="w-16 h-16 mx-auto mb-3 bg-green-100 rounded-full flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto mb-3 bg-success-soft rounded-full flex items-center justify-center">
                 <Lock className="w-8 h-8 text-green-600" />
               </div>
               <p className="text-gray-600">
@@ -362,7 +362,7 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
 
         {step === 'success' && (
           <div className="text-center py-8">
-            <div className="w-20 h-20 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center animate-bounce">
+            <div className="w-20 h-20 mx-auto mb-4 bg-success-soft rounded-full flex items-center justify-center animate-bounce">
               <CheckCircle2 className="w-10 h-10 text-green-600" />
             </div>
             <h3 className="text-xl font-semibold mb-2">Autenticado!</h3>

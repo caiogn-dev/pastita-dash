@@ -49,7 +49,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
         {[...Array(5)].map((_, i) => (
           <div 
             key={i}
-            className="p-4 rounded-lg border border-border-token bg-surface animate-pulse"
+            className="p-4 superficie animate-pulse"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-surface-2" />

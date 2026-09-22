@@ -55,7 +55,7 @@ export function StepItens({
   return (
     <div className="space-y-3">
       {/* Search */}
-      <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border-token bg-surface">
+      <div className="flex items-center gap-2 px-3 py-2 superficie">
         <MagnifyingGlassIcon className="h-4 w-4 text-fg-muted-token flex-shrink-0" />
         <input
           type="text"
@@ -108,7 +108,7 @@ export function StepItens({
           {cart.map((item) => (
             <div
               key={item.product.id}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border-token bg-surface"
+              className="flex items-center gap-2 px-3 py-2 superficie"
             >
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-fg-token truncate">

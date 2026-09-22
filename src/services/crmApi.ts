@@ -64,8 +64,19 @@ export const crmApi = {
   getTeam: (storeSlug: string) =>
     api.get<TeamMember[]>(`/stores/${storeSlug}/team/`),
 
-  addTeamMember: (storeSlug: string, data: { user_id: string; role: string }) =>
-    api.post(`/stores/${storeSlug}/team/`, data),
+  /** Convida pelo TELEFONE — o dono da loja não sabe o id de ninguém.
+   *
+   * O contrato antigo pedia `user_id` e era `UUIDField` no backend enquanto a
+   * chave do usuário é inteira: toda chamada voltava 400 e nenhum membro
+   * nunca foi criado por aqui. Corrigido em 22/09 nos dois lados.
+   *
+   * Reconvidar quem saiu reativa; reconvidar quem está dentro troca o papel.
+   * O backend devolve 201 no primeiro convite e 200 na atualização.
+   */
+  addTeamMember: (
+    storeSlug: string,
+    data: { phone: string; name?: string; role: string },
+  ) => api.post<TeamMember>(`/stores/${storeSlug}/team/`, data),
 
   updateTeamMember: (
     storeSlug: string,

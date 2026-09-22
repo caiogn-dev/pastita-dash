@@ -165,7 +165,7 @@ const ComboGroupRow: React.FC<ComboGroupRowProps> = ({ group, products, onUpdate
             e.stopPropagation();
             onRemove(group._key);
           }}
-          className="w-7 h-7 flex items-center justify-center text-red-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+          className="w-7 h-7 flex items-center justify-center text-red-400 hover:text-danger-token dark:hover:text-red-400 hover:bg-danger-soft dark:hover:bg-red-900/20 rounded-md transition-colors"
           title="Remover grupo"
         >
           <TrashIcon className="w-4 h-4" />

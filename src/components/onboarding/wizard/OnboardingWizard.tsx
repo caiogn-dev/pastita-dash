@@ -27,7 +27,7 @@ const OnboardingWizard: FC<OnboardingWizardProps> = ({ open, steps, onClose, sta
       <Dialog as="div" className="relative z-50" onClose={onClose}>
         <div className="fixed inset-0 bg-black/60" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border-token bg-surface-token shadow-2xl">
+          <Dialog.Panel className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden superficie shadow-2xl">
             <div className="border-b border-border-token px-6 py-4">
               <div className="flex items-center justify-between">
                 {!isFirst ? (
