@@ -29,8 +29,13 @@ describe('coluna sem rótulo de categoria', () => {
   });
 
   it('clicar num grupo recolhido não muda a preferência de largura', () => {
-    const bloco = fonte.slice(fonte.indexOf('aria-expanded={estaAberta}'), fonte.indexOf('aria-expanded={estaAberta}') + 700);
-    expect(bloco).not.toMatch(/mudarPreferencia\(false\)/);
-    expect(bloco).toMatch(/setEspiando\(true\)/);
+    // O ramo do clique com a coluna recolhida: mostra o submenu por cima
+    // (espiada) e NÃO reescreve a preferência de largura.
+    const inicio = fonte.indexOf('if (recolhido) {');
+    const ramo = fonte.slice(inicio, fonte.indexOf('}', fonte.indexOf('setAberto(secao.label);', inicio)));
+    expect(ramo).not.toMatch(/mudarPreferencia/);
+    expect(ramo).toMatch(/setEspiando\(true\)/);
+    // E alterna: sem isto o submenu desce e não volta.
+    expect(ramo).toMatch(/if \(estaAberta\)/);
   });
 });

@@ -150,6 +150,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
   const mudarPreferencia = (novo: boolean) => {
     setRecolhido(novo);
     setEspiando(false);
+    // Recolher também FECHA o grupo aberto. Sem isto o submenu continuava
+    // desenhado por cima de uma coluna de 72px — pior que antes de recolher.
+    if (novo) setAberto(null);
     gravarPreferencia(novo);
   };
 
@@ -369,7 +372,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                   // por um gesto que pedia só para ver um submenu. Agora o
                   // submenu aparece por cima, que é a mesma espiada do hover:
                   // mostra o grupo e devolve o espaço intacto ao sair.
+                  //
+                  // E ALTERNA, como no estado expandido: a primeira versão
+                  // forçava "abrir", então o submenu descia e não voltava
+                  // mais no segundo clique.
                   if (recolhido) {
+                    if (estaAberta) {
+                      setAberto(null);
+                      return;
+                    }
                     setEspiando(true);
                     setAberto(secao.label);
                     return;

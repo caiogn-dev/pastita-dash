@@ -97,6 +97,31 @@ describe('Sidebar', () => {
     expect(document.querySelector('.w-\\[72px\\]')).toBeTruthy();
   });
 
+  it('recolhida, clicar de novo FECHA o grupo', () => {
+    // Bug de 21/09: o clique com a coluna recolhida forçava "abrir" em vez de
+    // alternar — o submenu descia e não voltava mais.
+    renderizar();
+    fireEvent.click(screen.getByRole('button', { name: /recolher menu/i }));
+    const grupo = screen.getByRole('button', { name: /Cardápio/ });
+
+    fireEvent.click(grupo);
+    expect(screen.getByRole('link', { name: /Combos/ })).toBeInTheDocument();
+
+    fireEvent.click(grupo);
+    expect(screen.queryByRole('link', { name: /Combos/ })).not.toBeInTheDocument();
+  });
+
+  it('recolher a coluna fecha o grupo que estava aberto', () => {
+    // Bug de 21/09: ao recolher, o submenu continuava desenhado por cima.
+    renderizar();
+    fireEvent.click(screen.getByRole('button', { name: /Cardápio/ }));
+    expect(screen.getByRole('link', { name: /Combos/ })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /recolher menu/i }));
+
+    expect(screen.queryByRole('link', { name: /Combos/ })).not.toBeInTheDocument();
+  });
+
   it('recolhida, passar o mouse expande — sem precisar clicar', async () => {
     // Recolher e expandir por clique cobra dois cliques por consulta ao menu:
     // um para abrir, outro para fechar. O ponteiro já está lá; a coluna deve
