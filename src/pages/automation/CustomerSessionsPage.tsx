@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import logger from '../../services/logger';
 import {
   UserGroupIcon,
@@ -16,6 +16,7 @@ import {
 import { CustomerSession, CompanyProfile, SessionStatus } from '../../types';
 import { toast } from 'react-hot-toast';
 import { PageShell, Tabela, RowActions, Modal } from '../../components/ui';
+import { EmptyState } from '../../components/common';
 import { formatCurrency } from '../../utils/formatters';
 
 const statusColors: Record<SessionStatus, string> = {
@@ -36,6 +37,7 @@ const CustomerSessionsPage: React.FC = () => {
   const [sessions, setSessions] = useState<CustomerSession[]>([]);
   const [companies, setCompanies] = useState<CompanyProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(false);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [selectedSession, setSelectedSession] = useState<CustomerSession | null>(null);
@@ -47,6 +49,12 @@ const CustomerSessionsPage: React.FC = () => {
     phone_number: '',
   });
   const [showFilters, setShowFilters] = useState(false);
+
+  // Sequência da busca em voo. Ao trocar filtros rápido, várias `loadSessions`
+  // correm em paralelo; só a mais recente pode aplicar seu resultado. Sem isto,
+  // a rejeição de uma busca obsoleta ligaria `erro` e apagaria o vazio/legítimo
+  // já pintado pela busca mais nova.
+  const requisicaoRef = useRef(0);
 
   useEffect(() => {
     loadCompanies();
@@ -66,20 +74,28 @@ const CustomerSessionsPage: React.FC = () => {
   };
 
   const loadSessions = async () => {
+    const req = ++requisicaoRef.current;
     try {
       setLoading(true);
+      setErro(false);
       const params: Record<string, string | number> = { page, page_size: POR_PAGINA };
       if (filters.company_id) params.company_id = filters.company_id;
       if (filters.status) params.status = filters.status;
       if (filters.phone_number) params.phone_number = filters.phone_number;
 
       const response = await customerSessionService.list(params);
+      if (req !== requisicaoRef.current) return; // busca superada por uma mais nova
       setSessions(response.results);
       setTotalCount(response.count);
     } catch (error) {
+      if (req !== requisicaoRef.current) return; // rejeição obsoleta: ignora
+      // Sem isto, a falha deixava `sessions` em `[]` e a Tabela mostrava o vazio
+      // confiante "Ninguém no meio de um pedido agora" — dizendo ao lojista que
+      // não há carrinho em andamento quando, na verdade, a busca caiu.
+      setErro(true);
       toast.error('Erro ao carregar sessões');
     } finally {
-      setLoading(false);
+      if (req === requisicaoRef.current) setLoading(false);
     }
   };
 
@@ -202,6 +218,17 @@ const CustomerSessionsPage: React.FC = () => {
         </div>
       )}
 
+      {erro && sessions.length === 0 ? (
+        // Falha sem dado em cache: erro acionável no lugar do vazio enganoso.
+        // Com dado em cache (falha só ao atualizar), a Tabela abaixo continua
+        // mostrando as sessões e o `toast` avisa da falha.
+        <EmptyState
+          icon={<UserGroupIcon className="h-12 w-12" />}
+          title="Não foi possível carregar as sessões"
+          description="A conexão falhou. Isto não quer dizer que ninguém está comprando — tente de novo."
+          action={{ label: 'Tentar novamente', onClick: loadSessions }}
+        />
+      ) : (
       <Tabela<CustomerSession>
         itens={sessions}
         chave={(s) => s.id}
@@ -302,6 +329,7 @@ const CustomerSessionsPage: React.FC = () => {
           },
         ]}
       />
+      )}
 
       {/* Session Detail Modal */}
       <Modal
