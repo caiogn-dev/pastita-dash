@@ -90,6 +90,10 @@ export default function SubscriptionManagementPage() {
   // opção que aparece primeiro é a que vira padrão na cabeça de quem lê.
   const [ciclo, setCiclo] = useState<Ciclo>('annual');
 
+  // O Grátis existe, mas não na vitrine — ver o comentário da grade.
+  const planosPagos = plans.filter((p) => p.monthly_price > 0);
+  const planoGratis = plans.find((p) => p.monthly_price === 0);
+
   const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
   const [invoiceHistory, setInvoiceHistory] = useState<Invoice[]>([]);
   const mountedRef = useRef(true);
@@ -320,10 +324,15 @@ export default function SubscriptionManagementPage() {
           </div>
         </div>
 
-        {/* 4 colunas porque sao 4 planos. Em lg:grid-cols-3 o "Rede" caia
-            sozinho numa segunda linha — orfao, e parecendo um bloco solto. */}
-        <div className="grid items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          {plans.map((p) => (
+        {/* TRÊS colunas para TRÊS planos pagos. O Grátis saiu da vitrine e
+            virou a linha discreta lá embaixo, por dois motivos:
+            - de layout: com ele eram 4 cards, e 4 colunas nesta largura
+              espremiam tudo — "Produtos no cardápio" quebrava em duas linhas
+              em todos os cartões;
+            - de venda: o Grátis não se vende. Dar a ele um quarto do espaço
+              da vitrine é usar o lugar nobre para a opção que não fatura. */}
+        <div className="grid items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {planosPagos.map((p) => (
             <CartaoDePlano
               key={p.key}
               plano={p}
@@ -336,6 +345,22 @@ export default function SubscriptionManagementPage() {
             />
           ))}
         </div>
+
+        {planoGratis && sub?.plan !== 'free' && (
+          <p className="mt-4 text-sm text-fg-muted-token">
+            Prefere começar sem pagar? O plano{' '}
+            <strong className="text-fg-token">Grátis</strong> aceita até{' '}
+            {planoGratis.limits?.max_products ?? 20} produtos e não tem bot de
+            WhatsApp.{' '}
+            <button
+              type="button"
+              onClick={() => void handleChange(planoGratis)}
+              className="font-medium text-brand-ink underline underline-offset-2"
+            >
+              Começar no Grátis
+            </button>
+          </p>
+        )}
       </section>
 
       {invoiceHistory.length > 0 && (
