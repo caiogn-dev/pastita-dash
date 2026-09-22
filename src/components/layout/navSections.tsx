@@ -263,6 +263,11 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
         { name: 'Entrega',    href: storeHref('delivery'),   icon: ShoppingCartIcon },
         { name: 'Storefront', href: storeHref('storefront'), icon: BuildingStorefrontIcon },
         { name: 'Pagamentos', href: storeHref('payments'),   icon: CreditCardIcon },
+        // Existia CRUD de equipe desde junho e nenhuma tela: o endpoint
+        // pedia o id do usuário (e como UUID, enquanto a chave é inteira),
+        // então nunca criou ninguém. Corrigido em 22/09 — agora convida-se
+        // pelo celular.
+        { name: 'Colaboradores', href: '/colaboradores', icon: UsersIcon },
         // Recuperadas: diagnósticos que existiam sem rota — quando o WhatsApp
         // cai, é aqui que se olha em vez de abrir o log do servidor.
         { name: 'Diagnóstico do WhatsApp', href: '/whatsapp/diagnostics', icon: WrenchScrewdriverIcon, sectionHeader: 'Quando algo falha' },

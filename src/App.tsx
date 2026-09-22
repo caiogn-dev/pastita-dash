@@ -66,6 +66,7 @@ const IntentStatsPage = lazy(() => import('./pages/automation').then(m => ({ def
 
 // Analytics/Reports Pages
 const AnalyticsPage = lazy(() => import('./pages/reports').then(m => ({ default: m.AnalyticsPage })));
+const ColaboradoresPage = lazy(() => import('./pages/settings/equipe/ColaboradoresPage'));
 const ConquistasPage = lazy(() => import('./pages/conquistas/ConquistasPage').then(m => ({ default: m.ConquistasPage })));
 
 // Stores Pages
@@ -253,6 +254,7 @@ const AppContent: React.FC = () => {
         <Route path="analytics/:relatorio" element={<PageBoundary><AnalyticsPage /></PageBoundary>} />
         <Route path="conquistas" element={<PageBoundary><ConquistasPage /></PageBoundary>} />
         <Route path="reports" element={<Navigate to="/analytics" replace />} />
+        <Route path="colaboradores" element={<ColaboradoresPage />} />
         
         {/* Stores Routes */}
         <Route path="stores" element={<PageBoundary><StoresPage /></PageBoundary>} />
