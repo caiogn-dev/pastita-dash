@@ -67,6 +67,7 @@ const IntentStatsPage = lazy(() => import('./pages/automation').then(m => ({ def
 // Analytics/Reports Pages
 const AnalyticsPage = lazy(() => import('./pages/reports').then(m => ({ default: m.AnalyticsPage })));
 const ColaboradoresPage = lazy(() => import('./pages/settings/equipe/ColaboradoresPage'));
+const ImportarCardapioPage = lazy(() => import('./pages/products/importar/ImportarCardapioPage'));
 const ConquistasPage = lazy(() => import('./pages/conquistas/ConquistasPage').then(m => ({ default: m.ConquistasPage })));
 
 // Stores Pages
@@ -255,6 +256,7 @@ const AppContent: React.FC = () => {
         <Route path="conquistas" element={<PageBoundary><ConquistasPage /></PageBoundary>} />
         <Route path="reports" element={<Navigate to="/analytics" replace />} />
         <Route path="colaboradores" element={<ColaboradoresPage />} />
+        <Route path="cardapio/importar" element={<ImportarCardapioPage />} />
         
         {/* Stores Routes */}
         <Route path="stores" element={<PageBoundary><StoresPage /></PageBoundary>} />

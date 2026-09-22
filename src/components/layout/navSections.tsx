@@ -13,7 +13,7 @@ import {
   // operador para de usar o ícone para se localizar e lê tudo de novo.
   ClipboardDocumentListIcon, PrinterIcon, BanknotesIcon, FireIcon, CubeIcon,
   TicketIcon, GlobeAltIcon, ChartBarIcon, ArchiveBoxArrowDownIcon,
-  UsersIcon, LightBulbIcon, RectangleStackIcon, HandRaisedIcon,
+  ArrowUpTrayIcon, UsersIcon, LightBulbIcon, RectangleStackIcon, HandRaisedIcon,
   ArrowPathIcon,
   ArrowPathRoundedSquareIcon, WrenchScrewdriverIcon, SignalIcon, ArrowTrendingUpIcon,
   BellAlertIcon,
@@ -214,6 +214,9 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
       label: 'Cardápio',
       icon: Squares2X2Icon,
       items: [
+        // Implantação custa 7,9 h por cliente e a maior fatia é digitar
+        // produto por produto. Sem item de menu, a tela não existe.
+        { name: 'Importar planilha', href: '/cardapio/importar', icon: ArrowUpTrayIcon },
         { name: 'Produtos',    href: storeHref('products'), icon: CubeIcon },
         { name: 'Combos',      href: storeHref('combos'),   icon: RectangleGroupIcon },
         { name: 'Cupons',      href: storeHref('coupons'),  icon: TicketIcon },
