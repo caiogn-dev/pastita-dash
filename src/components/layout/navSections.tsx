@@ -4,7 +4,8 @@ import {
   ShoppingCartIcon, CreditCardIcon, CpuChipIcon, Cog6ToothIcon,
   BoltIcon, UserGroupIcon, TagIcon, Squares2X2Icon, BuildingStorefrontIcon,
   MegaphoneIcon, DocumentTextIcon, EnvelopeIcon,
-  ClockIcon, PresentationChartLineIcon, SparklesIcon, RectangleGroupIcon,
+  ClockIcon, PresentationChartLineIcon, SparklesIcon,
+  StarIcon, RectangleGroupIcon,
   QrCodeIcon, GiftIcon, LinkIcon, TrophyIcon,
   BeakerIcon,
   // Um ícone por destino. Antes CreditCardIcon aparecia em três itens,
@@ -162,15 +163,17 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
     // ── Operação: o que se toca durante o expediente ──────────────────────
     { grupo: 'Operação', label: 'Início', icon: HomeIcon, href: '/', items: [] },
     {
-      // Só o histórico. A operação ao vivo mora no botão "Central de Pedidos"
-      // da barra do topo, que abre em aba própria e fica ligada o expediente
-      // inteiro; repetir aqui daria dois caminhos com comportamentos
-      // diferentes para a mesma tela.
+      // A operação ao vivo mora no botão "Central de Pedidos" da barra do
+      // topo, que abre em aba própria e fica ligada o expediente inteiro;
+      // repetir aqui daria dois caminhos com comportamentos diferentes para a
+      // mesma tela. Ficam o histórico e o que o cliente achou dele.
       grupo: 'Operação',
       label: 'Pedidos',
       icon: ClipboardDocumentListIcon,
-      href: storeHref('orders/historico'),
-      items: [],
+      items: [
+        { name: 'Histórico',   href: storeHref('orders/historico'), icon: ClipboardDocumentListIcon },
+        { name: 'Avaliações',  href: '/avaliacoes',                 icon: StarIcon },
+      ],
     },
     {
       // Atendimento era um item solto ("Chat") enquanto fila humana, sessões e

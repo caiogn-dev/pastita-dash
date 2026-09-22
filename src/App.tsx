@@ -105,6 +105,7 @@ const ConnectionsPage = lazy(() => import('./pages/messaging/ConnectionsPage').t
 
 // WhatsApp Pages
 const HandoverRequestsPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.HandoverRequestsPage })));
+const AvaliacoesPage = lazy(() => import('./pages/avaliacoes/AvaliacoesPage'));
 const RecuperacaoPage = lazy(() => import('./pages/marketing/recuperacao/RecuperacaoPage'));
 const PromocaoNoInstagramPage = lazy(() => import('./pages/marketing/instagram/PromocaoNoInstagramPage'));
 const InstagramCallbackPage = lazy(() => import('./pages/instagram/InstagramCallbackPage'));
@@ -288,6 +289,7 @@ const AppContent: React.FC = () => {
         <Route path="marketing/email/new" element={<PageBoundary><NewCampaignPage /></PageBoundary>} />
         <Route path="marketing/whatsapp" element={<PageBoundary><WhatsAppCampaignsPage /></PageBoundary>} />
         <Route path="marketing/whatsapp/new" element={<PageBoundary><NewWhatsAppCampaignPage /></PageBoundary>} />
+        <Route path="avaliacoes" element={<PageBoundary><AvaliacoesPage /></PageBoundary>} />
         <Route path="marketing/recuperacao" element={<PageBoundary><RecuperacaoPage /></PageBoundary>} />
         <Route path="marketing/instagram" element={<PageBoundary><PromocaoNoInstagramPage /></PageBoundary>} />
         <Route path="marketing/whatsapp/templates" element={<PageBoundary><WhatsAppTemplatesPage /></PageBoundary>} />
