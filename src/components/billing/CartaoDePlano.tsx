@@ -40,12 +40,14 @@ export interface CartaoDePlanoProps {
   ocupado?: boolean;
   /** Mensal ou anual. Muda o numero grande E o primeiro pagamento. */
   ciclo?: Ciclo;
+  /** Destaca o plano que a loja media deveria escolher. */
+  recomendado?: boolean;
   onEscolher: (plano: Plan) => void;
 }
 
 export const CartaoDePlano: React.FC<CartaoDePlanoProps> = ({
   plano, planoAtual, temAssinatura = false, ocupado = false,
-  ciclo = 'monthly', onEscolher,
+  ciclo = 'monthly', recomendado = false, onEscolher,
 }) => {
   const atual = plano.key === planoAtual;
   const acao = acaoDoPlano(plano, planoAtual, temAssinatura);
@@ -53,16 +55,22 @@ export const CartaoDePlano: React.FC<CartaoDePlanoProps> = ({
 
   return (
     <div
-      className={`flex flex-col rounded-2xl border p-5 ${
-        atual ? 'border-brand ring-1 ring-brand' : 'border-border-token'
+      className={`superficie relative flex h-full flex-col rounded-2xl border p-5 ${
+        atual || recomendado ? 'border-brand ring-1 ring-brand' : 'border-border-token'
       }`}
     >
-      {atual && <span className="mb-1 text-xs font-semibold text-brand-ink">Plano atual</span>}
+      {/* O selo sai do fluxo: dentro do card ele empurrava o título e
+          desalinhava os quatro cartões entre si. */}
+      {(atual || recomendado) && (
+        <span className="absolute -top-2.5 left-5 rounded-full bg-brand px-2 py-0.5 text-[11px] font-semibold text-on-brand">
+          {atual ? 'Plano atual' : 'Mais escolhido'}
+        </span>
+      )}
       <h3 className="text-base font-bold text-fg-token">{plano.name}</h3>
 
       <p className="mt-2 flex items-baseline gap-1">
         <span className="text-2xl font-extrabold text-fg-token">
-          {plano.monthly_price === 0 ? 'Grátis' : formatarReais(oferta.valorPorMes)}
+          {plano.monthly_price === 0 ? 'R$ 0' : formatarReais(oferta.valorPorMes)}
         </span>
         {plano.monthly_price > 0 && <span className="text-sm text-fg-muted-token">/mês</span>}
       </p>
@@ -78,12 +86,12 @@ export const CartaoDePlano: React.FC<CartaoDePlanoProps> = ({
         </span>
       )}
       {ciclo === 'annual' && oferta.economia > 0 && (
-        <p className="mt-1 text-xs font-medium text-success-ink">
+        <p className="mt-2 text-xs font-medium text-success-ink">
           Economia de {formatarReais(oferta.economia)} no ano
         </p>
       )}
 
-      <ul className="mt-4 flex-1 space-y-2 border-t border-border-token pt-4">
+      <ul className="mt-5 flex-1 space-y-2 border-t border-border-token pt-4">
         {oQuePlanoInclui(plano).map((item) => (
           <li key={item.rotulo} className="flex items-center justify-between gap-3 text-sm">
             <span className="text-fg-muted-token">{item.rotulo}</span>

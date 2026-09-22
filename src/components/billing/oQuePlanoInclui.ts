@@ -33,5 +33,10 @@ export function acaoDoPlano(
   temAssinatura: boolean,
 ): { rotulo: string; desabilitado: boolean } {
   if (plano.key === planoAtual) return { rotulo: 'Plano atual', desabilitado: true };
+  // "Assinar" num plano gratuito manda o dono para um checkout que não existe.
+  // O Grátis não se assina: começa-se nele.
+  if (plano.monthly_price === 0) {
+    return { rotulo: 'Começar grátis', desabilitado: false };
+  }
   return { rotulo: temAssinatura ? 'Mudar para este' : 'Assinar', desabilitado: false };
 }

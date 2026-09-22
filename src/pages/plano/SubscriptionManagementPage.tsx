@@ -280,7 +280,7 @@ export default function SubscriptionManagementPage() {
         {/* A âncora vem ANTES do preço, de propósito. R$ 249 sozinho é um
             custo; R$ 249 ao lado dos R$ 2.385 que o marketplace levaria da
             mesma loja é uma escolha. */}
-        <div className="superficie mb-4 rounded-xl p-4">
+        <div className="superficie mb-5 rounded-xl border border-border-token p-4 sm:p-5">
           <p className="text-sm text-fg-token">
             Uma loja que fatura <strong>{formatarReais(9000)}</strong> por mês entrega{' '}
             <strong>{formatarReais(quantoOMarketplaceLevaria(9000))}</strong> de comissão
@@ -320,7 +320,9 @@ export default function SubscriptionManagementPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* 4 colunas porque sao 4 planos. Em lg:grid-cols-3 o "Rede" caia
+            sozinho numa segunda linha — orfao, e parecendo um bloco solto. */}
+        <div className="grid items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {plans.map((p) => (
             <CartaoDePlano
               key={p.key}
@@ -329,6 +331,7 @@ export default function SubscriptionManagementPage() {
               temAssinatura={!!sub && sub.status !== 'none'}
               ocupado={busy}
               ciclo={ciclo}
+              recomendado={p.key === 'pro' && sub?.plan !== 'pro'}
               onEscolher={(plano) => void handleChange(plano)}
             />
           ))}
