@@ -62,7 +62,7 @@ export const CartaoDePlano: React.FC<CartaoDePlanoProps> = ({
       {/* O selo sai do fluxo: dentro do card ele empurrava o título e
           desalinhava os quatro cartões entre si. */}
       {(atual || recomendado) && (
-        <span className="absolute -top-2.5 left-5 rounded-full bg-brand px-2 py-0.5 text-[11px] font-semibold text-on-brand">
+        <span className="absolute -top-2.5 left-5 rounded-full bg-brand px-2 py-0.5 text-badge font-semibold text-on-brand">
           {atual ? 'Plano atual' : 'Mais escolhido'}
         </span>
       )}
