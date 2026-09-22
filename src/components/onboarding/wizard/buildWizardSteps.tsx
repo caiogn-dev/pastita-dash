@@ -11,6 +11,6 @@ export function buildWizardSteps(storeId: string): WizardStepDef[] {
     { key: 'product', title: 'Cadastre seu 1º produto', render: ({ onSaved }) => <StepProduct storeId={storeId} onSaved={onSaved} /> },
     { key: 'delivery', title: 'Configure a entrega', render: ({ onSaved }) => <StepDelivery storeId={storeId} onSaved={onSaved} /> },
     { key: 'hours', title: 'Defina o horário', render: ({ onSaved }) => <StepHours storeId={storeId} onSaved={onSaved} /> },
-    { key: 'whatsapp', title: 'Informe seu WhatsApp', render: ({ onSaved }) => <StepWhatsApp storeId={storeId} onSaved={onSaved} /> },
+    { key: 'whatsapp', title: 'Conecte seu WhatsApp', render: ({ onSaved }) => <StepWhatsApp storeId={storeId} onSaved={onSaved} /> },
   ];
 }

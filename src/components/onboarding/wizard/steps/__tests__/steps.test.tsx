@@ -1,6 +1,12 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { act } from 'react';
 
+// StepWhatsApp passou a montar o ConnectWhatsAppButton (22/09), que puxa o
+// cliente de API — mock para o suite continuar isolado dos services.
+jest.mock('../../../../whatsapp/ConnectWhatsAppButton', () => ({
+  __esModule: true,
+  ConnectWhatsAppButton: () => null,
+}));
 jest.mock('../../../../../services/storesApi', () => ({
   __esModule: true,
   updateStore: jest.fn(),

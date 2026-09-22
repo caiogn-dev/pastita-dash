@@ -1,4 +1,10 @@
 // Os steps importam services que tocam import.meta (logger) — mock para isolar.
+// StepWhatsApp passou a montar o ConnectWhatsAppButton (22/09), que puxa o
+// cliente de API — mock para o suite continuar isolado dos services.
+jest.mock('../../../whatsapp/ConnectWhatsAppButton', () => ({
+  __esModule: true,
+  ConnectWhatsAppButton: () => null,
+}));
 jest.mock('../../../../services/storesApi', () => ({ __esModule: true, updateStore: jest.fn(), updateStoreWithFiles: jest.fn() }));
 jest.mock('../../../../services/products', () => ({ __esModule: true, default: { createProduct: jest.fn() } }));
 jest.mock('../../../../services/delivery', () => ({ __esModule: true, default: { createZone: jest.fn() } }));
