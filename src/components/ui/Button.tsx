@@ -67,11 +67,16 @@ const VARIANTS: Record<ButtonVariant, string> = {
   link: 'text-brand-ink hover:underline px-0 py-0',
 };
 
+// Altura EXPLÍCITA, e a mesma do campo de texto do mesmo tamanho.
+// Antes cada primitiva chegava na sua altura por soma de padding: botão "md"
+// dava 36px e campo "md" dava 42px — lado a lado numa barra de filtros, seis
+// pixels de desalinho. Ver `ui/input.tsx`, que repete esta escala, e o teste
+// `alturaDosControles.test.tsx`, que trava as duas juntas.
 const SIZES: Record<ButtonSize, string> = {
-  xs: 'px-2 py-1 text-xs',
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-3.5 py-2 text-sm',
-  lg: 'px-5 py-2.5 text-base',
+  xs: 'h-7 px-2 text-xs',
+  sm: 'h-8 px-3 text-sm',
+  md: 'h-10 px-4 text-sm',
+  lg: 'h-12 px-5 text-base',
 };
 
 const Spinner = () => (

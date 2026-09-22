@@ -77,11 +77,12 @@ describe('páginas recuperadas — existiam no código e não tinham caminho nen
 });
 
 describe('atendimento deixa de ser um item solto', () => {
-  it('junta conversas, fila humana, sessões e insights', () => {
+  it('junta conversas, fila humana, avisos automáticos, sessões e insights', () => {
     const at = acha('Atendimento');
     expect(at.items.map((i) => i.href)).toEqual([
       '/inbox/whatsapp',
       '/whatsapp/handover',
+      '/whatsapp/avisos',
       '/automation/sessions',
       '/automation/conversation-insights',
     ]);
@@ -101,10 +102,13 @@ it('sem automação habilitada, Marketing e Automação somem — o resto fica',
   expect(labels).toEqual(expect.arrayContaining(['Início', 'Pedidos', 'Atendimento', 'Balcão', 'Cardápio']));
 });
 
-it('Configurações mantém Geral/Entrega/Storefront/Pagamentos e ganha Diagnóstico', () => {
+it('Configurações mantém Geral/Entrega/Storefront/Pagamentos, Colaboradores e Diagnóstico', () => {
+  // Colaboradores entrou em 22/09: o CRUD de equipe existia desde junho sem
+  // nenhuma tela, e sem item de menu uma tela nova não existe para o lojista.
   const cfg = acha('Configurações');
   expect(cfg.items.map((i) => i.name)).toEqual([
-    'Geral', 'Entrega', 'Storefront', 'Pagamentos', 'Diagnóstico do WhatsApp', 'Diagnóstico do chat',
+    'Geral', 'Entrega', 'Storefront', 'Pagamentos', 'Colaboradores',
+    'Diagnóstico do WhatsApp', 'Diagnóstico do chat',
   ]);
   expect(cfg.items[0].href).toBe('/stores/loja-x/settings');
 });

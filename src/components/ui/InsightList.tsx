@@ -78,7 +78,7 @@ export const InsightList: React.FC<InsightListProps> = ({
     <section
       aria-label={titulo}
       className={cn(
-        'overflow-hidden rounded border',
+        'superficie overflow-hidden',
         alerta
           ? 'border-[var(--warning)]/40 bg-[var(--warning)]/5'
           : 'border-border-token bg-surface',

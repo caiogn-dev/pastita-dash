@@ -78,11 +78,11 @@ interface TemplateCardProps {
 
 const TemplateCard: React.FC<TemplateCardProps> = ({ template, onPreview, onUse }) => {
   const typeColors: Record<string, string> = {
-    coupon: 'bg-green-100 text-green-700',
-    welcome: 'bg-blue-100 text-blue-700',
-    promotional: 'bg-orange-100 text-orange-700',
-    order_confirmation: 'bg-purple-100 text-purple-700',
-    abandoned_cart: 'bg-yellow-100 text-yellow-700',
+    coupon: 'bg-success-soft text-success-token',
+    welcome: 'bg-info-soft text-info-token',
+    promotional: 'bg-warning-soft text-warning-token',
+    order_confirmation: 'bg-info-soft text-info-token',
+    abandoned_cart: 'bg-warning-soft text-warning-token',
     newsletter: 'bg-pink-100 text-pink-700',
     transactional: 'bg-surface-2 text-fg-token',
     custom: 'bg-surface-2 text-fg-token',
@@ -114,14 +114,14 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onPreview, onUse 
         
         {/* Overlay Actions */}
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-          <button
+          <button aria-label="Pré-visualizar modelo"
             onClick={onPreview}
             className="p-2 bg-surface rounded-full hover:bg-surface-2 dark:hover:bg-surface-2"
             title="Visualizar"
           >
             <EyeIcon className="w-5 h-5 text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]" />
           </button>
-          <button
+          <button aria-label="Usar este modelo"
             onClick={onUse}
             className="p-2 bg-primary-500 rounded-full hover:bg-primary-600"
             title="Usar Template"

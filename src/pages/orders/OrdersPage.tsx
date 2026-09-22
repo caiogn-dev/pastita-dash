@@ -47,7 +47,8 @@ import {
   cancelOrder,
   StoreOrder,
 } from '../../services/storesApi';
-import { useStore, useConfirm, useOrderDetailModal } from '../../hooks';
+import { useStore, useOrderDetailModal } from '../../hooks';
+import { CancelarPedidoModal } from '../../components/orders/CancelarPedidoModal';
 import { useRealTimeOrders } from '../../hooks/useRealTimeOrders';
 import { getErrorMessage } from '../../services';
 import { useRootStore, resolveStoreKey } from '../../stores/rootStore';
@@ -338,7 +339,7 @@ const OrderCardBase: React.FC<CardProps> = ({
           onClick={() => onCancel(order)}
           disabled={cancelling || isUpdating}
           title="Cancelar pedido"
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-red-100 text-red-400 hover:bg-red-50 disabled:opacity-60 dark:border-red-900/30 dark:text-red-500 transition-colors"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-red-100 text-red-400 hover:bg-danger-soft disabled:opacity-60 dark:border-red-900/30 dark:text-red-500 transition-colors"
         >
           <XMarkIcon className="h-3.5 w-3.5" />
         </button>
@@ -401,7 +402,6 @@ const EMPTY_ORDERS: StoreOrder[] = [];
 export const OrdersPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId, storeSlug } = useStore();
-  const [ConfirmDialog, confirm] = useConfirm();
   const storeQuery = storeSlug || storeId;
 
   // ── Novo Pedido (PDV) drawer ─────────────────────────────────────────────
@@ -555,20 +555,22 @@ export const OrdersPage: React.FC = () => {
     }
   }, [patchOrder]);
 
-  const handleCancel = useCallback(async (order: StoreOrder) => {
-    const confirmed = await confirm({
-      title: 'Cancelar pedido',
-      message: `Cancelar pedido #${order.order_number}? Esta ação não pode ser desfeita.`,
-      variant: 'warning',
-    });
-    if (!confirmed) return;
+  // Cancelar pede o motivo (CancelarPedidoModal): 0 dos 37 cancelados em
+  // 30 dias tinham motivo quando isto era um "tem certeza?".
+  const [pedidoACancelar, setPedidoACancelar] = useState<StoreOrder | null>(null);
+  const handleCancel = useCallback((order: StoreOrder) => {
+    setPedidoACancelar(order);
+  }, []);
+
+  const confirmarCancelamento = useCallback(async (order: StoreOrder, motivo: string) => {
     setCancellingId(order.id);
     try {
-      await cancelOrder(order.id);
+      await cancelOrder(order.id, motivo);
+      setPedidoACancelar(null);
       patchOrder(order.id, { status: 'cancelled' });
       toast.success(`Pedido #${order.order_number} cancelado`);
     } catch (err) {
-      console.error('[OrdersPage] handleCancel:', err);
+      console.error('[OrdersPage] confirmarCancelamento:', err);
       toast.error(getErrorMessage(err) || 'Erro ao cancelar pedido');
     } finally {
       setCancellingId(null);
@@ -851,7 +853,7 @@ export const OrdersPage: React.FC = () => {
                       <Icon className="h-4 w-4 opacity-90" />
                       <span className="text-xs font-bold uppercase tracking-wide">{col.label}</span>
                     </div>
-                    <span className="bg-surface/20 px-2 py-0.5 rounded-full text-xs font-bold min-w-[22px] text-center">
+                    <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold min-w-[22px] text-center">
                       {col.orders.length}
                     </span>
                   </div>
@@ -920,7 +922,13 @@ export const OrdersPage: React.FC = () => {
           </div>
         ) : null}
       </DragOverlay>
-      {ConfirmDialog}
+      <CancelarPedidoModal
+        open={pedidoACancelar !== null}
+        orderNumber={pedidoACancelar?.order_number ?? ''}
+        loading={pedidoACancelar !== null && cancellingId === pedidoACancelar.id}
+        onClose={() => setPedidoACancelar(null)}
+        onConfirm={(motivo) => { if (pedidoACancelar) confirmarCancelamento(pedidoACancelar, motivo); }}
+      />
 
       {/* PDV: Novo Pedido Drawer */}
       {storeSlug && (

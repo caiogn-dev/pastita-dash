@@ -5,6 +5,12 @@ import { DashboardPage } from '../DashboardPage';
 import * as storesApi from '../../../services/storesApi';
 import { dashboardService } from '../../../services';
 
+// O card de carrinhos abandonados tem teste próprio e busca a API ao montar.
+jest.mock('../../../components/dashboard/CarrinhosAbandonadosCard', () => ({
+  __esModule: true,
+  CarrinhosAbandonadosCard: () => null,
+}));
+
 // ── Mocks das dependências pesadas do dashboard ──────────────────────────────
 jest.mock('../../../services/storesApi', () => ({
   getOrders: jest.fn(),

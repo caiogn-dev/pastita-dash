@@ -1,13 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  CheckCircleIcon,
+  CubeIcon,
+  ExclamationTriangleIcon,
+  PauseCircleIcon,
+} from '@heroicons/react/24/outline';
 import { DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import * as storesApi from '../../services/storesApi';
 import type { StoreCategory, StoreProductType } from '../../services/storesApi';
 import type { Product } from '../../services/products';
-import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import { Button, EmptyState, InsightList, PageShell } from '../../components/ui';
+import { Button, EmptyState, InsightList, KpiGrid, PageShell } from '../../components/ui';
 import { Loading } from '../../components/common';
 import { insightsDeCardapio } from './insightsDeCardapio';
+import { numerosDoCardapio } from './numerosDoCardapio';
 import { useStore } from '../../hooks/useStore';
 // react-hot-toast e NÃO useToast: aquele hook guarda os toasts num useState
 // local e devolve o array para o componente renderizar — mas o ToastProvider
@@ -229,6 +235,38 @@ export const ProductsPage: React.FC = () => {
   const semProdutos = productsQuery.data === undefined;
   const produtosCarregando = semProdutos && productsQuery.isFetching;
   const produtosFalharam = semProdutos && productsQuery.isError && !productsQuery.isFetching;
+  // Quatro números antes da lista: a lista diz o que a loja vende, os números
+  // dizem quanto do cardápio está realmente no ar.
+  const numeros = useMemo(() => numerosDoCardapio(products as never), [products]);
+  const indicadores = useMemo(() => [
+    {
+      label: 'Produtos cadastrados',
+      value: numeros.cadastrados,
+      definicao: 'Tudo que existe no cardápio, no ar ou não.',
+      icone: <CubeIcon className="h-5 w-5" />,
+    },
+    {
+      label: 'No ar agora',
+      value: numeros.ativos,
+      definicao: 'O cliente vê e consegue pedir.',
+      tone: 'success' as const,
+      icone: <CheckCircleIcon className="h-5 w-5" />,
+    },
+    {
+      label: 'Pausados',
+      value: numeros.pausados,
+      definicao: 'Cadastrados e fora do cardápio — ninguém vê.',
+      tone: numeros.pausados > 0 ? ('warning' as const) : undefined,
+      icone: <PauseCircleIcon className="h-5 w-5" />,
+    },
+    {
+      label: 'Sem estoque',
+      value: numeros.semEstoque,
+      definicao: 'Controlam estoque e estão zerados. Ainda aparecem para o cliente.',
+      tone: numeros.semEstoque > 0 ? ('danger' as const) : undefined,
+      icone: <ExclamationTriangleIcon className="h-5 w-5" />,
+    },
+  ], [numeros]);
 
   if (initialLoading) return <div>Carregando…</div>;
 
@@ -273,6 +311,8 @@ export const ProductsPage: React.FC = () => {
           203 linhas de produto respondem "o que eu vendo"; nenhuma responde
           "o que eu faço com o cardápio esta semana". Item sem estoque, sem
           preço ou sem foto está na tela e não salta aos olhos. */}
+      <KpiGrid className="mb-4" itens={indicadores} />
+
       <InsightList
         className="mb-4"
         titulo="O que pede atenção no cardápio"

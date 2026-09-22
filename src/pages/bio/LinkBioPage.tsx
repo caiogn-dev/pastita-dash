@@ -453,7 +453,7 @@ const LinkBioPage: React.FC = () => {
                           crossOrigin="anonymous"
                         />
                       ) : (
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border-token bg-surface-2 text-lg">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center superficie-2 text-lg">
                           {link.icon}
                         </span>
                       )}

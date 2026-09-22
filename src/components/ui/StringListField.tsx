@@ -64,7 +64,7 @@ export const StringListField: React.FC<StringListFieldProps> = ({
                 type="button"
                 onClick={() => remover(indice)}
                 aria-label={`Remover ${item || 'item'}`}
-                className="shrink-0 p-2 rounded text-fg-muted-token hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                className="shrink-0 p-2 rounded text-fg-muted-token hover:text-danger-token hover:bg-danger-soft dark:hover:bg-red-900/20 transition-colors"
               >
                 <XMarkIcon className="w-4 h-4" />
               </button>

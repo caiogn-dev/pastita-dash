@@ -17,6 +17,8 @@ const toInstagramAccount = (account: InstagramAccount): ChannelAccount => ({
   avatarUrl: account.profile_picture_url,
   isActive: account.is_active,
   webhookVerified: account.is_verified,
+  // A Meta recusou o token: a conta está ligada e muda.
+  precisaReconectar: !!account.precisa_reconectar,
   lastSyncAt: account.last_sync_at,
   raw: account,
 });

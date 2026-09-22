@@ -63,7 +63,7 @@ export function Table<T>({
           {data.map((item) => (
             <tr
               key={keyExtractor(item)}
-              className={onRowClick ? 'hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer' : ''}
+              className={onRowClick ? 'hover:bg-surface-muted-token dark:hover:bg-zinc-800 cursor-pointer' : ''}
               onClick={() => onRowClick?.(item)}
             >
               {columns.map((column) => (

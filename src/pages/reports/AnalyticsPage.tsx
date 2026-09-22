@@ -670,7 +670,7 @@ const AnalyticsPage: React.FC = () => {
         <div
           role="tablist"
           aria-label={`Visões de ${relatorio.titulo}`}
-          className="mb-6 inline-flex flex-wrap gap-1 rounded-xl border border-border-token bg-surface-2 p-1"
+          className="mb-6 inline-flex flex-wrap gap-1 superficie-2 p-1"
         >
           {relatorio.visoes.map((v) => (
             <button

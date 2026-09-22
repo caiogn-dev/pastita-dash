@@ -66,7 +66,11 @@ export const Switch: React.FC<SwitchProps> = ({
     >
       <span
         className={cn(
-          'inline-block rounded-full bg-white transition-transform duration-200 ease-in-out',
+          'inline-block rounded-full transition-transform duration-200 ease-in-out',
+          // Desligado precisa PARECER desligado: com o botão branco nos dois
+          // estados, no tema escuro o switch apagado virava o ponto mais claro
+          // da linha — numa lista, os pausados saltavam mais que os ativos.
+          checked ? 'bg-white' : 'bg-fg-muted-token',
           thumbSizeClasses[size],
           checked && thumbCheckedClasses[size]
         )}

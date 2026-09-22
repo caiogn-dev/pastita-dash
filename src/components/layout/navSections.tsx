@@ -4,7 +4,8 @@ import {
   ShoppingCartIcon, CreditCardIcon, CpuChipIcon, Cog6ToothIcon,
   BoltIcon, UserGroupIcon, TagIcon, Squares2X2Icon, BuildingStorefrontIcon,
   MegaphoneIcon, DocumentTextIcon, EnvelopeIcon,
-  ClockIcon, PresentationChartLineIcon, SparklesIcon, RectangleGroupIcon,
+  ClockIcon, PresentationChartLineIcon, SparklesIcon,
+  StarIcon, RectangleGroupIcon,
   QrCodeIcon, GiftIcon, LinkIcon, TrophyIcon,
   BeakerIcon,
   // Um ícone por destino. Antes CreditCardIcon aparecia em três itens,
@@ -13,7 +14,9 @@ import {
   ClipboardDocumentListIcon, PrinterIcon, BanknotesIcon, FireIcon, CubeIcon,
   TicketIcon, GlobeAltIcon, ChartBarIcon, ArchiveBoxArrowDownIcon,
   UsersIcon, LightBulbIcon, RectangleStackIcon, HandRaisedIcon,
+  ArrowPathIcon,
   ArrowPathRoundedSquareIcon, WrenchScrewdriverIcon, SignalIcon, ArrowTrendingUpIcon,
+  BellAlertIcon,
 } from '@heroicons/react/24/outline';
 
 export interface NavItem {
@@ -106,8 +109,15 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
     label: 'Marketing',
     icon: MegaphoneIcon,
     items: [
+      // Primeiro da lista de propósito: é a única tela de marketing que fala
+      // do dinheiro que já está na mesa, sem precisar criar nada.
+      { name: 'Recuperador de vendas', href: '/marketing/recuperacao',      icon: ArrowPathIcon },
       { name: 'Campanha WhatsApp',   href: '/marketing/whatsapp',           icon: DevicePhoneMobileIcon },
       { name: 'Campanha por e-mail', href: '/marketing/email/campaigns',    icon: EnvelopeIcon },
+      // Promoção de comentário no Instagram: a loja responde no direct quem
+      // comentar na publicação. Entra no menu junto das outras campanhas
+      // porque é a mesma decisão do dono — "como eu chamo gente hoje?".
+      { name: 'Promoção no Instagram', href: '/marketing/instagram',        icon: MegaphoneIcon },
       // Recuperadas: existiam no código e não tinham caminho nenhum no menu.
       { name: 'E-mails automáticos', href: '/marketing/automations',        icon: ArrowPathRoundedSquareIcon },
       { name: 'Modelos de mensagem', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
@@ -153,15 +163,17 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
     // ── Operação: o que se toca durante o expediente ──────────────────────
     { grupo: 'Operação', label: 'Início', icon: HomeIcon, href: '/', items: [] },
     {
-      // Só o histórico. A operação ao vivo mora no botão "Central de Pedidos"
-      // da barra do topo, que abre em aba própria e fica ligada o expediente
-      // inteiro; repetir aqui daria dois caminhos com comportamentos
-      // diferentes para a mesma tela.
+      // A operação ao vivo mora no botão "Central de Pedidos" da barra do
+      // topo, que abre em aba própria e fica ligada o expediente inteiro;
+      // repetir aqui daria dois caminhos com comportamentos diferentes para a
+      // mesma tela. Ficam o histórico e o que o cliente achou dele.
       grupo: 'Operação',
       label: 'Pedidos',
       icon: ClipboardDocumentListIcon,
-      href: storeHref('orders/historico'),
-      items: [],
+      items: [
+        { name: 'Histórico',   href: storeHref('orders/historico'), icon: ClipboardDocumentListIcon },
+        { name: 'Avaliações',  href: '/avaliacoes',                 icon: StarIcon },
+      ],
     },
     {
       // Atendimento era um item solto ("Chat") enquanto fila humana, sessões e
@@ -174,6 +186,8 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
       items: [
         { name: 'Conversas',    href: '/inbox/whatsapp',                     icon: ChatBubbleLeftRightIcon },
         { name: 'Fila humana',  href: '/whatsapp/handover',                  icon: HandRaisedIcon },
+        // O que a loja mandou sozinha (status, lembretes, avaliação) e se chegou.
+        { name: 'Avisos automáticos', href: '/whatsapp/avisos',              icon: BellAlertIcon },
         { name: 'Sessões',      href: '/automation/sessions',                icon: RectangleStackIcon },
         { name: 'Insights',     href: '/automation/conversation-insights',   icon: LightBulbIcon },
       ],
@@ -249,6 +263,11 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
         { name: 'Entrega',    href: storeHref('delivery'),   icon: ShoppingCartIcon },
         { name: 'Storefront', href: storeHref('storefront'), icon: BuildingStorefrontIcon },
         { name: 'Pagamentos', href: storeHref('payments'),   icon: CreditCardIcon },
+        // Existia CRUD de equipe desde junho e nenhuma tela: o endpoint
+        // pedia o id do usuário (e como UUID, enquanto a chave é inteira),
+        // então nunca criou ninguém. Corrigido em 22/09 — agora convida-se
+        // pelo celular.
+        { name: 'Colaboradores', href: '/colaboradores', icon: UsersIcon },
         // Recuperadas: diagnósticos que existiam sem rota — quando o WhatsApp
         // cai, é aqui que se olha em vez de abrir o log do servidor.
         { name: 'Diagnóstico do WhatsApp', href: '/whatsapp/diagnostics', icon: WrenchScrewdriverIcon, sectionHeader: 'Quando algo falha' },

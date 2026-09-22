@@ -61,7 +61,7 @@ export const InteractiveList: React.FC<InteractiveListProps> = ({
         className={cn(
           'w-full py-3 px-4 flex items-center justify-between',
           'text-sm font-medium text-blue-600 dark:text-blue-400',
-          'hover:bg-zinc-50 dark:hover:bg-zinc-700/50',
+          'hover:bg-surface-muted-token dark:hover:bg-zinc-700/50',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           'transition-colors duration-150'
         )}
@@ -93,8 +93,8 @@ export const InteractiveList: React.FC<InteractiveListProps> = ({
                       disabled={disabled}
                       className={cn(
                         'w-full py-3 px-4 text-left',
-                        'hover:bg-zinc-50 dark:hover:bg-zinc-700/50',
-                        'active:bg-zinc-100 dark:active:bg-zinc-700',
+                        'hover:bg-surface-muted-token dark:hover:bg-zinc-700/50',
+                        'active:bg-surface-muted-token dark:active:bg-zinc-700',
                         'disabled:opacity-50 disabled:cursor-not-allowed',
                         'transition-colors duration-150'
                       )}

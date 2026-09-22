@@ -297,8 +297,12 @@ export const ordersService = {
     return normalizePaginatedEnvelope<Order>(response.data).results.map(normalizeOrder);
   },
 
-  updateStatus: async (id: string, status: string, storeSlug?: string): Promise<Order> => {
-    const response = await api.post<Order>(`${getBaseUrl(storeSlug)}/${id}/update_status/`, { status });
+  /** `reason` só vale ao cancelar: vira `cancel_reason` no pedido. */
+  updateStatus: async (id: string, status: string, storeSlug?: string, reason?: string): Promise<Order> => {
+    const response = await api.post<Order>(
+      `${getBaseUrl(storeSlug)}/${id}/update_status/`,
+      reason ? { status, reason } : { status },
+    );
     return normalizeOrder(response.data);
   },
 

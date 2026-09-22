@@ -456,7 +456,7 @@ export const NewCampaignPage: React.FC = () => {
                       isActive
                         ? 'bg-primary-100 text-primary-700'
                         : isPast
-                        ? 'bg-green-100 text-green-700 cursor-pointer hover:bg-green-200'
+                        ? 'bg-success-soft text-success-token cursor-pointer hover:bg-success-soft'
                         : 'bg-surface-2 text-fg-muted-token'
                     }`}
                   >
@@ -569,16 +569,16 @@ export const NewCampaignPage: React.FC = () => {
                       As variáveis do template serão preenchidas automaticamente com os dados de cada cliente:
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                      <span className="text-xs bg-info-soft text-info-token px-2 py-1 rounded-full">
                         {'{{customer_name}}'} → Nome do cliente
                       </span>
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                      <span className="text-xs bg-info-soft text-info-token px-2 py-1 rounded-full">
                         {'{{first_name}}'} → Primeiro nome
                       </span>
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                      <span className="text-xs bg-info-soft text-info-token px-2 py-1 rounded-full">
                         {'{{email}}'} → Email
                       </span>
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                      <span className="text-xs bg-info-soft text-info-token px-2 py-1 rounded-full">
                         {'{{store_name}}'} → Nome da loja
                       </span>
                     </div>
@@ -815,7 +815,7 @@ export const NewCampaignPage: React.FC = () => {
                           )}
                         </div>
                         {subscriber.total_orders > 0 && (
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                          <span className="text-xs bg-success-soft text-success-token px-2 py-1 rounded-full">
                             {subscriber.total_orders} pedidos
                           </span>
                         )}

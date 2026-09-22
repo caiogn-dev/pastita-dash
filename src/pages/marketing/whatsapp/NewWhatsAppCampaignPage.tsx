@@ -43,6 +43,8 @@ type SystemContact = {
 };
 import logger from '../../../services/logger';
 import { avisoDaJanela, horarioParaConsulta, type ResumoDaJanela } from './janelaDe24h';
+import { LinhaDoDia } from '../../../components/campanhas/LinhaDoDia';
+import { horarioPermitido } from './linhaDoDia';
 import { precoVigenteDoProduto } from '../../../utils/precoVigente';
 import { formatCurrency } from '../../../utils/formatters';
 
@@ -705,7 +707,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
             
             {/* Recipient count badge */}
             {currentStep !== 'account' && recipientCount > 0 && (
-              <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1.5 rounded-full">
+              <div className="flex items-center gap-2 bg-success-soft text-success-token px-3 py-1.5 rounded-full">
                 <UsersIcon className="w-4 h-4" />
                 <span className="font-medium">{recipientCount} destinatários</span>
               </div>
@@ -726,9 +728,9 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                     disabled={!isPast && !isActive}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
                       isActive
-                        ? 'bg-green-100 text-green-700'
+                        ? 'bg-success-soft text-success-token'
                         : isPast
-                        ? 'bg-green-100 text-green-700 cursor-pointer hover:bg-green-200'
+                        ? 'bg-success-soft text-success-token cursor-pointer hover:bg-success-soft'
                         : 'bg-surface-2 text-fg-muted-token'
                     }`}
                   >
@@ -1018,7 +1020,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                         decoding="async"
                       />
                     ) : (
-                      <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border-token rounded-lg p-8 cursor-pointer hover:border-green-400 hover:bg-green-50/50 dark:hover:bg-green-900/10 transition-colors">
+                      <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border-token rounded-lg p-8 cursor-pointer hover:border-green-400 hover:bg-success-soft/50 dark:hover:bg-green-900/10 transition-colors">
                         <PhotoIcon className="w-10 h-10 text-fg-muted-token" />
                         <span className="text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
                           Selecionar imagem
@@ -1120,7 +1122,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                       </div>
                     </div>
                   ) : (
-                    <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border-token rounded-lg p-8 cursor-pointer hover:border-green-400 hover:bg-green-50/50 dark:hover:bg-green-900/10 transition-colors">
+                    <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border-token rounded-lg p-8 cursor-pointer hover:border-green-400 hover:bg-success-soft/50 dark:hover:bg-green-900/10 transition-colors">
                       <PhotoIcon className="w-10 h-10 text-fg-muted-token" />
                       <span className="text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
                         Selecionar imagem
@@ -1250,17 +1252,33 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
             {/* Quantos recebem de graça NESTE horário. Sem o número o dono
                 agenda no escuro: "manda às 20h" pode ser 10 pessoas ou 2, e
                 ele só descobre depois que a campanha rodou. */}
+            {!horarioPermitido(formData.scheduledAt).ok && (
+              <p role="alert" className="mt-2 text-caption text-danger-token">
+                {horarioPermitido(formData.scheduledAt).motivo}
+              </p>
+            )}
             {janela && (
               <p className="mt-2 text-caption text-fg-muted-token">
                 {avisoDaJanela(janela)}
               </p>
             )}
+            {/* A campanha grátis não sai num bloco só: quem fecharia a janela
+                de 24h antes do horário recebe antes. A linha mostra isso antes
+                de o dono confirmar. */}
+            {janela?.faixas?.length ? (
+              <div className="mt-4">
+                <LinhaDoDia faixas={janela.faixas} horarioDaCampanha={formData.scheduledAt} />
+              </div>
+            ) : null}
           </div>
           <div className="flex justify-end gap-3">
             <Button variant="secondary" onClick={() => setShowScheduleModal(false)}>
               Cancelar
             </Button>
-            <Button onClick={() => handleSendCampaign(true)} disabled={sending || !formData.scheduledAt}>
+            <Button
+              onClick={() => handleSendCampaign(true)}
+              disabled={sending || !formData.scheduledAt || !horarioPermitido(formData.scheduledAt).ok}
+            >
               {sending ? 'Agendando...' : 'Confirmar Agendamento'}
             </Button>
           </div>
@@ -1359,9 +1377,9 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
                       )}
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      contact.source === 'conversation' ? 'bg-blue-100 text-blue-700' :
-                      contact.source === 'order' ? 'bg-green-100 text-green-700' :
-                      contact.source === 'subscriber' ? 'bg-purple-100 text-purple-700' :
+                      contact.source === 'conversation' ? 'bg-info-soft text-info-token' :
+                      contact.source === 'order' ? 'bg-success-soft text-success-token' :
+                      contact.source === 'subscriber' ? 'bg-info-soft text-info-token' :
                       'bg-surface-2 text-fg-token'
                     }`}>
                       {contact.source === 'conversation' ? 'Conversa' :

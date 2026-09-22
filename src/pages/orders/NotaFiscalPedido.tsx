@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Modal } from '../../components/common';
-import { DocumentTextIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, ArrowTopRightOnSquareIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { ordersService, getErrorMessage } from '../../services';
 import type { NotaFiscal } from '../../services/orders';
@@ -21,10 +21,10 @@ interface NotaFiscalPedidoProps {
 }
 
 const BOTAO =
-  'flex w-full items-center justify-center gap-2 rounded border border-white/15 px-4 py-3 text-sm font-medium transition hover:bg-surface/5 disabled:opacity-50';
+  'flex w-full items-center justify-center gap-2 rounded border border-border-token bg-surface px-4 py-3 text-sm font-medium text-fg-token transition hover:bg-surface-2 disabled:opacity-50';
 
 const CAMPO =
-  'w-full rounded border border-white/15 bg-surface px-3 py-2 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand';
+  'w-full rounded border border-border-token bg-surface px-3 py-2 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand';
 
 /** CPF/CNPJ só entra na nota se fechar o dígito verificador — número errado
  *  faz a SEFAZ recusar a nota inteira (rejeição 237). Validamos aqui, onde o
@@ -98,6 +98,7 @@ export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, sto
   const [habilitado, setHabilitado] = useState(false);
   const [documentos, setDocumentos] = useState<NotaFiscal[]>([]);
   const [carregado, setCarregado] = useState(false);
+  const [falhou, setFalhou] = useState(false);
   const [emitindo, setEmitindo] = useState<'65' | '55' | null>(null);
   const [cancelando, setCancelando] = useState(false);
   const [documento, setDocumento] = useState('');
@@ -109,8 +110,10 @@ export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, sto
       const resposta = await ordersService.consultarNfce(orderId, storeSlug);
       setHabilitado(resposta.habilitado);
       setDocumentos(resposta.documentos);
+      setFalhou(false);
     } catch (erro) {
       logger.error('Erro ao consultar notas do pedido:', erro);
+      setFalhou(true);
     } finally {
       setCarregado(true);
     }
@@ -165,14 +168,29 @@ export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, sto
     }
   };
 
-  if (!carregado || !habilitado) return null;
+  if (!carregado) return null;
+
+  // Sumir aqui esconderia nota AUTORIZADA atrás de um erro de rede — o dono
+  // acharia que o pedido não tem nota e poderia emitir outra.
+  if (falhou) {
+    return (
+      <div className="inline-flex items-center gap-2 text-xs text-warning-token">
+        Não foi possível consultar a nota fiscal deste pedido.
+        <button type="button" onClick={carregar} className="underline">
+          Tentar de novo
+        </button>
+      </div>
+    );
+  }
+
+  if (!habilitado) return null;
 
   const tipoDigitado = classificarDocumento(documento);
   const jaEmitida = (modelo: '65' | '55') =>
     documentos.some(d => d.modelo === modelo && (d.status === 'authorized' || d.status === 'pending'));
 
   const corpo = (
-    <div className={variant === 'barra' ? '' : 'mt-6 rounded border border-white/15 p-4'}>
+    <div className={variant === 'barra' ? '' : 'mt-6 rounded border border-border-token p-4'}>
       {variant === 'painel' && (
         <div className="flex items-center gap-2">
           <DocumentTextIcon className="h-4 w-4 text-fg-muted-token" />
@@ -244,6 +262,18 @@ export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, sto
                     Abrir {modelo === '55' ? 'DANFE' : 'cupom (DANFE)'}
                   </a>
                 )}
+                {nota.xml_url && (
+                  <a
+                    href={nota.xml_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
+                    className="flex items-center gap-1 text-[var(--brand)] hover:underline"
+                  >
+                    <ArrowDownTrayIcon className="h-3.5 w-3.5" />
+                    Baixar XML (para o contador)
+                  </a>
+                )}
                 {podeCancelar && cancelandoModelo !== modelo && (
                   <button onClick={() => setCancelandoModelo(modelo)} className={`${BOTAO} mt-1`}>
                     Cancelar nota
@@ -277,7 +307,7 @@ export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, sto
 
             {(nota.status === 'rejected' || nota.status === 'error') && (
               <div className="mt-2 grid gap-2">
-                <p className="text-amber-500">{nota.error_message || 'A nota não foi autorizada.'}</p>
+                <p className="text-warning-token">{nota.error_message || 'A nota não foi autorizada.'}</p>
                 <button onClick={() => emitir(modelo)} disabled={emitindo !== null} className={BOTAO}>
                   {emitindo === modelo ? 'Emitindo…' : 'Tentar de novo'}
                 </button>

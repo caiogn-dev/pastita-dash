@@ -115,6 +115,38 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
+export type SituacaoDoDestinatario = 'leu' | 'recebeu' | 'falhou' | 'ficou_de_fora' | 'na_fila';
+
+export interface PessoaDaCampanha {
+  id: string;
+  nome: string;
+  telefone: string;
+  situacao: SituacaoDoDestinatario;
+  /** Em português: "Fora da janela de 24h…", "A Meta segurou…". */
+  motivo: string;
+  quando: string | null;
+}
+
+export interface DestinatariosDaCampanha {
+  /** Conta a campanha inteira, mesmo com filtro. */
+  resumo: Record<SituacaoDoDestinatario, number>;
+  pessoas: PessoaDaCampanha[];
+}
+
+export interface SaidaDeCampanha {
+  nome: string;
+  telefone: string;
+  quando: string;
+  /** 'button' = apertou "Parar promoções"; 'text' = escreveu; 'manual'. */
+  origem: 'button' | 'text' | 'manual';
+  texto: string;
+}
+
+export interface SaidasDaConta {
+  total: number;
+  pessoas: SaidaDeCampanha[];
+}
+
 export const campaignsService = {
   // Campaigns (WhatsApp) - usando /campaigns/ endpoint
   getCampaigns: async (params?: Record<string, string>): Promise<PaginatedResponse<Campaign>> => {
@@ -208,6 +240,22 @@ export const campaignsService = {
     completed_at: string | null;
   }> => {
     const response = await api.get(`/campaigns/campaigns/${id}/stats/`);
+    return response.data;
+  },
+
+  /** Pessoas da campanha com situação e motivo em português. */
+  getDestinatarios: async (id: string, situacao?: SituacaoDoDestinatario): Promise<DestinatariosDaCampanha> => {
+    const response = await api.get(`/campaigns/campaigns/${id}/destinatarios/`, {
+      params: situacao ? { situacao } : undefined,
+    });
+    return response.data;
+  },
+
+  /** Quem pediu para parar de receber campanhas (só leitura). */
+  getSaidas: async (accountId?: string): Promise<SaidasDaConta> => {
+    const response = await api.get('/campaigns/campaigns/saidas/', {
+      params: accountId ? { account_id: accountId } : undefined,
+    });
     return response.data;
   },
 
@@ -314,13 +362,64 @@ export const campaignsService = {
   getJanelaDaAudiencia: async (params?: {
     store?: string;
     em?: string;
-  }): Promise<{ dentro: number; fora: number; janela_horas: number }> => {
+  }): Promise<{
+    dentro: number;
+    fora: number;
+    janela_horas: number;
+    no_horario: number;
+    antecipados: number;
+    faixas: { hora: number; quantidade: number }[];
+  }> => {
     const response = await api.get('/campaigns/audiencia/janela/', { params });
     const d = response.data ?? {};
     return {
       dentro: Number(d.dentro ?? 0),
       fora: Number(d.fora ?? 0),
       janela_horas: Number(d.janela_horas ?? 24),
+      // A campanha não sai toda no horário: quem fecharia a janela antes
+      // recebe antes. Sem estes campos a tela promete um bloco que não existe.
+      no_horario: Number(d.no_horario ?? 0),
+      antecipados: Number(d.antecipados ?? 0),
+      faixas: Array.isArray(d.faixas) ? d.faixas : [],
+    };
+  },
+
+  /** A campanha hora a hora: o que já saiu e o que ainda falta. */
+  /** O vocabulário do construtor de público: campos e operadores do servidor. */
+  camposDaAudiencia: async (): Promise<import('../pages/marketing/whatsapp/regrasDePublico').CampoDoCatalogo[]> => {
+    const response = await api.get('/campaigns/audiencia/campos/');
+    return response.data?.campos ?? [];
+  },
+
+  /** Quantas pessoas a regra alcança, com a regra escrita em português. */
+  previaPorRegra: async (
+    regra: unknown,
+    storeIds?: string[],
+  ): Promise<{ total: number; de: number; em_portugues: string; amostra: { nome: string; telefone: string }[] }> => {
+    const response = await api.post('/campaigns/audiencia/previa/', {
+      regra,
+      store_ids: storeIds,
+    });
+    const d = response.data ?? {};
+    return {
+      total: Number(d.total ?? 0),
+      de: Number(d.de ?? 0),
+      em_portugues: d.em_portugues ?? '',
+      amostra: Array.isArray(d.amostra) ? d.amostra : [],
+    };
+  },
+
+  getFaixasDaCampanha: async (id: string): Promise<{
+    faixas: { hora: number; enviadas: number; aguardando: number }[];
+    proxima_faixa: number | null;
+    fora_da_janela: number;
+  }> => {
+    const response = await api.get(`/campaigns/campaigns/${id}/faixas/`);
+    const d = response.data ?? {};
+    return {
+      faixas: Array.isArray(d.faixas) ? d.faixas : [],
+      proxima_faixa: d.proxima_faixa ?? null,
+      fora_da_janela: Number(d.fora_da_janela ?? 0),
     };
   },
 

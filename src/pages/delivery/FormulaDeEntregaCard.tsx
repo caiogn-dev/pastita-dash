@@ -212,7 +212,7 @@ export const FormulaDeEntregaCard: React.FC<Props> = ({
 
         {/* Taxa base e R$/km não dizem nada sozinhos. O dono pensa em bairro e
             em distância, então a tela responde na moeda dele. */}
-        <div className="rounded-xl border border-border-token bg-surface-2 p-4">
+        <div className="superficie-2 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted-token">
             Quanto o cliente paga
           </p>

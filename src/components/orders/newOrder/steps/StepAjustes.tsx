@@ -55,14 +55,14 @@ export function StepAjustes({
           value={discountValue}
           onChange={(e) => setDiscountValue(e.target.value)}
           placeholder={discountType === 'percent' ? 'Ex: 10 (para 10%)' : 'Ex: 5.00'}
-          className="w-full px-3 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token placeholder:text-fg-muted-token focus:outline-none focus:ring-1 focus:ring-brand"
+          className="w-full px-3 py-2 superficie text-sm text-fg-token placeholder:text-fg-muted-token focus:outline-none focus:ring-1 focus:ring-brand"
         />
         <input
           type="text"
           value={discountReason}
           onChange={(e) => setDiscountReason(e.target.value)}
           placeholder="Motivo do desconto"
-          className="w-full px-3 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token placeholder:text-fg-muted-token focus:outline-none focus:ring-1 focus:ring-brand"
+          className="w-full px-3 py-2 superficie text-sm text-fg-token placeholder:text-fg-muted-token focus:outline-none focus:ring-1 focus:ring-brand"
         />
       </div>
 
@@ -78,14 +78,14 @@ export function StepAjustes({
           value={surchargeValue}
           onChange={(e) => setSurchargeValue(e.target.value)}
           placeholder="Ex: 2.50"
-          className="w-full px-3 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token placeholder:text-fg-muted-token focus:outline-none focus:ring-1 focus:ring-brand"
+          className="w-full px-3 py-2 superficie text-sm text-fg-token placeholder:text-fg-muted-token focus:outline-none focus:ring-1 focus:ring-brand"
         />
         <input
           type="text"
           value={surchargeReason}
           onChange={(e) => setSurchargeReason(e.target.value)}
           placeholder="Motivo do acréscimo"
-          className="w-full px-3 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token placeholder:text-fg-muted-token focus:outline-none focus:ring-1 focus:ring-brand"
+          className="w-full px-3 py-2 superficie text-sm text-fg-token placeholder:text-fg-muted-token focus:outline-none focus:ring-1 focus:ring-brand"
         />
       </div>
 

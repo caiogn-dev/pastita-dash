@@ -36,6 +36,33 @@ describe('NotaFiscalPedido', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  it('nota autorizada oferece abrir o DANFE e baixar o XML', async () => {
+    mocked.consultarNfce.mockResolvedValue({
+      habilitado: true,
+      documentos: [{
+        id: 'n1', status: 'authorized', modelo: '55', numero: '2', serie: '1',
+        chave_acesso: '1'.repeat(44), created_at: '2026-09-19T12:21:55Z',
+        danfe_url: 'https://api.focusnfe.com.br/arquivos/danfe.pdf',
+        xml_url: 'https://api.focusnfe.com.br/arquivos/nota.xml',
+      }],
+    } as never);
+    render(<NotaFiscalPedido orderId="1" storeSlug="loja" />);
+    expect((await screen.findByText(/Abrir DANFE/)).closest('a'))
+      .toHaveAttribute('href', 'https://api.focusnfe.com.br/arquivos/danfe.pdf');
+    expect(screen.getByText(/Baixar XML/).closest('a'))
+      .toHaveAttribute('href', 'https://api.focusnfe.com.br/arquivos/nota.xml');
+  });
+
+  it('consulta que falha avisa em vez de sumir com o bloco', async () => {
+    // 19/set: a consulta dava 500 e o bloco da nota sumia calado — o dono
+    // achou que o botão tinha ido embora, com uma nota autorizada no pedido.
+    mocked.consultarNfce.mockRejectedValueOnce(new Error('500'));
+    mocked.consultarNfce.mockResolvedValueOnce({ habilitado: true, documentos: [] } as never);
+    render(<NotaFiscalPedido orderId="1" storeSlug="loja" />);
+    fireEvent.click(await screen.findByText(/Tentar de novo/));
+    expect(await screen.findByText('Emitir NFC-e (consumidor)')).toBeInTheDocument();
+  });
+
   it('oferece o botão de emitir quando a loja emite e o pedido não tem nota', async () => {
     mocked.consultarNfce.mockResolvedValue({ habilitado: true, documentos: [] } as never);
     render(<NotaFiscalPedido orderId="1" storeSlug="loja" />);

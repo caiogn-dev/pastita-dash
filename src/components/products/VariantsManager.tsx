@@ -196,7 +196,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({ productId, bas
           />
           Ativa
         </label>
-        <button
+        <button aria-label="Salvar variação"
           type="button"
           onClick={handleSave}
           disabled={saving}
@@ -205,7 +205,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({ productId, bas
         >
           <CheckIcon className="w-4 h-4" />
         </button>
-        <button
+        <button aria-label="Cancelar edição da variação"
           type="button"
           onClick={cancelEdit}
           className="p-1.5 rounded-md bg-surface-2 text-fg-token hover:bg-surface"

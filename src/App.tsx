@@ -34,7 +34,6 @@ const ExpedicaoPage = lazy(() => import('./pages/expedicao/ExpedicaoPage'));
 const PaymentsPage = lazy(() => import('./pages/payments/PaymentsPage').then(m => ({ default: m.PaymentsPage })));
 const PaymentLinkPage = lazy(() => import('./pages/payments/PaymentLinkPage').then(m => ({ default: m.PaymentLinkPage })));
 const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
-const PlanoPage = lazy(() => import('./pages/plano/PlanoPage').then(m => ({ default: m.PlanoPage })));
 const SubscriptionManagementPage = lazy(() => import('./pages/plano/SubscriptionManagementPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
@@ -67,6 +66,7 @@ const IntentStatsPage = lazy(() => import('./pages/automation').then(m => ({ def
 
 // Analytics/Reports Pages
 const AnalyticsPage = lazy(() => import('./pages/reports').then(m => ({ default: m.AnalyticsPage })));
+const ColaboradoresPage = lazy(() => import('./pages/settings/equipe/ColaboradoresPage'));
 const ConquistasPage = lazy(() => import('./pages/conquistas/ConquistasPage').then(m => ({ default: m.ConquistasPage })));
 
 // Stores Pages
@@ -106,6 +106,11 @@ const ConnectionsPage = lazy(() => import('./pages/messaging/ConnectionsPage').t
 
 // WhatsApp Pages
 const HandoverRequestsPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.HandoverRequestsPage })));
+const AvaliacoesPage = lazy(() => import('./pages/avaliacoes/AvaliacoesPage'));
+const RecuperacaoPage = lazy(() => import('./pages/marketing/recuperacao/RecuperacaoPage'));
+const PromocaoNoInstagramPage = lazy(() => import('./pages/marketing/instagram/PromocaoNoInstagramPage'));
+const InstagramCallbackPage = lazy(() => import('./pages/instagram/InstagramCallbackPage'));
+const AvisosAutomaticosPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.AvisosAutomaticosPage })));
 
 // Protected Route wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -171,6 +176,13 @@ const AppContent: React.FC = () => {
       } />
       <Route path="/signup" element={<Navigate to="/cadastro" replace />} />
 
+      {/* Fim do login com Instagram: roda dentro da janelinha e só avisa a tela Conexões. */}
+      <Route path="/instagram/callback" element={
+        <Suspense fallback={<FullPageLoading />}>
+          <InstagramCallbackPage />
+        </Suspense>
+      } />
+
       {/* KDS fullscreen — sem sidebar, para a tela da cozinha */}
       <Route path="/stores/:storeId/kds" element={
         <ProtectedRoute>
@@ -214,7 +226,8 @@ const AppContent: React.FC = () => {
         <Route path="settings" element={<PageBoundary><SettingsPage /></PageBoundary>} />
 
         {/* Planos / assinatura */}
-        <Route path="plano" element={<PageBoundary><PlanoPage /></PageBoundary>} />
+        {/* A tela de planos virou uma só; o endereço antigo continua de pé. */}
+        <Route path="plano" element={<Navigate to="/assinatura" replace />} />
         <Route path="assinatura" element={<PageBoundary><SubscriptionManagementPage /></PageBoundary>} />
 
         {/* Link de pagamento avulso (Fase 3) */}
@@ -241,6 +254,7 @@ const AppContent: React.FC = () => {
         <Route path="analytics/:relatorio" element={<PageBoundary><AnalyticsPage /></PageBoundary>} />
         <Route path="conquistas" element={<PageBoundary><ConquistasPage /></PageBoundary>} />
         <Route path="reports" element={<Navigate to="/analytics" replace />} />
+        <Route path="colaboradores" element={<ColaboradoresPage />} />
         
         {/* Stores Routes */}
         <Route path="stores" element={<PageBoundary><StoresPage /></PageBoundary>} />
@@ -277,6 +291,9 @@ const AppContent: React.FC = () => {
         <Route path="marketing/email/new" element={<PageBoundary><NewCampaignPage /></PageBoundary>} />
         <Route path="marketing/whatsapp" element={<PageBoundary><WhatsAppCampaignsPage /></PageBoundary>} />
         <Route path="marketing/whatsapp/new" element={<PageBoundary><NewWhatsAppCampaignPage /></PageBoundary>} />
+        <Route path="avaliacoes" element={<PageBoundary><AvaliacoesPage /></PageBoundary>} />
+        <Route path="marketing/recuperacao" element={<PageBoundary><RecuperacaoPage /></PageBoundary>} />
+        <Route path="marketing/instagram" element={<PageBoundary><PromocaoNoInstagramPage /></PageBoundary>} />
         <Route path="marketing/whatsapp/templates" element={<PageBoundary><WhatsAppTemplatesPage /></PageBoundary>} />
         
         
@@ -292,6 +309,7 @@ const AppContent: React.FC = () => {
         <Route path="whatsapp/diagnostics" element={<PageBoundary><WebhookDiagnosticsPage /></PageBoundary>} />
         <Route path="whatsapp/debug" element={<PageBoundary><DebugDashboardPage /></PageBoundary>} />
         <Route path="whatsapp/handover" element={<PageBoundary><HandoverRequestsPage /></PageBoundary>} />
+        <Route path="whatsapp/avisos" element={<PageBoundary><AvisosAutomaticosPage /></PageBoundary>} />
       </Route>
 
       {/* Catch all — 404 real (não redireciona mais silenciosamente para "/") */}
