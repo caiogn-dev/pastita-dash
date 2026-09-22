@@ -12,6 +12,7 @@ import type { StoreCategory, StoreProductType } from '../../services/storesApi';
 import type { Product } from '../../services/products';
 import { Button, EmptyState, InsightList, KpiGrid, PageShell } from '../../components/ui';
 import { Loading } from '../../components/common';
+import { estadoDoCardapio } from './estadoDoCardapio';
 import { insightsDeCardapio } from './insightsDeCardapio';
 import { numerosDoCardapio } from './numerosDoCardapio';
 import { useStore } from '../../hooks/useStore';
@@ -30,9 +31,11 @@ import { AddCategoryModal } from './components/AddCategoryModal';
 import { MontadorModal, type ConfigMontador } from './components/MontadorModal';
 import { ProductFormModal } from './ProductFormModal';
 import { useConfirm } from '../../hooks/useConfirm';
+import { useNavigate } from 'react-router-dom';
 
 export const ProductsPage: React.FC = () => {
   const { storeId } = useStore();
+  const navegar = useNavigate();
 
   // Produtos: fetch/cache/dedup via react-query; estado local é semeado a partir
   // da query e continua sendo a fonte para edição inline + reorder (otimista).
@@ -233,8 +236,14 @@ export const ProductsPage: React.FC = () => {
   //     acionável com retry.
   // Com dado em cache (falha/atualização só de fundo) mantém o cardápio anterior.
   const semProdutos = productsQuery.data === undefined;
-  const produtosCarregando = semProdutos && productsQuery.isFetching;
-  const produtosFalharam = semProdutos && productsQuery.isError && !productsQuery.isFetching;
+  const estado = estadoDoCardapio({
+    temDados: !semProdutos,
+    buscando: productsQuery.isFetching,
+    falhou: productsQuery.isError,
+    quantidade: products.length,
+  });
+  const produtosCarregando = estado === 'carregando';
+  const produtosFalharam = estado === 'falhou';
   // Quatro números antes da lista: a lista diz o que a loja vende, os números
   // dizem quanto do cardápio está realmente no ar.
   const numeros = useMemo(() => numerosDoCardapio(products as never), [products]);
@@ -303,6 +312,31 @@ export const ProductsPage: React.FC = () => {
             <Button variant="outline" onClick={() => productsQuery.refetch()}>
               Tentar novamente
             </Button>
+          }
+        />
+      ) : estado === 'vazio' ? (
+        /* O momento de ativação do cliente novo. Antes ele caía numa página de
+           indicadores zerados e uma lista vazia, sem nada dizendo o que fazer
+           — justo a hora em que o importador resolve a maior fatia das 7,9 h
+           de implantação. */
+        <EmptyState
+          variante="ativacao"
+          titulo="Seu cardápio ainda está vazio"
+          descricao="Suba uma planilha e cadastre tudo de uma vez, ou comece por um produto."
+          beneficios={[
+            { titulo: 'Cardápio inteiro de uma vez', descricao: 'Uma planilha com nome, preço e categoria.' },
+            { titulo: 'Você confere antes', descricao: 'Vê o que entra e o que ficou de fora antes de gravar.' },
+            { titulo: 'Corrigiu? Suba de novo', descricao: 'Reimportar atualiza os preços em vez de duplicar.' },
+          ]}
+          acao={
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={() => navegar('/cardapio/importar')}>
+                Importar planilha
+              </Button>
+              <Button variant="outline" onClick={() => setModalProduct({})}>
+                Cadastrar um produto
+              </Button>
+            </div>
           }
         />
       ) : (

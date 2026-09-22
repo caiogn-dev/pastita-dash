@@ -1,15 +1,21 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 import { ProductsPage } from '../ProductsPage';
 import * as storesApi from '../../../services/storesApi';
 
 const renderPage = () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  // MemoryRouter porque a página navega para o importador a partir do estado
+  // vazio (22/09). Renderizar sem Router testava a página num contexto que
+  // nunca existe no app.
   return render(
-    <QueryClientProvider client={client}>
-      <ProductsPage />
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={client}>
+        <ProductsPage />
+      </QueryClientProvider>
+    </MemoryRouter>,
   );
 };
 
