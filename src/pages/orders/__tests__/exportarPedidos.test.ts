@@ -70,4 +70,56 @@ describe('pedidosParaCsv', () => {
     const csv = pedidosParaCsv([pedido({ customer_phone: undefined })]);
     expect(csv).not.toMatch(/undefined/);
   });
+
+  // Segurança — CSV/formula injection (OWASP). O nome/telefone vêm do cliente
+  // no storefront: um valor de TEXTO começando com = + - @ TAB CR é executado
+  // como fórmula pelo Excel/Sheets ao abrir o arquivo na máquina do lojista.
+  it('neutraliza nome que começa com "=" (formula injection)', () => {
+    const csv = pedidosParaCsv([pedido({ customer_name: '=1+2' })]);
+    // O gatilho vira texto: prefixo "'". Nenhuma célula pode começar com "=".
+    expect(csv).toContain("'=1+2");
+    expect(csv).not.toMatch(/(^|,)=1\+2/);
+  });
+
+  it('neutraliza =HYPERLINK, mantendo o texto legível e aspeado', () => {
+    const csv = pedidosParaCsv([
+      pedido({ customer_name: '=HYPERLINK("http://evil","x")' }),
+    ]);
+    expect(csv).toContain("'=HYPERLINK");
+  });
+
+  it('neutraliza telefone internacional começando com "+"', () => {
+    const csv = pedidosParaCsv([pedido({ customer_phone: '+5563999990000' })]);
+    expect(csv).toContain("'+5563999990000");
+  });
+
+  it('neutraliza gatilhos "@" e "-" em texto controlado pelo cliente', () => {
+    const csvArroba = pedidosParaCsv([pedido({ customer_name: '@cmd' })]);
+    expect(csvArroba).toContain("'@cmd");
+    const csvHifen = pedidosParaCsv([pedido({ source: '-2+3' })]);
+    expect(csvHifen).toContain("'-2+3");
+  });
+
+  it('NÃO prefixa dinheiro negativo — número precisa seguir número no Excel', () => {
+    // O "-" da moeda produzida por nós não pode virar texto: quebraria a soma
+    // do contador. O gatilho de fórmula vale só para o texto do cliente.
+    const csv = pedidosParaCsv([pedido({ total: -5, delivery_fee: -3 })]);
+    expect(csv).toContain('"-5,00"');
+    expect(csv).not.toContain("'-5,00");
+    expect(csv).not.toContain("'-3,00");
+  });
+
+  it('não altera nome comum (sem gatilho)', () => {
+    const csv = pedidosParaCsv([pedido({ customer_name: 'Maria' })]);
+    expect(csv).not.toContain("'Maria");
+  });
+
+  it('CR em texto hostil é aspeado — não vira separador de registro (P1)', () => {
+    // "\r=1+2" sem vírgula/aspas: o "'" fica ANTES do CR, mas se o CR não
+    // entrar na condição de aspeamento, leitores que quebram registro no CR
+    // criam uma nova linha começando com "=" e a injeção volta. O CR precisa
+    // ser aspeado junto do LF (mesma regra do utilitário canônico csv.ts).
+    const csv = pedidosParaCsv([pedido({ customer_name: '\r=1+2' })]);
+    expect(csv).toContain(`"'\r=1+2"`);
+  });
 });
