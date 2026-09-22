@@ -9,6 +9,7 @@ import { useStore } from '../../hooks/useStore';
 import { useConfirm } from '../../hooks/useConfirm';
 import {
   getSubscription,
+  subscribe,
   cancelSubscription,
   changePlan,
   getPlans,
@@ -21,6 +22,7 @@ import {
 import PixInvoicePanel from '../../components/billing/PixInvoicePanel';
 import CartaoDePlano from '../../components/billing/CartaoDePlano';
 import { nomeDoPlano } from './nomeDoPlano';
+import { formatarReais, quantoOMarketplaceLevaria, type Ciclo } from './ofertaDoPlano';
 import { PageShell } from '../../components/ui';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -79,11 +81,14 @@ export default function SubscriptionManagementPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // O seletor Mensal/Anual saiu da tela em 21/09: ele mostrava "2 meses
-  // grátis" e um preço anual que NINGUÉM conseguia contratar — o painel não
-  // tinha como gravar o ciclo, e a assinatura saía mensal de qualquer jeito.
-  // O backend já sabe cobrar no ano (StoreSubscription.billing_cycle, fatura
-  // PIX kind=annual); falta a escolha chegar até aqui.
+  // O seletor saiu da tela em 21/09 porque prometia "2 meses grátis" e
+  // entregava assinatura mensal: o endpoint `subscribe/` ignorava o ciclo.
+  // Voltou em 22/09, junto com o backend que o honra — anual grava
+  // `billing_cycle` e emite fatura PIX do ano em vez de preapproval.
+  //
+  // Começa em 'annual' de propósito: é a oferta que inclui a implantação, e a
+  // opção que aparece primeiro é a que vira padrão na cabeça de quem lê.
+  const [ciclo, setCiclo] = useState<Ciclo>('annual');
 
   const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
   const [invoiceHistory, setInvoiceHistory] = useState<Invoice[]>([]);
@@ -176,6 +181,16 @@ export default function SubscriptionManagementPage() {
     if (!slug) return;
     setBusy(true);
     try {
+      if (ciclo === 'annual') {
+        // Anual não tem init_point: é fatura PIX única. Redirecionar aqui
+        // mandaria o dono para `undefined`.
+        await subscribe(slug, plan.key, 'annual');
+        const fatura = await getCurrentInvoice(slug);
+        setCurrentInvoice(fatura);
+        setSub(await getSubscription(slug));
+        setBusy(false);
+        return;
+      }
       const r = await changePlan(slug, plan.key);
       window.location.href = r.init_point;
     } catch {
@@ -262,9 +277,49 @@ export default function SubscriptionManagementPage() {
       )}
 
       <section>
-        <p className="mb-3 text-sm text-fg-muted-token">
-          Tudo incluso, 0% de comissão, com bot + IA.
-        </p>
+        {/* A âncora vem ANTES do preço, de propósito. R$ 249 sozinho é um
+            custo; R$ 249 ao lado dos R$ 2.385 que o marketplace levaria da
+            mesma loja é uma escolha. */}
+        <div className="superficie mb-4 rounded-xl p-4">
+          <p className="text-sm text-fg-token">
+            Uma loja que fatura <strong>{formatarReais(9000)}</strong> por mês entrega{' '}
+            <strong>{formatarReais(quantoOMarketplaceLevaria(9000))}</strong> de comissão
+            num marketplace de entrega.
+          </p>
+          <p className="mt-1 text-sm text-fg-muted-token">
+            Aqui a comissão é <strong>0%</strong>: você paga o plano e fica com o resto.
+          </p>
+        </div>
+
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <p className="text-sm text-fg-muted-token">
+            Tudo incluso, 0% de comissão, com bot + IA.
+          </p>
+          <div
+            role="radiogroup"
+            aria-label="Forma de pagamento"
+            className="controle inline-flex rounded-lg p-0.5"
+          >
+            {([
+              ['annual', 'Anual'],
+              ['monthly', 'Mensal'],
+            ] as Array<[Ciclo, string]>).map(([valor, rotulo]) => (
+              <button
+                key={valor}
+                type="button"
+                role="radio"
+                aria-checked={ciclo === valor}
+                onClick={() => setCiclo(valor)}
+                className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${
+                  ciclo === valor ? 'bg-brand text-on-brand' : 'text-fg-muted-token'
+                }`}
+              >
+                {rotulo}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {plans.map((p) => (
             <CartaoDePlano
@@ -273,6 +328,7 @@ export default function SubscriptionManagementPage() {
               planoAtual={sub?.plan}
               temAssinatura={!!sub && sub.status !== 'none'}
               ocupado={busy}
+              ciclo={ciclo}
               onEscolher={(plano) => void handleChange(plano)}
             />
           ))}

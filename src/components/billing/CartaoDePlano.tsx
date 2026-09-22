@@ -11,6 +11,7 @@ import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { formatCurrency } from '../../utils/formatters';
 import type { Plan } from '../../services/billing';
 import { acaoDoPlano, oQuePlanoInclui } from './oQuePlanoInclui';
+import { ofertaDoPlano, formatarReais, type Ciclo } from '../../pages/plano/ofertaDoPlano';
 
 const Valor: React.FC<{ valor: string | boolean }> = ({ valor }) => {
   if (valor === true) {
@@ -37,14 +38,18 @@ export interface CartaoDePlanoProps {
   planoAtual?: string | null;
   temAssinatura?: boolean;
   ocupado?: boolean;
+  /** Mensal ou anual. Muda o numero grande E o primeiro pagamento. */
+  ciclo?: Ciclo;
   onEscolher: (plano: Plan) => void;
 }
 
 export const CartaoDePlano: React.FC<CartaoDePlanoProps> = ({
-  plano, planoAtual, temAssinatura = false, ocupado = false, onEscolher,
+  plano, planoAtual, temAssinatura = false, ocupado = false,
+  ciclo = 'monthly', onEscolher,
 }) => {
   const atual = plano.key === planoAtual;
   const acao = acaoDoPlano(plano, planoAtual, temAssinatura);
+  const oferta = ofertaDoPlano(plano as never, ciclo);
 
   return (
     <div
@@ -57,15 +62,26 @@ export const CartaoDePlano: React.FC<CartaoDePlanoProps> = ({
 
       <p className="mt-2 flex items-baseline gap-1">
         <span className="text-2xl font-extrabold text-fg-token">
-          {plano.monthly_price === 0 ? 'Grátis' : formatCurrency(plano.monthly_price)}
+          {plano.monthly_price === 0 ? 'Grátis' : formatarReais(oferta.valorPorMes)}
         </span>
         {plano.monthly_price > 0 && <span className="text-sm text-fg-muted-token">/mês</span>}
       </p>
-      <p className="mt-1 text-xs text-fg-muted-token">
-        {plano.setup_fee > 0
-          ? `+ ${formatCurrency(plano.setup_fee)} de adesão (única)`
-          : 'Sem taxa de adesão'}
-      </p>
+      {/* O primeiro pagamento aparece SEM rodeio. No mensal ele carrega a
+          implantação, e esconder isso atrás do "/mês" só adia a objeção para a
+          hora de pagar. */}
+      {plano.monthly_price > 0 && (
+        <p className="mt-1 text-xs text-fg-muted-token">{oferta.explicacao}</p>
+      )}
+      {oferta.selo && (
+        <span className="mt-2 inline-flex w-fit rounded-full bg-success-surface px-2 py-0.5 text-xs font-semibold text-success-ink">
+          {oferta.selo}
+        </span>
+      )}
+      {ciclo === 'annual' && oferta.economia > 0 && (
+        <p className="mt-1 text-xs font-medium text-success-ink">
+          Economia de {formatarReais(oferta.economia)} no ano
+        </p>
+      )}
 
       <ul className="mt-4 flex-1 space-y-2 border-t border-border-token pt-4">
         {oQuePlanoInclui(plano).map((item) => (

@@ -88,14 +88,21 @@ export function trialDaysRemaining(
 }
 
 /**
- * Inicia a assinatura de um plano (preapproval MercadoPago). Retorna o
- * init_point — o dono autoriza o cartão lá. NÃO cobra automaticamente.
+ * Inicia a assinatura de um plano.
+ *
+ * MENSAL devolve `init_point`: preapproval do Mercado Pago, o dono autoriza o
+ * cartão lá e nada é cobrado automaticamente.
+ *
+ * ANUAL não tem init_point — é fatura PIX única. Quem chamar precisa ler a
+ * fatura vigente depois, não redirecionar. Confundir os dois manda o dono para
+ * `undefined`.
  */
 export async function subscribe(
   storeSlug: string,
   plan: PlanKey,
-): Promise<{ init_point: string; preapproval_id: string }> {
-  const { data } = await api.post(`/stores/${storeSlug}/subscribe/`, { plan });
+  billing_cycle: 'monthly' | 'annual' = 'monthly',
+): Promise<{ init_point?: string; preapproval_id?: string; billing_cycle?: string; invoice_id?: string }> {
+  const { data } = await api.post(`/stores/${storeSlug}/subscribe/`, { plan, billing_cycle });
   return data;
 }
 
