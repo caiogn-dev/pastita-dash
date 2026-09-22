@@ -47,6 +47,111 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
 - **Antes/depois:** `npm test` 1863/310 → **1866/311**; `tsc --noEmit` limpo nos dois
   lados; `eslint` sem erros novos no arquivo tocado. Só produção alterada: ramo de
   erro acionável + guarda de corrida, risco baixo.
+## Baseline atual (2026-09-19)
+
+- `git fetch origin` + `git checkout -B loop-base origin/main` + `npm ci`: ok.
+  Base do PR: `origin/main` em `6635f6c`.
+- `npx tsc --noEmit`: **limpo** (antes e depois).
+- `npm test`: **1806/301 → 1809/301** verdes (+3 testes desta fatia, incl. o
+  reforço do estado de retry apontado na revisão do Codex).
+- `npm run lint`: gate em 400 warnings; **4 erros PRÉ-EXISTENTES**
+  (`Unused eslint-disable directive` em `OrdersHeatMap.tsx`, `sidebarColuna.test.tsx`,
+  `pagamentoAMenorAoVivo.test.tsx`) — NÃO tocados por esta fatia. Produção tocada
+  (`ProductsPage.tsx`) com **0 erros / 0 warnings**; o teste adiciona 4 warnings de
+  `no-explicit-any` seguindo o idioma `(storesApi.X as any)` já usado no arquivo
+  (266 → 270 warnings, muito abaixo do gate).
+- Gate anti-acúmulo: **0 PRs `bot/` abertos**; nenhum PR aberto/fechado recente cobre
+  a falha silenciosa da busca de produtos no Cardápio.
+
+### 2026-09-19 — UX/Resiliência: Cardápio não vira "cardápio vazio" quando a busca de produtos falha
+- **Medido:** `ProductsPage` (`src/pages/products/ProductsPage.tsx`) serve os produtos
+  por `useProducts` (react-query) e só destruturava `data`/`isLoading` — o `isError`
+  **nunca era lido**. Numa falha de rede/500 **sem cache**, `productsQuery.data` fica
+  `undefined`, `products` continua `[]`, e o gate `initialLoading` (que exige
+  `categories.length === 0 && products.length === 0`) já cai para `false` assim que as
+  categorias carregam (fetch manual à parte). Resultado: a tela renderizava as
+  **categorias sem nenhum item** — um cardápio "vazio" que diz ao lojista que o
+  cardápio sumiu, quando na verdade foi a consulta que caiu. Mesmo engano de
+  "vazios/zeros enganosos" já corrigido em Clientes/Pagamentos/home, agora na tela de
+  gestão de produtos mais usada. `ProductsPage` era candidato nomeado no backlog desde
+  a varredura de KPIs derivados de query.
+- **Mudado (`ProductsPage.tsx`, mesmo padrão de Clientes):** novo flag
+  `produtosFalharam = productsQuery.isError && productsQuery.data === undefined`.
+  Na falha sem cache, no lugar do `InsightList` + lista arrastável mostra um
+  `EmptyState` acionável ("Não foi possível carregar o cardápio" + botão **"Tentar
+  novamente"** que chama `productsQuery.refetch()`), deixando claro que **nada foi
+  apagado**. Com dado em cache (falha só ao atualizar) mantém o cardápio anterior na
+  tela. Toolbar, filtros e modais seguem disponíveis; DnD/edição inline intactos.
+- **Teste (TDD, `__tests__/ProductsPage.test.tsx` — novo bloco):** escrito **vermelho
+  antes, verde depois**. 2 casos: (1) `getProducts` rejeita sem cache → erro acionável
+  e o produto real (`Arroz`) **não** aparece; (2) "Tentar novamente" refaz a busca
+  (`getProducts` chamado de novo).
+- **Reforço (revisão do Codex, P2):** ao clicar "Tentar novamente", o React Query
+  tira a query de `error` e a devolve para `pending` (`isError` vira `false`) ainda
+  **sem dados**; com as categorias já carregadas, o `initialLoading` também segue
+  `false`, então a versão inicial reexpunha o cardápio vazio durante todo o refetch
+  (que pode se arrastar por timeouts/retries). Corrigido: estado derivado de
+  `productsQuery.data === undefined` — `produtosCarregando` (busca em voo, inclui o
+  retry) mostra um `Loading` no lugar do menu; `produtosFalharam` (erro **e** sem
+  refetch em voo) mostra o erro acionável. Em nenhum dos dois se renderiza o cardápio
+  enganoso. +1 teste (estado coberto durante o refetch), vermelho antes do reforço.
+- **Antes/depois:** `npm test` 1806/301 → **1809/301**; `tsc --noEmit` limpo nos dois
+  lados; `eslint` **0 erros/0 warnings** no arquivo de produção tocado. Só produção
+  alterada: carregando/erro no lugar do estado vazio enganoso, risco baixo.
+
+_(Baselines e histórico anteriores mantidos abaixo.)_
+## Baseline atual (2026-09-20)
+
+- `git fetch origin --prune` + `git checkout -B loop-base origin/main` + `npm ci`: ok.
+  Base do PR: `origin/main` em `27b9736`.
+- `npx tsc --noEmit`: **limpo** (antes e depois).
+- `npm test`: **1863/310 → 1870/310** verdes (+7 testes desta fatia; mesma suíte).
+- `npm run lint`: **4 errors + 256 warnings PRÉ-EXISTENTES** (`Unused eslint-disable
+  directive` em `OrdersHeatMap.tsx`, `sidebarColuna.test.tsx`,
+  `pagamentoAMenorAoVivo.test.tsx`) — NÃO tocados por esta fatia; os arquivos desta
+  fatia passam com **0 problemas**.
+- Gate anti-acúmulo: só o PR `bot/` #202 (erro do cardápio) estava aberto — 1 < 3.
+  Nenhum PR aberto/fechado (14 dias) cobre a injeção de fórmula no CSV do histórico.
+
+## Histórico
+
+### 2026-09-20 — Segurança: CSV do histórico de pedidos vulnerável a formula injection
+- **Medido:** o painel tem DOIS caminhos de export CSV. O canônico
+  `src/utils/csv.ts` já neutraliza **CSV/formula injection** (prefixa `'` quando uma
+  célula de TEXTO começa com `= + - @ TAB CR` — OWASP, PR #175). Mas o export do
+  **histórico de pedidos** (`src/pages/orders/exportarPedidos.ts`, usado por
+  `HistoricoPedidosPage` → botão "Exportar CSV") tem o seu PRÓPRIO `campo()`, que só
+  aspeia delimitadores (`" , ; \n`) e **não** tem essa proteção. As colunas
+  **Cliente** (`customer_name`), **Telefone** (`customer_phone`) e **Canal**
+  (`source`) chegam do cliente pelo storefront, sem sanitização. Um cliente com nome
+  `=HYPERLINK("http://evil","clique")` (ou `=cmd|...`, `+`/`-`/`@…`) faz o Excel/
+  Sheets **executar a fórmula ao abrir** o arquivo na máquina do contador/dono —
+  exfiltração/execução exatamente da classe que o #175 fechou no outro caminho, mas
+  este export ficou de fora. Nenhum teste cobria o caso.
+- **Mudado (`exportarPedidos.ts`):** novo helper `texto()` que, antes de aspear via
+  `campo()`, prefixa `'` quando o valor bruto casa `GATILHO_DE_FORMULA = /^[=+\-@\t\r]/`
+  (mesma regra do `csv.ts`). As colunas de TEXTO controladas/potencialmente hostis
+  (`order_number`, `customer_name`, `customer_phone`, `source`, rótulo de pagamento,
+  rótulo de status) passam por `texto()`. As colunas de **dinheiro**
+  (`moeda(discount|delivery_fee|total)`) e a **quantidade** seguem por `campo()`: um
+  valor negativo produzido por nós (`-5,00`) NÃO pode virar texto, senão quebraria a
+  soma do contador no Excel. Data/hora saem por `campo()` (começam com dígito).
+- **Teste (TDD, `__tests__/exportarPedidos.test.ts`):** 6 casos novos, escritos
+  **vermelhos antes, verdes depois**: (1) `=1+2` vira `'=1+2` e nenhuma célula começa
+  com `=`; (2) `=HYPERLINK(...)` neutralizado e aspeado; (3) telefone `+55…`
+  prefixado; (4) gatilhos `@` e `-` em `customer_name`/`source`; (5) **regressão:**
+  dinheiro negativo (`-5,00`, `-3,00`) permanece numérico, sem `'`; (6) nome comum
+  ("Maria") intocado. Antes da correção, 4 desses casos falhavam (2 já verdes eram os
+  de regressão que provam que dinheiro não é afetado).
+- **Refino pós-review (Codex, P1):** o `campo()` deste export não aspeava CR (`\r`),
+  só `" , ; \n`. Com um nome hostil `"\r=1+2"` o `'` do `texto()` fica ANTES do CR,
+  mas o CR cru fora de célula aspeada é separador de registro para vários leitores:
+  a linha após o CR começa com `=`, e a injeção voltava. Corrigido incluindo `\r` na
+  condição de aspeamento (`/[",;\n\r]/`, mesma regra do `csv.ts`); novo 7º caso de
+  teste (`"\r=1+2"` deve sair aspeado) escrito vermelho→verde.
+- **Antes/depois:** `npm test` 1863/310 → **1870/310**; `tsc --noEmit` limpo nos dois
+  lados; `eslint` 0 problemas nos arquivos tocados. Só produção alterada: sanitização
+  de saída; caminho feliz idêntico (nomes/valores normais inalterados). Risco baixo.
 
 ## Baseline atual (2026-09-16)
 

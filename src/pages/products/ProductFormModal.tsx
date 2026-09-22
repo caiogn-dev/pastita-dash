@@ -811,7 +811,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     quarta e devolve na quinta deixa o preço errado para sempre
                     se falhar, e foi assim que a Almôndega ficou a R$ 42,99 por
                     dois dias sem ninguém ver. */}
-                <div className="sm:col-span-2 rounded-lg border border-border-token bg-surface-2 p-3">
+                <div className="sm:col-span-2 superficie-2 p-3">
                   <p className="text-sm font-medium text-fg-token mb-1">
                     Promoção semanal <span className="font-normal text-fg-muted-token">(opcional)</span>
                   </p>

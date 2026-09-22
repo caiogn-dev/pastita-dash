@@ -150,6 +150,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
   const mudarPreferencia = (novo: boolean) => {
     setRecolhido(novo);
     setEspiando(false);
+    // Recolher também FECHA o grupo aberto. Sem isto o submenu continuava
+    // desenhado por cima de uma coluna de 72px — pior que antes de recolher.
+    if (novo) setAberto(null);
     gravarPreferencia(novo);
   };
 
@@ -195,13 +198,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
     return () => publicarRecuo(false);
   }, [espiada]);
 
-  // 72px e não 64: com 64 o ícone de 20px ficava com 22px de folga de cada
-  // lado, e o alvo de clique encostava na borda da tela. 72 dá respiro e
-  // permite o ícone maior sem apertar.
+  // 72px e não 64: com 64 o ícone ficava com 22px de folga de cada lado e o
+  // alvo de clique encostava na borda da tela.
   const largura = estreita ? 'w-[72px]' : 'w-64';
-  // O ícone também é movimento: sem a transição ele TROCA de tamanho num
-  // frame, no meio de uma coluna que está deslizando.
-  const tamIcone = cn('transition-[width,height] duration-200', miolo ? 'h-6 w-6' : 'h-5 w-5');
+  // TAMANHO ÚNICO. O ícone crescia para 24px ao recolher, com transição de
+  // tamanho: no meio de uma coluna deslizando, o desenho também esticava — o
+  // efeito de zoom que denuncia animação feita à mão. Ícone é sinal, não
+  // decoração: mudando de tamanho conforme o estado, o olho lê como se fosse
+  // outro ícone. O que anima é a LARGURA da coluna, e só ela.
+  const tamIcone = 'h-5 w-5';
 
   return (
     // O invólucro segura o ESPAÇO da coluna na preferência do usuário. Sem ele,
@@ -292,20 +297,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
           // ajuste. Recolhida a coluna vira um traço: o texto não caberia, mas
           // a separação ainda vale.
           const primeiraDoGrupo = secao.grupo && sections[indice - 1]?.grupo !== secao.grupo;
+          // O NOME do grupo saiu da coluna (decisão do dono, 21/09): texto que
+          // não é destino ocupava quatro linhas e ninguém clicava. O traço
+          // fino separa igual, e separa nos DOIS estados — recolhida, ele é a
+          // única pista de que ali muda de assunto.
           const cabecalhoDoGrupo = primeiraDoGrupo ? (
-            miolo ? (
-              <li aria-hidden className="mx-auto my-2 h-px w-6 bg-border-token" />
-            ) : (
-              <li
-                className={cn(
-                  ENTRADA,
-                  'px-2.5 pb-1 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-fg-muted-token/70',
-                  indice === 0 ? 'pt-1' : 'pt-4',
-                )}
-              >
-                {secao.grupo}
-              </li>
-            )
+            <li aria-hidden className="mx-auto my-2 h-px w-6 bg-border-token" />
           ) : null;
 
           // Seção sem filhos é um link direto — não vira botão de acordeão.
@@ -370,12 +367,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                 type="button"
                 aria-expanded={estaAberta}
                 onClick={() => {
-                  // Recolhida, abrir um grupo mostrava os filhos como ícones
-                  // mudos empilhados — você clicava em "Cardápio" e recebia
-                  // cinco quadradinhos sem nome. O gesto de abrir um grupo é
-                  // um pedido para VER o grupo: a coluna expande junto.
+                  // Recolhida, a coluna FICA recolhida. Antes este clique
+                  // trocava a preferência e a página inteira pulava 184px —
+                  // por um gesto que pedia só para ver um submenu. Agora o
+                  // submenu aparece por cima, que é a mesma espiada do hover:
+                  // mostra o grupo e devolve o espaço intacto ao sair.
+                  //
+                  // E ALTERNA, como no estado expandido: a primeira versão
+                  // forçava "abrir", então o submenu descia e não voltava
+                  // mais no segundo clique.
                   if (recolhido) {
-                    mudarPreferencia(false);
+                    if (estaAberta) {
+                      setAberto(null);
+                      return;
+                    }
+                    setEspiando(true);
                     setAberto(secao.label);
                     return;
                   }

@@ -154,7 +154,7 @@ export default function MessengerInbox() {
               <h1 className="text-base font-semibold text-fg-primary">Messenger</h1>
               <p className="text-xs text-fg-muted">{conversations.length} conversa(s)</p>
             </div>
-            <button
+            <button aria-label="Atualizar conversas"
               type="button"
               onClick={loadConversations}
               className="ml-auto rounded-lg p-2 text-fg-muted transition-colors hover:bg-bg-hover hover:text-fg-primary"

@@ -614,7 +614,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
 
   if (loadError && !order) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-border-token bg-surface px-6 py-12 text-center">
+      <div className="flex flex-col items-center justify-center gap-4 superficie px-6 py-12 text-center">
         <XMarkIcon className="h-10 w-10 text-[var(--danger)]" />
         <div>
           <p className="text-base font-semibold text-fg-token">
@@ -718,7 +718,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
         </header>
 
         {/* ── A régua de status, atravessando o topo ────────────────────── */}
-        <div className="rounded-xl border border-border-token bg-surface px-5 py-4">
+        <div className="superficie px-5 py-4">
           <FluxoDoStatus order={order} isCancelled={isCancelled} marcos={marcos} />
         </div>
 
@@ -729,7 +729,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
         {/* Duas colunas, não três. Os botões moravam numa coluna só deles e
             deixavam 110px de buraco embaixo: botão não é informação, ele
             pertence à coisa que opera. */}
-        <section className="grid gap-x-8 gap-y-4 rounded-xl border border-border-token bg-surface p-5 sm:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+        <section className="grid gap-x-8 gap-y-4 superficie p-5 sm:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
           <div className="min-w-0">
             <p className="mb-1.5 text-xs font-medium text-fg-muted-token">Cliente</p>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -831,7 +831,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
             )}
 
             {/* ── O que foi pedido ──────────────────────────────────── */}
-            <section className="rounded-xl border border-border-token bg-surface p-5">
+            <section className="superficie p-5">
               <Secao
                 acao={
                   <span className="text-xs text-fg-muted-token">
@@ -961,7 +961,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
           <aside className="flex min-w-0 flex-col gap-5">
 
             {/* ── Dinheiro ─────────────────────────────────────────── */}
-            <section className="rounded-xl border border-border-token bg-surface p-5">
+            <section className="superficie p-5">
               <Secao>Pagamento</Secao>
 
               {hasPaymentBalance && amountDue > 0 ? (
@@ -1064,7 +1064,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                       aria-label="Valor da cobrança"
                       value={chargeAmount}
                       onChange={(e) => setChargeAmount(e.target.value)}
-                      className="w-24 rounded-lg border border-border-token bg-surface px-2.5 py-2 text-sm outline-none focus:border-[var(--brand)]"
+                      className="w-24 superficie px-2.5 py-2 text-sm outline-none focus:border-[var(--brand)]"
                     />
                     <button
                       type="button"

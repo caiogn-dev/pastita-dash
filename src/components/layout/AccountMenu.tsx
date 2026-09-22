@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   ArrowRightOnRectangleIcon, BuildingStorefrontIcon,
-  LinkIcon, Cog6ToothIcon, SparklesIcon, CreditCardIcon,
+  LinkIcon, Cog6ToothIcon, CreditCardIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/authStore';
 import { useStore } from '../../hooks/useStore';
@@ -22,8 +22,9 @@ export const ACCOUNT_LINKS: AccountLink[] = [
   // tela ensinam o operador duas vezes e nenhuma delas por inteiro.
   { name: 'Conexões',        href: '/connections', icon: LinkIcon, sectionHeader: 'Integrações' },
   { name: 'Preferências',    href: '/settings',    icon: Cog6ToothIcon, sectionHeader: 'Conta' },
-  { name: 'Plano',           href: '/plano',       icon: SparklesIcon },
-  { name: 'Assinatura',      href: '/assinatura',  icon: CreditCardIcon },
+  // 'Plano' (/plano) saiu: era o MESMO catálogo de 'Assinatura', com outro
+  // desenho e sem o estado da cobrança. Duas portas para a mesma decisão.
+  { name: 'Plano e cobrança', href: '/assinatura', icon: CreditCardIcon },
 ];
 
 export const AccountMenu: React.FC = () => {

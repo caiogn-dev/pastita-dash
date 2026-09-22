@@ -27,13 +27,13 @@ const actionTypeLabels: Record<string, string> = {
 };
 
 const actionTypeColors: Record<string, string> = {
-  message_received: 'bg-blue-100 text-blue-800',
-  message_sent: 'bg-green-100 text-green-800',
-  webhook_received: 'bg-purple-100 text-purple-800',
-  session_created: 'bg-indigo-100 text-indigo-800',
-  session_updated: 'bg-yellow-100 text-yellow-800',
+  message_received: 'bg-info-soft text-info-token',
+  message_sent: 'bg-success-soft text-success-token',
+  webhook_received: 'bg-info-soft text-info-token',
+  session_created: 'bg-info-soft text-info-token',
+  session_updated: 'bg-warning-soft text-warning-token',
   notification_sent: 'bg-cyan-100 text-cyan-800',
-  error: 'bg-red-100 text-red-800',
+  error: 'bg-danger-soft text-danger-token',
 };
 
 const POR_PAGINA = 50;
@@ -128,7 +128,7 @@ const AutomationLogsPage: React.FC = () => {
         onClick={() => setShowFilters(!showFilters)}
         className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${
         showFilters
-        ? 'border-green-500 text-green-700 bg-green-50'
+        ? 'border-green-500 text-success-token bg-success-soft'
         : 'border-border-token text-fg-token dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-surface hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)]'
         }`}
         >

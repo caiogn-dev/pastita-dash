@@ -19,6 +19,8 @@ import {
   type Invoice,
 } from '../../services/billing';
 import PixInvoicePanel from '../../components/billing/PixInvoicePanel';
+import CartaoDePlano from '../../components/billing/CartaoDePlano';
+import { nomeDoPlano } from './nomeDoPlano';
 import { PageShell } from '../../components/ui';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -28,13 +30,6 @@ const STATUS_LABEL: Record<string, string> = {
   past_due:  'Pagamento atrasado',
   suspended: 'Suspensa',
   canceled:  'Cancelada',
-};
-
-const PLAN_LABEL: Record<string, string> = {
-  free:      'Grátis',
-  essencial: 'Essencial',
-  pro:       'Pro',
-  premium:   'Premium',
 };
 
 const INVOICE_STATUS_LABEL: Record<string, string> = {
@@ -84,7 +79,11 @@ export default function SubscriptionManagementPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [cycle, setCycle] = useState<'monthly' | 'annual'>('monthly');
+  // O seletor Mensal/Anual saiu da tela em 21/09: ele mostrava "2 meses
+  // grátis" e um preço anual que NINGUÉM conseguia contratar — o painel não
+  // tinha como gravar o ciclo, e a assinatura saía mensal de qualquer jeito.
+  // O backend já sabe cobrar no ano (StoreSubscription.billing_cycle, fatura
+  // PIX kind=annual); falta a escolha chegar até aqui.
 
   const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
   const [invoiceHistory, setInvoiceHistory] = useState<Invoice[]>([]);
@@ -210,7 +209,7 @@ export default function SubscriptionManagementPage() {
           </strong>
           {sub?.plan && (
             <>
-              {' '}— plano <strong className="text-fg-token">{PLAN_LABEL[sub.plan] ?? sub.plan}</strong>
+              {' '}— plano <strong className="text-fg-token">{nomeDoPlano(sub.plan, plans)}</strong>
             </>
           )}
           {sub?.current_period_end && (
@@ -263,88 +262,20 @@ export default function SubscriptionManagementPage() {
       )}
 
       <section>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm text-fg-muted-token">
-            Tudo incluso, 0% de comissão, com bot + IA.
-          </p>
-          <div className="inline-flex rounded-full border border-border-token p-1 text-xs">
-            <button
-              type="button"
-              onClick={() => setCycle('monthly')}
-              className={`rounded-full px-3 py-1 font-medium transition-colors ${
-                cycle === 'monthly' ? 'bg-brand text-white' : 'text-fg-muted-token'
-              }`}
-            >
-              Mensal
-            </button>
-            <button
-              type="button"
-              onClick={() => setCycle('annual')}
-              className={`rounded-full px-3 py-1 font-medium transition-colors ${
-                cycle === 'annual' ? 'bg-brand text-white' : 'text-fg-muted-token'
-              }`}
-            >
-              Anual
-            </button>
-          </div>
-        </div>
-        {cycle === 'annual' && (
-          <p className="mb-3 text-xs text-fg-muted-token">
-            Cobrança anual chega em breve — por enquanto a assinatura é mensal.
-          </p>
-        )}
+        <p className="mb-3 text-sm text-fg-muted-token">
+          Tudo incluso, 0% de comissão, com bot + IA.
+        </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {plans.map((p) => {
-            const isCurrent = sub?.plan === p.key;
-            const annualPrice = p.annual_price ?? p.monthly_price * 10;
-            return (
-              <div
-                key={p.key}
-                className={`rounded-lg border p-5 flex flex-col gap-3 ${
-                  isCurrent ? 'border-brand ring-1 ring-brand' : 'border-border-token'
-                }`}
-              >
-                {isCurrent && (
-                  <span className="overline text-brand-ink">
-                    Plano atual
-                  </span>
-                )}
-                <h2 className="text-base font-bold text-fg-token">{p.name}</h2>
-                <p className="text-lg font-semibold text-fg-token">
-                  {p.monthly_price === 0 ? (
-                    'Grátis'
-                  ) : cycle === 'annual' ? (
-                    <>
-                      R$ {annualPrice.toFixed(2)}
-                      <span className="text-sm font-normal text-fg-muted-token">/ano</span>
-                    </>
-                  ) : (
-                    <>
-                      R$ {p.monthly_price.toFixed(2)}
-                      <span className="text-sm font-normal text-fg-muted-token">/mês</span>
-                    </>
-                  )}
-                </p>
-                {cycle === 'annual' && p.monthly_price > 0 && (
-                  <span className="text-badge font-semibold text-success-token">
-                    2 meses grátis
-                  </span>
-                )}
-                {p.setup_fee > 0 && (
-                  <p className="text-xs text-fg-muted-token">
-                    + R$ {p.setup_fee.toFixed(2)} de adesão (única)
-                  </p>
-                )}
-                <button
-                  disabled={busy || isCurrent}
-                  onClick={() => void handleChange(p)}
-                  className="mt-auto w-full rounded-lg bg-brand px-3 py-2 text-sm font-medium text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
-                >
-                  {isCurrent ? 'Plano atual' : 'Mudar para este'}
-                </button>
-              </div>
-            );
-          })}
+          {plans.map((p) => (
+            <CartaoDePlano
+              key={p.key}
+              plano={p}
+              planoAtual={sub?.plan}
+              temAssinatura={!!sub && sub.status !== 'none'}
+              ocupado={busy}
+              onEscolher={(plano) => void handleChange(plano)}
+            />
+          ))}
         </div>
       </section>
 

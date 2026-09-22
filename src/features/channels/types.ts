@@ -9,6 +9,8 @@ export interface ChannelAccount {
   avatarUrl?: string;
   isActive: boolean;
   webhookVerified?: boolean;
+  /** Token recusado pela Meta: ligada, porém muda. */
+  precisaReconectar?: boolean;
   lastSyncAt?: string | null;
   raw: unknown;
 }

@@ -20,13 +20,13 @@ import { EmptyState } from '../../components/common';
 import { formatCurrency } from '../../utils/formatters';
 
 const statusColors: Record<SessionStatus, string> = {
-  active: 'bg-blue-100 text-blue-800',
-  cart_created: 'bg-yellow-100 text-yellow-800',
-  cart_abandoned: 'bg-red-100 text-red-800',
-  checkout: 'bg-purple-100 text-purple-800',
-  payment_pending: 'bg-orange-100 text-orange-800',
-  payment_confirmed: 'bg-green-100 text-green-800',
-  order_placed: 'bg-indigo-100 text-indigo-800',
+  active: 'bg-info-soft text-info-token',
+  cart_created: 'bg-warning-soft text-warning-token',
+  cart_abandoned: 'bg-danger-soft text-danger-token',
+  checkout: 'bg-info-soft text-info-token',
+  payment_pending: 'bg-warning-soft text-warning-token',
+  payment_confirmed: 'bg-success-soft text-success-token',
+  order_placed: 'bg-info-soft text-info-token',
   completed: 'bg-surface-2 text-fg-token',
   expired: 'bg-surface-2 text-fg-muted-token',
 };
@@ -137,7 +137,7 @@ const CustomerSessionsPage: React.FC = () => {
         onClick={() => setShowFilters(!showFilters)}
         className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${
         showFilters
-        ? 'border-green-500 text-green-700 bg-green-50'
+        ? 'border-green-500 text-success-token bg-success-soft'
         : 'border-border-token text-fg-token dark:text-[var(--dark-text-secondary,#a1a1aa)] bg-surface hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)]'
         }`}
         >

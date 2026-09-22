@@ -21,6 +21,7 @@ import type {
   SystemContact,
 } from '../../../services/campaigns';
 import logger from '../../../services/logger';
+import ConstrutorDeRegras from './ConstrutorDeRegras';
 import {
   ATALHOS,
   ROTULO_FREQUENCIA,
@@ -48,6 +49,7 @@ export const SeletorDeAudiencia: React.FC<Props> = ({ accountId, storeSlug, onUs
   const [previa, setPrevia] = useState<RespostaDeAudiencia | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [avancado, setAvancado] = useState(false);
+  const [porRegra, setPorRegra] = useState(false);
 
   const conflito = useMemo(() => conflitoNosFiltros(filtros), [filtros]);
   const atalho = useMemo(() => atalhoAtivo(filtros), [filtros]);
@@ -174,14 +176,33 @@ export const SeletorDeAudiencia: React.FC<Props> = ({ accountId, storeSlug, onUs
         </p>
       )}
 
-      <button
-        type="button"
-        onClick={() => setAvancado((v) => !v)}
-        className="text-sm text-brand-ink hover:underline"
-        aria-expanded={avancado}
-      >
-        {avancado ? 'Esconder filtros detalhados' : 'Filtrar com mais detalhe'}
-      </button>
+      <div className="flex flex-wrap items-center gap-4">
+        <button
+          type="button"
+          onClick={() => { setAvancado((v) => !v); setPorRegra(false); }}
+          className="text-body text-brand-ink hover:underline"
+          aria-expanded={avancado}
+        >
+          {avancado ? 'Esconder filtros detalhados' : 'Filtrar com mais detalhe'}
+        </button>
+        {/* Terceiro nível: quem quer precisão monta a própria pergunta.
+            Atalho → eixos → construtor é *progressive disclosure*: o poder
+            existe sem cobrar dele de quem só quer disparar rápido. */}
+        <button
+          type="button"
+          onClick={() => { setPorRegra((v) => !v); setAvancado(false); }}
+          className="text-body text-brand-ink hover:underline"
+          aria-expanded={porRegra}
+        >
+          {porRegra ? 'Esconder o construtor' : 'Montar minha própria regra'}
+        </button>
+      </div>
+
+      {porRegra && (
+        <div className="border-t border-border-token pt-4">
+          <ConstrutorDeRegras storeIds={storeSlug ? undefined : undefined} />
+        </div>
+      )}
 
       {avancado && (
         <div className="space-y-4 border-t border-border-token pt-4">

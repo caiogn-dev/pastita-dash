@@ -300,7 +300,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                                 }))
                               }
                               placeholder={`Valor para {{${v.index}}}`}
-                              className="w-full px-2.5 py-1.5 rounded-lg border border-border-token bg-surface text-xs text-fg-token placeholder-fg-muted-token focus:outline-none focus:ring-1 focus:ring-brand"
+                              className="w-full px-2.5 py-1.5 superficie text-xs text-fg-token placeholder-fg-muted-token focus:outline-none focus:ring-1 focus:ring-brand"
                             />
                           </div>
                         ))}

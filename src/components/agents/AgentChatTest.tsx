@@ -251,7 +251,7 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
           >
             <BugAntIcon className="w-4 h-4" />
           </button>
-          <button
+          <button aria-label="Limpar conversa de teste"
             onClick={handleClear}
             className="p-2 rounded-lg text-fg-muted-token hover:text-danger-token hover:bg-danger-soft transition-colors"
             title="Limpar conversa"

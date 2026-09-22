@@ -38,19 +38,19 @@ import logger from '../../services/logger';
 // =============================================================================
 
 const TRIGGER_CONFIG: Record<string, { icon: string; color: string; bgColor: string }> = {
-  new_user: { icon: '👤', color: 'text-blue-600', bgColor: 'bg-blue-100' },
-  welcome: { icon: '👋', color: 'text-green-600', bgColor: 'bg-green-100' },
-  order_confirmed: { icon: '✅', color: 'text-emerald-600', bgColor: 'bg-emerald-100' },
-  order_preparing: { icon: '👨‍🍳', color: 'text-orange-600', bgColor: 'bg-orange-100' },
-  order_shipped: { icon: '🚚', color: 'text-blue-600', bgColor: 'bg-blue-100' },
-  order_delivered: { icon: '📦', color: 'text-green-600', bgColor: 'bg-green-100' },
-  order_cancelled: { icon: '❌', color: 'text-red-600', bgColor: 'bg-red-100' },
-  payment_confirmed: { icon: '💳', color: 'text-green-600', bgColor: 'bg-green-100' },
-  payment_failed: { icon: '⚠️', color: 'text-red-600', bgColor: 'bg-red-100' },
-  cart_abandoned: { icon: '🛒', color: 'text-yellow-600', bgColor: 'bg-yellow-100' },
-  coupon_sent: { icon: '🎟️', color: 'text-purple-600', bgColor: 'bg-purple-100' },
+  new_user: { icon: '👤', color: 'text-info-token', bgColor: 'bg-info-soft' },
+  welcome: { icon: '👋', color: 'text-success-token', bgColor: 'bg-success-soft' },
+  order_confirmed: { icon: '✅', color: 'text-success-token', bgColor: 'bg-success-soft' },
+  order_preparing: { icon: '👨‍🍳', color: 'text-warning-token', bgColor: 'bg-warning-soft' },
+  order_shipped: { icon: '🚚', color: 'text-info-token', bgColor: 'bg-info-soft' },
+  order_delivered: { icon: '📦', color: 'text-success-token', bgColor: 'bg-success-soft' },
+  order_cancelled: { icon: '❌', color: 'text-danger-token', bgColor: 'bg-danger-soft' },
+  payment_confirmed: { icon: '💳', color: 'text-success-token', bgColor: 'bg-success-soft' },
+  payment_failed: { icon: '⚠️', color: 'text-danger-token', bgColor: 'bg-danger-soft' },
+  cart_abandoned: { icon: '🛒', color: 'text-warning-token', bgColor: 'bg-warning-soft' },
+  coupon_sent: { icon: '🎟️', color: 'text-info-token', bgColor: 'bg-info-soft' },
   birthday: { icon: '🎂', color: 'text-pink-600', bgColor: 'bg-pink-100' },
-  review_request: { icon: '⭐', color: 'text-yellow-600', bgColor: 'bg-yellow-100' },
+  review_request: { icon: '⭐', color: 'text-warning-token', bgColor: 'bg-warning-soft' },
 };
 
 // =============================================================================
@@ -339,7 +339,7 @@ export default function AutomationsPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => openTestModal(automation)}
-                        className="p-2 text-fg-muted-token hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 rounded-lg"
+                        className="p-2 text-fg-muted-token hover:text-info-token dark:text-blue-400 hover:bg-info-soft rounded-lg"
                         title="Enviar teste"
                       >
                         <BeakerIcon className="w-5 h-5" />
@@ -348,8 +348,8 @@ export default function AutomationsPage() {
                         onClick={() => handleToggle(automation)}
                         className={`p-2 rounded-lg ${
                           automation.is_active
-                            ? 'text-yellow-600 hover:bg-yellow-50'
-                            : 'text-green-600 hover:bg-green-50'
+                            ? 'text-warning-token hover:bg-warning-soft'
+                            : 'text-success-token hover:bg-success-soft'
                         }`}
                         title={automation.is_active ? 'Pausar' : 'Ativar'}
                       >
@@ -361,7 +361,7 @@ export default function AutomationsPage() {
                       </button>
                       <button
                         onClick={() => handleDelete(automation)}
-                        className="p-2 text-fg-muted-token hover:text-danger-token hover:bg-red-50 rounded-lg"
+                        className="p-2 text-fg-muted-token hover:text-danger-token hover:bg-danger-soft rounded-lg"
                         title="Excluir"
                       >
                         <TrashIcon className="w-5 h-5" />

@@ -113,7 +113,9 @@ describe('SubscriptionManagementPage — fatura atual + histórico + toggle', ()
     expect(screen.queryByText(/PIX copia e cola/i)).not.toBeInTheDocument();
   });
 
-  it('alterna para "anual" e exibe o preço anual do plano pago', async () => {
+  it('não oferece o ciclo anual, que ninguém consegue contratar', async () => {
+    // O seletor Mensal/Anual mostrava "2 meses grátis" e um preço anual, mas a
+    // assinatura saía mensal de qualquer jeito: nada no painel grava o ciclo.
     mockGetSubscription.mockResolvedValue(BASE_SUB);
     mockGetPlans.mockResolvedValue(BASE_PLANS);
     mockGetCurrentInvoice.mockResolvedValue(null);
@@ -121,37 +123,20 @@ describe('SubscriptionManagementPage — fatura atual + histórico + toggle', ()
     render(<SubscriptionManagementPage />);
 
     await waitFor(() => expect(mockGetPlans).toHaveBeenCalled());
-    expect(await screen.findByText(/R\$ 100.00/)).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: /anual/i }));
-
-    expect(await screen.findByText(/R\$ 1000.00/)).toBeInTheDocument();
-    expect(screen.getByText(/2 meses grátis/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /anual/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/2 meses grátis/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/chega em breve/i)).not.toBeInTheDocument();
   });
 
-  it('mostra aviso de cobrança anual em breve só no ciclo anual', async () => {
+  it('cada plano diz o que inclui antes de pedir a escolha', async () => {
     mockGetSubscription.mockResolvedValue(BASE_SUB);
     mockGetPlans.mockResolvedValue(BASE_PLANS);
     mockGetCurrentInvoice.mockResolvedValue(null);
 
     render(<SubscriptionManagementPage />);
 
-    await waitFor(() => expect(mockGetPlans).toHaveBeenCalled());
-    expect(
-      screen.queryByText(/Cobrança anual chega em breve/i),
-    ).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: /anual/i }));
-
-    expect(
-      await screen.findByText(/Cobrança anual chega em breve — por enquanto a assinatura é mensal\./i),
-    ).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: /mensal/i }));
-
-    expect(
-      screen.queryByText(/Cobrança anual chega em breve/i),
-    ).not.toBeInTheDocument();
+    expect(await screen.findAllByText('Produtos no cardápio')).not.toHaveLength(0);
+    expect(screen.getAllByText('Atendimento por WhatsApp').length).toBeGreaterThan(0);
   });
 
   it('exibe o histórico de faturas quando listInvoices retorna itens', async () => {

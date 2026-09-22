@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ProductsPage } from '../ProductsPage';
 import * as storesApi from '../../../services/storesApi';
@@ -67,4 +67,68 @@ test('renders categories and products', async () => {
   renderPage();
   await waitFor(() => expect(screen.getAllByText('Almoço').length).toBeGreaterThan(0));
   expect(screen.getByText('Arroz')).toBeInTheDocument();
+});
+
+// Quando a busca de produtos cai SEM cache, `productsQuery.data` fica undefined e
+// `products` vira []. Antes, a página apenas renderizava um cardápio vazio (as
+// categorias sem nenhum item) — dizendo ao lojista que o cardápio sumiu, quando
+// na verdade a consulta é que falhou. Mesmo engano de "zeros/vazios enganosos"
+// já corrigido em Clientes/Pagamentos, agora na tela de Cardápio.
+describe('cardápio: falha na busca de produtos sem cache', () => {
+  test('mostra erro acionável em vez de um cardápio vazio silencioso', async () => {
+    (storesApi.getProducts as any).mockRejectedValue(new Error('boom'));
+    renderPage();
+
+    await waitFor(() =>
+      expect(screen.getByText('Não foi possível carregar o cardápio')).toBeInTheDocument(),
+    );
+    // Não pode fingir que a loja não tem produtos.
+    expect(screen.queryByText('Arroz')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /tentar novamente/i })).toBeInTheDocument();
+  });
+
+  test('"Tentar novamente" refaz a busca de produtos', async () => {
+    (storesApi.getProducts as any).mockRejectedValueOnce(new Error('boom'));
+    renderPage();
+
+    const botao = await screen.findByRole('button', { name: /tentar novamente/i });
+    const chamadasAntes = (storesApi.getProducts as any).mock.calls.length;
+    fireEvent.click(botao);
+
+    await waitFor(() =>
+      expect((storesApi.getProducts as any).mock.calls.length).toBeGreaterThan(chamadasAntes),
+    );
+  });
+
+  // Durante o retry o React Query tira a query de `error` e a devolve para
+  // `pending` (isError=false) ainda sem dados. Não pode reexpor o cardápio vazio
+  // nessa janela — que pode durar timeouts/retries inteiros.
+  test('durante o refetch (sem dados) mostra carregando, não o cardápio vazio', async () => {
+    let concluirSegunda: (v: unknown) => void = () => {};
+    (storesApi.getProducts as any)
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockImplementationOnce(
+        () => new Promise((res) => { concluirSegunda = res as (v: unknown) => void; }),
+      );
+    renderPage();
+
+    const botao = await screen.findByRole('button', { name: /tentar novamente/i });
+    fireEvent.click(botao);
+
+    // Refetch em voo: o erro/retry some e no lugar aparece o estado de carregando
+    // (não o cardápio vazio). O produto real NÃO reaparece até a busca concluir.
+    await waitFor(() =>
+      expect(screen.getByText('Carregando o cardápio…')).toBeInTheDocument(),
+    );
+    expect(screen.queryByRole('button', { name: /tentar novamente/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('Arroz')).not.toBeInTheDocument();
+
+    // Busca conclui com dados → o produto aparece.
+    concluirSegunda({
+      results: [
+        { id: 'p1', name: 'Arroz', price: 6.8, stock_quantity: 1, track_stock: false, status: 'active', category: 'a', sort_order: 0 },
+      ],
+    });
+    await waitFor(() => expect(screen.getByText('Arroz')).toBeInTheDocument());
+  });
 });

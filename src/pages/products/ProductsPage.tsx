@@ -1,11 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  CheckCircleIcon,
+  CubeIcon,
+  ExclamationTriangleIcon,
+  PauseCircleIcon,
+} from '@heroicons/react/24/outline';
 import { DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import * as storesApi from '../../services/storesApi';
 import type { StoreCategory, StoreProductType } from '../../services/storesApi';
 import type { Product } from '../../services/products';
-import { InsightList } from '../../components/ui';
+import { Button, EmptyState, InsightList, KpiGrid, PageShell } from '../../components/ui';
+import { Loading } from '../../components/common';
 import { insightsDeCardapio } from './insightsDeCardapio';
+import { numerosDoCardapio } from './numerosDoCardapio';
 import { useStore } from '../../hooks/useStore';
 // react-hot-toast e NÃO useToast: aquele hook guarda os toasts num useState
 // local e devolve o array para o componente renderizar — mas o ToastProvider
@@ -22,7 +30,6 @@ import { AddCategoryModal } from './components/AddCategoryModal';
 import { MontadorModal, type ConfigMontador } from './components/MontadorModal';
 import { ProductFormModal } from './ProductFormModal';
 import { useConfirm } from '../../hooks/useConfirm';
-import { PageShell } from '../../components/ui';
 
 export const ProductsPage: React.FC = () => {
   const { storeId } = useStore();
@@ -213,6 +220,54 @@ export const ProductsPage: React.FC = () => {
   // de chamada entre renders e o React quebra — foi o que aconteceu aqui.
   const insights = useMemo(() => insightsDeCardapio(products as never), [products]);
 
+  // Sem dados de produtos (nunca chegaram) — `productsQuery.data` fica undefined
+  // e `products` continua []. Sem tratar isso, a tela mostrava as categorias sem
+  // nenhum item: um cardápio "vazio" que na verdade é uma consulta que caiu.
+  // Dois estados distintos, e em NENHUM se renderiza esse cardápio enganoso:
+  //   - `produtosCarregando`: a busca está em voo. Cobre também o RETRY — ao
+  //     clicar "Tentar novamente", o React Query tira a query de `error` e a põe
+  //     de volta em `pending` (isError vira false) ainda sem dados; sem isto, o
+  //     cardápio vazio reaparecia durante todo o refetch (que pode se arrastar
+  //     por timeouts/retries).
+  //   - `produtosFalharam`: falhou e parou (erro, sem refetch em voo) → erro
+  //     acionável com retry.
+  // Com dado em cache (falha/atualização só de fundo) mantém o cardápio anterior.
+  const semProdutos = productsQuery.data === undefined;
+  const produtosCarregando = semProdutos && productsQuery.isFetching;
+  const produtosFalharam = semProdutos && productsQuery.isError && !productsQuery.isFetching;
+  // Quatro números antes da lista: a lista diz o que a loja vende, os números
+  // dizem quanto do cardápio está realmente no ar.
+  const numeros = useMemo(() => numerosDoCardapio(products as never), [products]);
+  const indicadores = useMemo(() => [
+    {
+      label: 'Produtos cadastrados',
+      value: numeros.cadastrados,
+      definicao: 'Tudo que existe no cardápio, no ar ou não.',
+      icone: <CubeIcon className="h-5 w-5" />,
+    },
+    {
+      label: 'No ar agora',
+      value: numeros.ativos,
+      definicao: 'O cliente vê e consegue pedir.',
+      tone: 'success' as const,
+      icone: <CheckCircleIcon className="h-5 w-5" />,
+    },
+    {
+      label: 'Pausados',
+      value: numeros.pausados,
+      definicao: 'Cadastrados e fora do cardápio — ninguém vê.',
+      tone: numeros.pausados > 0 ? ('warning' as const) : undefined,
+      icone: <PauseCircleIcon className="h-5 w-5" />,
+    },
+    {
+      label: 'Sem estoque',
+      value: numeros.semEstoque,
+      definicao: 'Controlam estoque e estão zerados. Ainda aparecem para o cliente.',
+      tone: numeros.semEstoque > 0 ? ('danger' as const) : undefined,
+      icone: <ExclamationTriangleIcon className="h-5 w-5" />,
+    },
+  ], [numeros]);
+
   if (initialLoading) return <div>Carregando…</div>;
 
   return (
@@ -235,10 +290,29 @@ export const ProductsPage: React.FC = () => {
         />
       }
     >
+      {produtosCarregando ? (
+        <div className="flex justify-center py-16">
+          <Loading size="md" rotulo="Carregando o cardápio…" />
+        </div>
+      ) : produtosFalharam ? (
+        <EmptyState
+          icone={<ExclamationTriangleIcon className="h-8 w-8 text-[var(--warning)]" />}
+          titulo="Não foi possível carregar o cardápio"
+          descricao="Os produtos não puderam ser carregados. Isso não apagou nada — é só a consulta que falhou."
+          acao={
+            <Button variant="outline" onClick={() => productsQuery.refetch()}>
+              Tentar novamente
+            </Button>
+          }
+        />
+      ) : (
+        <>
       {/* Diagnóstico antes da lista.
           203 linhas de produto respondem "o que eu vendo"; nenhuma responde
           "o que eu faço com o cardápio esta semana". Item sem estoque, sem
           preço ou sem foto está na tela e não salta aos olhos. */}
+      <KpiGrid className="mb-4" itens={indicadores} />
+
       <InsightList
         className="mb-4"
         titulo="O que pede atenção no cardápio"
@@ -330,6 +404,8 @@ export const ProductsPage: React.FC = () => {
         ))}
         </SortableContext>
       </DndContext>
+        </>
+      )}
       <AddCategoryModal
         isOpen={addCatOpen}
         saving={addCatSaving}

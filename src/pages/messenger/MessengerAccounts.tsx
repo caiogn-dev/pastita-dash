@@ -201,7 +201,7 @@ export default function MessengerAccounts() {
                 onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
                 placeholder={placeholder}
                 disabled={disabled}
-                className="w-full rounded-lg border border-border-token bg-surface px-3 py-2 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
+                className="w-full superficie px-3 py-2 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
               />
             </div>
           ))}

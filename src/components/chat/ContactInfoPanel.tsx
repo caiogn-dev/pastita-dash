@@ -179,7 +179,7 @@ export const ContactInfoPanel: React.FC<ContactInfoPanelProps> = ({
                 onBlur={handleNoteBlur}
                 placeholder="Anotações sobre esse contato..."
                 rows={3}
-                className="w-full px-3 py-2 rounded-xl border border-border-token bg-surface text-sm text-fg-token placeholder-fg-muted-token resize-none focus:outline-none focus:ring-2 focus:ring-brand"
+                className="w-full px-3 py-2 superficie text-sm text-fg-token placeholder-fg-muted-token resize-none focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
 

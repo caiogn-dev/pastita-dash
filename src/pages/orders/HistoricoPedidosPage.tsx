@@ -204,7 +204,7 @@ export const HistoricoPedidosPage: React.FC = () => {
   }
 
   const selectCls =
-    'h-9 rounded-lg border border-border-token bg-surface px-3 text-sm text-fg-token outline-none focus:ring-2 focus:ring-brand';
+    'h-9 superficie px-3 text-sm text-fg-token outline-none focus:ring-2 focus:ring-brand';
 
   return (
     <PageShell

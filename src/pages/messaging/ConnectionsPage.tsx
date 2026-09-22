@@ -18,6 +18,7 @@ import { channelsApi } from '../../features/channels';
 import { ConnectWhatsAppButton } from '../../components/whatsapp/ConnectWhatsAppButton';
 import { InstagramIcon, WhatsAppIcon } from '../../components/brand/BrandIcons';
 import { PageShell } from '../../components/ui';
+import { estadoDoInstagram } from './estadoDoInstagram';
 import { useAuthStore } from '../../stores/authStore';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -40,6 +41,7 @@ interface ContaInstagram {
   name?: string;
   handle?: string;
   isActive?: boolean;
+  precisaReconectar?: boolean;
 }
 
 type Estado = 'funcionando' | 'desconectado' | 'pausado';
@@ -61,10 +63,12 @@ const SELO: Record<Estado, { rotulo: string; classe: string; ponto: string }> = 
 
 // ─── Peças ────────────────────────────────────────────────────────────────────
 
-const Selo: React.FC<{ estado: Estado }> = ({ estado }) => (
+/** `rotulo` troca só o texto: "desconectado no celular" é coisa de WhatsApp
+ *  com coexistência; no Instagram a mesma cor significa outra frase. */
+const Selo: React.FC<{ estado: Estado; rotulo?: string }> = ({ estado, rotulo }) => (
   <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${SELO[estado].classe}`}>
     <span className={`h-2 w-2 rounded-full ${SELO[estado].ponto}`} aria-hidden />
-    {SELO[estado].rotulo}
+    {rotulo ?? SELO[estado].rotulo}
   </span>
 );
 
@@ -84,7 +88,7 @@ const Cartao: React.FC<{
   selo?: React.ReactNode;
   children: React.ReactNode;
 }> = ({ icone, titulo, subtitulo, selo, children }) => (
-  <section className="flex flex-col gap-5 rounded-2xl border border-border-token bg-surface-token p-6">
+  <section className="flex flex-col gap-5 superficie p-6">
     <header className="flex items-center gap-3.5">
       {icone}
       <div className="min-w-0 flex-1">
@@ -98,7 +102,7 @@ const Cartao: React.FC<{
 );
 
 const botaoSecundario =
-  'inline-flex h-11 items-center rounded-xl border border-border-token bg-surface-token px-4 text-sm font-semibold text-fg-token hover:bg-surface-muted-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
+  'inline-flex h-11 items-center superficie px-4 text-sm font-semibold text-fg-token hover:bg-surface-muted-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
 const botaoPrimario =
   'inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand';
 const botaoDiscreto =
@@ -262,6 +266,7 @@ export default function ConnectionsPage() {
   });
 
   const instagramAtivo = instagrams.find((c) => c.isActive);
+  const estadoIg = instagramAtivo ? estadoDoInstagram(instagramAtivo) : null;
 
   return (
     <PageShell
@@ -339,15 +344,38 @@ export default function ConnectionsPage() {
                 icone={<InstagramIcon size={48} />}
                 titulo="Instagram"
                 subtitulo={instagramAtivo.name || 'Conta profissional'}
-                selo={<Selo estado="funcionando" />}
+                selo={(
+                  <Selo
+                    estado={estadoIg ?? 'funcionando'}
+                    rotulo={estadoIg === 'desconectado' ? 'Precisa reconectar' : undefined}
+                  />
+                )}
               >
                 <p className="text-sm font-semibold text-fg-token">@{instagramAtivo.handle}</p>
+                {estadoIg === 'desconectado' && (
+                  <p className="rounded-xl bg-danger-soft p-3 text-sm text-danger-token">
+                    A Meta recusou o acesso desta conta — nada entra nem sai por aqui. Conecte de
+                    novo para voltar a receber o direct e os comentários.
+                  </p>
+                )}
                 <ul className="flex flex-col gap-3">
                   <Beneficio titulo="Direct no mesmo lugar">que o WhatsApp — responda tudo numa tela só.</Beneficio>
                   <Beneficio titulo="Comentários chegam aqui,">prontos para campanhas do tipo “comenta e recebe no direct”.</Beneficio>
                 </ul>
                 <div className="mt-auto flex flex-wrap items-center gap-2">
-                  <Link to="/inbox/conversas" className={botaoPrimario}>Abrir conversas</Link>
+                  {estadoIg === 'desconectado' ? (
+                    <button
+                      type="button"
+                      className={botaoPrimario}
+                      disabled={conectandoInstagram}
+                      onClick={entrarComInstagram}
+                    >
+                      Conectar de novo
+                    </button>
+                  ) : (
+                    <Link to="/inbox/instagram" className={botaoPrimario}>Abrir direct</Link>
+                  )}
+                  <Link to="/marketing/instagram" className={botaoSecundario}>Criar promoção</Link>
                   <button type="button" className={botaoDiscreto} onClick={() => desconectarInstagram(instagramAtivo)}>Desconectar</button>
                 </div>
               </Cartao>
@@ -378,7 +406,7 @@ export default function ConnectionsPage() {
           </div>
 
           {/* ── Avisos ── */}
-          <section className="rounded-2xl border border-border-token bg-surface-token px-6 py-5" aria-labelledby="avisos-titulo">
+          <section className="superficie px-6 py-5" aria-labelledby="avisos-titulo">
             <h2 id="avisos-titulo" className="mb-2 text-base font-bold text-fg-token">Avisos</h2>
             {avisos.length === 0 ? (
               <p className="text-sm text-fg-muted-token">Nenhum aviso. Está tudo funcionando.</p>
