@@ -12,7 +12,8 @@
  * Sessões. Aqui garantimos o erro acionável (com "Tentar novamente") no lugar
  * do vazio, e que o caminho de sucesso continua mostrando as mensagens reais.
  */
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { StrictMode } from 'react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 
@@ -111,6 +112,43 @@ test('falha sem cache → erro acionável, nunca o vazio enganoso "nenhuma mensa
   expect(
     screen.queryByText(/não foi possível carregar as mensagens agendadas/i),
   ).not.toBeInTheDocument();
+});
+
+test('rejeição de requisição obsoleta não sobrepõe o resultado da mais recente (StrictMode)', async () => {
+  // Sob `React.StrictMode` (usado no `main.tsx`), o efeito de montagem dispara
+  // `fetchData` duas vezes: duas buscas sobrepostas. Se a 1ª (obsoleta) rejeitar
+  // DEPOIS de a 2ª (a mais recente) já ter resolvido vazio, a rejeição obsoleta
+  // não pode ligar o erro e apagar o vazio legítimo.
+  let rejeitarObsoleta: (e: unknown) => void = () => {};
+  const obsoleta = new Promise((_, reject) => {
+    rejeitarObsoleta = reject;
+  });
+  listMock
+    .mockReturnValueOnce(obsoleta) // 1ª busca (montagem) — fica em voo e rejeita depois
+    .mockResolvedValueOnce({ results: [] }); // 2ª busca (remontagem StrictMode) — a mais recente
+
+  render(
+    <StrictMode>
+      <MemoryRouter>
+        <ScheduledMessagesPage />
+      </MemoryRouter>
+    </StrictMode>,
+  );
+
+  // A mais recente resolveu vazio → aparece o vazio legítimo.
+  expect(await screen.findByText(/nenhuma mensagem agendada/i)).toBeInTheDocument();
+  expect(listMock).toHaveBeenCalledTimes(2);
+
+  // Agora a 1ª (obsoleta) rejeita: NÃO pode virar "não foi possível carregar".
+  await act(async () => {
+    rejeitarObsoleta(new Error('500'));
+    await Promise.resolve();
+  });
+
+  expect(
+    screen.queryByText(/não foi possível carregar as mensagens agendadas/i),
+  ).not.toBeInTheDocument();
+  expect(screen.getByText(/nenhuma mensagem agendada/i)).toBeInTheDocument();
 });
 
 test('sucesso → renderiza as mensagens, sem estado de erro', async () => {
