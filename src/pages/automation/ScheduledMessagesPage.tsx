@@ -12,7 +12,7 @@ import {
   ArrowPathIcon,
   CalendarIcon,
 } from '@heroicons/react/24/outline';
-import { Card, Button, Badge, Loading, Modal, Input } from '../../components/common';
+import { Card, Button, Badge, Loading, Modal, Input, EmptyState } from '../../components/common';
 import { scheduledMessagesService } from '../../services/scheduling';
 import { whatsappService } from '../../services';
 import {
@@ -45,6 +45,7 @@ export default function ScheduledMessagesPage() {
   const [stats, setStats] = useState<ScheduledMessageStats | null>(null);
   const [accounts, setAccounts] = useState<WhatsAppAccount[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<ScheduledMessage | null>(null);
@@ -67,6 +68,7 @@ export default function ScheduledMessagesPage() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+      setErro(false);
       const [messagesRes, statsRes, accountsRes] = await Promise.all([
         scheduledMessagesService.list(filters),
         scheduledMessagesService.getStats(filters.account_id || undefined),
@@ -76,6 +78,10 @@ export default function ScheduledMessagesPage() {
       setStats(statsRes);
       setAccounts(accountsRes.data.results || []);
     } catch (error) {
+      // Sem isto, a falha deixava `messages` em `[]` e a Tabela mostrava o
+      // vazio confiante "Nenhuma mensagem agendada" — dizendo ao lojista que
+      // não há nada programado quando, na verdade, a busca caiu.
+      setErro(true);
       toast.error('Erro ao carregar mensagens agendadas');
       logger.error('Failed to load scheduled messages', error);
     } finally {
@@ -248,6 +254,17 @@ export default function ScheduledMessagesPage() {
         </div>
       </Card>
 
+      {erro && messages.length === 0 ? (
+        // Falha sem dado em cache: erro acionável no lugar do vazio enganoso.
+        // Com dado em cache (falha só ao atualizar), a Tabela abaixo continua
+        // mostrando as mensagens e o `toast` avisa da falha.
+        <EmptyState
+          icon={<ClockIcon className="h-12 w-12" />}
+          title="Não foi possível carregar as mensagens agendadas"
+          description="A conexão falhou. Isto não quer dizer que não há nada programado — tente de novo."
+          action={{ label: 'Tentar novamente', onClick: fetchData }}
+        />
+      ) : (
       <Tabela<ScheduledMessage>
         itens={messages}
         chave={(m) => m.id}
@@ -330,6 +347,7 @@ export default function ScheduledMessagesPage() {
           },
         ]}
       />
+      )}
 
       {/* Create Modal */}
       <Modal
