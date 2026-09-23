@@ -57,3 +57,30 @@ describe('modelo de planilha', () => {
     expect(MODELO_CSV).toContain('32,90'); // preço no formato brasileiro
   });
 });
+
+// ── 23/09: o dono disse "está cru, não entendi a lógica" ───────────────────
+
+describe('o que a tela precisa ensinar', () => {
+  it('lista os nomes de coluna aceitos, não só um', () => {
+    // Eu aceito 'Produto', 'Valor', 'Seção' — mas isso vivia SÓ no backend.
+    // O lojista abria a planilha dele, via "Produto" no cabeçalho, e não
+    // tinha como saber se servia.
+    const { COLUNAS_ACEITAS } = require('../planilhaDoCardapio');
+    const nome = COLUNAS_ACEITAS.find((c: { chave: string }) => c.chave === 'nome');
+    expect(nome.exemplos).toEqual(expect.arrayContaining(['Nome', 'Produto']));
+    const preco = COLUNAS_ACEITAS.find((c: { chave: string }) => c.chave === 'preco');
+    expect(preco.exemplos).toEqual(expect.arrayContaining(['Preço', 'Valor']));
+  });
+
+  it('diz quais colunas são obrigatórias', () => {
+    const { COLUNAS_ACEITAS } = require('../planilhaDoCardapio');
+    const obrig = COLUNAS_ACEITAS.filter((c: { obrigatoria: boolean }) => c.obrigatoria);
+    expect(obrig.map((c: { chave: string }) => c.chave).sort()).toEqual(['nome', 'preco']);
+  });
+
+  it('aceita Excel, e o texto de ajuda diz isso', () => {
+    const { FORMATOS_ACEITOS } = require('../planilhaDoCardapio');
+    expect(FORMATOS_ACEITOS.toLowerCase()).toContain('excel');
+    expect(FORMATOS_ACEITOS.toLowerCase()).toContain('csv');
+  });
+});

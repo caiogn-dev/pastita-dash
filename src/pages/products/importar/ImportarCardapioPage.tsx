@@ -8,6 +8,8 @@ import api from '../../../services/api';
 import { getErrorMessage } from '../../../services';
 import { useStore } from '../../../hooks/useStore';
 import {
+  COLUNAS_ACEITAS,
+  FORMATOS_ACEITOS,
   MODELO_CSV,
   podeImportar,
   resumoDaConferencia,
@@ -28,24 +30,26 @@ export const ImportarCardapioPage: React.FC = () => {
   const { storeSlug } = useStore();
   const entrada = useRef<HTMLInputElement>(null);
 
-  const [csv, setCsv] = useState('');
+  const [arquivo, setArquivo] = useState<File | null>(null);
   const [nomeDoArquivo, setNomeDoArquivo] = useState('');
   const [conferencia, setConferencia] = useState<Conferencia | null>(null);
   const [ocupado, setOcupado] = useState(false);
 
   const escolher = async (evento: React.ChangeEvent<HTMLInputElement>) => {
-    const arquivo = evento.target.files?.[0];
-    if (!arquivo || !storeSlug) return;
-    const texto = await arquivo.text();
-    setCsv(texto);
-    setNomeDoArquivo(arquivo.name);
+    const escolhido = evento.target.files?.[0];
+    if (!escolhido || !storeSlug) return;
+    // O ARQUIVO vai inteiro para o servidor. Ler com `.text()` aqui quebrava
+    // duas vezes: .xlsx é binário, e o CSV do Excel brasileiro vem em cp1252
+    // (lido como UTF-8, "Preço" virava "Pre?o" e a coluna sumia).
+    setArquivo(escolhido);
+    setNomeDoArquivo(escolhido.name);
     setConferencia(null);
     setOcupado(true);
     try {
-      const { data } = await api.post(`/stores/${storeSlug}/produtos/importar/`, {
-        csv: texto,
-        confirmar: false,
-      });
+      const corpo = new FormData();
+      corpo.append('arquivo', escolhido);
+      corpo.append('confirmar', 'false');
+      const { data } = await api.post(`/stores/${storeSlug}/produtos/importar/`, corpo);
       setConferencia(data);
     } catch (erro) {
       toast.error(getErrorMessage(erro));
@@ -55,16 +59,16 @@ export const ImportarCardapioPage: React.FC = () => {
   };
 
   const importar = async () => {
-    if (!storeSlug || !podeImportar(conferencia)) return;
+    if (!storeSlug || !arquivo || !podeImportar(conferencia)) return;
     setOcupado(true);
     try {
-      const { data } = await api.post(`/stores/${storeSlug}/produtos/importar/`, {
-        csv,
-        confirmar: true,
-      });
+      const corpo = new FormData();
+      corpo.append('arquivo', arquivo);
+      corpo.append('confirmar', 'true');
+      const { data } = await api.post(`/stores/${storeSlug}/produtos/importar/`, corpo);
       toast.success(resumoDoResultado(data));
       setConferencia(null);
-      setCsv('');
+      setArquivo(null);
       setNomeDoArquivo('');
       if (entrada.current) entrada.current.value = '';
     } catch (erro) {
@@ -105,12 +109,28 @@ export const ImportarCardapioPage: React.FC = () => {
             </button>
           </li>
           <li>
-            <strong>2.</strong> Preço pode ser <code>32,90</code> ou{' '}
-            <code>R$ 32,90</code>. A categoria é criada sozinha se ainda não
-            existir.
+            <strong>2.</strong> Serve {FORMATOS_ACEITOS}. Preço pode ser{' '}
+            <code>32,90</code> ou <code>R$ 32,90</code>, e a categoria é criada
+            sozinha se ainda não existir.
           </li>
           <li>
-            <strong>3.</strong> Você vê o que vai entrar <em>antes</em> de
+            {/* Os nomes aceitos viviam só no backend. Sem isto o lojista
+                renomeava as colunas à mão — o trabalho que a tela veio tirar. */}
+            <strong>3.</strong> Não precisa renomear suas colunas. Eu entendo:
+            <ul className="mt-1 space-y-0.5">
+              {COLUNAS_ACEITAS.map((c) => (
+                <li key={c.chave} className="text-fg-muted-token">
+                  <span className="text-fg-token">{c.titulo}</span>
+                  {c.obrigatoria ? ' (obrigatória)' : ' (opcional)'} —{' '}
+                  {c.exemplos.map((e) => (
+                    <code key={e} className="mr-1">{e}</code>
+                  ))}
+                </li>
+              ))}
+            </ul>
+          </li>
+          <li>
+            <strong>4.</strong> Você vê o que vai entrar <em>antes</em> de
             confirmar.
           </li>
         </ol>
@@ -119,9 +139,9 @@ export const ImportarCardapioPage: React.FC = () => {
           <input
             ref={entrada}
             type="file"
-            accept=".csv,text/csv"
+            accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
             onChange={(e) => void escolher(e)}
-            aria-label="Planilha do cardápio"
+            aria-label="Planilha do cardápio (Excel ou CSV)"
             className="controle w-full rounded-lg p-2 text-sm"
           />
           {nomeDoArquivo && (

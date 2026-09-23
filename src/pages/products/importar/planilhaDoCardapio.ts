@@ -57,3 +57,33 @@ export function resumoDoResultado(r: { criados: number; atualizados: number }): 
   if (partes.length === 0) return 'Nada foi alterado.';
   return `${partes.join(' e ')}.`;
 }
+
+
+/**
+ * Os nomes de coluna que o backend entende, trazidos para a tela.
+ *
+ * Eles viviam só em `SINONIMOS` no servidor. O lojista abria a planilha dele,
+ * via "Produto" no cabeçalho, e não tinha como saber se servia — então
+ * renomeava tudo à mão ou desistia. Espelhar aqui é o preço de não fazer o
+ * dono adivinhar; se a lista do backend crescer, esta cresce junto.
+ */
+export interface ColunaAceita {
+  chave: 'nome' | 'preco' | 'categoria' | 'descricao';
+  titulo: string;
+  exemplos: string[];
+  obrigatoria: boolean;
+}
+
+export const COLUNAS_ACEITAS: ColunaAceita[] = [
+  { chave: 'nome',      titulo: 'Nome do produto', obrigatoria: true,
+    exemplos: ['Nome', 'Produto', 'Item'] },
+  { chave: 'preco',     titulo: 'Preço',           obrigatoria: true,
+    exemplos: ['Preço', 'Valor'] },
+  { chave: 'categoria', titulo: 'Categoria',       obrigatoria: false,
+    exemplos: ['Categoria', 'Seção', 'Grupo'] },
+  { chave: 'descricao', titulo: 'Descrição',       obrigatoria: false,
+    exemplos: ['Descrição', 'Ingredientes', 'Detalhes'] },
+];
+
+/** Formatos que a tela aceita de verdade. */
+export const FORMATOS_ACEITOS = 'Excel (.xlsx) ou CSV';
