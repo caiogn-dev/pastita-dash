@@ -22,6 +22,7 @@ import {
   WhatsAppAccount,
 } from '../../types';
 import { PageShell, Tabela, RowActions, KpiGrid, Select } from '../../components/ui';
+import { estadoDaLista } from '../../utils/estadoDaLista';
 
 const statusVariants: Record<string, 'gray' | 'info' | 'success' | 'danger' | 'warning'> = {
   pending: 'info',
@@ -46,6 +47,15 @@ export default function ScheduledMessagesPage() {
   const [accounts, setAccounts] = useState<WhatsAppAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(false);
+  // Uma busca já DEU CERTO alguma vez — o que separa "nada agendado" de
+  // "não consegui saber".
+  const [carregouAlgumaVez, setCarregouAlgumaVez] = useState(false);
+  const estado = estadoDaLista({
+    temDados: carregouAlgumaVez,
+    buscando: loading,
+    falhou: erro,
+    quantidade: messages.length,
+  });
   // Sequência da busca em voo. Sob `React.StrictMode` o efeito de montagem dispara
   // `fetchData` duas vezes (e trocas rápidas de filtro também podem sobrepor buscas);
   // sem isto, a rejeição de uma busca obsoleta ligaria `erro` DEPOIS de a mais recente
@@ -83,6 +93,7 @@ export default function ScheduledMessagesPage() {
       ]);
       if (req !== requisicaoRef.current) return; // busca superada por uma mais nova
       setMessages(messagesRes.results);
+      setCarregouAlgumaVez(true);
       setStats(statsRes);
       setAccounts(accountsRes.data.results || []);
     } catch (error) {
@@ -263,10 +274,11 @@ export default function ScheduledMessagesPage() {
         </div>
       </Card>
 
-      {erro && messages.length === 0 ? (
+      {estado === 'falhou' ? (
         // Falha sem dado em cache: erro acionável no lugar do vazio enganoso.
         // Com dado em cache (falha só ao atualizar), a Tabela abaixo continua
-        // mostrando as mensagens e o `toast` avisa da falha.
+        // mostrando as mensagens e o `toast` avisa da falha. Quem decide é
+        // `estadoDaLista` — a mesma regra de todas as listas do painel.
         <EmptyState
           icon={<ClockIcon className="h-12 w-12" />}
           title="Não foi possível carregar as mensagens agendadas"

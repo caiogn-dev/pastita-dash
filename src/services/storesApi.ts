@@ -84,6 +84,8 @@ export interface Store {
   owner: number;
   metadata: Record<string, unknown>;
   integrations_count: number;
+  /** A loja tem conta de WhatsApp CONECTADA — não é o número digitado. */
+  whatsapp_conectado: boolean;
   products_count: number;
   orders_count: number;
   created_at: string;

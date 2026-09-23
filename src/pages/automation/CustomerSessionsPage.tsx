@@ -18,6 +18,7 @@ import { toast } from 'react-hot-toast';
 import { PageShell, Tabela, RowActions, Modal } from '../../components/ui';
 import { EmptyState } from '../../components/common';
 import { formatCurrency } from '../../utils/formatters';
+import { estadoDaLista } from '../../utils/estadoDaLista';
 
 const statusColors: Record<SessionStatus, string> = {
   active: 'bg-info-soft text-info-token',
@@ -38,6 +39,9 @@ const CustomerSessionsPage: React.FC = () => {
   const [companies, setCompanies] = useState<CompanyProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(false);
+  // Uma busca já DEU CERTO alguma vez. É o que separa "vazio de verdade" de
+  // "vazio porque caiu" — sem isso a tela adivinha, e adivinhava errado.
+  const [carregouAlgumaVez, setCarregouAlgumaVez] = useState(false);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [selectedSession, setSelectedSession] = useState<CustomerSession | null>(null);
@@ -55,6 +59,13 @@ const CustomerSessionsPage: React.FC = () => {
   // a rejeição de uma busca obsoleta ligaria `erro` e apagaria o vazio/legítimo
   // já pintado pela busca mais nova.
   const requisicaoRef = useRef(0);
+
+  const estado = estadoDaLista({
+    temDados: carregouAlgumaVez,
+    buscando: loading,
+    falhou: erro,
+    quantidade: sessions.length,
+  });
 
   useEffect(() => {
     loadCompanies();
@@ -87,6 +98,7 @@ const CustomerSessionsPage: React.FC = () => {
       if (req !== requisicaoRef.current) return; // busca superada por uma mais nova
       setSessions(response.results);
       setTotalCount(response.count);
+      setCarregouAlgumaVez(true);
     } catch (error) {
       if (req !== requisicaoRef.current) return; // rejeição obsoleta: ignora
       // Sem isto, a falha deixava `sessions` em `[]` e a Tabela mostrava o vazio
@@ -218,10 +230,11 @@ const CustomerSessionsPage: React.FC = () => {
         </div>
       )}
 
-      {erro && sessions.length === 0 ? (
+      {estado === 'falhou' ? (
         // Falha sem dado em cache: erro acionável no lugar do vazio enganoso.
         // Com dado em cache (falha só ao atualizar), a Tabela abaixo continua
-        // mostrando as sessões e o `toast` avisa da falha.
+        // mostrando as sessões e o `toast` avisa da falha. Quem decide é
+        // `estadoDaLista` — a mesma regra de todas as listas do painel.
         <EmptyState
           icon={<UserGroupIcon className="h-12 w-12" />}
           title="Não foi possível carregar as sessões"

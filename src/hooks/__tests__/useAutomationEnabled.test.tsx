@@ -23,32 +23,58 @@ beforeEach(() => {
   mockGetAgents.mockReset();
 });
 
-it('is false when there is no WhatsApp signal', async () => {
-  mockUseStore.mockReturnValue({ store: { whatsapp_number: '', integrations_count: 0 } });
+it('número digitado não abre o portão', async () => {
+  // `whatsapp_number` é texto que o dono digita. Em 22/09 quatro lojas tinham
+  // número escrito e nenhuma WABA conectada.
+  mockUseStore.mockReturnValue({
+    store: { whatsapp_number: '5563999999999', whatsapp_conectado: false, integrations_count: 0 },
+  });
   mockGetAgents.mockResolvedValue([{ id: 'a1' }]);
   const { result } = renderHook(() => useAutomationEnabled(), { wrapper });
   await waitFor(() => expect(result.current).toBe(false));
   expect(mockGetAgents).not.toHaveBeenCalled();
 });
 
-it('is false when WhatsApp is present but there are no agents', async () => {
-  mockUseStore.mockReturnValue({ store: { whatsapp_number: '5563999999999', integrations_count: 0 } });
+it('integração de pagamento não abre o portão', async () => {
+  // `integrations_count` conta qualquer integração ativa — Mercado Pago
+  // inclusive. Não é sinal de WhatsApp.
+  mockUseStore.mockReturnValue({
+    store: { whatsapp_number: '', whatsapp_conectado: false, integrations_count: 3 },
+  });
+  mockGetAgents.mockResolvedValue([{ id: 'a1' }]);
+  const { result } = renderHook(() => useAutomationEnabled(), { wrapper });
+  await waitFor(() => expect(result.current).toBe(false));
+  expect(mockGetAgents).not.toHaveBeenCalled();
+});
+
+it('é falso com WhatsApp conectado e nenhum agente', async () => {
+  mockUseStore.mockReturnValue({ store: { whatsapp_conectado: true } });
   mockGetAgents.mockResolvedValue([]);
   const { result } = renderHook(() => useAutomationEnabled(), { wrapper });
   await waitFor(() => expect(mockGetAgents).toHaveBeenCalled());
   expect(result.current).toBe(false);
 });
 
-it('is true when WhatsApp is present and there is at least one agent', async () => {
-  mockUseStore.mockReturnValue({ store: { whatsapp_number: '5563999999999', integrations_count: 1 } });
+it('é verdadeiro com WhatsApp conectado e pelo menos um agente', async () => {
+  mockUseStore.mockReturnValue({ store: { whatsapp_conectado: true } });
   mockGetAgents.mockResolvedValue([{ id: 'a1' }]);
   const { result } = renderHook(() => useAutomationEnabled(), { wrapper });
   await waitFor(() => expect(result.current).toBe(true));
 });
 
-it('is false (never throws) while pending', () => {
-  mockUseStore.mockReturnValue({ store: { whatsapp_number: '5563999999999', integrations_count: 1 } });
-  mockGetAgents.mockReturnValue(new Promise(() => {})); // never resolves
+it('erro ao listar agentes NÃO some com o menu', async () => {
+  // O portão falhava fechado: uma consulta que erra apagava dez telas da
+  // navegação sem dizer nada, e o dono ficava procurando o que sumiu. Quem já
+  // tem WhatsApp conectado não perde o menu porque a lista de agentes caiu.
+  mockUseStore.mockReturnValue({ store: { whatsapp_conectado: true } });
+  mockGetAgents.mockRejectedValue(new Error('500'));
+  const { result } = renderHook(() => useAutomationEnabled(), { wrapper });
+  await waitFor(() => expect(result.current).toBe(true));
+});
+
+it('é falso (nunca lança) enquanto carrega', () => {
+  mockUseStore.mockReturnValue({ store: { whatsapp_conectado: true } });
+  mockGetAgents.mockReturnValue(new Promise(() => {})); // nunca resolve
   const { result } = renderHook(() => useAutomationEnabled(), { wrapper });
   expect(result.current).toBe(false);
 });

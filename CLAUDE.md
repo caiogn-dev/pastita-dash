@@ -52,6 +52,32 @@ Toda página usa `PageShell` (`src/components/ui`): trilha → título → descr
 
 Companheiros, no mesmo barrel: `KpiGrid` (definição do indicador é obrigatória e impressa, não em tooltip), `InsightList` (alerta que termina em botão), `EmptyState` (variante `ativacao` vende a feature desligada), `PhonePreview` (iframe da página pública real), `RowActions` + `linhaClicavel` (kebab e linha clicável acessível).
 
+## Lista que carrega: use `estadoDaLista`
+
+Toda tela de lista escolhe entre quatro telas — `carregando`, `falhou`, `vazio`,
+`lista` — e a escolha tem uma armadilha com nome: **vazio enganoso**. Quando a
+busca falha, a lista fica em `[]` e a tabela mostra "Nenhum cliente cadastrado":
+um vazio confiante, que diz ao lojista que ninguém comprou quando a conexão é
+que caiu.
+
+A decisão mora em `src/utils/estadoDaLista.ts`. **Não escreva `erro && lista.length === 0`
+na página.** A regra já estava copiada à mão em cinco telas (Cardápio, Clientes,
+Sessões, Agendadas, Direct), cada uma com a sua versão do comentário — a sexta
+cópia era questão de tempo, e basta errar a ordem uma vez para o vazio enganoso
+voltar.
+
+```ts
+const estado = estadoDaLista({
+  temDados: carregouAlgumaVez,   // uma busca já deu certo alguma vez
+  buscando: loading,
+  falhou: erro,
+  quantidade: itens.length,
+});
+```
+
+`temDados` é o que separa "vazio de verdade" de "vazio porque caiu": sem ele a
+tela adivinha. Com react-query, é `query.data !== undefined`.
+
 ## Important Areas
 
 - `src/pages/stores/StorefrontPage.tsx`: store branding, public menu template, colors and domain.
