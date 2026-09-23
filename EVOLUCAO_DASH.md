@@ -36,17 +36,24 @@ uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes v
   **"Tentar novamente"** que chama `fetchData`) no lugar da `Tabela`/vazio enganoso.
   Com dado em cache (falha só ao atualizar), a `Tabela` segue mostrando as mensagens e
   o `toast` avisa da falha. O KPI (`stats`) já ficava oculto no erro, então não inventa
-  zeros. Nota: a página tem gate de página inteira (`if (loading) return <Loading/>`),
-  que serializa as buscas e impede a corrida de filtros que o loop guardou em telas sem
-  esse gate — por isso não foi preciso o `requisicaoRef` aqui.
+  zeros.
+- **Follow-up (revisão do Codex, P2 — corrida de requisição):** sob `React.StrictMode`
+  (usado no `main.tsx`) o efeito de montagem dispara `fetchData` **duas vezes** — duas
+  buscas sobrepostas; trocas rápidas de filtro também podem sobrepor. Sem guarda, a
+  rejeição de uma busca obsoleta ligava `erro` DEPOIS de a mais recente já ter
+  respondido (apagando um vazio legítimo) e o `finally` de uma busca velha desligava o
+  `loading` de uma mais nova ainda em voo. Novo `requisicaoRef`: cada `fetchData`
+  captura sua sequência e só aplica sucesso, erro e o fim do `loading` se ainda for a
+  mais recente; buscas superadas são descartadas em silêncio (mesmo padrão de
+  `CustomerSessionsPage`). Novo teste em `StrictMode`, vermelho antes / verde depois.
 - **Teste (TDD):** novo `__tests__/ScheduledMessagesErro.test.tsx` (2 casos), escrito
   **vermelho antes, verde depois**: (1) falha sem cache → erro acionável e retry refaz a
   busca (voltando ao vazio legítimo), **sem** o "Nenhuma mensagem agendada"; (2) sucesso →
   mensagens renderizadas, sem estado de erro.
-- **Antes/depois:** `npm test` **2014/344** verdes (inclui os 2 novos); `tsc --noEmit`
-  limpo nos dois lados; `eslint` **0 erros** no arquivo de produção tocado (mantém só o
-  1 warning pré-existente). Só produção alterada: ramo de erro acionável no lugar do
-  vazio enganoso, risco baixo.
+- **Antes/depois:** `npm test` **2015/344** verdes (inclui os 3 novos casos, com o de
+  corrida do follow-up); `tsc --noEmit` limpo nos dois lados; `eslint` **0 erros** no
+  arquivo de produção tocado (mantém só o 1 warning pré-existente). Só produção
+  alterada: ramo de erro acionável + guarda de corrida, risco baixo.
 
 _(Baselines e histórico anteriores mantidos abaixo.)_
 
