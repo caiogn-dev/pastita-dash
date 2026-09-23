@@ -66,3 +66,16 @@ Media message `content` can be an object. Never render `message.content` directl
 
 Use `crossOrigin="anonymous"` on cross-origin media elements where needed.
 
+## Registro do loop diário — um arquivo por dia
+
+**Não anexe ao `EVOLUCAO_DASH.md`.** Cada execução do loop escreve o seu relato em
+`docs/evolucao/AAAA-MM-DD.md` (crie a pasta se não existir).
+
+O motivo é concreto: enquanto todo loop anexava no mesmo arquivo, **dois PRs
+abertos nunca mergeavam limpos** — o conflito era garantido por construção, e
+sobrava para quem fosse mergear resolver um changelog à mão. Medido em 22/09:
+dos 6 PRs abertos, 5 conflitavam, e 4 deles SÓ no changelog.
+
+O `EVOLUCAO_DASH.md` permanece como índice e história até 23/09/2026. Não o edite;
+leia-o se precisar de contexto antigo.
+
