@@ -3,6 +3,60 @@
 Backlog priorizado e histórico do loop diário de evolução. Cada execução entrega
 uma fatia de valor com disciplina de TDD e zero-regressão (tsc limpo + testes verdes).
 
+## Baseline atual (2026-09-23)
+
+- `git fetch origin --prune` + `git checkout -B loop-base origin/main` + `npm ci`: ok.
+  Base do PR: `origin/main` em `0a01133`.
+- `npx tsc --noEmit`: **limpo** (antes e depois).
+- `npm test`: **2014/344 verdes** (antes e depois; +2 testes desta fatia — a suíte
+  já contava os 2 novos casos no total acima).
+- `npm run lint`: **4 erros + 265 warnings PRÉ-EXISTENTES** (`Unused eslint-disable
+  directive` em `OrdersHeatMap.tsx`, `sidebarColuna.test.tsx`,
+  `pagamentoAMenorAoVivo.test.tsx`) — NÃO tocados por esta fatia. O arquivo de
+  produção tocado (`ScheduledMessagesPage.tsx`) fica com **0 erros** e mantém só o
+  1 warning `no-explicit-any` pré-existente (linha ~395, região não tocada).
+- Gate anti-acúmulo: **0 PRs `bot/` abertos**; nenhum PR aberto/fechado (14 dias)
+  cobre o vazio enganoso das mensagens agendadas.
+
+### 2026-09-23 — UX/Resiliência: "Mensagens agendadas" não vira "nenhuma mensagem agendada" quando a busca falha
+- **Medido:** `ScheduledMessagesPage` (`src/pages/automation/ScheduledMessagesPage.tsx`)
+  carrega a lista + as estatísticas por `useState`/`useEffect` num `Promise.all`
+  (`scheduledMessagesService.list`, `.getStats`, `whatsappService.getAccounts`). No
+  erro (rede/500) **sem cache**, o `catch` só disparava `toast.error('Erro ao carregar
+  mensagens agendadas')` — um aviso que some em segundos — e deixava `messages` em `[]`,
+  `stats` em `null` e `loading = false`. A `Tabela` então caía no vazio **confiante**
+  "**Nenhuma mensagem agendada** · Agende uma mensagem para ela sair sozinha na hora
+  marcada.", dizendo ao lojista que **não há nenhum disparo programado** quando, na
+  verdade, a requisição caiu. É o mesmo engano de "vazio/zeros enganoso" que o loop já
+  corrigiu em Clientes (#199), Cardápio (#202) e Sessões (#204).
+- **Mudado (`ScheduledMessagesPage.tsx`, mesmo padrão de `CustomerSessionsPage`):** novo
+  flag `erro`, ligado no `catch` e desligado no início de cada `fetchData`. Quando a
+  falha ocorre **sem dado em cache** (`erro && messages.length === 0`), a página mostra
+  um `EmptyState` acionável ("Não foi possível carregar as mensagens agendadas" + botão
+  **"Tentar novamente"** que chama `fetchData`) no lugar da `Tabela`/vazio enganoso.
+  Com dado em cache (falha só ao atualizar), a `Tabela` segue mostrando as mensagens e
+  o `toast` avisa da falha. O KPI (`stats`) já ficava oculto no erro, então não inventa
+  zeros.
+- **Follow-up (revisão do Codex, P2 — corrida de requisição):** sob `React.StrictMode`
+  (usado no `main.tsx`) o efeito de montagem dispara `fetchData` **duas vezes** — duas
+  buscas sobrepostas; trocas rápidas de filtro também podem sobrepor. Sem guarda, a
+  rejeição de uma busca obsoleta ligava `erro` DEPOIS de a mais recente já ter
+  respondido (apagando um vazio legítimo) e o `finally` de uma busca velha desligava o
+  `loading` de uma mais nova ainda em voo. Novo `requisicaoRef`: cada `fetchData`
+  captura sua sequência e só aplica sucesso, erro e o fim do `loading` se ainda for a
+  mais recente; buscas superadas são descartadas em silêncio (mesmo padrão de
+  `CustomerSessionsPage`). Novo teste em `StrictMode`, vermelho antes / verde depois.
+- **Teste (TDD):** novo `__tests__/ScheduledMessagesErro.test.tsx` (2 casos), escrito
+  **vermelho antes, verde depois**: (1) falha sem cache → erro acionável e retry refaz a
+  busca (voltando ao vazio legítimo), **sem** o "Nenhuma mensagem agendada"; (2) sucesso →
+  mensagens renderizadas, sem estado de erro.
+- **Antes/depois:** `npm test` **2015/344** verdes (inclui os 3 novos casos, com o de
+  corrida do follow-up); `tsc --noEmit` limpo nos dois lados; `eslint` **0 erros** no
+  arquivo de produção tocado (mantém só o 1 warning pré-existente). Só produção
+  alterada: ramo de erro acionável + guarda de corrida, risco baixo.
+
+_(Baselines e histórico anteriores mantidos abaixo.)_
+
 ## Baseline atual (2026-09-21)
 
 - `npm ci`: ok. Base do PR: `origin/main` em `27b9736`.
