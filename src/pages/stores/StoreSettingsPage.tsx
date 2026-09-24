@@ -31,6 +31,7 @@ import ValePorLinkSection from './ValePorLinkSection';
 import AcrescimoDoValeSection from './AcrescimoDoValeSection';
 import TempoDePreparoSection from './TempoDePreparoSection';
 import NotaFiscalSection from './NotaFiscalSection';
+import CaixaDinheiroSection from './CaixaDinheiroSection';
 
 const DAYS = [
   { key: 'monday',    label: 'Segunda' },
@@ -773,6 +774,9 @@ export const StoreSettingsPage: React.FC = () => {
                       (store as unknown as { voucher_fee_percent?: number }).voucher_fee_percent,
                     ) || 0}
                   />
+                </div>
+                <div className="mt-6">
+                  <CaixaDinheiroSection loja={store} onSalvo={setStore} />
                 </div>
               </>
             )}

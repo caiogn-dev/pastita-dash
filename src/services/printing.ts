@@ -4,6 +4,8 @@
  */
 import api from './api';
 
+export type SituacaoDoAgente = 'ok' | 'offline' | 'impressora_indisponivel';
+
 export interface PrintAgent {
   id: string;
   store: string;
@@ -26,6 +28,18 @@ export interface PrintAgent {
   is_active: boolean;
   /** Impressoras detectadas no PC do agent (via heartbeat) */
   available_printers?: string[];
+  /**
+   * Situação calculada pelo vigia de impressão do backend. Opcional: backend
+   * antigo não manda, e aí nenhuma faixa acende.
+   */
+  situacao?: SituacaoDoAgente;
+  /** Desde quando está nessa situação (ISO). `null` quando `ok`. */
+  situacao_desde?: string | null;
+  /** Frase pronta para o lojista, ex. "EPSON TM-T20 não responde — 10 impressões presas no Windows". */
+  situacao_detalhe?: string;
+  versao_desatualizada?: boolean;
+  /** Versão mais nova do programa de impressão. */
+  versao_atual?: string;
   created_at: string;
   /** Presente apenas na resposta de criação/rotação — chave exibida uma única vez */
   api_key?: string;

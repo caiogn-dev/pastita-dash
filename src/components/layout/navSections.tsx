@@ -94,6 +94,11 @@ export interface BuildNavSectionsOpts {
   storeHref: (path: string) => string;
   unreadBadge?: string;
   automationEnabled: boolean;
+  /**
+   * "Uso caixa com dinheiro vivo" (Configurações da loja → Recebimento).
+   * Omitido vale `true`: o Caixa só sai do menu quando o dono desliga.
+   */
+  caixaEnabled?: boolean;
 }
 
 /**
@@ -101,7 +106,7 @@ export interface BuildNavSectionsOpts {
  * Account-level links (Todas as Lojas, Integrações, Preferências, Plano) are
  * intentionally NOT here — they live in the avatar menu (AccountMenu.tsx).
  */
-export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: BuildNavSectionsOpts): NavSection[] {
+export function buildNavSections({ storeHref, unreadBadge, automationEnabled, caixaEnabled = true }: BuildNavSectionsOpts): NavSection[] {
   // Marketing e Automação são features avançadas: ficam sob o mesmo gate para
   // manter a coluna focada em operação (pedidos/cardápio/atendimento).
   const marketing: NavSection = {
@@ -200,7 +205,7 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled }: 
       icon: QrCodeIcon,
       items: [
         { name: 'Venda no balcão',   href: storeHref('pdv'),  icon: QrCodeIcon },
-        { name: 'Caixa',             href: storeHref('cash'), icon: BanknotesIcon },
+        ...(caixaEnabled ? [{ name: 'Caixa', href: storeHref('cash'), icon: BanknotesIcon }] : []),
         { name: 'Link de pagamento', href: '/payments/link',  icon: LinkIcon },
         { name: 'Cozinha (KDS)',     href: storeHref('kds'),  icon: FireIcon },
         // Bipar o código de barras da comanda avança o pedido para a saída.

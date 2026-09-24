@@ -81,4 +81,35 @@ describe('CashPage', () => {
 
     await waitFor(() => expect(mocked.closeCashSession).toHaveBeenCalledWith('loja-x', '95', ''));
   });
+
+  describe('caixa esquecido aberto', () => {
+    beforeAll(() => {
+      jest.useFakeTimers({ doNotFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval', 'nextTick', 'setImmediate', 'queueMicrotask'] });
+      jest.setSystemTime(new Date('2026-09-24T15:00:00Z'));
+    });
+    afterAll(() => jest.useRealTimers());
+
+    const sessaoAbertaEm = (opened_at: string) =>
+      mocked.getCurrentCashSession.mockResolvedValue({
+        data: { id: 's1', status: 'open', opening_amount: '0.00', opened_at, movements: [], expected_cash: '0.00' },
+      } as never);
+
+    it('aberto há mais de 24 h: aviso no topo com a data e o caminho para fechar', async () => {
+      sessaoAbertaEm('2026-07-26T12:00:00Z');
+      renderPage();
+
+      const aviso = await screen.findByRole('alert');
+      expect(aviso).toHaveTextContent('Caixa aberto desde 26/07 — feche o dia');
+
+      fireEvent.click(screen.getByRole('button', { name: /fechar o dia/i }));
+      expect(screen.getByLabelText(/valor contado/i)).toHaveFocus();
+    });
+
+    it('aberto hoje cedo: sem aviso', async () => {
+      sessaoAbertaEm('2026-09-24T11:00:00Z');
+      renderPage();
+      await waitFor(() => expect(screen.getByText(/esperado em caixa/i)).toBeInTheDocument());
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+  });
 });

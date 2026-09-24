@@ -150,3 +150,18 @@ describe('menu não promete tela que nunca teve dado', () => {
     expect(todos).toContain('/marketing/whatsapp/templates');
   });
 });
+
+describe('Caixa só aparece para quem usa dinheiro vivo', () => {
+  const temCaixa = (opts: { caixaEnabled?: boolean }) =>
+    buildNavSections({ storeHref, automationEnabled: true, ...opts })
+      .flatMap((s) => s.items)
+      .some((i) => i.href === '/stores/loja-x/cash');
+
+  it('sem a preferência dita, o Caixa continua no menu', () => {
+    expect(temCaixa({})).toBe(true);
+  });
+
+  it('loja que desligou "Uso caixa com dinheiro vivo" não vê o Caixa', () => {
+    expect(temCaixa({ caixaEnabled: false })).toBe(false);
+  });
+});

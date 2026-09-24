@@ -13,12 +13,14 @@ import { useMemo } from 'react';
 import { useStore } from '../../hooks/useStore';
 import { useTotalUnreadCount } from '../../stores/chatStore';
 import { useAutomationEnabled } from '../../hooks/useAutomationEnabled';
+import { lojaUsaCaixa } from '../../utils/lojaUsaCaixa';
 import { buildNavSections, type NavSection } from './navSections';
 
 export function useNavSections(): NavSection[] {
   const { store } = useStore();
   const totalUnreadCount = useTotalUnreadCount();
   const automationEnabled = useAutomationEnabled();
+  const caixaEnabled = lojaUsaCaixa(store);
 
   const storeKey = store?.slug || store?.id || null;
   const storeHref = useMemo(
@@ -35,8 +37,9 @@ export function useNavSections(): NavSection[] {
             ? String(totalUnreadCount > 99 ? '99+' : totalUnreadCount)
             : undefined,
         automationEnabled,
+        caixaEnabled,
       }),
-    [storeHref, totalUnreadCount, automationEnabled]
+    [storeHref, totalUnreadCount, automationEnabled, caixaEnabled]
   );
 }
 

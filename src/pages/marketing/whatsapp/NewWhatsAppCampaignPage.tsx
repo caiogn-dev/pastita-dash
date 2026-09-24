@@ -8,7 +8,7 @@
  * 4. Add recipients (manual, CSV, or contact list)
  * 5. Review & Send/Schedule
  */
-import React, { useState, useEffect, useMemo, Fragment } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeftIcon,
@@ -115,7 +115,19 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
   const { storeId, storeSlug, storeName } = useStore();
 
   // State
-  const [currentStep, setCurrentStep] = useState<PassoDaCampanha>('account');
+  const [currentStep, setPassoAtual] = useState<PassoDaCampanha>('account');
+  /**
+   * Passos já abertos continuam MONTADOS (só escondidos). O que o dono
+   * preencheu na página sobrevivia à troca de passo, mas o que mora dentro do
+   * passo — o filtro de público montado pela metade, o construtor de regra
+   * aberto — morria ao desmontar. Voltar de "Mensagem" para "Destinatários"
+   * não pode custar refazer o público.
+   */
+  const [passosAbertos, setPassosAbertos] = useState<Set<PassoDaCampanha>>(() => new Set(['account']));
+  const setCurrentStep = useCallback((passo: PassoDaCampanha) => {
+    setPassosAbertos((abertos) => (abertos.has(passo) ? abertos : new Set(abertos).add(passo)));
+    setPassoAtual(passo);
+  }, []);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [accounts, setAccounts] = useState<WhatsAppAccount[]>([]);
@@ -281,7 +293,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       templateId: '',
       templateName: '',
     }));
-    setCurrentStep('message');
+    setCurrentStep(proximoPasso('account'));
   };
 
   const handleTemplateSelect = (template: MessageTemplate) => {
@@ -763,8 +775,8 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
         )}
 
         {/* Passo: Message Configuration */}
-        {currentStep === 'message' && (
-          <div className="space-y-6">
+        {passosAbertos.has('message') && (
+          <div className="space-y-6" hidden={currentStep !== 'message'}>
             <div>
               <h2 className="text-lg font-semibold text-fg-token mb-2">
                 Configure a Mensagem
@@ -1161,21 +1173,23 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
         )}
 
         {/* Passo: Recipients */}
-        {currentStep === 'recipients' && (
-          <PassoDosDestinatarios
-            formData={formData}
-            setFormData={setFormData as never}
-            contactLists={contactLists}
-            newContact={newContact}
-            setNewContact={setNewContact}
-            storeSlug={storeSlug}
-            onAdicionarContato={handleAddContact}
-            onRemoverContato={handleRemoveContact}
-            onCarregarLista={handleLoadContactList}
-            onCarregarContatosDoSistema={handleLoadSystemContacts}
-            onUsarAudiencia={handleUsarAudiencia}
-            onAbrirImportacao={setShowImportModal}
-          />
+        {passosAbertos.has('recipients') && (
+          <div hidden={currentStep !== 'recipients'}>
+            <PassoDosDestinatarios
+              formData={formData}
+              setFormData={setFormData as never}
+              contactLists={contactLists}
+              newContact={newContact}
+              setNewContact={setNewContact}
+              storeSlug={storeSlug}
+              onAdicionarContato={handleAddContact}
+              onRemoverContato={handleRemoveContact}
+              onCarregarLista={handleLoadContactList}
+              onCarregarContatosDoSistema={handleLoadSystemContacts}
+              onUsarAudiencia={handleUsarAudiencia}
+              onAbrirImportacao={setShowImportModal}
+            />
+          </div>
         )}
 
         {/* Passo: Review */}

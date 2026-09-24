@@ -31,6 +31,12 @@ import {
   requeuePrintJob,
 } from '../../services/printing';
 import { PageShell, Tabela, RowActions } from '../../components/ui';
+import {
+  ROTULO_DA_SITUACAO,
+  TOM_DA_SITUACAO,
+  desdeQuando,
+} from '../../components/printing/situacaoDaImpressora';
+import { TelefoneDeAlertaSection } from '../../components/printing/TelefoneDeAlertaSection';
 
 const JOB_STATUS_TONE: Record<string, 'success' | 'warning' | 'danger' | 'neutral'> = {
   completed: 'success',
@@ -271,28 +277,57 @@ const PrintSettingsPage: React.FC = () => {
             },
             {
               chave: 'status',
-              cabecalho: 'Status',
-              render: (a) => (
-                <>
-                  {a.is_online ? (
-                    <Badge tone="success" className="gap-1">
-                      <SignalIcon className="h-3.5 w-3.5" /> Online
-                    </Badge>
-                  ) : (
-                    <Badge tone="danger" className="gap-1">
-                      <SignalSlashIcon className="h-3.5 w-3.5" /> Offline
-                    </Badge>
-                  )}
-                  {a.last_error && (
-                    <p
-                      className="mt-0.5 max-w-[200px] truncate text-xs text-[var(--danger)]"
-                      title={a.last_error}
-                    >
-                      {a.last_error}
-                    </p>
-                  )}
-                </>
-              ),
+              cabecalho: 'Situação',
+              render: (a) => {
+                // A situação vem do vigia de impressão do backend. Backend
+                // antigo não manda; aí vale o online/offline de sempre.
+                const situacao = a.situacao;
+                const desde = situacao && situacao !== 'ok' ? desdeQuando(a.situacao_desde) : null;
+                return (
+                  <>
+                    {situacao ? (
+                      <Badge tone={TOM_DA_SITUACAO[situacao]} className="gap-1">
+                        {situacao === 'offline' ? (
+                          <SignalSlashIcon className="h-3.5 w-3.5" />
+                        ) : (
+                          <SignalIcon className="h-3.5 w-3.5" />
+                        )}
+                        {ROTULO_DA_SITUACAO[situacao]}
+                      </Badge>
+                    ) : a.is_online ? (
+                      <Badge tone="success" className="gap-1">
+                        <SignalIcon className="h-3.5 w-3.5" /> Online
+                      </Badge>
+                    ) : (
+                      <Badge tone="danger" className="gap-1">
+                        <SignalSlashIcon className="h-3.5 w-3.5" /> Offline
+                      </Badge>
+                    )}
+                    {desde && (
+                      <p className="mt-0.5 text-xs text-fg-muted-token">desde {desde}</p>
+                    )}
+                    {situacao && situacao !== 'ok' && a.situacao_detalhe ? (
+                      <p className="mt-0.5 max-w-[260px] text-xs text-[var(--danger)]">
+                        {a.situacao_detalhe}
+                      </p>
+                    ) : (
+                      a.last_error && (
+                        <p
+                          className="mt-0.5 max-w-[200px] truncate text-xs text-[var(--danger)]"
+                          title={a.last_error}
+                        >
+                          {a.last_error}
+                        </p>
+                      )
+                    )}
+                    {a.versao_desatualizada && (
+                      <Badge tone="warning" className="mt-1">
+                        Atualize o programa de impressão ({a.app_version || '?'} → {a.versao_atual || 'nova'})
+                      </Badge>
+                    )}
+                  </>
+                );
+              },
             },
             {
               chave: 'contato',
@@ -329,6 +364,9 @@ const PrintSettingsPage: React.FC = () => {
           ]}
         />
       </Card>
+
+      {/* Para quem avisar quando a impressora parar */}
+      {(store?.id || storeId) && <TelefoneDeAlertaSection storeId={store?.id || storeId!} />}
 
       {/* Fila de jobs */}
       <Card className="p-6">

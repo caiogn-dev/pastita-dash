@@ -109,29 +109,36 @@ describe('campanha de WhatsApp — o caminho que gasta dinheiro', () => {
     scheduleCampaign.mockResolvedValue({});
   });
 
-  const irAteDestinatarios = async () => {
+  const escolherConta = async () => {
     abrir();
-
     // 1. conta
     fireEvent.click(await screen.findByText('Conta 1'));
     avancar();
+  };
 
-    // 2. mensagem livre
+  const adicionarContato = async (telefone = '11999998888') => {
+    fireEvent.change(await screen.findByPlaceholderText(/5511999999999/i), {
+      target: { value: telefone },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /adicionar contato/i }));
+  };
+
+  const escreverTexto = async (texto = 'Promoção de hoje: salada por R$ 29,90') => {
     fireEvent.click(await screen.findByText('Texto Livre'));
     fireEvent.change(await screen.findByPlaceholderText(/digite sua mensagem/i), {
-      target: { value: 'Promoção de hoje: salada por R$ 29,90' },
+      target: { value: texto },
     });
-    avancar();
   };
 
   it('percorre o assistente e envia o que foi montado', async () => {
-    await irAteDestinatarios();
+    await escolherConta();
 
-    // 3. destinatários, digitados à mão
-    fireEvent.change(await screen.findByPlaceholderText(/5511999999999/i), {
-      target: { value: '11999998888' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /adicionar contato/i }));
+    // 2. destinatários, digitados à mão — quem recebe vem antes do que recebe
+    await adicionarContato();
+    avancar();
+
+    // 3. mensagem livre
+    await escreverTexto();
     avancar();
 
     // 4. envio
@@ -154,11 +161,10 @@ describe('campanha de WhatsApp — o caminho que gasta dinheiro', () => {
 
   it('criar NÃO basta: a campanha precisa ser iniciada', async () => {
     // Criar sem iniciar deixa a campanha parada e o dono achando que enviou.
-    await irAteDestinatarios();
-    fireEvent.change(await screen.findByPlaceholderText(/5511999999999/i), {
-      target: { value: '11999998888' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /adicionar contato/i }));
+    await escolherConta();
+    await adicionarContato();
+    avancar();
+    await escreverTexto();
     avancar();
     fireEvent.click(await screen.findByRole('button', { name: /enviar agora/i }));
 
@@ -166,11 +172,37 @@ describe('campanha de WhatsApp — o caminho que gasta dinheiro', () => {
     expect(scheduleCampaign).not.toHaveBeenCalled();
   });
 
-  it('sem destinatário, o passo de envio não abre', async () => {
+  it('sem destinatário, não passa para a mensagem', async () => {
     // A trava que impede uma campanha vazia sair.
-    await irAteDestinatarios();
+    await escolherConta();
+    await screen.findByPlaceholderText(/5511999999999/i);
 
     expect(botaoAvancar()).toBeDisabled();
+  });
+
+  it('o passo 2 é Destinatários e o 3 é Mensagem', async () => {
+    await escolherConta();
+    expect(await screen.findByPlaceholderText(/5511999999999/i)).toBeInTheDocument();
+    expect(screen.queryByText('Texto Livre')).not.toBeInTheDocument();
+  });
+
+  it('voltar e avançar não perde nada do que foi preenchido', async () => {
+    await escolherConta();
+    await adicionarContato();
+    // Estado que mora DENTRO do passo (o seletor de público), não na página.
+    fireEvent.click(screen.getByRole('button', { name: /filtrar com mais detalhe/i }));
+    avancar();
+
+    await escreverTexto('Oi, hoje tem promoção');
+    fireEvent.click(screen.getByRole('button', { name: /^voltar$/i }));
+
+    // De volta aos destinatários: o contato e o filtro aberto continuam lá.
+    expect(await screen.findByText('11999998888')).toBeVisible();
+    expect(screen.getByRole('button', { name: /esconder filtros detalhados/i })).toBeInTheDocument();
+
+    avancar();
+    // E a mensagem escrita também.
+    expect(screen.getByPlaceholderText(/digite sua mensagem/i)).toHaveValue('Oi, hoje tem promoção');
   });
 
   it('com uma conta só, ela já vem escolhida — não faz o dono clicar no óbvio', async () => {
@@ -198,8 +230,8 @@ describe('campanha de WhatsApp — o caminho que gasta dinheiro', () => {
   });
 
   it('sem texto nem mídia, não passa da mensagem', async () => {
-    abrir();
-    fireEvent.click(await screen.findByText('Conta 1'));
+    await escolherConta();
+    await adicionarContato();
     avancar();
     fireEvent.click(await screen.findByText('Texto Livre'));
 
