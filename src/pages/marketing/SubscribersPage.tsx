@@ -18,6 +18,7 @@ import { marketingService, Subscriber } from '../../services/marketingService';
 import { useRootStore } from '../../stores/rootStore';
 import logger from '../../services/logger';
 import { formatCurrency } from '../../utils/formatters';
+import { assinantesParaCsv } from './exportarAssinantes';
 
 interface NewSubscriber {
   email: string;
@@ -199,11 +200,11 @@ export const SubscribersPage: React.FC = () => {
   };
 
   const handleExport = () => {
-    const csv = filteredSubscribers
-      .map((subscriber) => `${subscriber.email},${subscriber.name},${subscriber.phone || ''},${subscriber.status}`)
-      .join('\n');
+    // Nome/e-mail/telefone chegam do cliente: escapa vírgula/aspas e neutraliza
+    // gatilho de fórmula (OWASP CSV injection) antes de virar planilha.
+    const csv = assinantesParaCsv(filteredSubscribers);
 
-    const blob = new Blob([`email,name,phone,status\n${csv}`], { type: 'text/csv' });
+    const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
