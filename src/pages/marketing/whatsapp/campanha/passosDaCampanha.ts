@@ -1,10 +1,15 @@
 export type PassoDaCampanha = 'account' | 'message' | 'recipients' | 'review';
 export type TipoDeMensagem = 'template' | 'text';
 
+/**
+ * Quem recebe antes do que recebe (decisão do dono em 29/08): a mensagem se
+ * escreve PARA um público — "clientes sumidos há 30 dias" pede outro texto que
+ * "quem pediu ontem". Com a mensagem primeiro, o dono escrevia no escuro.
+ */
 export const PASSOS: { id: PassoDaCampanha; label: string }[] = [
   { id: 'account', label: 'Conta' },
-  { id: 'message', label: 'Mensagem' },
   { id: 'recipients', label: 'Destinatários' },
+  { id: 'message', label: 'Mensagem' },
   { id: 'review', label: 'Enviar' },
 ];
 

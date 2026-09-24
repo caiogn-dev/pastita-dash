@@ -82,14 +82,8 @@ describe('NewWhatsAppCampaignPage — acessibilidade dos botões icon-only', () 
   it('expõe nome acessível nos botões de adicionar e remover contato', async () => {
     renderPage();
 
-    // Avança: Conta (auto-selecionada) -> Mensagem
+    // Avança: Conta (auto-selecionada) -> Destinatários
     await screen.findByRole('button', { name: /voltar para campanhas whatsapp/i });
-    fireEvent.click(await screen.findByRole('button', { name: /^continuar$/i }));
-
-    // Mensagem: escolhe texto livre e digita conteúdo
-    fireEvent.click(await screen.findByText(/texto livre/i));
-    const textarea = await screen.findByPlaceholderText(/digite sua mensagem aqui/i);
-    fireEvent.change(textarea, { target: { value: 'Olá!' } });
     fireEvent.click(await screen.findByRole('button', { name: /^continuar$/i }));
 
     // Destinatários: botão de adicionar contato precisa de nome acessível

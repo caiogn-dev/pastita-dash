@@ -83,8 +83,11 @@ describe('spec: avançar na campanha', () => {
   });
 
   describe('navegação entre passos', () => {
-    it('a ordem é conta → mensagem → destinatários → revisão', () => {
-      expect(PASSOS.map((p) => p.id)).toEqual(['account', 'message', 'recipients', 'review']);
+    it('a ordem é conta → destinatários → mensagem → revisão', () => {
+      // Quem recebe antes do que recebe (decisão do dono em 29/08): a
+      // mensagem se escreve para um público, não o contrário.
+      expect(PASSOS.map((p) => p.id)).toEqual(['account', 'recipients', 'message', 'review']);
+      expect(PASSOS.map((p) => p.label)).toEqual(['Conta', 'Destinatários', 'Mensagem', 'Enviar']);
     });
 
     it('do último não passa, do primeiro não volta', () => {
@@ -93,8 +96,11 @@ describe('spec: avançar na campanha', () => {
     });
 
     it('anda um de cada vez, para frente e para trás', () => {
-      expect(proximoPasso('account')).toBe('message');
-      expect(passoAnterior('recipients')).toBe('message');
+      expect(proximoPasso('account')).toBe('recipients');
+      expect(proximoPasso('recipients')).toBe('message');
+      expect(proximoPasso('message')).toBe('review');
+      expect(passoAnterior('message')).toBe('recipients');
+      expect(passoAnterior('recipients')).toBe('account');
     });
   });
 });
