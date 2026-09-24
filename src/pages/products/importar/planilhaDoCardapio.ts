@@ -10,7 +10,11 @@ export interface ItemConferido {
   nome: string;
   preco: string;
   categoria: string;
+  descricao?: string;
 }
+
+/** De onde veio a conferência. `conferencia` = confirmação de linhas já vistas. */
+export type Origem = 'planilha' | 'foto' | 'pdf' | 'conferencia';
 
 export interface ErroDeLinha {
   linha: number;
@@ -20,6 +24,7 @@ export interface ErroDeLinha {
 export interface Conferencia {
   validos: ItemConferido[];
   erros: ErroDeLinha[];
+  origem?: Origem;
 }
 
 /** Modelo de planilha para o dono baixar e preencher. */
@@ -31,13 +36,18 @@ export const MODELO_CSV =
 export function resumoDaConferencia(c: Conferencia): string {
   const n = c.validos.length;
   const e = c.erros.length;
-  if (n === 0 && e === 0) return 'A planilha está vazia.';
-  if (n === 0) return `Nenhum produto pôde ser lido — ${e} ${e === 1 ? 'linha tem' : 'linhas têm'} problema.`;
+  // Foto não tem linha: falar de "linha" ali faz o dono procurar o que não existe.
+  const daFoto = c.origem === 'foto' || c.origem === 'pdf';
+  const [um, varios] = daFoto ? ['item', 'itens'] : ['linha', 'linhas'];
+  if (n === 0 && e === 0) {
+    return daFoto ? 'Não encontrei produtos no cardápio enviado.' : 'A planilha está vazia.';
+  }
+  if (n === 0) return `Nenhum produto pôde ser lido — ${e} ${e === 1 ? `${um} tem` : `${varios} têm`} problema.`;
   const entram = `${n} ${n === 1 ? 'produto entra' : 'produtos entram'} no cardápio`;
   if (e === 0) return `${entram}.`;
   // O número de falhas aparece SEMPRE que existe. Esconder atrás de um "ver
   // detalhes" faz o dono importar achando que veio tudo.
-  return `${entram}. ${e} ${e === 1 ? 'linha ficou' : 'linhas ficaram'} de fora.`;
+  return `${entram}. ${e} ${e === 1 ? `${um} ficou` : `${varios} ficaram`} de fora.`;
 }
 
 /** Dá para gravar? Sem um item válido não há o que importar. */
