@@ -10,7 +10,7 @@
  * is provided by the caller so the same content renders in both surfaces.
  */
 import { copyToClipboard } from '../../utils/clipboard';
-import React, { Fragment, useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
   ArrowLeftIcon,
   ArrowPathIcon,
@@ -26,12 +26,7 @@ import {
   BellIcon,
   BellSlashIcon,
   LinkIcon,
-  InboxArrowDownIcon,
   CheckCircleIcon,
-  XCircleIcon,
-  FireIcon,
-  CheckBadgeIcon,
-  ShoppingBagIcon,
   ChatBubbleLeftRightIcon,
   ArrowTopRightOnSquareIcon,
   DocumentDuplicateIcon,
@@ -93,9 +88,8 @@ import { RegistrarPagamentoModal } from '../../components/orders/RegistrarPagame
 import { CancelarPedidoModal } from '../../components/orders/CancelarPedidoModal';
 import { saldoDoPedido, podeRegistrarPagamento } from './saldoDoPedido';
 import { useStore } from '../../hooks';
-import { marcosDoPedido, duracaoLegivel } from './marcosDoPedido';
+import { LinhaDoTempoDoPedido } from '../../components/orders/LinhaDoTempoDoPedido';
 import { proximaAcaoDoPedido } from './proximaAcao';
-import { etapasDoPedido, horariosDasEtapas, type EtapaDoPedido } from './fluxoDoPedido';
 import { enderecoDaEntrega } from './enderecoDaEntrega';
 import { composicaoDaSalada } from './composicaoDaSalada';
 import { textoDoTroco } from './trocoDoPedido';
@@ -222,108 +216,6 @@ const formatScheduledLabel = (
   const timePart = scheduled_time ? scheduled_time.slice(0, 5) : '';
   if (datePart && timePart) return `${datePart} às ${timePart}`;
   return datePart || timePart;
-};
-
-/**
- * A régua de status, atravessando o topo do pedido.
- *
- * É a primeira pergunta de quem abre um pedido — "onde ele está?" — então ela
- * ocupa a largura inteira, antes de qualquer outra coisa. As etapas vêm de
- * `fluxoDoPedido`, que ramifica entrega e retirada igual ao botão de ação.
- */
-const ICONE_DA_ETAPA: Record<EtapaDoPedido['chave'], typeof ClockIcon> = {
-  recebido: InboxArrowDownIcon,
-  confirmado: CheckCircleIcon,
-  preparo: FireIcon,
-  despacho: TruckIcon,
-  fim: CheckBadgeIcon,
-};
-
-interface FluxoDoStatusProps {
-  order: Order;
-  isCancelled?: boolean;
-  /** Horários reais do pedido, para pendurar em cada etapa. */
-  marcos?: Array<{ chave: string; quando: Date; minutosDesdeAnterior: number | null }>;
-}
-
-const FluxoDoStatus: React.FC<FluxoDoStatusProps> = ({ order, isCancelled, marcos = [] }) => {
-  const etapas = etapasDoPedido(order);
-  const horarios = horariosDasEtapas(marcos);
-  const retirada = order.delivery_method === 'pickup' || order.delivery_method === 'digital';
-
-  if (isCancelled) {
-    return (
-      <div className="flex items-center gap-2 rounded-lg bg-[var(--danger-soft)] px-4 py-2.5 text-sm font-semibold text-[var(--danger)]">
-        <XCircleIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
-        Pedido cancelado
-      </div>
-    );
-  }
-
-  return (
-    <ol className="flex items-start" aria-label="Andamento do pedido">
-      {etapas.map((etapa, i) => {
-        const Icone = etapa.chave === 'despacho' && retirada ? ShoppingBagIcon : ICONE_DA_ETAPA[etapa.chave];
-        const concluida = etapa.estado === 'concluida';
-        const atual = etapa.estado === 'atual';
-        const quando = horarios[etapa.chave];
-        const anterior = i > 0 ? etapas[i - 1] : null;
-
-        return (
-          <Fragment key={etapa.chave}>
-            {/* O trecho de linha ENTRE duas bolinhas é o tempo que se passou
-                entre elas — é onde a duração pertence. */}
-            {anterior && (
-              <li aria-hidden="true" className="flex flex-1 flex-col items-center pt-4">
-                <span
-                  className={`h-0.5 w-full rounded-full ${
-                    concluida || atual ? 'bg-[var(--brand)]' : 'bg-border-token'
-                  }`}
-                />
-                {quando?.minutos != null && (
-                  <span className="mt-1 text-badge text-fg-muted-token">
-                    {duracaoLegivel(quando.minutos)}
-                  </span>
-                )}
-              </li>
-            )}
-
-            <li
-              className="flex shrink-0 flex-col items-center gap-1.5 px-1 text-center"
-              aria-current={atual ? 'step' : undefined}
-            >
-              <span
-                className={[
-                  'flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
-                  concluida
-                    ? 'border-[var(--brand)] bg-[var(--brand)] text-brand-strong'
-                    : atual
-                      ? 'border-[var(--brand)] bg-surface text-[var(--brand)] ring-4 ring-brand-soft'
-                      : 'border-border-token bg-surface text-fg-muted-token',
-                ].join(' ')}
-              >
-                {concluida ? <CheckIcon className="h-4 w-4" /> : <Icone className="h-4 w-4" />}
-              </span>
-              <span
-                className={[
-                  'text-xs leading-tight',
-                  atual ? 'font-semibold text-fg-token' : concluida ? 'text-fg-token' : 'text-fg-muted-token',
-                ].join(' ')}
-              >
-                {etapa.rotulo}
-              </span>
-              {/* A hora vive na etapa: o cartão "Tempos" que a guardava
-                  esticava a coluna lateral e abria um buraco ao lado dos
-                  itens. Aqui ela responde "onde" e "quando" de uma vez. */}
-              <span className="text-badge tabular-nums text-fg-muted-token">
-                {quando?.hora ?? '\u00A0'}
-              </span>
-            </li>
-          </Fragment>
-        );
-      })}
-    </ol>
-  );
 };
 
 // =============================================================================
@@ -585,7 +477,6 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
   // Get next action based on current status
   // Antes de qualquer `return` condicional: hook depois de early return muda
   // a quantidade de hooks entre renders e o React derruba a árvore.
-  const marcos = useMemo(() => (order ? marcosDoPedido(order as never) : []), [order]);
 
   /**
    * O passo seguinte vem de `proximaAcao.ts`, a mesma função do kanban.
@@ -719,7 +610,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
 
         {/* ── A régua de status, atravessando o topo ────────────────────── */}
         <div className="superficie px-5 py-4">
-          <FluxoDoStatus order={order} isCancelled={isCancelled} marcos={marcos} />
+          <LinhaDoTempoDoPedido pedido={order} />
         </div>
 
         {/* ── Cliente e entrega: uma faixa horizontal, largura inteira ─────
