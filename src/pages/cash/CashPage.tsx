@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { ArrowDownTrayIcon, ArrowUpTrayIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, ArrowUpTrayIcon, ExclamationTriangleIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -14,6 +14,7 @@ import {
   closeCashSession,
 } from '../../services/cash';
 import { formatCurrency } from '../../utils/formatters';
+import { caixaAbertoDesde } from './caixaEsquecido';
 
 
 const CashPage: React.FC = () => {
@@ -28,6 +29,15 @@ const CashPage: React.FC = () => {
   const [movementReason, setMovementReason] = useState('');
   const [countedAmount, setCountedAmount] = useState('');
   const [closeNotes, setCloseNotes] = useState('');
+  const campoContadoRef = useRef<HTMLInputElement>(null);
+
+  /** Leva ao fechamento que já existe nesta tela: rola até ele e põe o cursor no valor contado. */
+  const irParaFechamento = () => {
+    const campo = campoContadoRef.current;
+    if (!campo) return;
+    campo.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+    campo.focus();
+  };
 
   const loadSession = useCallback(async () => {
     if (!storeId) return;
@@ -99,6 +109,21 @@ const CashPage: React.FC = () => {
     <PageShell
       titulo="Caixa"
     >
+      {session && caixaAbertoDesde(session.opened_at) && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--warning)] bg-[var(--warning-soft)] px-4 py-3"
+        >
+          <p className="flex items-center gap-2 text-sm font-semibold text-fg-token">
+            <ExclamationTriangleIcon className="h-5 w-5 shrink-0 text-[var(--warning)]" aria-hidden="true" />
+            Caixa aberto desde {caixaAbertoDesde(session.opened_at)} — feche o dia
+          </p>
+          <Button variant="outline" size="sm" onClick={irParaFechamento}>
+            Fechar o dia
+          </Button>
+        </div>
+      )}
+
       {/* A largura travada em max-w-3xl deixava metade da tela vazia e cinco
           blocos um embaixo do outro. Agora: status em cima, ações lado a lado. */}
       <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
@@ -256,6 +281,7 @@ const CashPage: React.FC = () => {
                   Valor contado (R$)
                 </label>
                 <input
+                  ref={campoContadoRef}
                   id="counted-amount"
                   type="number"
                   min="0"
