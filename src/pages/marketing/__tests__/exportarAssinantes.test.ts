@@ -1,4 +1,8 @@
-import { assinantesParaCsv, type AssinanteExportavel } from '../exportarAssinantes';
+import {
+  assinantesParaCsv,
+  lerContatosCsv,
+  type AssinanteExportavel,
+} from '../exportarAssinantes';
 
 const assinante = (over: Partial<AssinanteExportavel>): AssinanteExportavel => ({
   email: 'a@b.com',
@@ -66,5 +70,47 @@ describe('assinantesParaCsv', () => {
       assinante({ email: 'x@y.com', name: 'Ana', phone: undefined, status: 'unsubscribed' }),
     ]);
     expect(csv.split('\n')[1]).toBe('x@y.com,Ana,,unsubscribed');
+  });
+});
+
+describe('lerContatosCsv (inverso — ida-e-volta com a exportação)', () => {
+  it('mantém paste simples separado por vírgula (comportamento antigo)', () => {
+    const contatos = lerContatosCsv('joao@x.com, João, 11999\nana@y.com, Ana');
+    expect(contatos).toEqual([
+      { email: 'joao@x.com', name: 'João', phone: '11999' },
+      { email: 'ana@y.com', name: 'Ana', phone: '' },
+    ]);
+  });
+
+  it('descarta o cabeçalho e as linhas sem e-mail válido', () => {
+    const contatos = lerContatosCsv('email,name,phone,status\nsó-texto\nx@y.com,Ana,1,active');
+    expect(contatos).toEqual([{ email: 'x@y.com', name: 'Ana', phone: '1' }]);
+  });
+
+  it('decodifica campo aspeado com vírgula interna', () => {
+    const contatos = lerContatosCsv('m@x.com,"Silva, Maria",119,active');
+    expect(contatos[0]).toEqual({ email: 'm@x.com', name: 'Silva, Maria', phone: '119' });
+  });
+
+  it('decodifica aspas internas ("" -> ")', () => {
+    const contatos = lerContatosCsv('z@x.com,"Ze ""Boca""",1,active');
+    expect(contatos[0].name).toBe('Ze "Boca"');
+  });
+
+  it('desfaz a guarda de fórmula só quando ela foi posta pela exportação', () => {
+    const contatos = lerContatosCsv("'+5511999@x.com,'=nome,'@arroba,active");
+    expect(contatos[0]).toEqual({ email: '+5511999@x.com', name: '=nome', phone: '@arroba' });
+  });
+
+  it('ida-e-volta: exportar e reimportar preserva email/nome/telefone', () => {
+    const origem: AssinanteExportavel[] = [
+      { email: 'm@x.com', name: 'Silva, Maria', phone: '+5511', status: 'active' },
+      { email: 'z@x.com', name: 'Ze "Boca"', phone: '', status: 'unsubscribed' },
+      { email: 'f@x.com', name: '=HYPERLINK("a","b")', phone: '119', status: 'active' },
+    ];
+    const voltaram = lerContatosCsv(assinantesParaCsv(origem));
+    expect(voltaram).toEqual(
+      origem.map(({ email, name, phone }) => ({ email, name, phone })),
+    );
   });
 });

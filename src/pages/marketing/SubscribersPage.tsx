@@ -18,7 +18,7 @@ import { marketingService, Subscriber } from '../../services/marketingService';
 import { useRootStore } from '../../stores/rootStore';
 import logger from '../../services/logger';
 import { formatCurrency } from '../../utils/formatters';
-import { assinantesParaCsv } from './exportarAssinantes';
+import { assinantesParaCsv, lerContatosCsv } from './exportarAssinantes';
 
 interface NewSubscriber {
   email: string;
@@ -166,18 +166,10 @@ export const SubscribersPage: React.FC = () => {
 
     setSaving(true);
     try {
-      const contacts = importText
-        .trim()
-        .split('\n')
-        .map((line) => {
-          const parts = line.split(',').map((part) => part.trim());
-          return {
-            email: parts[0],
-            name: parts[1] || '',
-            phone: parts[2] || '',
-          };
-        })
-        .filter((contact) => contact.email && contact.email.includes('@'));
+      // Parser CSV-ciente (inverso da exportação): decodifica aspas e vírgulas
+      // internas, então o arquivo exportado ("Silva, Maria", 'Ze "Boca"') volta
+      // inteiro no ida-e-volta. Um split(',') cru corromperia esses valores.
+      const contacts = lerContatosCsv(importText);
 
       if (contacts.length === 0) {
         toast.error('Nenhum e-mail válido encontrado');

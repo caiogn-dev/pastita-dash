@@ -65,3 +65,85 @@ export function assinantesParaCsv(assinantes: AssinanteExportavel[]): string {
   // quebrado, enquanto o cabeçalho abre e mostra que o recorte não tinha nada.
   return linhas.join('\n');
 }
+
+export interface ContatoImportado {
+  email: string;
+  name: string;
+  phone: string;
+}
+
+/**
+ * Reverte a guarda de fórmula: só removemos o `'` líder quando foi a própria
+ * exportação que o pôs (imediatamente antes de um gatilho `=+-@`/tab/CR), para
+ * não comer um `'` que faça parte do dado (um nome que comece com apóstrofo).
+ */
+function tirarGuardaDeFormula(valor: string): string {
+  if (valor.startsWith("'") && GATILHO_DE_FORMULA.test(valor.slice(1))) {
+    return valor.slice(1);
+  }
+  return valor;
+}
+
+/**
+ * Parser CSV mínimo (separador `,`, aspas com `""` escapado, campo aspeado pode
+ * conter `,`/CR/LF). Cobre exatamente o formato que `assinantesParaCsv` gera —
+ * não pretende ser um parser RFC-4180 completo. Existe para o ida-e-volta:
+ * quando o dono exporta e cola o arquivo de volta em "Importar clientes", um
+ * nome como `Silva, Maria` ou `Ze "Boca"` precisa voltar inteiro. Um `split(',')`
+ * cru quebraria o primeiro e não decodificaria as aspas do segundo.
+ */
+function parseLinhasCsv(texto: string): string[][] {
+  const linhas: string[][] = [];
+  let campos: string[] = [];
+  let campo = '';
+  let dentroDeAspas = false;
+
+  for (let i = 0; i < texto.length; i++) {
+    const c = texto[i];
+    if (dentroDeAspas) {
+      if (c === '"') {
+        if (texto[i + 1] === '"') {
+          campo += '"';
+          i++;
+        } else {
+          dentroDeAspas = false;
+        }
+      } else {
+        campo += c;
+      }
+    } else if (c === '"') {
+      dentroDeAspas = true;
+    } else if (c === ',') {
+      campos.push(campo);
+      campo = '';
+    } else if (c === '\n') {
+      campos.push(campo);
+      linhas.push(campos);
+      campos = [];
+      campo = '';
+    } else if (c !== '\r') {
+      // CR fora de aspas é só fim de linha estilo Windows — ignorado.
+      campo += c;
+    }
+  }
+  campos.push(campo);
+  linhas.push(campos);
+  return linhas;
+}
+
+/**
+ * Lê o texto colado em "Importar clientes" respeitando o mesmo formato da
+ * exportação. Mantém a leniência do parser antigo: trima cada campo e só
+ * aceita a linha quando o e-mail tem `@` (o cabeçalho `email,name,...` cai
+ * fora sozinho por esse filtro). Desfaz a guarda de fórmula da exportação.
+ */
+export function lerContatosCsv(texto: string): ContatoImportado[] {
+  return parseLinhasCsv(texto)
+    .map((campos) => {
+      const [email = '', name = '', phone = ''] = campos.map((c) =>
+        tirarGuardaDeFormula(c.trim()),
+      );
+      return { email, name, phone };
+    })
+    .filter((contato) => contato.email.includes('@'));
+}
