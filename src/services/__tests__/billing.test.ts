@@ -1,6 +1,9 @@
 // src/services/__tests__/billing.test.ts
 import api from '../api';
-import { getSubscription, cancelSubscription, changePlan, getCurrentInvoice, listInvoices } from '../billing';
+import {
+  getSubscription, cancelSubscription, changePlan, getCurrentInvoice, listInvoices,
+  getAdicionais, contratarAdicional, cancelarAdicional, ehAdicionalNecessario,
+} from '../billing';
 
 jest.mock('../api', () => ({
   __esModule: true,
@@ -86,5 +89,45 @@ describe('billing invoices service', () => {
     mockGet.mockResolvedValueOnce({ data: {} });
     const res = await listInvoices('loja');
     expect(res).toEqual([]);
+  });
+});
+
+describe('adicionais (Etiqueta ANVISA)', () => {
+  it('getAdicionais lê o catálogo de adicionais da vitrine pública', async () => {
+    const etiqueta = {
+      key: 'etiqueta_anvisa', nome: 'Etiqueta nutricional ANVISA', descricao: 'd',
+      inclui: ['TACO'], implantacao: 390, mensal: 79, anual: 790,
+    };
+    mockGet.mockResolvedValueOnce({ data: { plans: [], adicionais: [etiqueta] } });
+    const res = await getAdicionais();
+    expect(mockGet).toHaveBeenCalledWith('/public/plans/', { skipAutoLogout: true });
+    expect(res).toEqual([etiqueta]);
+  });
+
+  it('getAdicionais devolve [] quando o backend ainda não manda adicionais', async () => {
+    mockGet.mockResolvedValueOnce({ data: { plans: [] } });
+    expect(await getAdicionais()).toEqual([]);
+  });
+
+  it('contratarAdicional faz POST e devolve a lista atualizada', async () => {
+    mockPost.mockResolvedValueOnce({ data: { adicionais: ['etiqueta_anvisa'] } });
+    const res = await contratarAdicional('loja', 'etiqueta_anvisa');
+    expect(mockPost).toHaveBeenCalledWith('/stores/loja/subscription/adicionais/', { adicional: 'etiqueta_anvisa' });
+    expect(res).toEqual(['etiqueta_anvisa']);
+  });
+
+  it('cancelarAdicional faz DELETE com o corpo', async () => {
+    const mockDelete = (api as unknown as { delete: jest.Mock }).delete;
+    mockDelete.mockResolvedValueOnce({ data: { adicionais: [] } });
+    const res = await cancelarAdicional('loja', 'etiqueta_anvisa');
+    expect(mockDelete).toHaveBeenCalledWith('/stores/loja/subscription/adicionais/', { data: { adicional: 'etiqueta_anvisa' } });
+    expect(res).toEqual([]);
+  });
+
+  it('ehAdicionalNecessario reconhece o 402 do portão e ignora outros erros', () => {
+    const portao = { response: { status: 402, data: { error: { code: 'adicional_necessario' } } } };
+    expect(ehAdicionalNecessario(portao)).toBe(true);
+    expect(ehAdicionalNecessario({ response: { status: 403, data: {} } })).toBe(false);
+    expect(ehAdicionalNecessario(new Error('rede'))).toBe(false);
   });
 });

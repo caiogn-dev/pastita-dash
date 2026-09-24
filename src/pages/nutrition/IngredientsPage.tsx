@@ -29,6 +29,8 @@ import { Badge, Button, Modal, PageShell, SearchInput, Tabela, RowActions } from
 import { Loading } from '../../components/common';
 import RecipeBuilder from './RecipeBuilder';
 import { useConfirm } from '../../hooks/useConfirm';
+import { PortaoDoAdicional } from '../../components/billing/PortaoDoAdicional';
+import { ADICIONAL_ETIQUETA } from '../../services/billing';
 
 type NutrientKey =
   | 'energy_kcal' | 'carbohydrates_g' | 'total_sugars_g' | 'added_sugars_g'
@@ -68,7 +70,7 @@ const empty = {
   display_name: '', canonical_name: '', category: '', source: 'manual', default_unit: 'g',
 } as Record<string, string>;
 
-export default function IngredientsPage() {
+function IngredientesDaLoja() {
   const { storeId } = useParams<{ storeId: string }>();
   const [items, setItems] = useState<Ingredient[]>([]);
   const [loading, setLoading] = useState(true);
@@ -525,5 +527,15 @@ export default function IngredientsPage() {
         </div>
       </Modal>
     </PageShell>
+  );
+}
+
+/** Receitas e etiqueta nutricional são o adicional Etiqueta ANVISA. O menu
+ *  continua visível para todos: quem clica sem ter vê o que ganharia. */
+export default function IngredientsPage() {
+  return (
+    <PortaoDoAdicional chave={ADICIONAL_ETIQUETA} titulo="Ingredientes e TACO">
+      <IngredientesDaLoja />
+    </PortaoDoAdicional>
   );
 }

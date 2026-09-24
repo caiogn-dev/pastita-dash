@@ -18,7 +18,7 @@ import VariantsManager from '../../components/products/VariantsManager';
 // Lazy de propósito: a aba Nutricional é a menos usada do formulário, e o
 // import direto arrastava o cliente de API para dentro de quem só veio mexer
 // no preço — inclusive nos testes do formulário.
-const RecipeBuilder = lazy(() => import('../nutrition/RecipeBuilder'));
+const ReceitaDoProduto = lazy(() => import('../nutrition/ReceitaDoProduto'));
 import DescriptionEditor from './DescriptionEditor';
 import storesApi, {
   StoreProduct as Product,
@@ -1102,7 +1102,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 conferido.
               </p>
               <Suspense fallback={<p className="text-sm opacity-60">Carregando…</p>}>
-                <RecipeBuilder productId={String(effectiveProduct.id)} storeUuid={storeId} ingredients={[]} />
+                <ReceitaDoProduto productId={String(effectiveProduct.id)} storeUuid={storeId} />
               </Suspense>
             </div>
           )}

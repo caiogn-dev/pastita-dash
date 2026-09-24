@@ -18,7 +18,10 @@ import {
   type SubscriptionStatus,
   type Plan,
   type Invoice,
+  ADICIONAL_ETIQUETA,
 } from '../../services/billing';
+import { useAdicional } from '../../hooks/useAdicional';
+import CartaoDeAdicional from '../../components/billing/CartaoDeAdicional';
 import PixInvoicePanel from '../../components/billing/PixInvoicePanel';
 import CartaoDePlano from '../../components/billing/CartaoDePlano';
 import { nomeDoPlano } from './nomeDoPlano';
@@ -93,6 +96,8 @@ export default function SubscriptionManagementPage() {
   // O Grátis existe, mas não na vitrine — ver o comentário da grade.
   const planosPagos = plans.filter((p) => p.monthly_price > 0);
   const planoGratis = plans.find((p) => p.monthly_price === 0);
+
+  const etiqueta = useAdicional(ADICIONAL_ETIQUETA);
 
   const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
   const [invoiceHistory, setInvoiceHistory] = useState<Invoice[]>([]);
@@ -179,6 +184,18 @@ export default function SubscriptionManagementPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleCancelarAdicional() {
+    const confirmed = await confirmAction({
+      title: 'Cancelar Etiqueta ANVISA',
+      message:
+        'Suas receitas continuam guardadas, mas a tela de ingredientes e as etiquetas nutricionais ficam bloqueadas. Se contratar de novo, a implantação é cobrada outra vez.',
+      confirmText: 'Cancelar adicional',
+      cancelText: 'Manter adicional',
+      variant: 'danger',
+    });
+    if (confirmed) await etiqueta.cancelar();
   }
 
   async function handleChange(plan: Plan) {
@@ -362,6 +379,22 @@ export default function SubscriptionManagementPage() {
           </p>
         )}
       </section>
+
+      {etiqueta.adicional && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-fg-token">Adicionais</h2>
+          <div className="grid items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <CartaoDeAdicional
+              adicional={etiqueta.adicional}
+              estado={etiqueta.estado}
+              ocupado={etiqueta.ocupado}
+              erro={etiqueta.erro}
+              onContratar={() => void etiqueta.contratar()}
+              onCancelar={() => void handleCancelarAdicional()}
+            />
+          </div>
+        </section>
+      )}
 
       {invoiceHistory.length > 0 && (
         <section className="space-y-2">

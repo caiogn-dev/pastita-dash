@@ -126,6 +126,10 @@ export interface SubscriptionStatus {
   grace_until?: string | null;
   /** Loja foi rebaixada para o plano gratuito por falta de pagamento (Task 1). */
   downgraded_for_nonpayment?: boolean;
+  /** Adicionais que a loja pode usar agora (contratados ou inclusos). */
+  adicionais?: AdicionalKey[];
+  /** Adicionais que a loja tem sem pagar (loja antiga, isenta de cobrança). */
+  adicionais_inclusos?: AdicionalKey[];
 }
 
 export async function getSubscription(storeSlug: string): Promise<SubscriptionStatus> {
@@ -170,4 +174,51 @@ export async function getCurrentInvoice(storeSlug: string): Promise<Invoice | nu
 export async function listInvoices(storeSlug: string): Promise<Invoice[]> {
   const { data } = await api.get(`/stores/${storeSlug}/invoices/`);
   return Array.isArray(data?.invoices) ? data.invoices : [];
+}
+
+/**
+ * Adicionais — módulos vendidos à parte do plano.
+ *
+ * Preço e descrição vêm do backend (`billing.ADICIONAIS`), na mesma vitrine
+ * dos planos. A tela não guarda preço: é assim que o repo deixou de ter três
+ * fontes de preço discordando.
+ */
+export type AdicionalKey = 'etiqueta_anvisa';
+
+export const ADICIONAL_ETIQUETA: AdicionalKey = 'etiqueta_anvisa';
+
+export interface Adicional {
+  key: AdicionalKey;
+  nome: string;
+  descricao: string;
+  /** O que o lojista ganha — lista curta para os cartões. */
+  inclui: string[];
+  /** Implantação, cobrada uma vez na primeira fatura (isenta no anual). */
+  implantacao: number;
+  mensal: number;
+  anual: number;
+}
+
+export async function getAdicionais(): Promise<Adicional[]> {
+  const { data } = await api.get<{ adicionais?: Adicional[] }>('/public/plans/', {
+    skipAutoLogout: true,
+  });
+  return Array.isArray(data?.adicionais) ? data.adicionais : [];
+}
+
+/** Contrata o adicional. Nada é cobrado na hora: entra na próxima fatura. */
+export async function contratarAdicional(storeSlug: string, adicional: AdicionalKey): Promise<AdicionalKey[]> {
+  const { data } = await api.post(`/stores/${storeSlug}/subscription/adicionais/`, { adicional });
+  return data?.adicionais ?? [];
+}
+
+export async function cancelarAdicional(storeSlug: string, adicional: AdicionalKey): Promise<AdicionalKey[]> {
+  const { data } = await api.delete(`/stores/${storeSlug}/subscription/adicionais/`, { data: { adicional } });
+  return data?.adicionais ?? [];
+}
+
+/** O 402 do portão de um adicional — a tela troca o erro pelo estado "bloqueado". */
+export function ehAdicionalNecessario(erro: unknown): boolean {
+  const resposta = (erro as { response?: { status?: number; data?: { error?: { code?: string } } } })?.response;
+  return resposta?.status === 402 && resposta.data?.error?.code === 'adicional_necessario';
 }

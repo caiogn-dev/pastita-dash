@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 jest.mock('react-hot-toast', () => ({
@@ -26,6 +26,16 @@ jest.mock('../../../services/billing', () => ({
 jest.mock('../../../hooks/useStore', () => ({
   __esModule: true,
   useStore: () => ({ store: { slug: 'loja-1' } }),
+}));
+
+const semAdicional = {
+  estado: 'desconhecido', liberado: true, adicional: null, ocupado: false, erro: null,
+  contratar: jest.fn(), cancelar: jest.fn(),
+};
+const mockUseAdicional = jest.fn(() => semAdicional);
+jest.mock('../../../hooks/useAdicional', () => ({
+  __esModule: true,
+  useAdicional: () => mockUseAdicional(),
 }));
 
 import SubscriptionManagementPage from '../SubscriptionManagementPage';
@@ -307,5 +317,45 @@ describe('SubscriptionManagementPage — fatura atual + histórico + toggle', ()
     expect(mockGetCurrentInvoice).toHaveBeenCalledTimes(callsBeforeUnmount);
 
     jest.useRealTimers();
+  });
+});
+
+describe('SubscriptionManagementPage — adicional Etiqueta ANVISA', () => {
+  const ETIQUETA = {
+    key: 'etiqueta_anvisa', nome: 'Etiqueta nutricional ANVISA', descricao: 'd',
+    inclui: ['Alergênicos conforme a RDC 26'], implantacao: 390, mensal: 79, anual: 790,
+  };
+
+  beforeEach(() => {
+    mockGetSubscription.mockResolvedValue(BASE_SUB);
+    mockGetPlans.mockResolvedValue(BASE_PLANS);
+    mockGetCurrentInvoice.mockResolvedValue(null);
+  });
+
+  afterEach(() => mockUseAdicional.mockReturnValue(semAdicional));
+
+  it('mostra o cartão com o preço do servidor e contrata', async () => {
+    const contratar = jest.fn();
+    mockUseAdicional.mockReturnValue({
+      ...semAdicional, estado: 'disponivel', liberado: false, adicional: ETIQUETA, contratar,
+    });
+    render(<SubscriptionManagementPage />);
+    expect(await screen.findByText('Etiqueta nutricional ANVISA')).toBeInTheDocument();
+    expect(screen.getByText(/R\$ 390,00 de implantação/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Contratar adicional' }));
+    expect(contratar).toHaveBeenCalled();
+  });
+
+  it('cancelar pede confirmação antes', async () => {
+    const cancelar = jest.fn();
+    mockUseAdicional.mockReturnValue({
+      ...semAdicional, estado: 'contratado', adicional: ETIQUETA, cancelar,
+    });
+    render(<SubscriptionManagementPage />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancelar adicional' }));
+    expect(cancelar).not.toHaveBeenCalled();
+    const dialogo = await screen.findByRole('dialog');
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Cancelar adicional' }));
+    await waitFor(() => expect(cancelar).toHaveBeenCalled());
   });
 });

@@ -23,6 +23,16 @@ jest.mock('../../../utils/labelPrint', () => ({
   printHtmlDocument: jest.fn().mockResolvedValue(undefined),
 }));
 
+// Os modelos de nutrição são o adicional Etiqueta ANVISA; os outros testes
+// rodam com ele liberado.
+const liberado = { estado: 'contratado', liberado: true, adicional: null, ocupado: false, erro: null,
+  contratar: jest.fn(), cancelar: jest.fn() };
+const mockUseAdicional = jest.fn(() => liberado);
+jest.mock('../../../hooks/useAdicional', () => ({
+  __esModule: true,
+  useAdicional: () => mockUseAdicional(),
+}));
+
 const mockedGetStores = getStores as jest.Mock;
 const mockedGetProducts = getProducts as jest.Mock;
 const mockedGerarCodigos = gerarCodigosInternos as jest.Mock;
@@ -83,6 +93,19 @@ describe('EtiquetasPage', () => {
     // barcode entra como SVG gerado a partir do código salvo
     expect(mockedPrint).toHaveBeenCalledTimes(1);
     expect((await code).gerados.p1).toMatch(/^2\d{12}$/);
+  });
+
+  it('sem o adicional, os modelos de nutrição mostram o bloqueio com o contratar — produto segue livre', async () => {
+    mockUseAdicional.mockReturnValue({ ...liberado, estado: 'disponivel', liberado: false });
+    renderPage();
+    await screen.findByText('Marmita P');
+    expect(screen.getByTestId('etq-imprimir')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Nutrição 100×80' }));
+
+    expect(screen.getByText(/fazem parte do adicional Etiqueta ANVISA/)).toBeInTheDocument();
+    expect(screen.queryByTestId('etq-imprimir')).not.toBeInTheDocument();
+    mockUseAdicional.mockReturnValue(liberado);
   });
 
   it('produto que já tem código não é alterado ao imprimir', async () => {

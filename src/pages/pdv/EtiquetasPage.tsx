@@ -13,6 +13,9 @@ import {
 import { precoVigenteDoProduto } from '../../utils/precoVigente';
 import { PageShell } from '../../components/ui';
 import { formatCurrency } from '../../utils/formatters';
+import { useAdicional } from '../../hooks/useAdicional';
+import { ADICIONAL_ETIQUETA } from '../../services/billing';
+import { AdicionalBloqueado } from '../../components/billing/AdicionalBloqueado';
 
 const fmtDate = (d: Date) => d.toLocaleDateString('pt-BR');
 const MM_PX = 96 / 25.4;
@@ -129,6 +132,11 @@ const EtiquetasPage: React.FC = () => {
   const [cfg, setCfg] = useState<SavedConfig>(loadConfig);
   const [preparing, setPreparing] = useState(false);
   const [profiles, setProfiles] = useState<Map<string, NutritionProfile>>(new Map());
+  // Produto e validade são de todo mundo; só os modelos de nutrição são o
+  // adicional Etiqueta ANVISA.
+  const etiqueta = useAdicional(ADICIONAL_ETIQUETA);
+  const nutricaoBloqueada = (template === 'nutricao' || template === 'nutricao-qr')
+    && etiqueta.estado !== 'carregando' && !etiqueta.liberado;
 
   useEffect(() => {
     try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch { /* quota/privado */ }
@@ -546,6 +554,8 @@ const EtiquetasPage: React.FC = () => {
                 </div>
               </details>
             </div>
+          ) : nutricaoBloqueada ? (
+            <AdicionalBloqueado etiqueta={etiqueta} />
           ) : template === 'nutricao' || template === 'nutricao-qr' ? (
             <div className="rounded-lg bg-black/5 p-3 text-sm space-y-2">
               <p className="font-semibold">{template === 'nutricao' ? 'Zebra 100 × 80 mm' : 'QR compacto 30 × 22 mm'}</p>
@@ -584,6 +594,7 @@ const EtiquetasPage: React.FC = () => {
             </div>
           )}
 
+          {!nutricaoBloqueada && (<>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide opacity-60 mb-1.5">Pré-visualização (tamanho real do papel)</p>
             <div
@@ -619,6 +630,7 @@ const EtiquetasPage: React.FC = () => {
             Na janela de impressão: selecione a impressora de etiquetas, papel igual ao
             configurado aqui, margens “Nenhuma” e escala 100% (sem “ajustar à página”).
           </p>
+          </>)}
         </Card>
       </div>
     </PageShell>
