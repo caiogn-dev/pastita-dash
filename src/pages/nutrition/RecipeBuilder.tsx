@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage, normalizePaginatedResponse } from '../../services/api';
-import { salvarRevisaoDeAlergenicos } from '../../services/nutrition';
+import { FichaDeCusto, salvarRevisaoDeAlergenicos } from '../../services/nutrition';
 import { getProducts, StoreProduct } from '../../services/storesApi';
 import { Button, Card } from '../../components/ui';
 import SeletorDeIngrediente from './SeletorDeIngrediente';
 import BarraDeComposicao from './BarraDeComposicao';
+import BlocoDeCusto from './BlocoDeCusto';
 import { paraCampo } from './numeroDeReceita';
 import { listaDeNomes, listaDeNutrientes } from './rotulosDeNutriente';
 import { TrashIcon } from '@heroicons/react/24/outline';
@@ -22,8 +23,10 @@ interface Calc {
   unmeasured_by_nutrient?:Record<string,string[]>;
   allergens?:{ texto?:string; revisado?:boolean; ingredientes_sem_revisao?:string[] };
   front_of_pack?:{ texto?:string[]; conclusivo?:boolean; indefinidos?:string[] };
+  /** Só na prévia: a ficha de custo contra o preço do prato. */
+  custo?:FichaDeCusto;
 }
-interface Recipe { id:string; serving_size_g:string; household_measure:string; status:string; items:Row[]; calculation?: Calc }
+interface Recipe { id:string; serving_size_g:string; household_measure:string; status:string; items:Row[]; calculation?: Calc; custo?: FichaDeCusto }
 interface Perfil { id:string; is_print_approved:boolean; physical_form:string }
 
 export default function RecipeBuilder({storeSlug,ingredients,productId,storeUuid}:{storeSlug?:string;ingredients:Ingredient[];productId?:string;storeUuid?:string}) {
@@ -69,13 +72,15 @@ export default function RecipeBuilder({storeSlug,ingredients,productId,storeUuid
     const prontos=rows.filter(r=>r.ingredient&&Number(r.quantity_g)>0);
     if(!prontos.length){setPrevia(null);return undefined;}
     const id=setTimeout(()=>{
-      api.post('/nutrition/recipes/previa/',{items:prontos,serving_size_g:serving,physical_form:perfil?.physical_form||'solido'})
+      // O prato vai junto para a prévia devolver a margem contra o preço dele.
+      api.post('/nutrition/recipes/previa/',{items:prontos,serving_size_g:serving,physical_form:perfil?.physical_form||'solido',product:product||undefined})
         .then(r=>setPrevia(r.data)).catch(()=>{});
     },450);
     return ()=>clearTimeout(id);
-  },[rows,serving,perfil?.physical_form]);
+  },[rows,serving,perfil?.physical_form,product]);
   // O salvo manda quando existe; a prévia cobre o que ainda não foi gravado.
   const calc:Calc|undefined=previa??recipe?.calculation;
+  const custo=previa?.custo??recipe?.custo;
   const pesoTotal=rows.reduce((t,r)=>t+(Number(r.quantity_g)||0),0);
   useEffect(()=>{ if(!revisandoAlergenico) return;
     api.get('/nutrition/alergenicos/').then(r=>setAlergenicos(r.data.alergenicos||[])).catch(()=>{});
@@ -147,6 +152,8 @@ export default function RecipeBuilder({storeSlug,ingredients,productId,storeUuid
           </div>
         ))}
       </div>
+      {custo&&<BlocoDeCusto custo={custo}/>}
+
       {!!c.unmeasured_by_nutrient&&Object.keys(c.unmeasured_by_nutrient).length>0&&<p className="text-xs opacity-70">A fonte não mede {listaDeNutrientes(Object.keys(c.unmeasured_by_nutrient))} — isso vem de ficha do fabricante ou laudo, não de cadastro.</p>}
 
       {revisandoAlergenico&&<div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 space-y-3">

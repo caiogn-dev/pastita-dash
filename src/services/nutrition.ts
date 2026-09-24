@@ -66,3 +66,33 @@ export const adotarIngrediente = async (
   });
   return r.data;
 };
+
+/**
+ * Ficha de custo do prato, como o servidor calcula (`apps/nutrition/services/custo.py`).
+ *
+ * Dinheiro chega como string do `DecimalField`. Qualquer campo em `null` é
+ * "não dá para saber" — nunca zero: ingrediente sem preço deixa o custo do
+ * prato em branco e aparece em `ingredientes_sem_preco`.
+ */
+export interface FichaDeCusto {
+  custo_total: string | null;
+  custo_por_porcao: string | null;
+  ingredientes_sem_preco: string[];
+  preco_de_venda: string | null;
+  margem_bruta_valor: string | null;
+  margem_bruta_pct: string | null;
+  cmv_pct: string | null;
+}
+
+export interface CustoDoPrato extends FichaDeCusto {
+  produto_id: string;
+  produto: string;
+  /** false = falta preço de ingrediente (ou o prato não tem preço de venda). */
+  completo: boolean;
+}
+
+/** Custo e margem de todo prato com receita da loja, pior margem primeiro. */
+export const buscarCustosDaLoja = async (storeUuid: string): Promise<CustoDoPrato[]> => {
+  const r = await api.get('/nutrition/custos/', { params: { store: storeUuid } });
+  return r.data;
+};

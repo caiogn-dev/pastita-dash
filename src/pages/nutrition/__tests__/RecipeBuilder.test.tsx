@@ -62,3 +62,35 @@ test('resolve o nome do ingrediente da receita salva', async () => {
   await waitFor(() => expect(screen.getAllByText("Farinha").length).toBeGreaterThan(0));
   expect(apiGet).toHaveBeenCalledWith('/nutrition/ingredients/i1/');
 });
+
+const custoSalvo = {
+  custo_total: '5.00', custo_por_porcao: '1.00', ingredientes_sem_preco: [],
+  preco_de_venda: '20.00', margem_bruta_valor: '15.00', margem_bruta_pct: '75.0', cmv_pct: '25.0',
+};
+
+test('mostra custo e margem do prato no resumo da receita', async () => {
+  apiGet.mockImplementation((url: string) => {
+    if (url === '/nutrition/recipes/') {
+      return Promise.resolve({ data: { results: [{
+        ...receitaSalva,
+        calculation: { per_100g: {}, missing_nutrients: [] },
+        custo: custoSalvo,
+      }] } });
+    }
+    if (url.startsWith('/nutrition/ingredients/')) return Promise.resolve({ data: { display_name: 'Farinha' } });
+    return Promise.resolve({ data: { results: [] } });
+  });
+  (api.post as jest.Mock).mockReturnValue(new Promise(() => {}));
+  render(<RecipeBuilder productId="p1" ingredients={[]} />);
+  await waitFor(() => expect(screen.getByText('Custo e margem')).toBeInTheDocument());
+  expect(screen.getByText('R$ 20,00')).toBeInTheDocument();
+});
+
+test('a prévia leva o prato para o servidor devolver a margem contra o preço dele', async () => {
+  (api.post as jest.Mock).mockReturnValue(new Promise(() => {}));
+  render(<RecipeBuilder productId="p1" ingredients={[]} />);
+  await waitFor(() => expect(api.post).toHaveBeenCalled(), { timeout: 4000 });
+  const [url, corpo] = (api.post as jest.Mock).mock.calls[0];
+  expect(url).toBe('/nutrition/recipes/previa/');
+  expect(corpo.product).toBe('p1');
+});

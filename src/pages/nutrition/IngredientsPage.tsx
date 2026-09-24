@@ -28,6 +28,9 @@ import { getStores } from '../../services/storesApi';
 import { Badge, Button, Modal, PageShell, SearchInput, Tabela, RowActions } from '../../components/ui';
 import { Loading } from '../../components/common';
 import RecipeBuilder from './RecipeBuilder';
+import TabelaDeCustos from './TabelaDeCustos';
+import { custoPorMil } from './custoDoIngrediente';
+import { formatCurrency } from '../../utils/formatters';
 import { useConfirm } from '../../hooks/useConfirm';
 
 type NutrientKey =
@@ -74,7 +77,7 @@ export default function IngredientsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
-  const [aba, setAba] = useState<'loja' | 'base'>('loja');
+  const [aba, setAba] = useState<'loja' | 'base' | 'custos'>('loja');
   const [totalBase, setTotalBase] = useState(0);
   // Com 2.5 mil alimentos oficiais, buscar só no que já baixou acha o que não
   // interessa e esconde o que interessa. A busca da base vai ao servidor.
@@ -164,6 +167,14 @@ export default function IngredientsPage() {
   const alternar = (lista: string[], set: (v: string[]) => void, valor: string) =>
     set(lista.includes(valor) ? lista.filter(v => v !== valor) : [...lista, valor]);
 
+  const unidadeBase = form.default_unit || 'g';
+  const unidadeDaCompra = form.unidade_compra || unidadeBase;
+  const temPreco = Boolean(form.preco_pago || form.quantidade_comprada);
+  const custoMil = custoPorMil({
+    preco: form.preco_pago || '', quantidade: form.quantidade_comprada || '', unidade: unidadeDaCompra,
+    porUnidade: form.quantidade_por_unidade || '', unidadeBase, densidade: form.density_g_ml || '',
+  });
+
   const save = async () => {
     if (!form.display_name.trim()) { toast.error('Informe o nome'); return; }
     // Só o que este formulário edita. Devolver o objeto inteiro stringificado
@@ -182,6 +193,12 @@ export default function IngredientsPage() {
       allergens: contem,
       may_contain: podeConter.filter(v => !contem.includes(v)),
       allergens_reviewed: revisado,
+      // Ficha de custo. Em branco é "não sei quanto pago" — nunca zero, que
+      // faria o prato parecer mais barato do que é.
+      preco_pago: form.preco_pago || null,
+      quantidade_comprada: form.quantidade_comprada || null,
+      unidade_compra: temPreco ? unidadeDaCompra : '',
+      quantidade_por_unidade: temPreco && unidadeDaCompra === 'un' ? form.quantidade_por_unidade || null : null,
     };
     setSalvando(true);
     try {
@@ -230,6 +247,7 @@ export default function IngredientsPage() {
   const abas = [
     { id: 'loja' as const, rotulo: `Meus ingredientes (${daLoja.length})` },
     { id: 'base' as const, rotulo: `Base TACO/POF (${totalBase || daBase.length})` },
+    { id: 'custos' as const, rotulo: 'Custo e margem' },
   ];
 
   const filtros = (
@@ -254,6 +272,7 @@ export default function IngredientsPage() {
           </button>
         ))}
       </div>
+      {aba !== 'custos' && <>
       <div className="min-w-56 flex-1">
         <SearchInput
           placeholder={aba === 'base' ? 'Buscar na TACO/POF…' : 'Buscar ingrediente…'}
@@ -269,6 +288,7 @@ export default function IngredientsPage() {
         <option value="">Todas as categorias</option>
         {categories.map(c => <option key={c}>{c}</option>)}
       </select>
+      </>}
     </div>
   );
 
@@ -302,6 +322,7 @@ export default function IngredientsPage() {
           </p>
         )}
 
+        {aba === 'custos' ? <TabelaDeCustos storeUuid={storeUuid} /> : (
         <Tabela<(typeof visible)[number]>
           itens={visible}
           chave={(i) => String(i.id)}
@@ -376,6 +397,7 @@ export default function IngredientsPage() {
             },
           ]}
         />
+        )}
       </div>
 
       <Modal
@@ -432,6 +454,70 @@ export default function IngredientsPage() {
               </label>
             ))}
           </div>
+
+          <section className="space-y-2 border-t border-border-token pt-4">
+            <div>
+              <h3 className="font-semibold text-fg-token">Quanto você paga</h3>
+              <p className="text-xs text-fg-muted-token">
+                Copie da nota do fornecedor. É daqui que sai o custo de cada prato
+                que usa este ingrediente.
+                {editandoOficial && ' O preço fica na sua cópia, não no alimento oficial.'}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-end gap-2 text-sm text-fg-muted-token">
+              <label>
+                Paguei (R$)
+                <input
+                  type="number" min="0" step="0.01"
+                  className="mt-1 block w-28 rounded border border-border-token bg-surface p-2 text-right tabular-nums text-fg-token"
+                  value={form.preco_pago || ''}
+                  onChange={e => setForm({ ...form, preco_pago: e.target.value })}
+                />
+              </label>
+              <span className="pb-2">por</span>
+              <label>
+                Quantidade comprada
+                <input
+                  type="number" min="0" step="0.001"
+                  className="mt-1 block w-28 rounded border border-border-token bg-surface p-2 text-right tabular-nums text-fg-token"
+                  value={form.quantidade_comprada || ''}
+                  onChange={e => setForm({ ...form, quantidade_comprada: e.target.value })}
+                />
+              </label>
+              <label>
+                Unidade
+                <select
+                  className="mt-1 block rounded border border-border-token bg-surface p-2 text-fg-token"
+                  value={unidadeDaCompra}
+                  onChange={e => setForm({ ...form, unidade_compra: e.target.value })}
+                >
+                  <option value="g">g</option>
+                  <option value="ml">ml</option>
+                  <option value="un">unidade</option>
+                </select>
+              </label>
+              {unidadeDaCompra === 'un' && (
+                <label>
+                  Cada unidade tem ({unidadeBase})
+                  <input
+                    type="number" min="0" step="0.001"
+                    className="mt-1 block w-28 rounded border border-border-token bg-surface p-2 text-right tabular-nums text-fg-token"
+                    value={form.quantidade_por_unidade || ''}
+                    onChange={e => setForm({ ...form, quantidade_por_unidade: e.target.value })}
+                  />
+                </label>
+              )}
+              <span className="pb-2 tabular-nums text-fg-token">
+                {custoMil != null
+                  ? `= ${formatCurrency(custoMil)} por ${unidadeBase === 'ml' ? 'litro' : 'kg'}`
+                  : temPreco && form.preco_pago && form.quantidade_comprada
+                    ? (unidadeDaCompra === 'un'
+                        ? 'informe quanto vem em cada unidade'
+                        : `a receita usa ${unidadeBase}: informe a compra em ${unidadeBase} ou por unidade`)
+                    : null}
+              </span>
+            </div>
+          </section>
 
           <section className="space-y-3 border-t border-border-token pt-4">
             <div>
