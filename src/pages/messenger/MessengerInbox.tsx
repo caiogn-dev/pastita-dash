@@ -1,5 +1,12 @@
 /**
- * MessengerInbox - Inbox do Facebook Messenger
+ * MessengerInbox — inbox do Facebook Messenger.
+ *
+ * Superfície de trabalho: PageShell no modo `quadro` (título curto, ações no
+ * canto, o resto da altura para o chat). O azul do Messenger pintava o ícone,
+ * a conversa selecionada, o contador, o avatar e todo balão enviado — 23 cores
+ * cruas, cada uma com o seu par de tema escuro. Agora é a identidade do painel: ouro
+ * da marca no que é nosso (selecionado, não lidas, balão enviado), neutro no
+ * resto.
  */
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -12,14 +19,36 @@ import {
   CheckCircleIcon,
   DocumentTextIcon,
   BoltIcon,
+  ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline';
 import { messengerService, MessengerConversation, MessengerMessage } from '../../services/messenger';
 import { normalizePaginatedResponse } from '../../services/api';
 import { ChatToolsPanel } from '../../components/chat/ChatToolsPanel';
+import { Badge, Button, EmptyState, Input, PageShell } from '../../components/ui';
+import { cn } from '../../utils/cn';
 import '../whatsapp/WhatsAppInbox.css';
 
-const inputCls =
-  'w-full rounded-xl border border-border-primary bg-bg-card px-3 py-2 text-sm text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand';
+/** Inicial do contato, para o avatar sem foto. */
+const inicial = (conv: MessengerConversation) => (conv.participant_name || conv.psid || '?')[0].toUpperCase();
+
+function Avatar({ conv, comNome = false }: { conv: MessengerConversation; comNome?: boolean }) {
+  if (conv.participant_profile_pic) {
+    return (
+      <img
+        src={conv.participant_profile_pic}
+        alt={comNome ? conv.participant_name || '' : ''}
+        className="h-10 w-10 shrink-0 rounded-pill object-cover"
+        loading="lazy"
+        decoding="async"
+      />
+    );
+  }
+  return (
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-pill bg-surface-2" aria-hidden>
+      <span className="text-sm font-bold text-fg-muted-token">{inicial(conv)}</span>
+    </div>
+  );
+}
 
 export default function MessengerInbox() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -142,235 +171,216 @@ export default function MessengerInbox() {
   });
 
   return (
-    <div className="whatsapp-inbox">
-      {/* Conversations panel */}
-      <div className="conversations-panel">
-        <div className="border-b border-border-primary p-4">
-          <div className="mb-3 flex items-center gap-3">
-            <div className="rounded-2xl bg-blue-500 p-2 text-white">
-              <PaperAirplaneIcon className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-base font-semibold text-fg-primary">Messenger</h1>
-              <p className="text-xs text-fg-muted">{conversations.length} conversa(s)</p>
-            </div>
-            <button aria-label="Atualizar conversas"
-              type="button"
-              onClick={loadConversations}
-              className="ml-auto rounded-lg p-2 text-fg-muted transition-colors hover:bg-bg-hover hover:text-fg-primary"
-              title="Atualizar"
-            >
-              <ArrowPathIcon className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="relative">
-            <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" />
-            <input
-              className={`${inputCls} pl-9`}
+    <PageShell
+      variante="quadro"
+      titulo="Messenger"
+      acoes={
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={loadConversations}
+          aria-label="Atualizar conversas"
+          title="Atualizar"
+          leftIcon={<ArrowPathIcon className="h-4 w-4" />}
+        >
+          Atualizar
+        </Button>
+      }
+    >
+      <div className="whatsapp-inbox superficie min-h-0 flex-1 overflow-hidden">
+        {/* Conversations panel */}
+        <div className="conversations-panel">
+          <div className="border-b border-border-token p-4">
+            <p className="mb-3 text-xs text-fg-muted-token">{conversations.length} conversa(s)</p>
+            <Input
+              size="sm"
+              leftIcon={<MagnifyingGlassIcon className="h-4 w-4" />}
+              aria-label="Buscar conversas"
               placeholder="Buscar conversas..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-        </div>
 
-        <div className="flex-1 overflow-y-auto p-2">
-          {loading ? (
-            <p className="py-8 text-center text-sm text-fg-muted">Carregando...</p>
-          ) : filtered.length === 0 ? (
-            <p className="py-8 text-center text-sm text-fg-muted">Nenhuma conversa.</p>
-          ) : (
-            filtered.map((conv) => (
-              <button
-                key={conv.id}
-                type="button"
-                onClick={() => selectConversation(conv)}
-                className={`mb-2 w-full rounded-2xl border p-3 text-left transition-colors ${
-                  selectedConversation?.id === conv.id
-                    ? 'border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/20'
-                    : 'border-[var(--dark-border,#2a2a2a)] bg-bg-card hover:bg-bg-hover'
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  {conv.participant_profile_pic ? (
-                    <img
-                      src={conv.participant_profile_pic}
-                      alt={conv.participant_name || ''}
-                      className="h-10 w-10 shrink-0 rounded-full object-cover"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  ) : (
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
-                      <span className="text-sm font-bold text-blue-600 dark:text-blue-300">
-                        {(conv.participant_name || conv.psid || '?')[0].toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="truncate text-sm font-semibold text-fg-primary">
-                        {conv.participant_name || conv.psid}
-                      </p>
-                      {conv.unread_count > 0 && (
-                        <span className="flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-blue-500 px-1 text-badge font-semibold text-white">
-                          {conv.unread_count}
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-0.5 truncate text-xs text-fg-muted">
-                      {(() => { const c = (conv.last_message as any)?.content; return typeof c === 'string' ? c : '—'; })()}
-                    </p>
-                  </div>
-                </div>
-              </button>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Chat panel */}
-      <div className={`chat-panel ${activePanel ? 'panel-open' : ''}`}>
-        {!selectedConversation ? (
-          <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-            <div className="mb-4 rounded-3xl bg-blue-500 p-4 text-white/90">
-              <PaperAirplaneIcon className="h-10 w-10" />
-            </div>
-            <h2 className="text-lg font-semibold text-fg-primary">Selecione uma conversa</h2>
-            <p className="mt-2 max-w-md text-sm text-fg-muted">
-              As mensagens do Messenger vão aparecer aqui assim que você selecionar uma conversa.
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="chat-header">
-              {selectedConversation.participant_profile_pic ? (
-                <img
-                  src={selectedConversation.participant_profile_pic}
-                  alt=""
-                  className="h-10 w-10 shrink-0 rounded-full object-cover"
-                />
-              ) : (
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
-                  <span className="text-sm font-bold text-blue-600 dark:text-blue-300">
-                    {(selectedConversation.participant_name || selectedConversation.psid || '?')[0].toUpperCase()}
-                  </span>
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-fg-primary">
-                  {selectedConversation.participant_name || selectedConversation.psid}
-                </p>
-                <p className="text-xs text-fg-muted">Messenger</p>
-              </div>
-              <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                Facebook
-              </span>
-              <button
-                type="button"
-                className={`tools-toggle-btn ${activePanel === 'templates' ? 'active' : ''}`}
-                onClick={() => togglePanel('templates')}
-                title="Templates"
-              >
-                <DocumentTextIcon className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                className={`tools-toggle-btn ${activePanel === 'tools' ? 'active' : ''}`}
-                onClick={() => togglePanel('tools')}
-                title="Ferramentas"
-              >
-                <BoltIcon className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="messages-container">
-              {loadingMessages ? (
-                <p className="py-10 text-center text-sm text-fg-muted">Carregando mensagens...</p>
-              ) : messages.length === 0 ? (
-                <p className="py-10 text-center text-sm text-fg-muted">Nenhuma mensagem ainda.</p>
-              ) : (
-                <div className="messages-list">
-                  {messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex ${msg.is_from_page ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[72%] rounded-2xl px-4 py-3 shadow-sm ${
-                          msg.is_from_page
-                            ? 'rounded-br-sm bg-blue-500 text-white'
-                            : 'rounded-bl-sm border border-border-primary bg-bg-card text-fg-primary'
-                        }`}
-                      >
-                        {msg.attachment_url ? (
-                          <img src={msg.attachment_url} alt="attachment" className="max-w-full rounded-xl" loading="lazy" decoding="async" crossOrigin="anonymous" />
-                        ) : (
-                          <p className="whitespace-pre-wrap break-words text-sm">{typeof msg.content === 'string' ? msg.content : ''}</p>
-                        )}
-                        <div className={`mt-2 flex items-center gap-1 text-xs ${msg.is_from_page ? 'justify-end text-blue-100' : 'justify-end text-fg-muted'}`}>
-                          <span>
-                            {new Date(msg.sent_at || msg.created_at).toLocaleTimeString('pt-BR', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                          {msg.is_from_page && (
-                            msg.is_read
-                              ? <CheckCircleIcon className="h-3.5 w-3.5 opacity-75" />
-                              : <CheckIcon className="h-3.5 w-3.5 opacity-75" />
+          <div className="flex-1 overflow-y-auto p-2">
+            {loading ? (
+              <p className="py-8 text-center text-sm text-fg-muted-token">Carregando...</p>
+            ) : filtered.length === 0 ? (
+              <p className="py-8 text-center text-sm text-fg-muted-token">Nenhuma conversa.</p>
+            ) : (
+              filtered.map((conv) => {
+                const selecionada = selectedConversation?.id === conv.id;
+                return (
+                  <button
+                    key={conv.id}
+                    type="button"
+                    onClick={() => selectConversation(conv)}
+                    aria-current={selecionada ? 'true' : undefined}
+                    className={cn(
+                      'mb-2 w-full rounded-xl border p-3 text-left transition-colors',
+                      selecionada ? 'border-brand bg-brand-soft' : 'border-border-token bg-surface hover:bg-surface-2',
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Avatar conv={conv} comNome />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="truncate text-sm font-semibold text-fg-token">
+                            {conv.participant_name || conv.psid}
+                          </p>
+                          {conv.unread_count > 0 && (
+                            <span
+                              className="flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-pill bg-brand px-1 text-badge font-semibold text-on-brand"
+                              aria-label={`${conv.unread_count} não lidas`}
+                            >
+                              {conv.unread_count}
+                            </span>
                           )}
                         </div>
+                        <p className="mt-0.5 truncate text-xs text-fg-muted-token">
+                          {(() => { const c = (conv.last_message as any)?.content; return typeof c === 'string' ? c : '—'; })()}
+                        </p>
                       </div>
                     </div>
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-              )}
-            </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
 
-            <div className="border-t border-border-primary px-5 py-4">
-              <div className="flex gap-3">
-                <input
-                  className={`${inputCls} flex-1`}
-                  placeholder="Digite sua mensagem..."
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      void handleSend();
-                    }
-                  }}
-                />
+        {/* Chat panel */}
+        <div className={`chat-panel ${activePanel ? 'panel-open' : ''}`}>
+          {!selectedConversation ? (
+            <div className="flex flex-1 items-center justify-center">
+              <EmptyState
+                icone={<ChatBubbleLeftRightIcon className="h-12 w-12" />}
+                titulo="Selecione uma conversa"
+                descricao="As mensagens do Messenger aparecem aqui assim que você escolher uma conversa na lista."
+              />
+            </div>
+          ) : (
+            <>
+              <div className="chat-header">
+                <Avatar conv={selectedConversation} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-fg-token">
+                    {selectedConversation.participant_name || selectedConversation.psid}
+                  </p>
+                  <p className="text-xs text-fg-muted-token">Messenger</p>
+                </div>
+                <Badge tone="neutral">Facebook</Badge>
                 <button
                   type="button"
-                  onClick={() => void handleSend()}
-                  disabled={!messageText.trim() || sending}
-                  className="rounded-xl bg-blue-500 p-3 text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label="Enviar mensagem"
-                  title="Enviar mensagem"
+                  className={`tools-toggle-btn ${activePanel === 'templates' ? 'active' : ''}`}
+                  onClick={() => togglePanel('templates')}
+                  aria-label="Modelos de mensagem"
+                  aria-pressed={activePanel === 'templates'}
+                  title="Modelos"
                 >
-                  <PaperAirplaneIcon className="h-5 w-5" />
+                  <DocumentTextIcon className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  className={`tools-toggle-btn ${activePanel === 'tools' ? 'active' : ''}`}
+                  onClick={() => togglePanel('tools')}
+                  aria-label="Ferramentas"
+                  aria-pressed={activePanel === 'tools'}
+                  title="Ferramentas"
+                >
+                  <BoltIcon className="h-5 w-5" />
                 </button>
               </div>
-            </div>
-          </>
+
+              <div className="messages-container">
+                {loadingMessages ? (
+                  <p className="py-10 text-center text-sm text-fg-muted-token">Carregando mensagens...</p>
+                ) : messages.length === 0 ? (
+                  <p className="py-10 text-center text-sm text-fg-muted-token">Nenhuma mensagem ainda.</p>
+                ) : (
+                  <div className="messages-list">
+                    {messages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`flex ${msg.is_from_page ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={cn(
+                            'max-w-[72%] rounded-2xl px-4 py-3 text-fg-token',
+                            msg.is_from_page
+                              ? 'rounded-br-sm bg-brand-soft'
+                              : 'rounded-bl-sm border border-border-token bg-surface',
+                          )}
+                        >
+                          {msg.attachment_url ? (
+                            <img src={msg.attachment_url} alt="Anexo" className="max-w-full rounded-xl" loading="lazy" decoding="async" crossOrigin="anonymous" />
+                          ) : (
+                            <p className="whitespace-pre-wrap break-words text-sm">{typeof msg.content === 'string' ? msg.content : ''}</p>
+                          )}
+                          <div className="mt-2 flex items-center justify-end gap-1 text-xs text-fg-muted-token">
+                            <span>
+                              {new Date(msg.sent_at || msg.created_at).toLocaleTimeString('pt-BR', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                            {msg.is_from_page && (
+                              msg.is_read
+                                ? <CheckCircleIcon className="h-3.5 w-3.5" aria-label="Lida" />
+                                : <CheckIcon className="h-3.5 w-3.5" aria-label="Enviada" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-border-token bg-surface px-5 py-4">
+                <div className="flex items-end gap-3">
+                  <div className="flex-1">
+                    <Input
+                      aria-label="Mensagem"
+                      placeholder="Digite sua mensagem..."
+                      value={messageText}
+                      onChange={(e) => setMessageText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          void handleSend();
+                        }
+                      }}
+                    />
+                  </div>
+                  <Button
+                    onClick={() => void handleSend()}
+                    disabled={!messageText.trim() || sending}
+                    aria-label="Enviar mensagem"
+                    title="Enviar mensagem"
+                  >
+                    <PaperAirplaneIcon className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {selectedConversation && activePanel && (
+          <ChatToolsPanel
+            key={activePanel}
+            accountId={(selectedConversation.account as string) || ''}
+            conversation={selectedConversation as any}
+            onInsertText={handleInsertText}
+            onSendMessage={handleToolsSend}
+            onAfterSend={() => selectedConversation && void selectConversation(selectedConversation)}
+            onClose={() => setActivePanel(null)}
+            defaultTab={activePanel}
+          />
         )}
       </div>
-
-      {selectedConversation && activePanel && (
-        <ChatToolsPanel
-          key={activePanel}
-          accountId={(selectedConversation.account as string) || ''}
-          conversation={selectedConversation as any}
-          onInsertText={handleInsertText}
-          onSendMessage={handleToolsSend}
-          onAfterSend={() => selectedConversation && void selectConversation(selectedConversation)}
-          onClose={() => setActivePanel(null)}
-          defaultTab={activePanel}
-        />
-      )}
-    </div>
+    </PageShell>
   );
 }

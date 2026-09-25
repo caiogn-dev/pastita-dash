@@ -1,25 +1,29 @@
+/**
+ * O que o cliente pede — intenções que o robô reconheceu nas mensagens.
+ *
+ * PageShell → quatro números (KpiGrid) → Secao com o ranking. Os cartões eram
+ * montados à mão, com índigo e roxo crus nos ícones e rótulos em caixa alta;
+ * a falha de carga era um banner vermelho do Tailwind.
+ */
 import React, { useState, useEffect } from 'react';
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import {
-  ChartBarIcon,
-  BoltIcon,
-  SparklesIcon,
-} from '@heroicons/react/24/outline';
+import { ChartBarIcon, BoltIcon, SparklesIcon, CpuChipIcon, CodeBracketIcon } from '@heroicons/react/24/outline';
 import { intentService, intentTypeLabels } from '../../services';
 import type { IntentStats, IntentType } from '../../types';
-import { PageShell, RankedList } from '../../components/ui';
+import { EmptyState, FalhaAoCarregar, KpiGrid, PageShell, RankedList, Secao } from '../../components/ui';
 import { Loading } from '../../components/common';
-
+import { formatNumber, formatPercent } from '../../utils/formatters';
 
 export const IntentStatsPage: React.FC = () => {
   const [stats, setStats] = useState<IntentStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [days, setDays] = useState(7);
+  const [days] = useState(7);
 
   useEffect(() => {
     loadStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days]);
 
   const loadStats = async () => {
@@ -31,7 +35,7 @@ export const IntentStatsPage: React.FC = () => {
       const data = await intentService.getStats({ start_date: startDate, end_date: endDate });
       setStats(data);
     } catch (err) {
-      setError('Erro ao carregar estatísticas de intenções');
+      setError('Não foi possível carregar o que os clientes pedem');
     } finally {
       setLoading(false);
     }
@@ -39,79 +43,55 @@ export const IntentStatsPage: React.FC = () => {
 
   const totalIntents = stats?.total_detected || 0;
   const uniqueIntents = stats?.top_intents?.length || 0;
+  const periodo = `${format(subDays(new Date(), days), 'dd/MM/yyyy', { locale: ptBR })} a ${format(new Date(), 'dd/MM/yyyy', { locale: ptBR })}`;
 
   return (
     <PageShell
       titulo="O que o cliente pede"
+      descricao={`O que o robô entendeu nas mensagens dos últimos ${days} dias.`}
     >
+      {error && <FalhaAoCarregar titulo={error} onTentarDeNovo={() => void loadStats()} />}
 
-      {/* Error State */}
-      {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-sm">
-          {error}
-        </div>
-      )}
-
-      {/* Loading */}
       {loading && (
-        <div className="flex items-center justify-center h-48">
+        <div className="flex h-48 items-center justify-center">
           <Loading size="md" />
         </div>
       )}
 
       {!loading && stats && (
         <>
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-surface dark:bg-zinc-900 rounded-xl border border-border-token dark:border-zinc-800 p-5">
-              <div className="flex items-center gap-2 mb-1">
-                <BoltIcon className="w-4 h-4 text-indigo-500" />
-                <span className="text-xs text-fg-muted-token font-medium uppercase tracking-wide">Total</span>
-              </div>
-              <div className="text-3xl font-bold text-fg-token">{totalIntents.toLocaleString()}</div>
-              <div className="text-sm text-fg-muted-token mt-0.5">Pedidos que o robô entendeu</div>
-            </div>
+          <KpiGrid
+            itens={[
+              {
+                label: 'Pedidos entendidos',
+                value: formatNumber(totalIntents),
+                definicao: 'Mensagens em que o robô reconheceu o que o cliente queria.',
+                icone: <BoltIcon />,
+              },
+              {
+                label: 'Tipos distintos',
+                value: formatNumber(uniqueIntents),
+                definicao: 'Quantos assuntos diferentes apareceram no período.',
+                icone: <SparklesIcon />,
+              },
+              {
+                label: 'Por padrão',
+                value: formatNumber(stats.by_method?.regex || 0),
+                definicao: 'Reconhecidas por regra fixa, sem custo de IA.',
+                icone: <CodeBracketIcon />,
+              },
+              {
+                label: 'Por IA',
+                value: formatNumber(stats.by_method?.llm || 0),
+                definicao: 'Reconhecidas pelo modelo de linguagem.',
+                icone: <CpuChipIcon />,
+              },
+            ]}
+          />
 
-            <div className="bg-surface dark:bg-zinc-900 rounded-xl border border-border-token dark:border-zinc-800 p-5">
-              <div className="flex items-center gap-2 mb-1">
-                <SparklesIcon className="w-4 h-4 text-purple-500" />
-                <span className="text-xs text-fg-muted-token font-medium uppercase tracking-wide">Únicas</span>
-              </div>
-              <div className="text-3xl font-bold text-fg-token">{uniqueIntents}</div>
-              <div className="text-sm text-fg-muted-token mt-0.5">Tipos distintos</div>
-            </div>
-
-            <div className="bg-surface dark:bg-zinc-900 rounded-xl border border-border-token dark:border-zinc-800 p-5">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs text-fg-muted-token font-medium uppercase tracking-wide">Regex / Padrão</span>
-              </div>
-              <div className="text-3xl font-bold text-blue-600">{(stats.by_method?.regex || 0).toLocaleString()}</div>
-              <div className="text-sm text-fg-muted-token mt-0.5">Detecções por padrão</div>
-            </div>
-
-            <div className="bg-surface dark:bg-zinc-900 rounded-xl border border-border-token dark:border-zinc-800 p-5">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs text-fg-muted-token font-medium uppercase tracking-wide">IA / LLM</span>
-              </div>
-              <div className="text-3xl font-bold text-purple-600">{(stats.by_method?.llm || 0).toLocaleString()}</div>
-              <div className="text-sm text-fg-muted-token mt-0.5">Detecções por IA</div>
-            </div>
-          </div>
-
-          {/* Top Intents Table */}
-          {stats.top_intents && stats.top_intents.length > 0 && (
-            <div className="bg-surface dark:bg-zinc-900 rounded-xl border border-border-token dark:border-zinc-800 overflow-hidden">
-              <div className="px-6 py-4 border-b border-border-token dark:border-zinc-800">
-                <h2 className="text-base font-semibold text-fg-token">O que os clientes mais pedem</h2>
-                <p className="text-sm text-fg-muted-token mt-0.5">
-                  {format(subDays(new Date(), days), 'dd/MM/yyyy', { locale: ptBR })} — {format(new Date(), 'dd/MM/yyyy', { locale: ptBR })}
-                </p>
-              </div>
-              {/* Isto nunca foi uma tabela: é um ranking com barra, e o
-                  painel já tem um — o mesmo que desenha os mais vendidos e os
-                  bairros que mais compram. A versão à mão aqui pintava
-                  `indigo-500` cru, uma cor que não existe em nenhuma outra
-                  tela. */}
+          {stats.top_intents && stats.top_intents.length > 0 ? (
+            <Secao titulo="O que os clientes mais pedem" descricao={periodo}>
+              {/* Ranking com barra — o mesmo dos mais vendidos e dos bairros. */}
               <RankedList
                 items={stats.top_intents.map((item) => {
                   const intent = (item.intent_type || item.intent) as IntentType;
@@ -119,19 +99,19 @@ export const IntentStatsPage: React.FC = () => {
                   return {
                     label: intentTypeLabels[intent] || intent,
                     value: item.count,
-                    valueLabel: item.count.toLocaleString('pt-BR'),
-                    sub: `${pct.toFixed(1)}% das mensagens`,
+                    valueLabel: formatNumber(item.count),
+                    sub: `${formatPercent(pct, 1)} das mensagens`,
                   };
                 })}
               />
-            </div>
-          )}
-
-          {/* Empty state */}
-          {(!stats.top_intents || stats.top_intents.length === 0) && (
-            <div className="bg-surface dark:bg-zinc-900 rounded-xl border border-border-token dark:border-zinc-800 p-12 text-center">
-              <ChartBarIcon className="w-12 h-12 text-gray-300 dark:text-zinc-600 mx-auto mb-3" />
-              <p className="text-fg-muted-token">Nenhum dado disponível para o período selecionado</p>
+            </Secao>
+          ) : (
+            <div className="superficie">
+              <EmptyState
+                icone={<ChartBarIcon className="h-12 w-12" />}
+                titulo="Nenhum pedido reconhecido no período"
+                descricao="Quando os clientes mandarem mensagens, o que eles pedem aparece aqui."
+              />
             </div>
           )}
         </>

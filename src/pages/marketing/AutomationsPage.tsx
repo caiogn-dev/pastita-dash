@@ -1,21 +1,18 @@
 /**
- * Email Automations Page
- * 
- * Configure automated emails for events like:
- * - Order confirmed
- * - Payment confirmed
- * - Order shipped
- * - Order delivered
- * - Cart abandoned
- * - etc.
+ * Automações de e-mail — o que sai sozinho quando algo acontece (pedido
+ * confirmado, pagamento, entrega, carrinho abandonado…).
+ *
+ * PageShell → KpiGrid → Secao com a lista. Estado no SeloDeEstado
+ * (`estadoDeAutomacao`, o mesmo das mensagens automáticas do WhatsApp) e o
+ * liga/desliga no Switch do kit. Antes cada gatilho tinha emoji e cor própria
+ * (rosa cru no aniversário), o selo "Ativa" era verde cru e o formulário era
+ * feito de campos nativos à mão.
  */
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   BoltIcon,
   PlusIcon,
   PlayIcon,
-  PauseIcon,
   TrashIcon,
   EnvelopeIcon,
   ClockIcon,
@@ -23,42 +20,41 @@ import {
   BeakerIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, Modal, Loading } from '../../components/common';
-import { PageShell, KpiGrid } from '../../components/ui';
+import { Loading } from '../../components/common';
+import {
+  Button,
+  EmptyState,
+  Input,
+  KpiGrid,
+  Modal,
+  NumberField,
+  PageShell,
+  Secao,
+  Select,
+  SeloDeEstado,
+  Switch,
+  Textarea,
+  estadoDeAutomacao,
+} from '../../components/ui';
 import { useStore, useConfirm } from '../../hooks';
-import { 
-  automationsApi, 
-  EmailAutomation, 
-  TriggerType 
+import {
+  automationsApi,
+  EmailAutomation,
+  TriggerType
 } from '../../services/marketingService';
 import logger from '../../services/logger';
 
-// =============================================================================
-// TRIGGER TYPE ICONS & COLORS
-// =============================================================================
-
-const TRIGGER_CONFIG: Record<string, { icon: string; color: string; bgColor: string }> = {
-  new_user: { icon: '👤', color: 'text-info-token', bgColor: 'bg-info-soft' },
-  welcome: { icon: '👋', color: 'text-success-token', bgColor: 'bg-success-soft' },
-  order_confirmed: { icon: '✅', color: 'text-success-token', bgColor: 'bg-success-soft' },
-  order_preparing: { icon: '👨‍🍳', color: 'text-warning-token', bgColor: 'bg-warning-soft' },
-  order_shipped: { icon: '🚚', color: 'text-info-token', bgColor: 'bg-info-soft' },
-  order_delivered: { icon: '📦', color: 'text-success-token', bgColor: 'bg-success-soft' },
-  order_cancelled: { icon: '❌', color: 'text-danger-token', bgColor: 'bg-danger-soft' },
-  payment_confirmed: { icon: '💳', color: 'text-success-token', bgColor: 'bg-success-soft' },
-  payment_failed: { icon: '⚠️', color: 'text-danger-token', bgColor: 'bg-danger-soft' },
-  cart_abandoned: { icon: '🛒', color: 'text-warning-token', bgColor: 'bg-warning-soft' },
-  coupon_sent: { icon: '🎟️', color: 'text-info-token', bgColor: 'bg-info-soft' },
-  birthday: { icon: '🎂', color: 'text-pink-600', bgColor: 'bg-pink-100' },
-  review_request: { icon: '⭐', color: 'text-warning-token', bgColor: 'bg-warning-soft' },
-};
-
-// =============================================================================
-// MAIN COMPONENT
-// =============================================================================
+const VARIAVEIS = [
+  'customer_name',
+  'first_name',
+  'email',
+  'store_name',
+  'order_number',
+  'order_total',
+  'tracking_code',
+];
 
 export default function AutomationsPage() {
-  const _navigate = useNavigate();
   const { storeId } = useStore();
   const [ConfirmDialog, confirm] = useConfirm();
 
@@ -118,7 +114,7 @@ export default function AutomationsPage() {
   const handleToggle = async (automation: EmailAutomation) => {
     try {
       const updated = await automationsApi.toggle(automation.id);
-      setAutomations(prev => 
+      setAutomations(prev =>
         prev.map(a => a.id === automation.id ? updated : a)
       );
       toast.success(updated.is_active ? 'Automação ativada' : 'Automação pausada');
@@ -217,20 +213,24 @@ export default function AutomationsPage() {
 
   if (!storeId) {
     return (
-      <div className="text-center py-12">
-        <p className="text-fg-muted-token">Selecione uma loja para gerenciar automações</p>
-      </div>
+      <EmptyState
+        titulo="Selecione uma loja"
+        descricao="As automações de e-mail são de cada loja. Escolha uma para ver e configurar."
+      />
     );
   }
+
+  const totalEnviados = automations.reduce((sum, a) => sum + a.total_sent, 0);
+  const totalAbertos = automations.reduce((sum, a) => sum + a.total_opened, 0);
 
   return (
     <PageShell
       trilha={[{ rotulo: 'Automação' }, { rotulo: 'E-mail' }]}
-      titulo="Automações de E-mail"
+      titulo="Automações de e-mail"
+      descricao="E-mails que saem sozinhos quando algo acontece com o pedido ou o cliente."
       acoes={
-        <Button onClick={() => setShowCreateModal(true)}>
-          <PlusIcon className="w-5 h-5 mr-2" />
-          Nova Automação
+        <Button leftIcon={<PlusIcon className="h-5 w-5" />} onClick={() => setShowCreateModal(true)}>
+          Nova automação
         </Button>
       }
     >
@@ -252,18 +252,18 @@ export default function AutomationsPage() {
           },
           {
             label: 'E-mails enviados',
-            value: automations.reduce((sum, a) => sum + a.total_sent, 0),
+            value: totalEnviados,
             definicao: 'Total já disparado por estas automações, desde sempre.',
             icone: <EnvelopeIcon />,
           },
           {
             label: 'Abertos',
-            value: automations.reduce((sum, a) => sum + a.total_opened, 0),
+            value: totalAbertos,
             // A taxa é o que decide se vale continuar; o número absoluto
             // sozinho não diz nada sem o denominador ao lado.
             definicao:
-              automations.reduce((sum, a) => sum + a.total_sent, 0) > 0
-                ? `Abriram o e-mail — ${Math.round((automations.reduce((sum, a) => sum + a.total_opened, 0) / automations.reduce((sum, a) => sum + a.total_sent, 0)) * 100)}% dos enviados.`
+              totalEnviados > 0
+                ? `Abriram o e-mail — ${Math.round((totalAbertos / totalEnviados) * 100)}% dos enviados.`
                 : 'Quantos abriram o e-mail.',
             tone: 'brand',
             icone: <CheckCircleIcon />,
@@ -271,60 +271,45 @@ export default function AutomationsPage() {
         ]}
       />
 
-      {/* Automations List */}
       {automations.length === 0 ? (
-        <Card className="p-12 text-center">
-          <BoltIcon className="w-12 h-12 text-fg-muted-token mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-fg-token mb-2">
-            Nenhuma automação configurada
-          </h3>
-          <p className="text-fg-muted-token mb-4">
-            Crie automações para enviar emails automaticamente quando eventos ocorrerem
-          </p>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <PlusIcon className="w-5 h-5 mr-2" />
-            Criar Primeira Automação
-          </Button>
-        </Card>
+        <div className="superficie">
+          <EmptyState
+            icone={<BoltIcon className="h-12 w-12" />}
+            titulo="Nenhuma automação configurada"
+            descricao="Crie automações para enviar e-mails sozinhos quando algo acontecer, como um pedido confirmado."
+            acao={
+              <Button leftIcon={<PlusIcon className="h-5 w-5" />} onClick={() => setShowCreateModal(true)}>
+                Criar primeira automação
+              </Button>
+            }
+          />
+        </div>
       ) : (
-        <div className="grid gap-4">
-          {automations.map(automation => {
-            const config = TRIGGER_CONFIG[automation.trigger_type] || {
-              icon: '📧',
-              color: 'text-fg-muted-token',
-              bgColor: 'bg-surface-2',
-            };
-
-            return (
-              <Card key={automation.id} className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-lg ${config.bgColor}`}>
-                      <span className="text-2xl">{config.icon}</span>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
+        <Secao titulo="Automações" contador={automations.length}>
+          <ul className="-my-3 divide-y divide-border-token">
+            {automations.map(automation => {
+              const estado = estadoDeAutomacao(automation.is_active);
+              return (
+                <li key={automation.id} className="flex flex-wrap items-center justify-between gap-4 py-3">
+                  <div className="flex min-w-0 items-center gap-4">
+                    <span className="rounded-lg bg-surface-2 p-2.5 text-fg-muted-token" aria-hidden>
+                      <EnvelopeIcon className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
                         <h3 className="font-medium text-fg-token">{automation.name}</h3>
-                        {automation.is_active ? (
-                          <span className="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded-full">
-                            Ativa
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 text-xs bg-surface-2 text-fg-muted-token rounded-full">
-                            Pausada
-                          </span>
-                        )}
+                        <SeloDeEstado tone={estado.tone}>{estado.rotulo}</SeloDeEstado>
                       </div>
                       <p className="text-sm text-fg-muted-token">
                         {automation.trigger_type_display}
                         {automation.delay_minutes > 0 && (
-                          <span className="ml-2">
-                            <ClockIcon className="w-4 h-4 inline mr-1" />
-                            {automation.delay_minutes} min de delay
+                          <span className="ml-2 inline-flex items-center gap-1">
+                            <ClockIcon className="h-4 w-4" aria-hidden />
+                            {automation.delay_minutes} min depois
                           </span>
                         )}
                       </p>
-                      <p className="text-xs text-fg-muted-token mt-1">
+                      <p className="mt-1 text-xs text-fg-muted-token">
                         Assunto: {automation.subject}
                       </p>
                     </div>
@@ -332,47 +317,29 @@ export default function AutomationsPage() {
 
                   <div className="flex items-center gap-4">
                     <div className="text-right text-sm">
-                      <p className="text-fg-token font-medium">{automation.total_sent}</p>
+                      <p className="font-medium tabular-nums text-fg-token">{automation.total_sent}</p>
                       <p className="text-fg-muted-token">enviados</p>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => openTestModal(automation)}
-                        className="p-2 text-fg-muted-token hover:text-info-token dark:text-blue-400 hover:bg-info-soft rounded-lg"
-                        title="Enviar teste"
-                      >
-                        <BeakerIcon className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => handleToggle(automation)}
-                        className={`p-2 rounded-lg ${
-                          automation.is_active
-                            ? 'text-warning-token hover:bg-warning-soft'
-                            : 'text-success-token hover:bg-success-soft'
-                        }`}
-                        title={automation.is_active ? 'Pausar' : 'Ativar'}
-                      >
-                        {automation.is_active ? (
-                          <PauseIcon className="w-5 h-5" />
-                        ) : (
-                          <PlayIcon className="w-5 h-5" />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(automation)}
-                        className="p-2 text-fg-muted-token hover:text-danger-token hover:bg-danger-soft rounded-lg"
-                        title="Excluir"
-                      >
-                        <TrashIcon className="w-5 h-5" />
-                      </button>
+                    <div className="flex items-center gap-1">
+                      <Switch
+                        ligado={automation.is_active}
+                        onMudar={() => void handleToggle(automation)}
+                        rotulo={`Automação ${automation.name} ativa`}
+                      />
+                      <Button size="sm" variant="ghost" onClick={() => openTestModal(automation)} aria-label="Enviar teste" title="Enviar teste">
+                        <BeakerIcon className="h-5 w-5" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleDelete(automation)} aria-label="Excluir" title="Excluir">
+                        <TrashIcon className="h-5 w-5" />
+                      </Button>
                     </div>
                   </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
+                </li>
+              );
+            })}
+          </ul>
+        </Secao>
       )}
 
       {/* Create Modal */}
@@ -382,117 +349,76 @@ export default function AutomationsPage() {
           setShowCreateModal(false);
           resetForm();
         }}
-        title="Nova Automação de Email"
+        title="Nova automação de e-mail"
         size="lg"
       >
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
-              Nome da Automação *
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
-              placeholder="Ex: Email de confirmação de pedido"
-            />
-          </div>
+          <Input
+            label="Nome da automação *"
+            value={formData.name}
+            onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            placeholder="Ex: E-mail de confirmação de pedido"
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
-              Gatilho (Quando enviar) *
-            </label>
-            <select
-              value={formData.trigger_type}
-              onChange={e => setFormData(prev => ({ ...prev, trigger_type: e.target.value }))}
-              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
-            >
-              <option value="">Selecione um gatilho...</option>
-              {triggerTypes.map(type => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Select
+            rotulo="Quando enviar *"
+            vazio="Selecione um gatilho..."
+            valor={formData.trigger_type}
+            onMudar={(v) => setFormData(prev => ({ ...prev, trigger_type: v }))}
+            opcoes={triggerTypes.map(type => ({ valor: type.value, rotulo: type.label }))}
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
-              Assunto do Email *
-            </label>
-            <input
-              type="text"
-              value={formData.subject}
-              onChange={e => setFormData(prev => ({ ...prev, subject: e.target.value }))}
-              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
-              placeholder="Ex: Seu pedido #{{order_number}} foi confirmado!"
-            />
-          </div>
+          <Input
+            label="Assunto do e-mail *"
+            value={formData.subject}
+            onChange={e => setFormData(prev => ({ ...prev, subject: e.target.value }))}
+            placeholder="Ex: Seu pedido #{{order_number}} foi confirmado!"
+          />
 
-          {/* Variables Info */}
-          <div className="bg-info-soft border border-info-token/30 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-info-token mb-2">📝 Variáveis Disponíveis</h4>
-            <p className="text-xs text-info-token mb-2">
-              Use estas variáveis no assunto e conteúdo - serão preenchidas automaticamente:
+          <div className="rounded-lg bg-surface-2 p-4">
+            <p className="mb-1 text-sm font-medium text-fg-token">Variáveis disponíveis</p>
+            <p className="mb-2 text-xs text-fg-muted-token">
+              Use no assunto e no conteúdo; elas são preenchidas no envio.
             </p>
             <div className="flex flex-wrap gap-1">
-              <code className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800 px-1.5 py-0.5 rounded">{'{{customer_name}}'}</code>
-              <code className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800 px-1.5 py-0.5 rounded">{'{{first_name}}'}</code>
-              <code className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800 px-1.5 py-0.5 rounded">{'{{email}}'}</code>
-              <code className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800 px-1.5 py-0.5 rounded">{'{{store_name}}'}</code>
-              <code className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800 px-1.5 py-0.5 rounded">{'{{order_number}}'}</code>
-              <code className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800 px-1.5 py-0.5 rounded">{'{{order_total}}'}</code>
-              <code className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800 px-1.5 py-0.5 rounded">{'{{tracking_code}}'}</code>
+              {VARIAVEIS.map((v) => (
+                <code key={v} className="rounded bg-surface px-1.5 py-0.5 text-xs text-fg-token">{`{{${v}}}`}</code>
+              ))}
             </div>
           </div>
 
+          <Textarea
+            label="Conteúdo HTML *"
+            value={formData.html_content}
+            onChange={e => setFormData(prev => ({ ...prev, html_content: e.target.value }))}
+            className="font-mono"
+            rows={8}
+            placeholder="<html>...</html>"
+            hint="Dica: copie um modelo da página de Marketing e personalize aqui."
+          />
+
           <div>
-            <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
-              Conteúdo HTML *
-            </label>
-            <textarea
-              value={formData.html_content}
-              onChange={e => setFormData(prev => ({ ...prev, html_content: e.target.value }))}
-              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand font-mono text-sm"
-              rows={8}
-              placeholder="<html>...</html>"
+            <NumberField
+              rotulo="Esperar antes de enviar"
+              sufixo="min"
+              valor={formData.delay_minutes}
+              onMudar={(v) => setFormData(prev => ({ ...prev, delay_minutes: v }))}
             />
-            <p className="text-xs text-fg-muted-token mt-1">
-              💡 Dica: Copie um template da página de Marketing e personalize aqui
+            <p className="mt-1 text-xs text-fg-muted-token">
+              0 = envio imediato. Para "pedir avaliação", por exemplo, 1440 = 24h.
             </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
-              Delay (minutos)
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={formData.delay_minutes}
-              onChange={e => setFormData(prev => ({ ...prev, delay_minutes: parseInt(e.target.value) || 0 }))}
-              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
+          <div className="flex items-center justify-between gap-3 text-sm">
+            <span className="text-fg-token">Ativar automação imediatamente</span>
+            <Switch
+              ligado={formData.is_active}
+              onMudar={(ligado) => setFormData(prev => ({ ...prev, is_active: ligado }))}
+              rotulo="Ativar automação imediatamente"
             />
-            <p className="text-xs text-fg-muted-token mt-1">
-              0 = envio imediato. Use delay para emails como "solicitar avaliação" (ex: 1440 = 24h)
-            </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="is_active"
-              checked={formData.is_active}
-              onChange={e => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
-              className="rounded border-border-token text-primary-600 focus:ring-brand"
-            />
-            <label htmlFor="is_active" className="text-sm text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
-              Ativar automação imediatamente
-            </label>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 border-t border-border-token pt-4">
             <Button
               variant="secondary"
               onClick={() => {
@@ -503,7 +429,7 @@ export default function AutomationsPage() {
               Cancelar
             </Button>
             <Button onClick={handleCreate}>
-              Criar Automação
+              Criar automação
             </Button>
           </div>
         </div>
@@ -517,28 +443,23 @@ export default function AutomationsPage() {
           setTestEmail('');
           setSelectedAutomation(null);
         }}
-        title="Enviar Email de Teste"
+        title="Enviar e-mail de teste"
       >
         <div className="space-y-4">
           <p className="text-fg-muted-token">
-            Envie um email de teste para verificar como a automação 
-            <strong> "{selectedAutomation?.name}"</strong> será exibida.
+            Veja como a automação
+            <strong className="text-fg-token"> "{selectedAutomation?.name}"</strong> chega na caixa de entrada.
           </p>
 
-          <div>
-            <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">
-              Email para teste
-            </label>
-            <input
-              type="email"
-              value={testEmail}
-              onChange={e => setTestEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
-              placeholder="seu@email.com"
-            />
-          </div>
+          <Input
+            type="email"
+            label="E-mail para teste"
+            value={testEmail}
+            onChange={e => setTestEmail(e.target.value)}
+            placeholder="seu@email.com"
+          />
 
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 border-t border-border-token pt-4">
             <Button
               variant="secondary"
               onClick={() => {
@@ -548,9 +469,8 @@ export default function AutomationsPage() {
             >
               Cancelar
             </Button>
-            <Button onClick={handleTest}>
-              <BeakerIcon className="w-5 h-5 mr-2" />
-              Enviar Teste
+            <Button leftIcon={<BeakerIcon className="h-5 w-5" />} onClick={handleTest}>
+              Enviar teste
             </Button>
           </div>
         </div>
