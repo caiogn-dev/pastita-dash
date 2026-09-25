@@ -71,3 +71,12 @@ export { AcaoCard } from './AcaoCard';
 export type { AcaoCardProps } from './AcaoCard';
 export { estadoDePagamento, estadoDeCampanha } from './estados';
 export type { Estado } from './estados';
+
+// Dashboard e Clientes (25/09): estado por domínio, falha com retentativa e
+// texto longo — o que as duas telas escreviam à mão.
+export { estadoDePedido, estadoDeCliente, estadoDeSegmento, estadoDeSaude } from './estados';
+export type { EstadoDeSegmento } from './estados';
+export { FalhaAoCarregar } from './FalhaAoCarregar';
+export type { FalhaAoCarregarProps } from './FalhaAoCarregar';
+export { Textarea } from './Textarea';
+export type { TextareaProps } from './Textarea';

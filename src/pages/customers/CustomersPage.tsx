@@ -6,25 +6,22 @@ import {
   MapPinIcon,
   EnvelopeIcon,
   ShoppingBagIcon,
-  CheckBadgeIcon,
   SparklesIcon,
-  NoSymbolIcon,
   UserGroupIcon,
   XMarkIcon,
   ChatBubbleLeftRightIcon,
   CalendarDaysIcon,
   TagIcon,
-  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-// Os dois lados somam: o kebab/linha clicável desta sessão e o EmptyState de
-// erro dos KPIs que o bot trouxe. Nenhum substitui o outro.
-import { PageLoading, EmptyState } from '../../components/common';
+import { PageLoading } from '../../components/common';
 import {
-  Card, Button, Badge, RowActions, Input,
+  Button, Badge, RowActions, Input, Textarea, Switch,
   PageShell, KpiGrid, InsightList, Tabela, SearchInput,
+  EmptyState, FalhaAoCarregar, SeloDeEstado, Skeleton,
+  estadoDePedido, estadoDeCliente, estadoDeSegmento,
 } from '../../components/ui';
 import { insightsDeClientes } from './insightsDeClientes';
 import { rotuloDeDias, rotuloDePerfil, type TomDeCrm } from './rotulosDeCrm';
@@ -70,7 +67,6 @@ function formatPhoneParaEdicao(valor?: string | null): string {
 function telefoneParaEnvio(valor: string): string {
   return formatPhoneForWhatsApp(valor);
 }
-import { Loading } from '../../components/common';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -85,16 +81,6 @@ const PAGE_SIZE = 30;
  * distinguir "sumiu" de "ainda não voltou".
  */
 const PERIODO_DO_SEGMENTO: DateRange = { period: '90d' };
-
-/** O que cada segmento significa em uma linha — o rótulo sozinho não age. */
-const SEGMENTO_NA_FICHA: Record<string, { label: string; tone: 'success' | 'warning' | 'danger' | 'neutral'; dica: string }> = {
-  campeoes:   { label: 'Campeão',  tone: 'success', dica: 'compra muito e recente' },
-  leais:      { label: 'Leal',     tone: 'success', dica: 'volta sempre' },
-  novos:      { label: 'Novo',     tone: 'neutral', dica: 'primeira compra recente' },
-  em_risco:   { label: 'Em risco', tone: 'warning', dica: 'comprava e parou' },
-  perdidos:   { label: 'Perdido',  tone: 'danger',  dica: 'sumiu faz tempo' },
-  sem_pedido: { label: 'Sem pedido', tone: 'neutral', dica: 'cadastrado, nunca comprou' },
-};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -112,23 +98,13 @@ const TOM_CRM: Record<TomDeCrm, string> = {
   perigo: 'text-[var(--danger)]',
 };
 
-// ─── Status helpers ───────────────────────────────────────────────────────────
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: 'Pendente', confirmed: 'Confirmado', preparing: 'Preparando',
-  out_for_delivery: 'Em entrega', delivered: 'Entregue', cancelled: 'Cancelado',
-  ready: 'Pronto', completed: 'Concluído', failed: 'Falhou',
-};
-const STATUS_COLOR: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
-  confirmed: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  preparing: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
-  out_for_delivery: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
-  delivered: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-  completed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-  cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
-  failed: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
-};
+/**
+ * Título de bloco dentro das gavetas (ficha e formulário). Em frase, 14px/600:
+ * era `text-xs font-bold` em caixa alta e espaçado, o rótulo vetado na
+ * direção de 25/09. A gaveta já é a superfície — `Secao` aqui
+ * empilharia um cartão dentro do outro.
+ */
+const TITULO_DE_BLOCO = 'text-sm font-semibold text-fg-token';
 
 // ─── Customer Form Drawer ─────────────────────────────────────────────────────
 
@@ -296,7 +272,7 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-sm z-50" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" onClick={onClose} />
       <div className="fixed inset-y-0 right-0 z-[60] w-full max-w-md bg-surface border-l border-border-token shadow-2xl flex flex-col animate-slide-in-right">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border-token">
           <p className="font-bold text-fg-token">{isEdit ? 'Editar cliente' : 'Novo cliente'}</p>
@@ -344,26 +320,17 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
             onChange={(e) => setWhatsapp(e.target.value)}
             onBlur={() => setWhatsapp(formatPhoneParaEdicao(telefoneParaEnvio(whatsapp)))}
           />
-          <div>
-            <label htmlFor="cf-notes" className="mb-1.5 block text-sm font-medium text-fg-token">Notas</label>
-            <textarea
-              id="cf-notes"
-              rows={3}
-              className="w-full superficie px-4 py-2.5 text-sm text-fg-token focus:border-brand focus:outline-none"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </div>
+          <Textarea
+            id="cf-notes"
+            label="Notas"
+            rows={3}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
 
           {/* Consentimento de marketing: o campo existe no backend e é a base
               legal das campanhas, mas não havia onde ler nem mudar. */}
-          <label className="flex items-start gap-3 rounded-xl border border-border-token p-3 text-sm text-fg-token">
-            <input
-              type="checkbox"
-              className="mt-0.5 h-4 w-4 accent-[var(--brand)]"
-              checked={aceitaMarketing}
-              onChange={(e) => setAceitaMarketing(e.target.checked)}
-            />
+          <div className="flex items-start justify-between gap-3 rounded-lg border border-border-token p-3 text-sm text-fg-token">
             <span>
               Aceita receber campanhas
               <span className="mt-0.5 block text-xs text-fg-muted-token">
@@ -372,20 +339,21 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
                   : 'Sem consentimento registrado'}
               </span>
             </span>
-          </label>
+            <Switch
+              ligado={aceitaMarketing}
+              onMudar={setAceitaMarketing}
+              rotulo="Aceita receber campanhas"
+            />
+          </div>
 
           <div className="space-y-3 border-t border-border-token pt-4">
             <div className="flex items-baseline justify-between gap-2">
-              <p className="text-xs font-bold uppercase tracking-widest text-fg-muted-token">
+              <h3 className={TITULO_DE_BLOCO}>
                 Endereços{outrosVisiveis ? ` (${enderecos.filter(enderecoPreenchido).length})` : ''}
-              </p>
-              <button
-                type="button"
-                onClick={novoEndereco}
-                className="text-xs font-semibold text-brand-ink hover:underline"
-              >
+              </h3>
+              <Button size="xs" variant="link" onClick={novoEndereco}>
                 + Novo endereço
-              </button>
+              </Button>
             </div>
 
             {/* Um cartão por endereço: o que está sendo editado fica marcado e
@@ -400,7 +368,7 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
                     <button type="button" className="block w-full text-left" onClick={() => setSelecionado(i)}>
                       <span className="flex items-center gap-2">
                         <span className="font-medium text-fg-token">{linhaDoEndereco(a) || 'Endereço novo'}</span>
-                        {a.is_default && <Badge tone="success">Padrão</Badge>}
+                        {a.is_default && <Badge tone="brand">Padrão</Badge>}
                       </span>
                       {complementoDoEndereco(a) && (
                         <span className="block text-xs text-fg-muted-token">{complementoDoEndereco(a)}</span>
@@ -412,9 +380,11 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
                           Tornar padrão
                         </button>
                       )}
+                      {/* `text-danger` não existe no tema (a cor `danger` só tem
+                          400/500/600): o "Remover" saía na cor do texto. */}
                       <button
                         type="button"
-                        className="font-semibold text-danger hover:underline"
+                        className="font-semibold text-danger-token hover:underline"
                         aria-label={`Remover endereço ${linhaDoEndereco(a) || i + 1}`}
                         onClick={() => remover(i)}
                       >
@@ -461,11 +431,13 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
           </div>
         </div>
 
+        {/* Botões do kit: o "Salvar" era `bg-brand text-white` — branco sobre
+            ouro não passa contraste; a tinta do ouro é `on-brand`. */}
         <div className="px-6 py-4 border-t border-border-token flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2 rounded-xl border border-border-token text-sm font-semibold text-fg-token hover:bg-surface-2">Cancelar</button>
-          <button onClick={handleSave} disabled={saving} className="flex-1 py-2 rounded-xl bg-brand text-white text-sm font-semibold disabled:opacity-50">
+          <Button variant="outline" className="flex-1" onClick={onClose}>Cancelar</Button>
+          <Button className="flex-1" onClick={handleSave} disabled={saving}>
             {saving ? 'Salvando...' : 'Salvar'}
-          </button>
+          </Button>
         </div>
       </div>
     </>
@@ -622,12 +594,13 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
   if (!customer) return null;
 
   const enderecosDaFicha = customer.address_list ?? [];
+  const estadoDoSegmento = estadoDeSegmento(segmento);
 
   return (
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-sm z-50 transition-opacity"
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 transition-opacity"
         onClick={onClose}
       />
 
@@ -665,20 +638,20 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
         {/* KPI strip */}
         <div className="grid grid-cols-3 divide-x divide-border-token border-b border-border-token">
           <div className="px-4 py-3 text-center">
-            <p className="overline mb-1">Gasto total</p>
-            <p className="text-lg font-bold text-brand-ink">
+            <p className="mb-1 text-caption text-fg-muted-token">Gasto total</p>
+            <p className="text-lg font-bold tabular-nums text-fg-token">
               {pedidosFalharam ? '—' : formatCurrency(resumoDosPedidos.gasto)}
             </p>
           </div>
           <div className="px-4 py-3 text-center">
-            <p className="overline mb-1">Pedidos</p>
-            <p className="text-lg font-bold text-fg-token">
+            <p className="mb-1 text-caption text-fg-muted-token">Pedidos</p>
+            <p className="text-lg font-bold tabular-nums text-fg-token">
               {pedidosFalharam ? '—' : resumoDosPedidos.pedidos}
             </p>
           </div>
           <div className="px-4 py-3 text-center">
-            <p className="overline mb-1">Ticket médio</p>
-            <p className="text-lg font-bold text-fg-token">
+            <p className="mb-1 text-caption text-fg-muted-token">Ticket médio</p>
+            <p className="text-lg font-bold tabular-nums text-fg-token">
               {pedidosFalharam ? '—' : formatCurrency(resumoDosPedidos.ticket)}
             </p>
           </div>
@@ -689,7 +662,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
 
           {/* Contact */}
           <div className="space-y-2">
-            <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">Contato</p>
+            <h3 className={TITULO_DE_BLOCO}>Contato</h3>
             <div className="rounded border border-border-token divide-y divide-border-token overflow-hidden">
               {(customer.whatsapp || customer.phone) && (
                 <div className="flex items-center gap-3 px-4 py-3">
@@ -718,16 +691,12 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
                   </span>
                 </div>
               )}
-              {segmento && SEGMENTO_NA_FICHA[segmento] && (
+              {estadoDoSegmento && (
                 <div className="flex items-center gap-3 px-4 py-3">
                   <SparklesIcon className="h-4 w-4 text-fg-muted-token shrink-0" />
                   <span className="flex items-center gap-2 text-sm text-fg-token">
-                    <Badge tone={SEGMENTO_NA_FICHA[segmento].tone}>
-                      {SEGMENTO_NA_FICHA[segmento].label}
-                    </Badge>
-                    <span className="text-fg-muted-token">
-                      {SEGMENTO_NA_FICHA[segmento].dica}
-                    </span>
+                    <SeloDeEstado tone={estadoDoSegmento.tone}>{estadoDoSegmento.rotulo}</SeloDeEstado>
+                    <span className="text-fg-muted-token">{estadoDoSegmento.dica}</span>
                   </span>
                 </div>
               )}
@@ -735,8 +704,10 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
                 <div className="flex items-start gap-3 px-4 py-3">
                   <TagIcon className="h-4 w-4 text-fg-muted-token shrink-0 mt-0.5" />
                   <div className="flex flex-wrap gap-1.5">
+                    {/* Etiqueta é rótulo, não estado: verde aqui dizia "tudo
+                        certo" sobre uma palavra qualquer. */}
                     {customer.tags.map(tag => (
-                      <Badge key={tag} tone="success">{tag}</Badge>
+                      <Badge key={tag} tone="neutral">{tag}</Badge>
                     ))}
                   </div>
                 </div>
@@ -748,9 +719,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
               nenhum: para conferir onde entregar era preciso abrir a edição. */}
           {enderecosDaFicha.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">
-                Endereços ({enderecosDaFicha.length})
-              </p>
+              <h3 className={TITULO_DE_BLOCO}>Endereços ({enderecosDaFicha.length})</h3>
               <ul className="rounded border border-border-token divide-y divide-border-token overflow-hidden">
                 {enderecosDaFicha.map((a, i) => (
                   <li key={a.id ?? i} className="flex items-start gap-3 px-4 py-3">
@@ -766,7 +735,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
                         >
                           {linhaDoEndereco(a) || '—'}
                         </a>
-                        {a.is_default && <Badge tone="success">Padrão</Badge>}
+                        {a.is_default && <Badge tone="brand">Padrão</Badge>}
                       </span>
                       {complementoDoEndereco(a) && (
                         <span className="block text-xs text-fg-muted-token">{complementoDoEndereco(a)}</span>
@@ -785,9 +754,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
               zero, o que fazia a ficha mentir em silêncio. */}
           <div className="space-y-2">
             <div className="flex items-baseline justify-between gap-2">
-              <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">
-                Cashback
-              </p>
+              <h3 className={TITULO_DE_BLOCO}>Cashback</h3>
               <div className="flex items-center gap-3">
                 <button
                   type="button"
@@ -877,31 +844,28 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
 
           {/* Order history */}
           <div className="space-y-2">
-            <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">
-              Histórico de pedidos
-            </p>
+            <h3 className={TITULO_DE_BLOCO}>Histórico de pedidos</h3>
             {!customerPhone ? (
-              <div className="text-center py-8 rounded border border-dashed border-border-token">
-                <PhoneIcon className="h-7 w-7 mx-auto mb-2 text-fg-muted-token" />
-                <p className="text-sm text-fg-muted-token">Cliente sem telefone</p>
-              </div>
+              <EmptyState
+                className="rounded-lg border border-dashed border-border-token py-8"
+                icone={<PhoneIcon className="h-7 w-7" />}
+                titulo="Cliente sem telefone"
+                descricao="Os pedidos são encontrados pelo telefone. Edite o cadastro para ver o histórico."
+              />
             ) : loadingOrders ? (
-              <div className="flex justify-center py-8">
-                <Loading size="sm" />
-              </div>
+              <Skeleton count={3} className="h-8" />
             ) : pedidosFalharam ? (
-              <div className="text-center py-8 rounded border border-dashed border-border-token">
-                <ExclamationTriangleIcon className="h-7 w-7 mx-auto mb-2 text-[var(--warning)]" />
-                <p className="text-sm text-fg-token mb-3">Não foi possível carregar os pedidos</p>
-                <Button size="sm" variant="outline" onClick={() => ordersQuery.refetch()}>
-                  Tentar novamente
-                </Button>
-              </div>
+              <FalhaAoCarregar
+                titulo="Não foi possível carregar os pedidos"
+                onTentarDeNovo={() => ordersQuery.refetch()}
+              />
             ) : orders.length === 0 ? (
-              <div className="text-center py-8 rounded border border-dashed border-border-token">
-                <ShoppingBagIcon className="h-7 w-7 mx-auto mb-2 text-fg-muted-token" />
-                <p className="text-sm text-fg-muted-token">Nenhum pedido encontrado</p>
-              </div>
+              <EmptyState
+                className="rounded-lg border border-dashed border-border-token py-8"
+                icone={<ShoppingBagIcon className="h-7 w-7" />}
+                titulo="Nenhum pedido encontrado"
+                descricao="Nenhum pedido com o telefone deste cliente."
+              />
             ) : (
               <Tabela<(typeof orders)[number]>
                 itens={orders.slice(0, 15)}
@@ -930,21 +894,16 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
                   {
                     chave: 'status',
                     cabecalho: 'Status',
-                    render: (o) => (
-                      <span
-                        className={`text-badge rounded px-2 py-0.5 font-semibold ${
-                          STATUS_COLOR[o.status] ?? 'bg-surface-2 text-fg-muted-token'
-                        }`}
-                      >
-                        {STATUS_LABEL[o.status] ?? o.status}
-                      </span>
-                    ),
+                    render: (o) => {
+                      const estado = estadoDePedido(o.status);
+                      return <SeloDeEstado tone={estado.tone}>{estado.rotulo}</SeloDeEstado>;
+                    },
                   },
                   {
                     chave: 'total',
                     cabecalho: 'Total',
                     alinhamento: 'direita',
-                    render: (o) => <span className="font-bold">{formatCurrency(o.total)}</span>,
+                    render: (o) => <span className="font-bold tabular-nums">{formatCurrency(o.total)}</span>,
                   },
                 ]}
               />
@@ -954,7 +913,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
           {/* Notes */}
           {customer.notes && (
             <div className="space-y-2">
-              <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">Observações</p>
+              <h3 className={TITULO_DE_BLOCO}>Observações</h3>
               <p className="text-sm text-fg-muted-token bg-surface-2 rounded p-4 leading-relaxed">
                 {customer.notes}
               </p>
@@ -1151,15 +1110,15 @@ export const CustomersPage: React.FC = () => {
       titulo="Clientes"
       acoes={
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          <Button
+            variant="outline"
             aria-label="Atualizar clientes"
+            className="w-10 px-0"
             onClick={refresh}
             disabled={refreshing}
-            className="p-2 rounded-lg bg-surface border border-border-token text-fg-muted-token hover:text-fg-token hover:bg-surface-2 transition-colors disabled:opacity-50"
           >
             <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          </button>
+          </Button>
           <Button onClick={() => { setEditingCustomer(null); setFormOpen(true); }}>
             Novo cliente
           </Button>
@@ -1180,24 +1139,22 @@ export const CustomersPage: React.FC = () => {
 
       {/* ── KPIs ── */}
       {statsFailed ? (
-        <Card>
-          <EmptyState
-            icon={<ExclamationTriangleIcon className="h-8 w-8 text-[var(--danger)]" />}
-            title="Não foi possível carregar os indicadores"
-            description="Os totais de clientes e receita não puderam ser carregados. Tente novamente."
-            action={{ label: 'Tentar novamente', onClick: refresh }}
-          />
-        </Card>
+        <FalhaAoCarregar
+          titulo="Não foi possível carregar os indicadores"
+          descricao="Os totais de clientes e receita não puderam ser carregados. Tente novamente."
+          onTentarDeNovo={refresh}
+        />
       ) : (
+        // Sem tom: nenhum destes números pede ação sozinho. O dourado em
+        // "Ativos" e "Receita" era cor por métrica, não informação.
         <KpiGrid
           itens={[
             { label: 'Total', value: kpis.total, definicao: 'cadastros nesta loja, comprando ou não' },
-            { label: 'Ativos', value: kpis.active, tone: 'brand', definicao: 'cadastro habilitado a pedir' },
+            { label: 'Ativos', value: kpis.active, definicao: 'cadastro habilitado a pedir' },
             { label: 'Com pedidos', value: kpis.withOrders, definicao: 'já fizeram ao menos uma compra' },
             {
               label: 'Receita total',
               value: formatCurrency(kpis.totalRevenue),
-              tone: 'brand',
               definicao: 'soma dos pedidos pagos de todos os clientes',
             },
           ]}
@@ -1233,6 +1190,9 @@ export const CustomersPage: React.FC = () => {
         carregando={customersQuery.isFetching}
         vazio={{
           titulo: 'Nenhum cliente encontrado',
+          descricao: debouncedSearch
+            ? `Nenhum cadastro bate com "${debouncedSearch}". Confira a grafia ou busque pelo telefone.`
+            : 'Clientes entram aqui no primeiro pedido, ou pelo botão Novo cliente.',
           icone: <UserGroupIcon className="h-8 w-8" />,
         }}
         paginacao={{
@@ -1309,10 +1269,13 @@ export const CustomersPage: React.FC = () => {
               // O destaque acima de R$ 500 escapava do `formatCurrency` e caía
               // num `toFixed(2)` cru: "R$ 1152.33". Quem cruza o corte é o
               // cliente mais valioso — é a última linha que pode sair torta.
-              return Number(gasto) > 500 ? (
-                <Badge tone="success">{formatCurrency(gasto)}</Badge>
-              ) : (
-                <span className="font-bold text-fg-token">{formatCurrency(gasto)}</span>
+              //
+              // Destaque em ouro, não em verde: verde é estado ("pago",
+              // "ativo"), e gasto alto não é estado — é o cliente que vale mais.
+              return (
+                <span className={`font-bold tabular-nums ${Number(gasto) > 500 ? 'text-brand-ink' : 'text-fg-token'}`}>
+                  {formatCurrency(gasto)}
+                </span>
               );
             },
           },
@@ -1355,18 +1318,10 @@ export const CustomersPage: React.FC = () => {
             chave: 'status',
             cabecalho: 'Status',
             alinhamento: 'centro',
-            render: (c) =>
-              c.is_active ? (
-                <Badge tone="success" className="gap-1">
-                  <CheckBadgeIcon className="h-3 w-3" />
-                  Ativo
-                </Badge>
-              ) : (
-                <Badge tone="neutral" className="gap-1">
-                  <NoSymbolIcon className="h-3 w-3" />
-                  Inativo
-                </Badge>
-              ),
+            render: (c) => {
+              const estado = estadoDeCliente(c.is_active);
+              return <SeloDeEstado tone={estado.tone} ponto>{estado.rotulo}</SeloDeEstado>;
+            },
           },
           {
             chave: 'acoes',
