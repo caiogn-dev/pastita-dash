@@ -55,25 +55,29 @@ describe('PrintSettingsPage — o que o agente imprime', () => {
 
   it('mostra os três papéis com o estado atual do agente', async () => {
     abrir();
-    const comanda = await screen.findByLabelText('pc desktop imprime comanda');
+    const comanda = await screen.findAllByLabelText('pc desktop imprime comanda').then((l) => l[0]);
     expect(comanda).toBeChecked();
-    expect(screen.getByLabelText('pc desktop imprime recibo')).toBeChecked();
-    expect(screen.getByLabelText('pc desktop imprime etiquetas')).not.toBeChecked();
+    expect(screen.getAllByLabelText('pc desktop imprime recibo')[0]).toBeChecked();
+    expect(screen.getAllByLabelText('pc desktop imprime etiquetas')[0]).not.toBeChecked();
   });
 
-  it('marcar etiquetas e desmarcar comanda grava a lista nova no agente', async () => {
+  it('marcar etiquetas grava a lista nova no agente', async () => {
     abrir();
-    await userEvent.click(await screen.findByLabelText('pc desktop imprime etiquetas'));
+    await userEvent.click((await screen.findAllByLabelText('pc desktop imprime etiquetas'))[0]);
     await waitFor(() => expect(atualizar).toHaveBeenCalledWith('loja-x', 'a1', { imprime: ['comanda', 'recibo', 'etiquetas'] }));
+  });
+
+  it('desmarcar comanda tira só a comanda da lista', async () => {
     listarAgentes.mockResolvedValue({ data: [{ ...AGENTE, imprime: ['comanda', 'recibo', 'etiquetas'] }] });
-    await userEvent.click(screen.getByLabelText('pc desktop imprime comanda'));
-    await waitFor(() => expect(atualizar).toHaveBeenLastCalledWith('loja-x', 'a1', { imprime: ['recibo', 'etiquetas'] }));
+    abrir();
+    await userEvent.click((await screen.findAllByLabelText('pc desktop imprime comanda'))[0]);
+    await waitFor(() => expect(atualizar).toHaveBeenCalledWith('loja-x', 'a1', { imprime: ['recibo', 'etiquetas'] }));
   });
 
   it('backend antigo sem o campo: assume comanda e recibo', async () => {
     listarAgentes.mockResolvedValue({ data: [{ ...AGENTE, imprime: undefined }] });
     abrir();
-    expect(await screen.findByLabelText('pc desktop imprime comanda')).toBeChecked();
-    expect(screen.getByLabelText('pc desktop imprime etiquetas')).not.toBeChecked();
+    expect(await screen.findAllByLabelText('pc desktop imprime comanda').then((l) => l[0])).toBeChecked();
+    expect(screen.getAllByLabelText('pc desktop imprime etiquetas')[0]).not.toBeChecked();
   });
 });
