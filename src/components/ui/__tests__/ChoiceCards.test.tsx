@@ -66,6 +66,14 @@ describe('ChoiceCards', () => {
     expect(screen.getByRole('radio', { name: /Inativo/ })).toHaveAttribute('tabindex', '-1');
   });
 
+  it('sem nada escolhido, a primeira opção entra na ordem de Tab', () => {
+    // Lista de templates começa sem escolha. Com todas em -1, o teclado não
+    // tinha como entrar no grupo.
+    render(<ChoiceCards rotulo="Operação" opcoes={OPCOES} valor="" onChange={jest.fn()} />);
+    expect(screen.getByRole('radio', { name: /Ativo/ })).toHaveAttribute('tabindex', '0');
+    expect(screen.getByRole('radio', { name: /Inativo/ })).toHaveAttribute('tabindex', '-1');
+  });
+
   it('aceita mais de duas opções', () => {
     // O padrão vale para qualquer escolha excludente curta, não só binária.
     render(

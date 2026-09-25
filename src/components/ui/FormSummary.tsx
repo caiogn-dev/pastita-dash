@@ -25,11 +25,11 @@ export interface FormSummaryProps {
   linhas: LinhaDeResumo[];
   titulo?: string;
   /**
-   * `rotulo` (padrão) é a etiqueta miúda de seção. `frase` é título em frase,
-   * para telas que falam com o dono em sentence case (Fidelidade) e não
-   * querem um rótulo em caixa alta no meio da conversa.
+   * `rotulo` (padrão) é o `.overline` de seção, em caixa alta. `frase` e
+   * `titulo` são o mesmo título curto em sentence case — para telas que
+   * falam com o dono e não querem caixa alta (Fidelidade, campanha).
    */
-  estiloDoTitulo?: 'rotulo' | 'frase';
+  estiloDoTitulo?: 'rotulo' | 'frase' | 'titulo';
   /** Linha de rodapé sob os números — a ressalva que muda a leitura deles. */
   nota?: React.ReactNode;
   className?: string;
@@ -51,7 +51,7 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
     >
       <h3
         className={
-          estiloDoTitulo === 'frase' ? 'text-body font-semibold text-fg-token' : 'overline'
+          estiloDoTitulo === 'rotulo' ? 'overline' : 'text-body font-semibold text-fg-token'
         }
       >
         {titulo}

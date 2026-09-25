@@ -112,7 +112,7 @@ describe('campanha de WhatsApp — o caminho que gasta dinheiro', () => {
   const escolherConta = async () => {
     abrir();
     // 1. conta
-    fireEvent.click(await screen.findByText('Conta 1'));
+    fireEvent.click(await screen.findByRole('button', { name: /^conta 1/i }));
     avancar();
   };
 
@@ -124,7 +124,7 @@ describe('campanha de WhatsApp — o caminho que gasta dinheiro', () => {
   };
 
   const escreverTexto = async (texto = 'Promoção de hoje: salada por R$ 29,90') => {
-    fireEvent.click(await screen.findByText('Texto Livre'));
+    fireEvent.click(await screen.findByRole('radio', { name: /texto livre/i }));
     fireEvent.change(await screen.findByPlaceholderText(/digite sua mensagem/i), {
       target: { value: texto },
     });
@@ -142,7 +142,7 @@ describe('campanha de WhatsApp — o caminho que gasta dinheiro', () => {
     avancar();
 
     // 4. envio
-    fireEvent.click(await screen.findByRole('button', { name: /enviar agora/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /enviar para 1 cliente/i }));
 
     await waitFor(() => expect(createCampaign).toHaveBeenCalled());
 
@@ -166,7 +166,7 @@ describe('campanha de WhatsApp — o caminho que gasta dinheiro', () => {
     avancar();
     await escreverTexto();
     avancar();
-    fireEvent.click(await screen.findByRole('button', { name: /enviar agora/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /enviar para 1 cliente/i }));
 
     await waitFor(() => expect(startCampaign).toHaveBeenCalledWith('camp-1'));
     expect(scheduleCampaign).not.toHaveBeenCalled();
@@ -183,7 +183,7 @@ describe('campanha de WhatsApp — o caminho que gasta dinheiro', () => {
   it('o passo 2 é Destinatários e o 3 é Mensagem', async () => {
     await escolherConta();
     expect(await screen.findByPlaceholderText(/5511999999999/i)).toBeInTheDocument();
-    expect(screen.queryByText('Texto Livre')).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /texto livre/i })).not.toBeInTheDocument();
   });
 
   it('voltar e avançar não perde nada do que foi preenchido', async () => {
@@ -207,7 +207,7 @@ describe('campanha de WhatsApp — o caminho que gasta dinheiro', () => {
 
   it('com uma conta só, ela já vem escolhida — não faz o dono clicar no óbvio', async () => {
     abrir();
-    await screen.findByText('Conta 1');
+    await screen.findByRole('button', { name: /^conta 1/i });
 
     expect(botaoAvancar()).toBeEnabled();
   });
@@ -233,7 +233,7 @@ describe('campanha de WhatsApp — o caminho que gasta dinheiro', () => {
     await escolherConta();
     await adicionarContato();
     avancar();
-    fireEvent.click(await screen.findByText('Texto Livre'));
+    fireEvent.click(await screen.findByRole('radio', { name: /texto livre/i }));
 
     expect(botaoAvancar()).toBeDisabled();
   });

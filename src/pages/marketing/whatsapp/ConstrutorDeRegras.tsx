@@ -149,7 +149,7 @@ export const ConstrutorDeRegras: React.FC<Props> = ({ storeIds, onRegra }) => {
       {regra.grupos.map((grupo, iGrupo) => (
         <Fragment key={iGrupo}>
           {iGrupo > 0 && (
-            <p className="text-center text-caption font-semibold uppercase tracking-wide text-fg-muted-token">
+            <p className="text-center text-caption font-semibold text-fg-muted-token">
               ou
             </p>
           )}
@@ -169,7 +169,7 @@ export const ConstrutorDeRegras: React.FC<Props> = ({ storeIds, onRegra }) => {
               {grupo.condicoes.map((condicao, iCondicao) => (
                 <Fragment key={iCondicao}>
                   {iCondicao > 0 && (
-                    <span className="text-caption font-semibold uppercase text-fg-muted-token">e</span>
+                    <span className="text-caption font-semibold text-fg-muted-token">e</span>
                   )}
                   <LinhaDaCondicao
                     condicao={condicao}

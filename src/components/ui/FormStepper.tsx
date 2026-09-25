@@ -26,7 +26,7 @@ import React, { useState } from 'react';
 import { CheckIcon } from '@heroicons/react/24/outline';
 
 import { cn } from '../../utils/cn';
-import { Button } from './Button';
+import { Button, type ButtonVariant } from './Button';
 
 export interface PassoDeFormulario {
   id: string;
@@ -61,6 +61,30 @@ export interface FormStepperProps {
    */
   passoAtivo?: string;
   onMudarPasso?: (id: string) => void;
+  /** Rótulo do botão de avançar. Padrão: "Avançar →". */
+  rotuloAvancar?: string;
+  /** Rótulo do botão de voltar. Padrão: "← Voltar". */
+  rotuloVoltar?: string;
+  /**
+   * DESABILITA o botão de avançar enquanto `podeAvancar` disser não.
+   *
+   * O padrão (false) só ignora o clique — serve ao modal, onde o passo marca a
+   * pendência. Num assistente que gasta dinheiro no fim (campanha), o botão
+   * apagado é o aviso: "ainda falta algo aqui".
+   */
+  travarAvancar?: boolean;
+  /**
+   * Com false, a trilha só leva a passos JÁ PERCORRIDOS. Serve quando um passo
+   * depende do anterior (o público decide a mensagem) e pular adiante levaria
+   * a pessoa a uma tela sem sentido. Padrão: true.
+   */
+  permitirPularAdiante?: boolean;
+  /** Variante do botão de conclusão. Padrão: 'primary'. */
+  varianteConcluir?: ButtonVariant;
+  /** Ícone à esquerda do rótulo de conclusão. */
+  iconeConcluir?: React.ReactNode;
+  /** Rótulo enquanto `concluindo`. Padrão: "Salvando…". */
+  rotuloConcluindo?: string;
   className?: string;
 }
 
@@ -75,6 +99,13 @@ export const FormStepper: React.FC<FormStepperProps> = ({
   concluindo = false,
   passoAtivo,
   onMudarPasso,
+  rotuloAvancar = 'Avançar →',
+  rotuloVoltar = '← Voltar',
+  travarAvancar = false,
+  permitirPularAdiante = true,
+  varianteConcluir = 'primary',
+  iconeConcluir,
+  rotuloConcluindo = 'Salvando…',
   className,
 }) => {
   const [interno, setInterno] = useState(0);
@@ -97,8 +128,10 @@ export const FormStepper: React.FC<FormStepperProps> = ({
 
   if (!atual) return null;
 
+  const liberado = podeAvancar ? podeAvancar(atual.id) : true;
+
   const avancar = () => {
-    if (podeAvancar && !podeAvancar(atual.id)) return;
+    if (!liberado) return;
     irPara(Math.min(i + 1, passos.length - 1));
   };
 
@@ -110,6 +143,7 @@ export const FormStepper: React.FC<FormStepperProps> = ({
           const Icone = p.icone;
           const ativo = idx === i;
           const passado = idx < i;
+          const bloqueado = !permitirPularAdiante && idx > i;
           return (
             <li key={p.id} className="flex items-center gap-1">
               {idx > 0 && (
@@ -118,10 +152,12 @@ export const FormStepper: React.FC<FormStepperProps> = ({
               <button
                 type="button"
                 aria-current={ativo ? 'step' : undefined}
+                disabled={bloqueado}
                 onClick={() => irPara(idx)}
                 className={cn(
                   'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-body font-medium transition-colors',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                  'disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-fg-muted-token',
                   ativo
                     ? 'bg-brand-soft text-brand-ink'
                     : 'text-fg-muted-token hover:bg-surface-2 hover:text-fg-token'
@@ -172,17 +208,28 @@ export const FormStepper: React.FC<FormStepperProps> = ({
           )}
           {i > 0 && (
             <Button type="button" variant="outline" onClick={() => irPara(i - 1)}>
-              ← Voltar
+              {rotuloVoltar}
             </Button>
           )}
           {ultimo && acoesExtras}
           {ultimo ? (
-            <Button type="button" variant="primary" onClick={onConcluir} disabled={concluindo}>
-              {concluindo ? 'Salvando…' : rotuloConcluir}
+            <Button
+              type="button"
+              variant={varianteConcluir}
+              onClick={onConcluir}
+              disabled={concluindo}
+              leftIcon={concluindo ? undefined : iconeConcluir}
+            >
+              {concluindo ? rotuloConcluindo : rotuloConcluir}
             </Button>
           ) : (
-            <Button type="button" variant="primary" onClick={avancar}>
-              Avançar →
+            <Button
+              type="button"
+              variant="primary"
+              onClick={avancar}
+              disabled={travarAvancar && !liberado}
+            >
+              {rotuloAvancar}
             </Button>
           )}
         </div>
