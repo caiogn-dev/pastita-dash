@@ -453,7 +453,7 @@ const EtiquetasPage: React.FC = () => {
     return { doc: buildValidadeDoc(row, v), w: v.paperW * MM_PX, h: v.labelH * MM_PX };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template, cfg, selected, cfg.shelfDays]);
-  const previewScale = Math.min(300 / preview.w, 1);
+  const previewScale = Math.min(352 / preview.w, 1);
 
   if (loading) return <Loading />;
 
@@ -516,7 +516,17 @@ const EtiquetasPage: React.FC = () => {
       }
     >
 
-      <div className="grid lg:grid-cols-[1fr,380px] gap-4 md:gap-5 items-start">
+      <div className="grid lg:grid-cols-[1fr,400px] gap-4 md:gap-5 items-start">
+        <div className="space-y-4 md:space-y-5">
+        <Card className="p-4 sm:p-5">
+          <ChoiceCards<Template>
+            rotulo="Qual etiqueta"
+            opcoes={MODELOS}
+            valor={template}
+            onChange={setTemplate}
+          />
+        </Card>
+
         <Card className="p-4 sm:p-5 space-y-3">
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
@@ -588,14 +598,7 @@ const EtiquetasPage: React.FC = () => {
           </ul>
         </Card>
 
-        <Card className="p-4 sm:p-5 space-y-5">
-          <ChoiceCards<Template>
-            rotulo="Qual etiqueta"
-            opcoes={MODELOS}
-            valor={template}
-            onChange={setTemplate}
-          />
-
+        <Card className="p-4 sm:p-5 space-y-4">
           {template === 'produto' ? (
             <section className="space-y-3">
               <h3 className="text-sm font-semibold text-fg-token">Papel</h3>
@@ -683,7 +686,13 @@ const EtiquetasPage: React.FC = () => {
             </section>
           )}
 
-          {!nutricaoBloqueada && (<>
+        </Card>
+        </div>
+
+        {!nutricaoBloqueada && (
+        <div className="lg:sticky lg:top-4 space-y-4">
+        <Card className="p-4 sm:p-5 space-y-5">
+          <>
           <section>
             <h3 className="text-sm font-semibold text-fg-token mb-1.5">Pré-visualização <span className="font-normal text-fg-muted-token">(tamanho real)</span></h3>
             <div
@@ -759,7 +768,13 @@ const EtiquetasPage: React.FC = () => {
               </p>
             </div>
           )}
-          </>)}
+          </>
+        </Card>
+        </div>
+        )}
+
+        <Card className="p-4 sm:p-5 space-y-5">
+
         </Card>
       </div>
     </PageShell>
