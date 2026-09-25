@@ -110,7 +110,7 @@ export interface EnvioDeEtiquetas {
   store: string;
   /** UUID do agent escolhido. */
   agent: string;
-  modelo: 'validade' | 'nutricao' | 'nutricao-qr';
+  modelo: 'produto' | 'validade' | 'nutricao' | 'nutricao-qr';
   etiquetas: unknown[];
   config?: Record<string, unknown>;
 }

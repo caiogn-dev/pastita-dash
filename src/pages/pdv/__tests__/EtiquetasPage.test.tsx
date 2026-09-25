@@ -251,11 +251,39 @@ describe('EtiquetasPage', () => {
       expect(mockedPrint).not.toHaveBeenCalled();
     });
 
-    it('etiqueta de produto (código de barras) não tem envio remoto', async () => {
+    it('etiqueta de produto também vai para a impressora remota, gerando o código de quem não tem', async () => {
       mockedListAgents.mockResolvedValue({ data: { results: [zebra] } });
       renderPage();
       await screen.findByText('Marmita P');
-      expect(screen.queryByTestId('etq-remoto')).toBeNull();
+      await userEvent.clear(screen.getByLabelText('Quantidade de etiquetas de Marmita P'));
+      await userEvent.type(screen.getByLabelText('Quantidade de etiquetas de Marmita P'), '2');
+      await userEvent.click(await screen.findByTestId('etq-enviar-remoto'));
+      await waitFor(() => expect(mockedEnviar).toHaveBeenCalledTimes(1));
+      expect(mockedGerarCodigos).toHaveBeenCalledWith('s1', ['p1']);
+      const body = mockedEnviar.mock.calls[0][0];
+      expect(body.modelo).toBe('produto');
+      expect(body.etiquetas).toHaveLength(2);
+      expect(body.etiquetas[0].barcode).toBe('2010000000015');
+      expect(body.config.width).toBeGreaterThan(0);
+    });
+
+    it('lembra a impressora escolhida por modelo: Elgin para validade, Zebra para produto', async () => {
+      const elgin = { ...zebra, id: 'ag-elgin', name: 'pc desktop · Elgin', printer_name: 'ELGIN L42PRO FULL' };
+      mockedListAgents.mockResolvedValue({ data: { results: [zebra, elgin] } });
+      const { unmount } = renderPage();
+      await screen.findByText('Marmita P');
+      await userEvent.click(screen.getByText('Validade (Elgin)'));
+      const seletor = (await screen.findByLabelText('Impressora de etiquetas')) as HTMLSelectElement;
+      await userEvent.selectOptions(seletor, 'ag-elgin');
+      expect(seletor.value).toBe('ag-elgin');
+      await userEvent.click(screen.getByText('Produto (Zebra)'));
+      expect((screen.getByLabelText('Impressora de etiquetas') as HTMLSelectElement).value).toBe('ag-zebra');
+      unmount();
+
+      renderPage();
+      await screen.findByText('Marmita P');
+      await userEvent.click(screen.getByText('Validade (Elgin)'));
+      expect(((await screen.findByLabelText('Impressora de etiquetas')) as HTMLSelectElement).value).toBe('ag-elgin');
     });
   });
 

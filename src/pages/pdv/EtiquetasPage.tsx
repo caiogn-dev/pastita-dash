@@ -54,6 +54,7 @@ const PRODUTO_PRESETS = [
 
 const CFG_KEY = 'cdx-etiquetas-cfg-v2';
 const LOTES_KEY = 'cdx-etiquetas-lotes-v1';
+const AGENTE_KEY = 'cdx-etiquetas-agente-v1';
 const MAX_LOTES = 8;
 
 /** Um lote impresso: o que a pessoa repete todo dia. Fica no navegador, por loja. */
@@ -81,6 +82,13 @@ const quandoFoi = (iso: string): string => {
   if (dias <= 0) return 'hoje';
   if (dias === 1) return 'ontem';
   return `há ${dias} dias`;
+};
+
+/** Sem escolha guardada, cada modelo vai para a impressora que costuma ser a dele:
+ *  produto e nutrição na Zebra, validade na Elgin. Depois a pessoa muda e fica. */
+const agentePadraoPara = (tpl: Template, agentes: PrintAgent[]): PrintAgent | undefined => {
+  const casa = tpl === 'validade' ? /elgin/i : /zdesigner|zebra/i;
+  return agentes.find((a) => casa.test(a.printer_name || '')) ?? agentes[0];
 };
 
 const DIAS_DA_SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
@@ -201,7 +209,14 @@ const EtiquetasPage: React.FC = () => {
   };
   const itensDaSelecao = (): Lote['itens'] =>
     selected.map((c) => ({ id: c.product.id, nome: c.product.name, qtd: qty.get(c.product.id) ?? 0 }));
-  const [agenteEscolhido, setAgenteEscolhido] = useState<string>('');
+  // Impressora por modelo: produto sai na Zebra, validade na Elgin — as duas
+  // no mesmo PC, cada uma com o seu agent. A escolha fica guardada por modelo.
+  const chaveDoAgente = (tpl: Template) => `${AGENTE_KEY}:${storeId ?? 'all'}:${tpl}`;
+  const [agenteEscolhido, setAgenteEscolhidoRaw] = useState<string>('');
+  const setAgenteEscolhido = (id: string) => {
+    setAgenteEscolhidoRaw(id);
+    try { if (id) localStorage.setItem(chaveDoAgente(template), id); } catch { /* sem storage */ }
+  };
   const [enviando, setEnviando] = useState(false);
   // Produto e validade são de todo mundo; só os modelos de nutrição são o
   // adicional Etiqueta ANVISA.
@@ -353,27 +368,38 @@ const EtiquetasPage: React.FC = () => {
   // Loja única da seleção: o job é de UMA loja e de UM agent.
   const lojaDaSelecao = useMemo(() => {
     const slugs = new Set(selected.map((c) => c.storeSlug));
-    return slugs.size === 1 ? selected[0].storeSlug : null;
-  }, [selected]);
+    if (slugs.size === 1) return selected[0].storeSlug;
+    // Sem seleção ainda: a loja da rota, para a impressora já aparecer escolhida.
+    if (slugs.size === 0) return storeId ?? null;
+    return null;
+  }, [selected, storeId]);
   const agentesDaSelecao = lojaDaSelecao ? (agentes.get(lojaDaSelecao) ?? []) : [];
   const agenteDaVez = agentesDaSelecao.find((a) => a.id === agenteEscolhido);
-  const envioRemotoDisponivel = template !== 'produto' && !nutricaoBloqueada
+  const envioRemotoDisponivel = !nutricaoBloqueada
     && (lojaDaSelecao ? agentesDaSelecao.length > 0 : agentes.size > 0);
   useEffect(() => {
-    if (!agentesDaSelecao.some((a) => a.id === agenteEscolhido)) {
-      setAgenteEscolhido(agentesDaSelecao[0]?.id ?? '');
+    let lembrado = '';
+    try { lembrado = localStorage.getItem(chaveDoAgente(template)) ?? ''; } catch { /* sem storage */ }
+    const valido = (id: string) => agentesDaSelecao.some((a) => a.id === id);
+    if (lembrado && valido(lembrado)) {
+      if (lembrado !== agenteEscolhido) setAgenteEscolhidoRaw(lembrado);
+    } else {
+      setAgenteEscolhidoRaw(agentePadraoPara(template, agentesDaSelecao)?.id ?? '');
     }
-  }, [agentesDaSelecao, agenteEscolhido]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentesDaSelecao, template]);
 
   const handleEnviarRemoto = async () => {
-    if (totalLabels === 0 || enviando || template === 'produto') return;
+    if (totalLabels === 0 || enviando) return;
     if (!lojaDaSelecao) { toast.error('Selecione produtos de uma loja só para enviar à impressora remota.'); return; }
     const agent = agentesDaSelecao.find((a) => a.id === agenteEscolhido);
     if (!agent) { toast.error('Escolha o programa de impressão que está com a Zebra.'); return; }
     setEnviando(true);
     try {
-      const etiquetas = template === 'validade' ? montarEtiquetasDeValidade() : montarEtiquetasNutricionais();
-      if (template !== 'validade' && etiquetas.length !== totalLabels) {
+      const etiquetas = template === 'produto'
+        ? await (async () => { const codes = await garantirCodigos(); return expandCopies((c) => produtoLabel(c, codes.get(c.product.id))); })()
+        : template === 'validade' ? montarEtiquetasDeValidade() : montarEtiquetasNutricionais();
+      if (template !== 'validade' && template !== 'produto' && etiquetas.length !== totalLabels) {
         toast.error('Alguns produtos selecionados ainda não têm perfil nutricional.');
         return;
       }
@@ -382,7 +408,7 @@ const EtiquetasPage: React.FC = () => {
         agent: agent.id,
         modelo: template,
         etiquetas,
-        config: template === 'validade' ? { ...cfg.validade } : {},
+        config: template === 'validade' ? { ...cfg.validade } : template === 'produto' ? { ...cfg.produto } : {},
       });
       guardarLote(template, itensDaSelecao());
       toast.success(`${etiquetas.length} etiqueta${etiquetas.length === 1 ? '' : 's'} enviada${etiquetas.length === 1 ? '' : 's'} para ${agent.name} (${agent.printer_name})`);
@@ -393,33 +419,38 @@ const EtiquetasPage: React.FC = () => {
     }
   };
 
+  /** Etiqueta de produto sem código → o BACKEND gera o EAN-13 interno (com
+   *  identidade de loja e sem colisão entre dois operadores). */
+  const garantirCodigos = async (): Promise<Map<string, string>> => {
+    const newCodes = new Map<string, string>();
+    // Etiqueta de produto sem código → o BACKEND gera o EAN-13 interno.
+    // Aqui era sorteado no navegador, o que dava código sem identidade de
+    // loja e podia colidir entre dois operadores imprimindo ao mesmo tempo.
+      const semCodigo = selected.filter((x) => !x.product.barcode);
+      const porLoja = new Map<string, string[]>();
+      semCodigo.forEach((c) => {
+        const atual = porLoja.get(c.product.store) || [];
+        atual.push(c.product.id);
+        porLoja.set(c.product.store, atual);
+      });
+      for (const [storeUuid, ids] of porLoja) {
+        const { gerados } = await gerarCodigosInternos(storeUuid, ids);
+        Object.entries(gerados).forEach(([id, code]) => newCodes.set(id, code));
+      }
+      if (newCodes.size > 0) {
+        setCatalog((prev) => prev.map((x) => (newCodes.has(x.product.id)
+          ? { ...x, product: { ...x.product, barcode: newCodes.get(x.product.id) as string } }
+          : x)));
+        toast.success(`${newCodes.size} código(s) interno(s) gerado(s) e salvo(s)`);
+      }
+    return newCodes;
+  };
+
   const handlePrint = async () => {
     if (totalLabels === 0 || preparing) return;
     setPreparing(true);
     try {
-      const newCodes = new Map<string, string>();
-      // Etiqueta de produto sem código → o BACKEND gera o EAN-13 interno.
-      // Aqui era sorteado no navegador, o que dava código sem identidade de
-      // loja e podia colidir entre dois operadores imprimindo ao mesmo tempo.
-      if (template === 'produto') {
-        const semCodigo = selected.filter((x) => !x.product.barcode);
-        const porLoja = new Map<string, string[]>();
-        semCodigo.forEach((c) => {
-          const atual = porLoja.get(c.product.store) || [];
-          atual.push(c.product.id);
-          porLoja.set(c.product.store, atual);
-        });
-        for (const [storeUuid, ids] of porLoja) {
-          const { gerados } = await gerarCodigosInternos(storeUuid, ids);
-          Object.entries(gerados).forEach(([id, code]) => newCodes.set(id, code));
-        }
-        if (newCodes.size > 0) {
-          setCatalog((prev) => prev.map((x) => (newCodes.has(x.product.id)
-            ? { ...x, product: { ...x.product, barcode: newCodes.get(x.product.id) as string } }
-            : x)));
-          toast.success(`${newCodes.size} código(s) interno(s) gerado(s) e salvo(s)`);
-        }
-      }
+      const newCodes = template === 'produto' ? await garantirCodigos() : new Map<string, string>();
       const nutritionCopies = montarEtiquetasNutricionais();
       if ((template === 'nutricao' || template === 'nutricao-qr') && nutritionCopies.length !== totalLabels) {
         toast.error('Alguns produtos selecionados ainda não têm perfil nutricional.');
@@ -812,7 +843,7 @@ const EtiquetasPage: React.FC = () => {
               {lojaDaSelecao ? (
                 agentesDaSelecao.length > 1 ? (
                   <Select
-                    rotuloOculto="Programa de impressão com a Zebra"
+                    rotuloOculto="Impressora de etiquetas"
                     opcoes={agentesDaSelecao.map((a) => ({
                       valor: a.id, rotulo: `${a.name} · ${a.printer_name}${a.is_online ? '' : ' (offline)'}`,
                     }))}
