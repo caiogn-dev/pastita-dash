@@ -119,7 +119,7 @@ export const SeletorDeAudiencia: React.FC<Props> = ({ accountId, storeSlug, onUs
         <div>
           <h3 className="font-medium text-fg-token flex items-center gap-2">
             <UserGroupIcon className="w-5 h-5" aria-hidden="true" />
-            Quem vai receber
+            Filtrar sua base de clientes
           </h3>
           <p className="text-sm text-fg-muted-token mt-0.5">
             {previa?.descricao ?? 'Todos os contatos'}
@@ -146,7 +146,7 @@ export const SeletorDeAudiencia: React.FC<Props> = ({ accountId, storeSlug, onUs
           aria-pressed={filtrosVazios(filtros)}
           className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
             filtrosVazios(filtros)
-              ? 'bg-brand-ink text-white border-transparent'
+              ? 'border-brand bg-brand-soft text-brand-ink'
               : 'border-border-token text-fg-token hover:bg-surface-2'
           }`}
         >
@@ -161,7 +161,7 @@ export const SeletorDeAudiencia: React.FC<Props> = ({ accountId, storeSlug, onUs
             title={a.porque}
             className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
               atalho === a.chave
-                ? 'bg-brand-ink text-white border-transparent'
+                ? 'border-brand bg-brand-soft text-brand-ink'
                 : 'border-border-token text-fg-token hover:bg-surface-2'
             }`}
           >
@@ -259,7 +259,7 @@ export const SeletorDeAudiencia: React.FC<Props> = ({ accountId, storeSlug, onUs
                     ticket_min: e.target.value === '' ? undefined : Number(e.target.value),
                   }))
                 }
-                className="w-28 px-3 py-2 border border-border-token rounded-lg bg-surface dark:bg-[var(--dark-bg-hover,#161616)] text-fg-token"
+                className="controle w-28"
               />
               <span className="text-fg-muted-token">até</span>
               <input
@@ -275,7 +275,7 @@ export const SeletorDeAudiencia: React.FC<Props> = ({ accountId, storeSlug, onUs
                     ticket_max: e.target.value === '' ? undefined : Number(e.target.value),
                   }))
                 }
-                className="w-28 px-3 py-2 border border-border-token rounded-lg bg-surface dark:bg-[var(--dark-bg-hover,#161616)] text-fg-token"
+                className="controle w-28"
               />
             </div>
           </div>
@@ -295,7 +295,7 @@ export const SeletorDeAudiencia: React.FC<Props> = ({ accountId, storeSlug, onUs
                     produtos: Array.from(e.target.selectedOptions, (o) => o.value),
                   }))
                 }
-                className="w-full h-32 px-3 py-2 border border-border-token rounded-lg bg-surface dark:bg-[var(--dark-bg-hover,#161616)] text-fg-token"
+                className="controle h-32 w-full py-2"
               >
                 {opcoes.produtos.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -377,7 +377,7 @@ const Eixo: React.FC<EixoProps> = ({ titulo, valores, selecionados, onAlternar }
             aria-pressed={ativo}
             className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
               ativo
-                ? 'bg-brand-ink text-white border-transparent'
+                ? 'border-brand bg-brand-soft text-brand-ink'
                 : 'border-border-token text-fg-token hover:bg-surface-2'
             }`}
           >

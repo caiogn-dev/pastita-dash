@@ -24,12 +24,19 @@ export interface LinhaDeResumo {
 export interface FormSummaryProps {
   linhas: LinhaDeResumo[];
   titulo?: string;
+  /**
+   * `rotulo` (padrão) é o `.overline` de seção, em caixa alta. `titulo` é um
+   * título curto em sentence case — para telas que vetaram caixa alta, como a
+   * campanha de WhatsApp.
+   */
+  estiloDoTitulo?: 'rotulo' | 'titulo';
   className?: string;
 }
 
 export const FormSummary: React.FC<FormSummaryProps> = ({
   linhas,
   titulo = 'Resumo',
+  estiloDoTitulo = 'rotulo',
   className,
 }) => {
   if (!linhas.length) return null;
@@ -39,7 +46,13 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
       aria-label={titulo}
       className={cn('rounded border border-border-token bg-surface p-4', className)}
     >
-      <h3 className="overline">{titulo}</h3>
+      <h3
+        className={
+          estiloDoTitulo === 'titulo' ? 'text-body font-semibold text-fg-token' : 'overline'
+        }
+      >
+        {titulo}
+      </h3>
       <dl className="mt-2.5 space-y-1.5">
         {linhas.map((l) => {
           const vazio =

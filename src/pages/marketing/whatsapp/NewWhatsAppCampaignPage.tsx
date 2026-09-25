@@ -1,74 +1,104 @@
 /**
- * New WhatsApp Campaign Page
- * 
- * Flow:
- * 1. Select WhatsApp account
- * 2. Choose message type (template or text)
- * 3. Configure message content
- * 4. Add recipients (manual, CSV, or contact list)
- * 5. Review & Send/Schedule
+ * Nova campanha de WhatsApp — "prévia ao lado com números" (direção do dono,
+ * 25/09/2026).
+ *
+ * Duas colunas:
+ *
+ *   esquerda  o assistente (Conta → Destinatários → Mensagem → Enviar), no
+ *             `FormStepper` do kit.
+ *   direita   FIXA: a mensagem dentro de um balão de conversa, com as
+ *             variáveis já trocadas pelo primeiro cliente da lista, e embaixo
+ *             o resumo em números — quantos recebem, por qual conta, quando e
+ *             quanto tempo leva.
+ *
+ * A tela antiga era uma faixa estreita: o dono escrevia sem ver como a
+ * mensagem chegava e só descobria para quantos ia na última tela. Agora as
+ * duas respostas estão sempre visíveis, e o botão final diz o que faz:
+ * "Enviar para 312 clientes".
+ *
+ * Cores só de token. O verde fica reservado para o botão final (variant
+ * `success`) — o resto da tela usa o dourado da marca, como o painel todo.
+ *
+ * O ENVIO NÃO MUDOU. O payload, as validações e a ordem criar → iniciar estão
+ * travados por `__tests__/NewWhatsAppCampaignPage.envio.test.tsx`.
  */
-import React, { useState, useEffect, useMemo, useCallback, Fragment } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeftIcon,
   DevicePhoneMobileIcon,
   UserGroupIcon,
   PaperAirplaneIcon,
-  CheckCircleIcon,
-  UsersIcon,
   DocumentTextIcon,
   ClockIcon,
   ChatBubbleLeftRightIcon,
   PhotoIcon,
-  XMarkIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, Loading, Modal, Input } from '../../../components/common';
-import { precoParaTemplate, variaveisDaOferta } from './variaveisDaOferta';
+
+import { Loading, Modal } from '../../../components/common';
+import {
+  Button,
+  ChoiceCards,
+  EmptyState,
+  FormStepper,
+  FormSummary,
+  PageShell,
+} from '../../../components/ui';
+import { BalaoDeWhatsApp } from '../../../components/marketing/BalaoDeWhatsApp';
+import { variaveisDaOferta } from './variaveisDaOferta';
 import { getErrorMessage } from '../../../services';
 import whatsappService from '../../../services/whatsapp';
 import { campaignsService } from '../../../services/campaigns';
 import { WhatsAppAccount, MessageTemplate } from '../../../types';
 import { useStore } from '../../../hooks';
 import { getProducts as getStoreProducts, StoreProduct } from '../../../services/storesApi';
-
-// Local type definitions for campaign page
-type ContactInput = { phone: string; name?: string };
-type SystemContact = { 
-  phone: string; 
-  name: string; 
-  last_message_at?: string;
-  source?: 'conversation' | 'order' | 'subscriber' | 'session';
-};
 import logger from '../../../services/logger';
 import { avisoDaJanela, horarioParaConsulta, type ResumoDaJanela } from './janelaDe24h';
 import { LinhaDoDia } from '../../../components/campanhas/LinhaDoDia';
 import { horarioPermitido } from './linhaDoDia';
 import { precoVigenteDoProduto } from '../../../utils/precoVigente';
 import { formatCurrency } from '../../../utils/formatters';
+import { cn } from '../../../utils/cn';
 
 import {
   componentesDoTemplate,
   variaveisDoTemplate,
 } from './campanha/componentesDoTemplate';
 import { contatosDoCsv } from './campanha/contatosDoCsv';
+import { CampoDeImagem } from './campanha/CampoDeImagem';
+import {
+  clientes,
+  exemploDeCliente,
+  previaDaMensagem,
+  rotuloDoEnvio,
+  tempoDeEnvio,
+  NOME_DE_EXEMPLO,
+} from './campanha/previaDaMensagem';
 import { PassoDaConta } from './campanha/passos/PassoDaConta';
 import { PassoDaRevisao } from './campanha/passos/PassoDaRevisao';
 import { PassoDosDestinatarios } from './campanha/passos/PassoDosDestinatarios';
 import {
   PASSOS,
   podeAvancar,
-  passoAnterior,
   proximoPasso,
   type PassoDaCampanha,
   type TipoDeMensagem,
 } from './campanha/passosDaCampanha';
 
+// Local type definitions for campaign page
+type ContactInput = { phone: string; name?: string };
+type SystemContact = {
+  phone: string;
+  name: string;
+  last_message_at?: string;
+  source?: 'conversation' | 'order' | 'subscriber' | 'session';
+};
+
 // =============================================================================
 // TYPES
 // =============================================================================
-
 
 interface CampaignFormData {
   name: string;
@@ -104,7 +134,54 @@ const ICONE_DO_PASSO: Record<PassoDaCampanha, React.ComponentType<{ className?: 
   review: PaperAirplaneIcon,
 };
 
-const STEPS = PASSOS.map((passo) => ({ ...passo, icon: ICONE_DO_PASSO[passo.id] }));
+const PASSOS_DO_ASSISTENTE = PASSOS.map((passo) => ({
+  id: passo.id,
+  rotulo: passo.label,
+  icone: ICONE_DO_PASSO[passo.id],
+}));
+
+const TIPOS_DE_MENSAGEM = [
+  {
+    valor: 'template' as const,
+    titulo: 'Template aprovado',
+    descricao: 'Aprovado pela Meta. Chega para qualquer cliente da lista.',
+    icone: DocumentTextIcon,
+  },
+  {
+    valor: 'text' as const,
+    titulo: 'Texto livre',
+    descricao: 'Escrito agora. Só chega para quem falou com a loja nas últimas 24h.',
+    icone: ChatBubbleLeftRightIcon,
+  },
+];
+
+const ROTULO_DA_ORIGEM: Record<string, string> = {
+  conversation: 'Conversa',
+  order: 'Pedido',
+  subscriber: 'Inscrito',
+  session: 'Sessão',
+};
+
+/** A Meta devolve a categoria em caixa alta ("MARKETING"). */
+const categoriaLegivel = (categoria?: string) => {
+  const c = String(categoria || '').toLowerCase();
+  if (c === 'marketing') return 'Marketing';
+  if (c === 'utility') return 'Utilidade';
+  return c ? c.charAt(0).toUpperCase() + c.slice(1) : 'Sem categoria';
+};
+
+const templatesUteis = (lista: MessageTemplate[]) =>
+  lista.filter(
+    (t) => t.status === 'approved' && String(t.category || '').toLowerCase() !== 'authentication',
+  );
+
+const dataEHora = (valor: string) =>
+  new Date(valor).toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
 // =============================================================================
 // COMPONENT
@@ -129,9 +206,13 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
     setPassoAtual(passo);
   }, []);
   const [loading, setLoading] = useState(true);
+  const [falhouContas, setFalhouContas] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
   const [sending, setSending] = useState(false);
   const [accounts, setAccounts] = useState<WhatsAppAccount[]>([]);
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [syncingTemplates, setSyncingTemplates] = useState(false);
   const [contactLists, setContactLists] = useState<Array<{ id: string; name: string; contact_count: number; contacts: ContactInput[] }>>([]);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [janela, setJanela] = useState<ResumoDaJanela | null>(null);
@@ -188,6 +269,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
+      setFalhouContas(false);
       try {
         // Load accounts (required)
         const accountsRes = await whatsappService.getAccounts();
@@ -207,15 +289,18 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
           setContactLists([]);
         }
       } catch (error) {
+        // Falha NÃO é "nenhuma conta": dizer "configure uma conta" para quem
+        // tem três e perdeu a conexão é o vazio enganoso (ver CLAUDE.md).
         logger.error('Failed to load accounts', error);
         setAccounts([]);
+        setFalhouContas(true);
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, []);
+  }, [tentativa]);
 
   useEffect(() => {
     return () => {
@@ -227,29 +312,31 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
   // Load templates when account is selected
   useEffect(() => {
+    let vivo = true;
     const loadTemplates = async () => {
       if (!formData.accountId) return;
 
+      setLoadingTemplates(true);
       try {
         const templatesRes = await whatsappService.getTemplates(formData.accountId);
-        const templatesList = templatesRes.data.results || [];
-        setTemplates(templatesList.filter((t: any) =>
-          t.status === 'approved' && String(t.category || '').toLowerCase() !== 'authentication'
-        ));
+        if (vivo) setTemplates(templatesUteis(templatesRes.data.results || []));
       } catch (error) {
         logger.error('Failed to load templates', error);
-        setTemplates([]);
+        if (vivo) setTemplates([]);
+      } finally {
+        if (vivo) setLoadingTemplates(false);
       }
     };
 
     loadTemplates();
+    return () => { vivo = false; };
   }, [formData.accountId]);
 
   // =============================================================================
   // COMPUTED VALUES
   // =============================================================================
 
-  const selectedAccount = useMemo(() => 
+  const selectedAccount = useMemo(() =>
     accounts.find(a => a.id === formData.accountId),
     [accounts, formData.accountId]
   );
@@ -275,12 +362,29 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
     [templateVariables]
   );
   const needsHeaderImage = useMemo(
-    () => selectedTemplate?.components?.some((component: any) =>
+    () => (selectedTemplate?.components as Array<{ type?: string; format?: string }> | undefined)?.some((component) =>
       String(component?.type || '').toUpperCase() === 'HEADER' &&
       String(component?.format || '').toUpperCase() === 'IMAGE'
     ) ?? false,
     [selectedTemplate]
   );
+
+  /**
+   * A prévia usa os MESMOS valores do envio: o `nome_cliente` do primeiro
+   * destinatário e as variáveis da oferta. Um exemplo inventado seria a
+   * prévia mentir justamente quando o dono confia nela.
+   */
+  const nomeDoExemplo = exemploDeCliente(formData.contacts);
+  const previa = useMemo(
+    () => previaDaMensagem({
+      tipo: formData.messageType,
+      texto: formData.textContent,
+      template: formData.messageType === 'template' ? selectedTemplate : undefined,
+      valores: { nome_cliente: nomeDoExemplo, ...variaveisDaOferta(selectedOfferProducts) },
+    }),
+    [formData.messageType, formData.textContent, selectedTemplate, nomeDoExemplo, selectedOfferProducts]
+  );
+  const imagemDaPrevia = mediaPreviewUrl || formData.mediaUrl || undefined;
 
   // =============================================================================
   // HANDLERS
@@ -305,6 +409,21 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       name: prev.name || `Campanha - ${template.name}`,
     }));
     setSelectedOfferProductIds([]);
+  };
+
+  const handleSyncTemplates = async () => {
+    setSyncingTemplates(true);
+    try {
+      await whatsappService.syncTemplates(formData.accountId);
+      const res = await whatsappService.getTemplates(formData.accountId);
+      setTemplates(templatesUteis(res.data.results || []));
+      toast.success('Templates sincronizados');
+    } catch (error) {
+      logger.error('Failed to sync templates', error);
+      toast.error('Não deu para sincronizar os templates. Tente de novo.');
+    } finally {
+      setSyncingTemplates(false);
+    }
   };
 
   useEffect(() => {
@@ -360,6 +479,25 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       }
       return [...prev, productId];
     });
+  };
+
+  const handleEscolherImagem = (file: File) => {
+    if (mediaPreviewUrl.startsWith('blob:')) URL.revokeObjectURL(mediaPreviewUrl);
+    setSelectedMediaFile(file);
+    setMediaPreviewUrl(URL.createObjectURL(file));
+    setFormData(prev => ({
+      ...prev,
+      mediaUrl: '',
+      mediaType: 'image',
+      mediaFilename: file.name,
+    }));
+  };
+
+  const handleRemoverImagem = () => {
+    if (mediaPreviewUrl.startsWith('blob:')) URL.revokeObjectURL(mediaPreviewUrl);
+    setSelectedMediaFile(null);
+    setMediaPreviewUrl('');
+    setFormData(prev => ({ ...prev, mediaUrl: '', mediaType: '', mediaFilename: '' }));
   };
 
   const handleLoadSystemContacts = async () => {
@@ -457,7 +595,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
     // Clean phone number
     const cleanPhone = newContact.phone.replace(/\D/g, '');
-    
+
     // Check for duplicates
     if (formData.contacts.some(c => c.phone.replace(/\D/g, '') === cleanPhone)) {
       toast.error('Este número já foi adicionado');
@@ -514,7 +652,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
   const handleLoadContactList = async (listId: string) => {
     try {
       const list = await campaignsService.getContactList(listId);
-      
+
       // Merge contacts
       const existingPhones = new Set(formData.contacts.map(c => c.phone));
       const uniqueNew = list.contacts.filter((c: { phone: string }) => !existingPhones.has(c.phone));
@@ -603,7 +741,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
         description: formData.description,
         campaign_type: 'broadcast' as const,
         template_id: formData.messageType === 'template' ? formData.templateId : undefined,
-        message_content: formData.messageType === 'text' 
+        message_content: formData.messageType === 'text'
           ? {
               text: formData.textContent,
               caption: formData.textContent,
@@ -631,14 +769,16 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       // Create campaign
       const campaign = await campaignsService.createCampaign(payload);
 
+      // O toast repete o nome da ação do botão: "Agendar envio" → "Envio
+      // agendado"; "Enviar para 312 clientes" → "Envio para 312 clientes
+      // iniciado". Nome diferente no botão e no aviso faz o dono duvidar se
+      // foi aquilo mesmo que aconteceu.
       if (schedule) {
-        // Schedule the campaign
         await campaignsService.scheduleCampaign(campaign.id, formData.scheduledAt);
-        toast.success(`🎉 Campanha agendada para ${new Date(formData.scheduledAt).toLocaleString('pt-BR')}`);
+        toast.success(`Envio agendado para ${dataEHora(formData.scheduledAt)}`);
       } else {
-        // Start immediately
         await campaignsService.startCampaign(campaign.id);
-        toast.success(`🎉 Campanha iniciada! Enviando para ${recipientCount} contatos...`);
+        toast.success(`Envio para ${clientes(recipientCount)} iniciado`);
       }
 
       navigate('/marketing/whatsapp');
@@ -657,8 +797,8 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
   // As regras de "posso avançar?" vivem em `campanha/passosDaCampanha`, com
   // spec. Cada uma existe porque deixar passar faz a Meta recusar o disparo.
-  const canProceed = () =>
-    podeAvancar(currentStep, {
+  const canProceed = (passo: PassoDaCampanha = currentStep) =>
+    podeAvancar(passo, {
       temConta: Boolean(formData.accountId),
       tipo: formData.messageType,
       temTemplate: Boolean(formData.templateId),
@@ -670,598 +810,457 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       quantidadeDeContatos: formData.contacts.length,
     });
 
-  const goToNextStep = () => setCurrentStep(proximoPasso(currentStep));
-
-  const goToPrevStep = () => setCurrentStep(passoAnterior(currentStep));
+  const inserirNome = () =>
+    setFormData(prev => ({
+      ...prev,
+      textContent: `${prev.textContent}${prev.textContent && !/\s$/.test(prev.textContent) ? ' ' : ''}{{nome}}`,
+    }));
 
   // =============================================================================
   // RENDER
   // =============================================================================
 
-  if (loading) {
-    return <Loading />;
-  }
+  const voltarParaCampanhas = (
+    <Button
+      variant="ghost"
+      onClick={() => navigate('/marketing/whatsapp')}
+      aria-label="Voltar para campanhas WhatsApp"
+      leftIcon={<ArrowLeftIcon className="h-4 w-4" aria-hidden />}
+    >
+      Voltar para campanhas
+    </Button>
+  );
 
-  if (accounts.length === 0) {
-    return (
-      <div className="p-6 text-center">
-        <DevicePhoneMobileIcon className="w-16 h-16 text-fg-muted-token mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-fg-token mb-2">Nenhuma conta WhatsApp</h2>
-        <p className="text-fg-muted-token mb-4">Configure uma conta WhatsApp para criar campanhas.</p>
-        <Button onClick={() => navigate('/accounts/new')}>Adicionar Conta</Button>
+  const casca = (conteudo: React.ReactNode) => (
+    <PageShell
+      trilha={[
+        { rotulo: 'Campanhas', href: '/marketing' },
+        { rotulo: 'WhatsApp', href: '/marketing/whatsapp' },
+        { rotulo: 'Nova campanha' },
+      ]}
+      titulo="Nova campanha de WhatsApp"
+      descricao="Escolha quem recebe, escreva a mensagem e veja como ela chega antes de enviar."
+      acoes={voltarParaCampanhas}
+    >
+      {conteudo}
+    </PageShell>
+  );
+
+  if (loading) {
+    return casca(
+      <div role="status" className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
+        <span className="sr-only">Carregando suas contas de WhatsApp…</span>
+        <div aria-hidden className="superficie h-96 motion-safe:animate-pulse" />
+        <div aria-hidden className="superficie h-80 motion-safe:animate-pulse" />
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-surface-2 dark:bg-black">
-      {/* Header */}
-      <div className="bg-surface border-b sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate('/marketing/whatsapp')}
-                className="p-2 hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)] rounded-lg transition-colors"
-                aria-label="Voltar para campanhas WhatsApp"
-              >
-                <ArrowLeftIcon className="w-5 h-5" />
-              </button>
-              <div>
-                <h1 className="font-display text-xl font-bold text-fg-token">Nova Campanha WhatsApp</h1>
-                {selectedAccount && (
-                  <p className="text-sm text-fg-muted-token">
-                    {selectedAccount.name} • {selectedAccount.display_phone_number || selectedAccount.phone_number}
-                  </p>
-                )}
-              </div>
-            </div>
-            
-            {/* Recipient count badge */}
-            {currentStep !== 'account' && recipientCount > 0 && (
-              <div className="flex items-center gap-2 bg-success-soft text-success-token px-3 py-1.5 rounded-full">
-                <UsersIcon className="w-4 h-4" />
-                <span className="font-medium">{recipientCount} destinatários</span>
-              </div>
-            )}
+  if (falhouContas) {
+    return casca(
+      <EmptyState
+        icone={<DevicePhoneMobileIcon className="h-10 w-10 text-fg-muted-token" aria-hidden />}
+        titulo="Não deu para carregar suas contas"
+        descricao="A conexão falhou. Suas contas continuam lá."
+        acao={
+          <Button
+            variant="outline"
+            onClick={() => setTentativa((t) => t + 1)}
+            leftIcon={<ArrowPathIcon className="h-4 w-4" aria-hidden />}
+          >
+            Tentar de novo
+          </Button>
+        }
+      />
+    );
+  }
+
+  if (accounts.length === 0) {
+    return casca(
+      <EmptyState
+        icone={<DevicePhoneMobileIcon className="h-10 w-10 text-fg-muted-token" aria-hidden />}
+        titulo="Nenhuma conta de WhatsApp"
+        descricao="Conecte um número para criar campanhas."
+        acao={<Button onClick={() => navigate('/accounts/new')}>Conectar número</Button>}
+      />
+    );
+  }
+
+  const remetente = selectedAccount?.name || storeName || 'Sua loja';
+  const numeroDoRemetente = selectedAccount
+    ? selectedAccount.display_phone_number || selectedAccount.phone_number
+    : undefined;
+  const tempo = tempoDeEnvio(recipientCount, formData.messagesPerMinute);
+
+  const passoDaMensagem = (
+    <div className="flex flex-col gap-6">
+      <header>
+        <h2 className="text-lg font-semibold text-fg-token">Escreva a mensagem</h2>
+        <p className="mt-1 text-body text-fg-muted-token">
+          A prévia ao lado mostra como ela chega para o cliente.
+        </p>
+      </header>
+
+      <ChoiceCards
+        rotulo="Tipo de mensagem"
+        opcoes={TIPOS_DE_MENSAGEM}
+        valor={formData.messageType}
+        onChange={(tipo) => setFormData(prev => ({ ...prev, messageType: tipo }))}
+      />
+
+      {/* Template */}
+      {formData.messageType === 'template' && (
+        loadingTemplates ? (
+          <div className="flex items-center gap-2 py-6 text-body text-fg-muted-token">
+            <Loading size="sm" rotulo="Carregando templates…" />
+            <span aria-hidden>Carregando templates…</span>
           </div>
-
-          {/* Steps */}
-          <div className="flex items-center gap-2 mt-4 overflow-x-auto pb-2">
-            {STEPS.map((step, index) => {
-              const Icon = step.icon;
-              const isActive = step.id === currentStep;
-              const isPast = STEPS.findIndex(s => s.id === currentStep) > index;
-
-              return (
-                <Fragment key={step.id}>
-                  <button
-                    onClick={() => isPast && setCurrentStep(step.id)}
-                    disabled={!isPast && !isActive}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
-                      isActive
-                        ? 'bg-success-soft text-success-token'
-                        : isPast
-                        ? 'bg-success-soft text-success-token cursor-pointer hover:bg-success-soft'
-                        : 'bg-surface-2 text-fg-muted-token'
-                    }`}
-                  >
-                    {isPast ? (
-                      <CheckCircleIcon className="w-5 h-5" />
-                    ) : (
-                      <Icon className="w-5 h-5" />
-                    )}
-                    <span className="font-medium">{step.label}</span>
-                  </button>
-                  {index < STEPS.length - 1 && (
-                    <div className={`w-8 h-0.5 ${isPast ? 'bg-green-300' : 'bg-surface-2'}`} />
-                  )}
-                </Fragment>
-              );
-            })}
+        ) : templates.length === 0 ? (
+          <div className="superficie flex flex-col items-center gap-2 p-6 text-center">
+            <DocumentTextIcon className="h-8 w-8 text-fg-muted-token" aria-hidden />
+            <p className="text-body font-medium text-fg-token">Nenhum template aprovado nesta conta</p>
+            <p className="text-caption text-fg-muted-token">
+              Aprovou um template agora na Meta? Sincronize para ele aparecer aqui.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-1"
+              isLoading={syncingTemplates}
+              onClick={handleSyncTemplates}
+            >
+              Sincronizar templates
+            </Button>
           </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-5xl mx-auto px-4 py-6">
-        {/* Passo: Account Selection */}
-        {currentStep === 'account' && (
-          <PassoDaConta
-            accounts={accounts}
-            formData={formData}
-            handleAccountSelect={handleAccountSelect}
+        ) : (
+          <ChoiceCards
+            rotulo="Template"
+            descricao="Só aparecem os templates aprovados pela Meta."
+            opcoes={templates.map((t) => ({
+              valor: t.id,
+              titulo: t.name,
+              descricao: `${categoriaLegivel(t.category)} · ${t.language}`,
+            }))}
+            valor={formData.templateId}
+            onChange={(id) => {
+              const escolhido = templates.find((t) => t.id === id);
+              if (escolhido) handleTemplateSelect(escolhido);
+            }}
           />
-        )}
+        )
+      )}
 
-        {/* Passo: Message Configuration */}
-        {passosAbertos.has('message') && (
-          <div className="space-y-6" hidden={currentStep !== 'message'}>
+      {formData.messageType === 'template' && selectedTemplate && needsOfferProducts && (
+        <section aria-labelledby="produtos-da-oferta" className="flex flex-col gap-3">
+          <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-fg-token mb-2">
-                Configure a Mensagem
-              </h2>
-              <p className="text-fg-muted-token">
-                Escolha o tipo de mensagem e configure o conteúdo
+              <h3 id="produtos-da-oferta" className="text-body font-semibold text-fg-token">
+                Produtos da oferta
+              </h3>
+              <p className="mt-0.5 text-caption text-fg-muted-token">
+                Escolha 2 saladas. O preço é o que a loja cobra hoje.
               </p>
             </div>
+            <span className="shrink-0 text-caption tabular-nums text-fg-muted-token" aria-live="polite">
+              {selectedOfferProducts.length} de 2
+            </span>
+          </div>
 
-            {/* Campaign Name */}
-            <Card className="p-4">
-              <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
-                Nome da Campanha
-              </label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Ex: Promoção de Janeiro"
-              />
-            </Card>
-
-            {/* Message Type Selection */}
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={() => setFormData(prev => ({ ...prev, messageType: 'template' }))}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${
-                  formData.messageType === 'template'
-                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                    : 'border-border-token hover:border-success-token/40'
-                }`}
-              >
-                <DocumentTextIcon className="w-8 h-8 text-green-600 mb-2" />
-                <h3 className="font-semibold text-fg-token">Template</h3>
-                <p className="text-sm text-fg-muted-token">
-                  Use um template aprovado pelo WhatsApp
-                </p>
-              </button>
-
-              <button
-                onClick={() => setFormData(prev => ({ ...prev, messageType: 'text' }))}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${
-                  formData.messageType === 'text'
-                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                    : 'border-border-token hover:border-success-token/40'
-                }`}
-              >
-                <ChatBubbleLeftRightIcon className="w-8 h-8 text-blue-600 mb-2" />
-                <h3 className="font-semibold text-fg-token">Texto Livre</h3>
-                <p className="text-sm text-fg-muted-token">
-                  Envie uma mensagem de texto personalizada
-                </p>
-              </button>
+          {!storeId ? (
+            <p className="rounded-lg bg-warning-soft p-3 text-body text-warning-token">
+              Escolha uma loja no topo do painel para carregar o cardápio.
+            </p>
+          ) : loadingProducts ? (
+            <div className="flex items-center gap-2 py-6 text-body text-fg-muted-token">
+              <Loading size="sm" rotulo="Carregando cardápio…" />
+              <span aria-hidden>Carregando cardápio…</span>
             </div>
+          ) : products.length === 0 ? (
+            <p className="py-6 text-center text-body text-fg-muted-token">
+              Nenhuma salada ativa em {storeName || 'esta loja'}.
+            </p>
+          ) : (
+            <div className="grid max-h-96 grid-cols-2 gap-2 overflow-y-auto pr-1 max-md:grid-cols-1">
+              {products.map(product => {
+                const selectedIndex = selectedOfferProductIds.indexOf(product.id);
+                const isSelected = selectedIndex >= 0;
+                const compareAt = Number(product.compare_at_price || 0);
+                const price = precoVigenteDoProduto(product);
+                const hasDiscount = compareAt > price;
 
-            {/* Template Selection */}
-            {formData.messageType === 'template' && (
-              <Card className="p-4">
-                <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
-                  Selecione o Template
-                </label>
-                {templates.length === 0 ? (
-                  <div className="text-center py-8 text-fg-muted-token">
-                    <DocumentTextIcon className="w-12 h-12 mx-auto mb-2 text-fg-muted-token" />
-                    <p>Nenhum template aprovado encontrado</p>
-                    <Button 
-                      variant="secondary" 
-                      size="sm" 
-                      className="mt-2"
-                      onClick={() => whatsappService.syncTemplates(formData.accountId).then(() => {
-                        toast.success('Templates sincronizados');
-                        // Reload templates
-                        whatsappService.getTemplates(formData.accountId)
-                          .then(res => setTemplates(res.data.results.filter((t: any) =>
-                            t.status === 'approved' && String(t.category || '').toLowerCase() !== 'authentication'
-                          )));
-                      })}
-                    >
-                      Sincronizar Templates
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 max-md:grid-cols-1 gap-3">
-                    {templates.map((template) => (
-                      <button
-                        key={template.id}
-                        onClick={() => handleTemplateSelect(template)}
-                        className={`p-3 rounded-lg border text-left transition-all ${
-                          formData.templateId === template.id
-                            ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                            : 'border-border-token hover:border-success-token/40'
-                        }`}
-                      >
-                        <h4 className="font-medium text-fg-token">{template.name}</h4>
-                        <p className="text-xs text-fg-muted-token mt-1">
-                          {template.category} • {template.language}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </Card>
-            )}
-
-            {formData.messageType === 'template' && selectedTemplate && (
-              <div className="space-y-4">
-                {needsOfferProducts && (
-                  <Card className="p-4">
-                    <div className="flex items-start justify-between gap-3 mb-4">
-                      <div>
-                        <h3 className="font-medium text-fg-token">
-                          Produtos da oferta
-                        </h3>
-                        <p className="text-sm text-fg-muted-token mt-1">
-                          Selecione 2 saladas do cardápio. O preço promocional vem do campo preço de venda; o comparativo vem do preço comparativo do produto.
-                        </p>
-                      </div>
-                      <span className="text-sm text-fg-muted-token whitespace-nowrap">
-                        {selectedOfferProducts.length}/2 selecionados
-                      </span>
-                    </div>
-
-                    {!storeId ? (
-                      <div className="rounded-lg border border-warning-token/30 bg-warning-soft p-3 text-sm text-warning-token">
-                        Selecione uma loja no topo do painel para carregar o cardápio.
-                      </div>
-                    ) : loadingProducts ? (
-                      <div className="flex items-center justify-center py-8">
-                        <Loading size="md" />
-                      </div>
-                    ) : products.length === 0 ? (
-                      <div className="text-center py-8 text-fg-muted-token">
-                        Nenhuma salada ativa encontrada para {storeName || 'esta loja'}.
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 max-md:grid-cols-1 gap-3 max-h-96 overflow-y-auto pr-1">
-                        {products.map(product => {
-                          const selectedIndex = selectedOfferProductIds.indexOf(product.id);
-                          const isSelected = selectedIndex >= 0;
-                          const compareAt = Number(product.compare_at_price || 0);
-                          const price = precoVigenteDoProduto(product);
-                          const hasDiscount = compareAt > price;
-
-                          return (
-                            <button
-                              key={product.id}
-                              type="button"
-                              onClick={() => handleToggleOfferProduct(product.id)}
-                              className={`flex gap-3 p-3 rounded-lg border text-left transition-all ${
-                                isSelected
-                                  ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                                  : 'border-border-token hover:border-success-token/40'
-                              }`}
-                            >
-                              <div className="w-16 h-16 rounded-lg bg-surface-2 overflow-hidden shrink-0">
-                                {product.main_image_url ? (
-                                  <img
-                                    src={product.main_image_url}
-                                    alt={product.name}
-                                    className="w-full h-full object-cover"
-                                    loading="lazy"
-                                    decoding="async"
-                                  />
-                                ) : (
-                                  <PhotoIcon className="w-7 h-7 text-fg-muted-token m-4" />
-                                )}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-start justify-between gap-2">
-                                  <p className="font-medium text-fg-token truncate">
-                                    {product.name}
-                                  </p>
-                                  {isSelected && (
-                                    <span className="shrink-0 rounded-full bg-green-600 text-white text-xs font-semibold px-2 py-0.5">
-                                      {selectedIndex + 1}
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-xs text-fg-muted-token truncate">
-                                  {product.category_name || 'Sem categoria'}
-                                </p>
-                                <div className="mt-2 flex items-baseline gap-2">
-                                  {hasDiscount && (
-                                    <span className="text-xs text-fg-muted-token line-through">
-                                      {formatCurrency(compareAt)}
-                                    </span>
-                                  )}
-                                  <span className="font-semibold text-green-700">
-                                    {formatCurrency(price)}
-                                  </span>
-                                  {hasDiscount && (
-                                    <span className="text-xs text-green-700">
-                                      -{product.discount_percentage}%
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
+                return (
+                  <button
+                    key={product.id}
+                    type="button"
+                    aria-pressed={isSelected}
+                    onClick={() => handleToggleOfferProduct(product.id)}
+                    className={cn(
+                      'flex gap-3 rounded-lg border p-2.5 text-left transition-colors',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                      isSelected
+                        ? 'border-brand bg-brand-soft'
+                        : 'border-border-token bg-surface hover:bg-surface-2',
                     )}
-
-                    {selectedOfferProducts.length > 0 && (
-                      <div className="mt-4 rounded-lg bg-surface-2 p-3">
-                        <p className="text-sm font-medium text-fg-token mb-2">
-                          Variáveis que serão enviadas
-                        </p>
-                        <div className="grid grid-cols-2 max-md:grid-cols-1 gap-2 text-sm text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
-                          <span>{'{{produto_1}}'}: {selectedOfferProducts[0]?.name || '-'}</span>
-                          <span>{'{{preco_1}}'}: {selectedOfferProducts[0] ? precoParaTemplate(precoVigenteDoProduto(selectedOfferProducts[0])) : '-'}</span>
-                          <span>{'{{produto_2}}'}: {selectedOfferProducts[1]?.name || '-'}</span>
-                          <span>{'{{preco_2}}'}: {selectedOfferProducts[1] ? precoParaTemplate(precoVigenteDoProduto(selectedOfferProducts[1])) : '-'}</span>
-                        </div>
-                      </div>
-                    )}
-                  </Card>
-                )}
-
-                {needsHeaderImage && (
-                  <Card className="p-4">
-                    <div className="flex items-center justify-between gap-3 mb-3">
-                      <div>
-                        <h3 className="font-medium text-fg-token">
-                          Imagem do template
-                        </h3>
-                        <p className="text-sm text-fg-muted-token mt-1">
-                          Esta imagem será usada no cabeçalho do template aprovado.
-                        </p>
-                      </div>
-                      {(selectedMediaFile || formData.mediaUrl) && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (mediaPreviewUrl.startsWith('blob:')) URL.revokeObjectURL(mediaPreviewUrl);
-                            setSelectedMediaFile(null);
-                            setMediaPreviewUrl('');
-                            setFormData(prev => ({ ...prev, mediaUrl: '', mediaType: '', mediaFilename: '' }));
-                          }}
-                          className="p-2 rounded-lg text-fg-muted-token hover:text-danger-token hover:bg-danger-soft"
-                          title="Remover imagem"
-                        >
-                          <XMarkIcon className="w-5 h-5" />
-                        </button>
+                  >
+                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md bg-surface-2">
+                      {product.main_image_url ? (
+                        <img
+                          src={product.main_image_url}
+                          alt=""
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <PhotoIcon className="m-4 h-6 w-6 text-fg-muted-token" aria-hidden />
                       )}
                     </div>
-
-                    {mediaPreviewUrl ? (
-                      <img
-                        src={mediaPreviewUrl}
-                        alt="Preview da imagem do template"
-                        className="w-48 h-48 rounded-lg object-cover border border-border-token"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    ) : (
-                      <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border-token rounded-lg p-8 cursor-pointer hover:border-green-400 hover:bg-success-soft/50 dark:hover:bg-green-900/10 transition-colors">
-                        <PhotoIcon className="w-10 h-10 text-fg-muted-token" />
-                        <span className="text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
-                          Selecionar imagem
-                        </span>
-                        <span className="text-xs text-fg-muted-token">
-                          PNG, JPG ou WEBP
-                        </span>
-                        <input
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp"
-                          className="hidden"
-                          onChange={(event) => {
-                            const file = event.target.files?.[0];
-                            if (!file) return;
-                            if (!file.type.startsWith('image/')) {
-                              toast.error('Selecione uma imagem válida');
-                              return;
-                            }
-                            if (mediaPreviewUrl.startsWith('blob:')) URL.revokeObjectURL(mediaPreviewUrl);
-                            setSelectedMediaFile(file);
-                            setMediaPreviewUrl(URL.createObjectURL(file));
-                            setFormData(prev => ({
-                              ...prev,
-                              mediaUrl: '',
-                              mediaType: 'image',
-                              mediaFilename: file.name,
-                            }));
-                          }}
-                        />
-                      </label>
-                    )}
-                  </Card>
-                )}
-              </div>
-            )}
-
-            {/* Text Content */}
-            {formData.messageType === 'text' && (
-              <div className="space-y-4">
-                <Card className="p-4">
-                  <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
-                    Mensagem
-                  </label>
-                  <textarea
-                    value={formData.textContent}
-                    onChange={(e) => setFormData(prev => ({ ...prev, textContent: e.target.value }))}
-                    placeholder="Digite sua mensagem aqui..."
-                    rows={6}
-                    className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent dark:bg-[var(--dark-bg-hover,#161616)] dark:text-white"
-                  />
-                  <p className="text-xs text-fg-muted-token mt-2">
-                    Use {"{{nome}}"} para personalizar com o nome do contato
-                  </p>
-                </Card>
-
-                <Card className="p-4">
-                  <div className="flex items-center justify-between gap-3 mb-3">
-                    <div>
-                      <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
-                        Card promocional
-                      </label>
-                      <p className="text-xs text-fg-muted-token mt-1">
-                        Anexe uma imagem para enviar junto com a legenda.
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="truncate text-body font-medium text-fg-token">{product.name}</p>
+                        {isSelected && (
+                          <span className="shrink-0 rounded-full bg-brand px-2 py-0.5 text-badge font-semibold text-on-brand">
+                            {selectedIndex + 1}
+                          </span>
+                        )}
+                      </div>
+                      <p className="truncate text-caption text-fg-muted-token">
+                        {product.category_name || 'Sem categoria'}
                       </p>
-                    </div>
-                    {(selectedMediaFile || formData.mediaUrl) && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (mediaPreviewUrl.startsWith('blob:')) URL.revokeObjectURL(mediaPreviewUrl);
-                          setSelectedMediaFile(null);
-                          setMediaPreviewUrl('');
-                          setFormData(prev => ({ ...prev, mediaUrl: '', mediaType: '', mediaFilename: '' }));
-                        }}
-                        className="p-2 rounded-lg text-fg-muted-token hover:text-danger-token hover:bg-danger-soft"
-                        title="Remover imagem"
-                      >
-                        <XMarkIcon className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
-
-                  {mediaPreviewUrl ? (
-                    <div className="flex items-start gap-4">
-                      <img
-                        src={mediaPreviewUrl}
-                        alt="Preview do card promocional"
-                        className="w-40 h-40 rounded-lg object-cover border border-border-token"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                      <div className="min-w-0">
-                        <p className="font-medium text-fg-token truncate">
-                          {formData.mediaFilename || selectedMediaFile?.name || 'Imagem da campanha'}
-                        </p>
-                        <p className="text-sm text-fg-muted-token mt-1">
-                          Será enviada como imagem no WhatsApp.
-                        </p>
+                      <div className="mt-1 flex items-baseline gap-2">
+                        {hasDiscount && (
+                          <span className="text-caption text-fg-muted-token line-through">
+                            {formatCurrency(compareAt)}
+                          </span>
+                        )}
+                        <span className="text-body font-semibold tabular-nums text-fg-token">
+                          {formatCurrency(price)}
+                        </span>
+                        {hasDiscount && (
+                          <span className="text-caption text-fg-muted-token">
+                            -{product.discount_percentage}%
+                          </span>
+                        )}
                       </div>
                     </div>
-                  ) : (
-                    <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border-token rounded-lg p-8 cursor-pointer hover:border-green-400 hover:bg-success-soft/50 dark:hover:bg-green-900/10 transition-colors">
-                      <PhotoIcon className="w-10 h-10 text-fg-muted-token" />
-                      <span className="text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
-                        Selecionar imagem
-                      </span>
-                      <span className="text-xs text-fg-muted-token">
-                        PNG, JPG ou WEBP
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        className="hidden"
-                        onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          if (!file) return;
-                          if (!file.type.startsWith('image/')) {
-                            toast.error('Selecione uma imagem válida');
-                            return;
-                          }
-                          if (mediaPreviewUrl.startsWith('blob:')) URL.revokeObjectURL(mediaPreviewUrl);
-                          setSelectedMediaFile(file);
-                          setMediaPreviewUrl(URL.createObjectURL(file));
-                          setFormData(prev => ({
-                            ...prev,
-                            mediaUrl: '',
-                            mediaType: 'image',
-                            mediaFilename: file.name,
-                          }));
-                        }}
-                      />
-                    </label>
-                  )}
-                </Card>
-              </div>
-            )}
-          </div>
-        )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
 
-        {/* Passo: Recipients */}
-        {passosAbertos.has('recipients') && (
-          <div hidden={currentStep !== 'recipients'}>
-            <PassoDosDestinatarios
-              formData={formData}
-              setFormData={setFormData as never}
-              contactLists={contactLists}
-              newContact={newContact}
-              setNewContact={setNewContact}
-              storeSlug={storeSlug}
-              onAdicionarContato={handleAddContact}
-              onRemoverContato={handleRemoveContact}
-              onCarregarLista={handleLoadContactList}
-              onCarregarContatosDoSistema={handleLoadSystemContacts}
-              onUsarAudiencia={handleUsarAudiencia}
-              onAbrirImportacao={setShowImportModal}
-            />
-          </div>
-        )}
+      {formData.messageType === 'template' && selectedTemplate && needsHeaderImage && (
+        <CampoDeImagem
+          titulo="Imagem do template"
+          descricao="Vai no cabeçalho do template aprovado."
+          previaUrl={mediaPreviewUrl}
+          nomeDoArquivo={formData.mediaFilename || selectedMediaFile?.name}
+          onEscolher={handleEscolherImagem}
+          onRemover={handleRemoverImagem}
+          onInvalido={() => toast.error('Selecione uma imagem válida')}
+        />
+      )}
 
-        {/* Passo: Review */}
-        {currentStep === 'review' && (
-          <PassoDaRevisao
-            formData={formData}
-            setFormData={setFormData as never}
-            selectedAccount={selectedAccount}
-            selectedTemplate={selectedTemplate}
-            selectedOfferProducts={selectedOfferProducts}
-            mediaPreviewUrl={mediaPreviewUrl}
-            recipientCount={recipientCount}
-          />
-        )}
-
-        {/* Navigation Buttons */}
-        <div className="flex items-center justify-between mt-8 pt-6 border-t">
-          <Button
-            variant="secondary"
-            onClick={goToPrevStep}
-            disabled={currentStep === 'account'}
-          >
-            <ArrowLeftIcon className="w-5 h-5 mr-2" />
-            Voltar
-          </Button>
-
-          <div className="flex gap-3">
-            {currentStep === 'review' ? (
-              <>
-                <Button
-                  variant="secondary"
-                  onClick={() => setShowScheduleModal(true)}
-                  disabled={sending}
-                >
-                  <ClockIcon className="w-5 h-5 mr-2" />
-                  Agendar
-                </Button>
-                <Button
-                  onClick={() => handleSendCampaign(false)}
-                  disabled={!canProceed()}
-                  isLoading={sending}
-                  leftIcon={<PaperAirplaneIcon className="w-5 h-5" />}
-                >
-                  {sending ? 'Enviando…' : 'Enviar agora'}
-                </Button>
-              </>
-            ) : (
-              <Button onClick={goToNextStep} disabled={!canProceed()}>
-                Continuar
+      {/* Texto livre */}
+      {formData.messageType === 'text' && (
+        <>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-end justify-between gap-3">
+              <label htmlFor="texto-da-campanha" className="text-sm font-medium text-fg-token">
+                Mensagem
+              </label>
+              <Button variant="ghost" size="xs" onClick={inserirNome}>
+                Inserir nome do cliente
               </Button>
-            )}
+            </div>
+            <textarea
+              id="texto-da-campanha"
+              aria-describedby="texto-da-campanha-ajuda"
+              value={formData.textContent}
+              onChange={(e) => setFormData(prev => ({ ...prev, textContent: e.target.value }))}
+              placeholder="Digite sua mensagem aqui..."
+              rows={6}
+              className="controle h-auto w-full resize-y py-2"
+            />
+            <p id="texto-da-campanha-ajuda" className="text-caption text-fg-muted-token">
+              {'{{nome}}'} vira o nome de cada cliente. *Negrito* e _itálico_ funcionam como no WhatsApp.
+            </p>
           </div>
-        </div>
+
+          <CampoDeImagem
+            titulo="Imagem (opcional)"
+            descricao="Vai junto, com o texto como legenda."
+            previaUrl={mediaPreviewUrl}
+            nomeDoArquivo={formData.mediaFilename || selectedMediaFile?.name}
+            onEscolher={handleEscolherImagem}
+            onRemover={handleRemoverImagem}
+            onInvalido={() => toast.error('Selecione uma imagem válida')}
+          />
+        </>
+      )}
+    </div>
+  );
+
+  const legendaDaPrevia = recipientCount > 0
+    ? <>Exemplo com os dados de <span className="font-medium text-fg-token">{nomeDoExemplo}</span>, o primeiro da lista.</>
+    : <>Exemplo com o nome {NOME_DE_EXEMPLO}. Adicione destinatários para ver com um cliente real.</>;
+
+  const textoVazioDaPrevia = formData.messageType === 'template'
+    ? 'Escolha um template. A mensagem aparece aqui.'
+    : 'A mensagem aparece aqui enquanto você escreve.';
+
+  return casca(
+    <>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
+        {/* Esquerda: o assistente.
+            `overflow-clip` (e não `hidden`) arredonda o rodapé do stepper sem
+            criar contêiner de rolagem — com `hidden`, o rodapé grudento
+            deixaria de grudar na base da janela. */}
+        <section aria-label="Passos da campanha" className="superficie min-w-0 overflow-clip px-6 pb-4 pt-5">
+          <FormStepper
+            passos={PASSOS_DO_ASSISTENTE}
+            passoAtivo={currentStep}
+            onMudarPasso={(id) => setCurrentStep(id as PassoDaCampanha)}
+            podeAvancar={(id) => canProceed(id as PassoDaCampanha)}
+            travarAvancar
+            permitirPularAdiante={false}
+            rotuloAvancar="Continuar"
+            rotuloVoltar="Voltar"
+            rotuloConcluir={rotuloDoEnvio(recipientCount)}
+            varianteConcluir="success"
+            iconeConcluir={<PaperAirplaneIcon className="h-4 w-4" aria-hidden />}
+            concluindo={sending}
+            rotuloConcluindo="Enviando…"
+            onConcluir={() => handleSendCampaign(false)}
+            acoesExtras={
+              <Button
+                variant="outline"
+                onClick={() => setShowScheduleModal(true)}
+                disabled={sending}
+                leftIcon={<ClockIcon className="h-4 w-4" aria-hidden />}
+              >
+                Agendar envio
+              </Button>
+            }
+          >
+            {() => (
+              <>
+                {currentStep === 'account' && (
+                  <PassoDaConta
+                    accounts={accounts}
+                    formData={formData}
+                    handleAccountSelect={handleAccountSelect}
+                  />
+                )}
+
+                {passosAbertos.has('recipients') && (
+                  <div hidden={currentStep !== 'recipients'}>
+                    <PassoDosDestinatarios
+                      formData={formData}
+                      setFormData={setFormData as never}
+                      contactLists={contactLists}
+                      newContact={newContact}
+                      setNewContact={setNewContact}
+                      storeSlug={storeSlug}
+                      onAdicionarContato={handleAddContact}
+                      onRemoverContato={handleRemoveContact}
+                      onCarregarLista={handleLoadContactList}
+                      onCarregarContatosDoSistema={handleLoadSystemContacts}
+                      onUsarAudiencia={handleUsarAudiencia}
+                      onAbrirImportacao={setShowImportModal}
+                    />
+                  </div>
+                )}
+
+                {passosAbertos.has('message') && (
+                  <div hidden={currentStep !== 'message'}>{passoDaMensagem}</div>
+                )}
+
+                {currentStep === 'review' && (
+                  <PassoDaRevisao
+                    formData={formData}
+                    setFormData={setFormData as never}
+                    recipientCount={recipientCount}
+                  />
+                )}
+              </>
+            )}
+          </FormStepper>
+        </section>
+
+        {/* Direita: o que o cliente recebe e os números do disparo. Fixa no
+            desktop; no celular desce para depois do assistente. */}
+        <aside aria-label="Prévia e resumo" className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-4">
+          <BalaoDeWhatsApp
+            remetente={remetente}
+            detalheDoRemetente={numeroDoRemetente}
+            texto={previa.corpo}
+            cabecalho={previa.cabecalho}
+            cabecalhoDeImagem={previa.cabecalhoDeImagem}
+            imagemUrl={imagemDaPrevia}
+            rodape={previa.rodape}
+            botoes={previa.botoes}
+            carregando={formData.messageType === 'template' && loadingTemplates}
+            textoVazio={textoVazioDaPrevia}
+            legenda={legendaDaPrevia}
+          />
+
+          {previa.semValor.length > 0 && (
+            <p role="note" className="rounded-lg bg-warning-soft p-3 text-caption text-warning-token">
+              O painel não preenche {previa.semValor.map((v) => `{{${v}}}`).join(', ')}. Confira o
+              template antes de enviar.
+            </p>
+          )}
+
+          <FormSummary
+            titulo="Resumo do envio"
+            estiloDoTitulo="titulo"
+            linhas={[
+              { rotulo: 'Recebem', valor: recipientCount > 0 ? clientes(recipientCount) : '' },
+              {
+                rotulo: 'Conta',
+                valor: selectedAccount
+                  ? [selectedAccount.name, numeroDoRemetente].filter(Boolean).join(' · ')
+                  : '',
+              },
+              {
+                rotulo: 'Mensagem',
+                valor: formData.messageType === 'text'
+                  ? 'Texto livre'
+                  : selectedTemplate?.name ?? '',
+              },
+              {
+                rotulo: 'Quando',
+                valor: showScheduleModal && formData.scheduledAt
+                  ? dataEHora(formData.scheduledAt)
+                  : 'Agora',
+              },
+              { rotulo: 'Duração', valor: tempo },
+            ]}
+          />
+        </aside>
       </div>
 
-      {/* Schedule Modal */}
+      {/* Agendar */}
       <Modal
         isOpen={showScheduleModal}
         onClose={() => setShowScheduleModal(false)}
-        title="Agendar Campanha"
+        title="Agendar envio"
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-2">
-              Data e Hora
+            <label htmlFor="horario-do-envio" className="mb-2 block text-sm font-medium text-fg-token">
+              Data e hora
             </label>
             <input
+              id="horario-do-envio"
               type="datetime-local"
               value={formData.scheduledAt}
               onChange={(e) => setFormData(prev => ({ ...prev, scheduledAt: e.target.value }))}
               min={new Date().toISOString().slice(0, 16)}
-              className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent dark:bg-[var(--dark-bg-hover,#161616)] dark:text-white"
+              className="controle w-full"
             />
             {/* Quantos recebem de graça NESTE horário. Sem o número o dono
                 agenda no escuro: "manda às 20h" pode ser 10 pessoas ou 2, e
@@ -1286,121 +1285,114 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
             ) : null}
           </div>
           <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setShowScheduleModal(false)}>
+            <Button variant="ghost" onClick={() => setShowScheduleModal(false)}>
               Cancelar
             </Button>
             <Button
+              variant="success"
               onClick={() => handleSendCampaign(true)}
               disabled={sending || !formData.scheduledAt || !horarioPermitido(formData.scheduledAt).ok}
+              leftIcon={<ClockIcon className="h-4 w-4" aria-hidden />}
             >
-              {sending ? 'Agendando...' : 'Confirmar Agendamento'}
+              {sending ? 'Agendando…' : 'Agendar envio'}
             </Button>
           </div>
         </div>
       </Modal>
 
-      {/* Import CSV Modal */}
+      {/* Importar CSV */}
       <Modal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
-        title="Importar Contatos do CSV"
+        title="Importar contatos de CSV"
       >
         <div className="space-y-4">
-          <p className="text-sm text-fg-muted-token">
-            Cole o conteúdo do CSV abaixo. Formato esperado: telefone,nome (uma linha por contato)
-          </p>
+          <label htmlFor="csv-da-campanha" className="block text-body text-fg-muted-token">
+            Cole o CSV abaixo: telefone,nome — um contato por linha.
+          </label>
           <textarea
+            id="csv-da-campanha"
             value={csvContent}
             onChange={(e) => setCsvContent(e.target.value)}
             placeholder="5511999999999,João Silva&#10;5511888888888,Maria Santos"
             rows={8}
-            className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent dark:bg-[var(--dark-bg-hover,#161616)] dark:text-white font-mono text-sm"
+            className="controle h-auto w-full py-2 font-mono text-sm"
           />
           <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setShowImportModal(false)}>
+            <Button variant="ghost" onClick={() => setShowImportModal(false)}>
               Cancelar
             </Button>
             <Button onClick={handleImportCSV}>
-              Importar
+              Importar contatos
             </Button>
           </div>
         </div>
       </Modal>
 
-      {/* System Contacts Modal */}
+      {/* Escolher um a um */}
       <Modal
         isOpen={showSystemContactsModal}
         onClose={() => setShowSystemContactsModal(false)}
-        title="Contatos do Sistema"
+        title="Escolher contatos"
       >
         <div className="space-y-4">
-          <p className="text-sm text-fg-muted-token">
-            Selecione os contatos que deseja adicionar à campanha
+          <p className="text-body text-fg-muted-token">
+            Marque quem entra na campanha.
           </p>
-          
+
           {loadingSystemContacts ? (
-            <div className="flex items-center justify-center py-8">
-              <Loading size="md" />
-            </div>
+            <Loading size="md" rotulo="Carregando contatos…" className="py-8" />
           ) : systemContacts.length === 0 ? (
-            <div className="text-center py-8 text-fg-muted-token">
-              <UserGroupIcon className="w-12 h-12 mx-auto mb-2 text-fg-muted-token" />
-              <p>Nenhum contato encontrado no sistema</p>
+            <div className="flex flex-col items-center gap-2 py-8 text-center">
+              <UserGroupIcon className="h-8 w-8 text-fg-muted-token" aria-hidden />
+              <p className="text-body text-fg-muted-token">Nenhum contato no sistema ainda.</p>
             </div>
           ) : (
             <>
-              {/* Select All */}
-              <div className="flex items-center justify-between p-2 bg-surface-2 rounded-lg">
-                <label className="flex items-center gap-2 cursor-pointer">
+              <div className="flex items-center justify-between rounded-lg bg-surface-2 p-2">
+                <label className="flex cursor-pointer items-center gap-2">
                   <input
                     type="checkbox"
                     checked={selectedSystemContacts.size === systemContacts.length}
                     onChange={handleSelectAllSystemContacts}
-                    className="w-4 h-4 text-green-600 rounded focus:ring-brand"
+                    className="h-4 w-4 rounded accent-brand"
                   />
                   <span className="font-medium text-fg-token">
-                    Selecionar todos ({systemContacts.length})
+                    Marcar todos ({systemContacts.length})
                   </span>
                 </label>
-                <span className="text-sm text-fg-muted-token">
-                  {selectedSystemContacts.size} selecionados
+                <span className="text-caption tabular-nums text-fg-muted-token">
+                  {selectedSystemContacts.size} marcados
                 </span>
               </div>
 
-              {/* Contact List */}
-              <div className="max-h-64 overflow-y-auto space-y-1 border rounded-lg p-2">
+              <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border border-border-token p-2">
                 {systemContacts.map((contact) => (
                   <label
                     key={contact.phone}
-                    className="flex items-center gap-3 p-2 hover:bg-surface-2 rounded cursor-pointer"
+                    className="flex cursor-pointer items-center gap-3 rounded p-2 hover:bg-surface-2"
                   >
                     <input
                       type="checkbox"
                       checked={selectedSystemContacts.has(contact.phone)}
                       onChange={() => handleToggleSystemContact(contact.phone)}
-                      className="w-4 h-4 text-green-600 rounded focus:ring-brand"
+                      className="h-4 w-4 rounded accent-brand"
                     />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-fg-token truncate">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium tabular-nums text-fg-token">
                         {contact.phone}
                       </p>
                       {contact.name && (
-                        <p className="text-sm text-fg-muted-token truncate">
+                        <p className="truncate text-caption text-fg-muted-token">
                           {contact.name}
                         </p>
                       )}
                     </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      contact.source === 'conversation' ? 'bg-info-soft text-info-token' :
-                      contact.source === 'order' ? 'bg-success-soft text-success-token' :
-                      contact.source === 'subscriber' ? 'bg-info-soft text-info-token' :
-                      'bg-surface-2 text-fg-token'
-                    }`}>
-                      {contact.source === 'conversation' ? 'Conversa' :
-                       contact.source === 'order' ? 'Pedido' :
-                       contact.source === 'subscriber' ? 'Inscrito' :
-                       contact.source === 'session' ? 'Sessão' : contact.source}
-                    </span>
+                    {contact.source && (
+                      <span className="rounded-full bg-surface-2 px-2 py-0.5 text-badge text-fg-muted-token">
+                        {ROTULO_DA_ORIGEM[contact.source] ?? contact.source}
+                      </span>
+                    )}
                   </label>
                 ))}
               </div>
@@ -1408,19 +1400,21 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
           )}
 
           <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setShowSystemContactsModal(false)}>
+            <Button variant="ghost" onClick={() => setShowSystemContactsModal(false)}>
               Cancelar
             </Button>
-            <Button 
+            <Button
               onClick={handleAddSystemContacts}
               disabled={selectedSystemContacts.size === 0}
             >
-              Adicionar {selectedSystemContacts.size > 0 ? `(${selectedSystemContacts.size})` : ''}
+              {selectedSystemContacts.size > 0
+                ? `Adicionar ${selectedSystemContacts.size} ${selectedSystemContacts.size === 1 ? 'contato' : 'contatos'}`
+                : 'Adicionar'}
             </Button>
           </div>
         </div>
       </Modal>
-    </div>
+    </>
   );
 };
 

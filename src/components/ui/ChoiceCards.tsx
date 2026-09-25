@@ -78,9 +78,13 @@ export function ChoiceCards<T extends string = string>({
         onKeyDown={aoTeclar}
         className="grid grid-cols-2 gap-3 max-sm:grid-cols-1"
       >
-        {opcoes.map((o) => {
+        {opcoes.map((o, idx) => {
           const Icone = o.icone;
           const escolhida = o.valor === valor;
+          // Sem escolha ainda, a primeira opção é a porta do grupo — senão
+          // todas ficam fora da ordem de Tab e o teclado não entra.
+          const nenhumaEscolhida = !opcoes.some((x) => x.valor === valor);
+          const naOrdemDeTab = escolhida || (nenhumaEscolhida && idx === 0);
           return (
             <button
               key={o.valor}
@@ -88,7 +92,7 @@ export function ChoiceCards<T extends string = string>({
               type="button"
               role="radio"
               aria-checked={escolhida}
-              tabIndex={escolhida ? 0 : -1}
+              tabIndex={naOrdemDeTab ? 0 : -1}
               onClick={() => onChange(o.valor)}
               className={cn(
                 'flex items-start gap-2.5 rounded border p-3 text-left transition-colors',

@@ -37,3 +37,24 @@ describe('FormSummary', () => {
     expect(container).toBeEmptyDOMElement();
   });
 });
+
+describe('FormSummary — título', () => {
+  it('por padrão o título é rótulo de seção (overline)', () => {
+    render(<FormSummary linhas={[{ rotulo: 'Preço', valor: 'R$ 1' }]} />);
+    expect(screen.getByRole('heading', { name: 'Resumo' })).toHaveClass('overline');
+  });
+
+  it('estiloDoTitulo="titulo" troca a caixa alta por um título em sentence case', () => {
+    // A campanha de WhatsApp não usa rótulo em caixa alta (decisão do dono).
+    render(
+      <FormSummary
+        titulo="Resumo do envio"
+        estiloDoTitulo="titulo"
+        linhas={[{ rotulo: 'Recebem', valor: '312 clientes' }]}
+      />
+    );
+    const titulo = screen.getByRole('heading', { name: 'Resumo do envio' });
+    expect(titulo).not.toHaveClass('overline');
+    expect(titulo.className).not.toMatch(/uppercase/);
+  });
+});

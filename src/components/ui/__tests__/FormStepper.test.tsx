@@ -153,3 +153,73 @@ describe('FormStepper controlado', () => {
     expect(screen.getByTestId('painel')).toHaveTextContent('basico');
   });
 });
+
+/**
+ * O assistente de página (campanha de WhatsApp) pede o que o de modal não
+ * pedia: botão que TRAVA em vez de só ignorar o clique, trilha que não deixa
+ * pular para a frente e conclusão que diz o que faz ("Enviar para 312
+ * clientes") na cor de sucesso. Tudo opcional — o padrão continua o de antes.
+ */
+describe('FormStepper — opções do assistente de página', () => {
+  const montarPagina = (props: Partial<React.ComponentProps<typeof FormStepper>> = {}) =>
+    render(
+      <FormStepper
+        passos={PASSOS}
+        onConcluir={jest.fn()}
+        rotuloConcluir="Enviar para 3 clientes"
+        rotuloAvancar="Continuar"
+        rotuloVoltar="Voltar"
+        {...props}
+      >
+        {(p) => <div data-testid="painel">{p}</div>}
+      </FormStepper>
+    );
+
+  it('usa os rótulos de navegação informados', () => {
+    montarPagina();
+    fireEvent.click(screen.getByRole('button', { name: /^continuar$/i }));
+    expect(screen.getByRole('button', { name: /^voltar$/i })).toBeInTheDocument();
+  });
+
+  it('com travarAvancar, o botão fica desabilitado enquanto o passo não pode avançar', () => {
+    montarPagina({ travarAvancar: true, podeAvancar: () => false });
+    expect(screen.getByRole('button', { name: /^continuar$/i })).toBeDisabled();
+  });
+
+  it('sem travarAvancar, o botão continua clicável (comportamento antigo)', () => {
+    montarPagina({ podeAvancar: () => false });
+    expect(screen.getByRole('button', { name: /^continuar$/i })).toBeEnabled();
+  });
+
+  it('com permitirPularAdiante=false, a trilha só volta', () => {
+    montarPagina({ passoAtivo: 'preco', onMudarPasso: jest.fn(), permitirPularAdiante: false });
+    expect(screen.getByRole('button', { name: /Básico/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /Mídia/ })).toBeDisabled();
+  });
+
+  it('a conclusão aceita variante, ícone e rótulo de carregamento', () => {
+    const { rerender } = montarPagina({
+      passoAtivo: 'midia',
+      onMudarPasso: jest.fn(),
+      varianteConcluir: 'success',
+      iconeConcluir: <span data-testid="icone" />,
+    });
+    expect(screen.getByRole('button', { name: /enviar para 3 clientes/i })).toBeInTheDocument();
+    expect(screen.getByTestId('icone')).toBeInTheDocument();
+
+    rerender(
+      <FormStepper
+        passos={PASSOS}
+        onConcluir={jest.fn()}
+        rotuloConcluir="Enviar para 3 clientes"
+        passoAtivo="midia"
+        onMudarPasso={jest.fn()}
+        concluindo
+        rotuloConcluindo="Enviando…"
+      >
+        {(p) => <div>{p}</div>}
+      </FormStepper>
+    );
+    expect(screen.getByRole('button', { name: /enviando…/i })).toBeDisabled();
+  });
+});

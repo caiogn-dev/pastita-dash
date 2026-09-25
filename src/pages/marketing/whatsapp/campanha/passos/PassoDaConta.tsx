@@ -19,13 +19,15 @@ interface Props {
  * errar.
  */
 export const PassoDaConta: React.FC<Props> = ({ accounts, formData, handleAccountSelect }) => (
-  <div className="flex flex-col gap-6">
-    <div>
-      <h2 className="mb-2 text-lg font-semibold text-fg-token">Selecione a conta de WhatsApp</h2>
-      <p className="text-fg-muted-token">Escolha o número que vai enviar as mensagens</p>
-    </div>
+  <div className="flex flex-col gap-5">
+    <header>
+      <h2 className="text-lg font-semibold text-fg-token">Escolha o número que envia</h2>
+      <p className="mt-1 text-body text-fg-muted-token">
+        O cliente vê este número e responde para ele.
+      </p>
+    </header>
 
-    <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
+    <div className="grid grid-cols-2 gap-3 max-md:grid-cols-1">
       {accounts.map((account) => {
         const escolhida = formData.accountId === account.id;
         const ativa = account.status === 'active';
@@ -38,12 +40,13 @@ export const PassoDaConta: React.FC<Props> = ({ accounts, formData, handleAccoun
             aria-pressed={escolhida}
             onClick={() => handleAccountSelect(account.id)}
             className={cn(
-              'rounded-xl border-2 p-4 text-left transition-all',
+              'rounded-xl border p-4 text-left transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
               // Verde cru era de outro produto: o painel é carvão e ouro, e
               // `green-500` não existe na paleta.
               escolhida
                 ? 'border-brand bg-brand-soft'
-                : 'border-border-token hover:border-[var(--border-strong)]',
+                : 'border-border-token bg-surface hover:border-[var(--border-strong)] hover:bg-surface-2',
             )}
           >
             <div className="flex items-center gap-3">
