@@ -1,222 +1,169 @@
-import React, { useState } from 'react';
-import { whatsappTemplates, getTemplatesByCategory, WhatsAppTemplate } from '../../../data/whatsappTemplates';
-import { Badge } from '../../../components/common';
-import { PageShell, KpiGrid } from '../../../components/ui';
-import {
-  // Ícones escolhidos pelo QUE A CATEGORIA FAZ, não por serem bonitos:
-  // Squares2X2  → a coleção inteira de templates
-  // TruckIcon   → transacional é o pedido andando (confirmado → entregue)
-  // MegaphoneIcon → marketing é anúncio para muitos
-  // ChatBubbleLeftRight → suporte é conversa de ida e volta
-  Squares2X2Icon,
-  TruckIcon,
-  MegaphoneIcon,
-  ChatBubbleLeftRightIcon,
-} from '@heroicons/react/24/outline';
-import type { BadgeProps } from '../../../components/common/Badge';
+/**
+ * Modelos de mensagem do WhatsApp.
+ *
+ * Simples (25/09): a lista à esquerda, a prévia à direita no mesmo balão da
+ * campanha (`BalaoDeWhatsApp`), variáveis em `Input` do kit. Saíram o fundo
+ * verde do WhatsApp em hex, a cor por categoria, o campo de texto cru e os botões
+ * "Usar template" e "Editar" que não faziam nada. O que a prévia entrega de
+ * verdade é a mensagem pronta: "Copiar mensagem".
+ */
+import React, { useMemo, useState } from 'react';
+import { ChatBubbleLeftRightIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
+
+import { BalaoDeWhatsApp } from '../../../components/marketing/BalaoDeWhatsApp';
+import { Badge, Button, EmptyState, Input, PageShell, PeriodChips, Secao } from '../../../components/ui';
+import { cn } from '../../../utils/cn';
+import { getTemplatesByCategory, whatsappTemplates, WhatsAppTemplate } from '../../../data/whatsappTemplates';
+
+type Categoria = 'all' | WhatsAppTemplate['category'];
+
+const CATEGORIAS: Record<WhatsAppTemplate['category'], { rotulo: string; descricao: string }> = {
+  transactional: {
+    rotulo: 'Transacional',
+    descricao: 'Confirmação, status do pedido e entrega. Pode sair a qualquer momento.',
+  },
+  marketing: {
+    rotulo: 'Marketing',
+    descricao: 'Promoção e reativação. Exige que o cliente aceite receber e conta no limite da Meta.',
+  },
+  support: {
+    rotulo: 'Suporte',
+    descricao: 'Atendimento e resposta a dúvida do cliente.',
+  },
+};
+
+const DESCRICAO_TODOS = 'Fora da janela de 24 horas, só modelo chega ao cliente.';
+
+/** Troca `{{variavel}}` pelo valor; sem valor, a marca fica e o balão destaca. */
+function preencher(modelo: WhatsAppTemplate, valores: Record<string, string>): string {
+  return Object.entries(valores).reduce(
+    (texto, [chave, valor]) => (valor ? texto.split(`{{${chave}}}`).join(valor) : texto),
+    modelo.content,
+  );
+}
 
 const WhatsAppTemplatesPage: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'transactional' | 'marketing' | 'support'>('all');
-  const [selectedTemplate, setSelectedTemplate] = useState<WhatsAppTemplate | null>(null);
-  const [previewVariables, setPreviewVariables] = useState<Record<string, string>>({});
+  const [categoria, setCategoria] = useState<Categoria>('all');
+  const [escolhido, setEscolhido] = useState<WhatsAppTemplate | null>(null);
+  const [valores, setValores] = useState<Record<string, string>>({});
 
-  const filteredTemplates = selectedCategory === 'all' 
-    ? whatsappTemplates 
-    : getTemplatesByCategory(selectedCategory);
+  const lista = categoria === 'all' ? whatsappTemplates : getTemplatesByCategory(categoria);
 
-  const getCategoryVariant = (category: WhatsAppTemplate['category']): BadgeProps['variant'] => {
-    switch (category) {
-      case 'transactional': return 'info';
-      case 'marketing': return 'purple';
-      case 'support': return 'success';
-      default: return 'gray';
+  const opcoes = useMemo(
+    () => [
+      { value: 'all' as Categoria, label: 'Todos', count: whatsappTemplates.length },
+      ...(Object.keys(CATEGORIAS) as WhatsAppTemplate['category'][]).map((c) => ({
+        value: c as Categoria,
+        label: CATEGORIAS[c].rotulo,
+        count: getTemplatesByCategory(c).length,
+      })),
+    ],
+    [],
+  );
+
+  const escolher = (modelo: WhatsAppTemplate) => {
+    setEscolhido(modelo);
+    setValores(Object.fromEntries(modelo.variables.map((v) => [v, ''])));
+  };
+
+  const texto = escolhido ? preencher(escolhido, valores) : '';
+
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(texto);
+      toast.success('Mensagem copiada');
+    } catch {
+      toast.error('Não foi possível copiar. Selecione o texto e copie à mão.');
     }
-  };
-
-  const getCategoryLabel = (category: WhatsAppTemplate['category']) => {
-    switch (category) {
-      case 'transactional': return 'Transacional';
-      case 'marketing': return 'Marketing';
-      case 'support': return 'Suporte';
-      default: return category;
-    }
-  };
-
-  const handleTemplateSelect = (template: WhatsAppTemplate) => {
-    setSelectedTemplate(template);
-    const vars: Record<string, string> = {};
-    template.variables.forEach(v => {
-      vars[v] = '';
-    });
-    setPreviewVariables(vars);
-  };
-
-  const getPreviewContent = () => {
-    if (!selectedTemplate) return '';
-    let content = selectedTemplate.content;
-    Object.entries(previewVariables).forEach(([key, value]) => {
-      content = content.replace(new RegExp(`{{${key}}}`, 'g'), value || `{{${key}}}`);
-    });
-    return content;
   };
 
   return (
     <PageShell
-      trilha={[{ rotulo: 'Campanhas', href: '/marketing' }, { rotulo: 'Templates' }]}
-      titulo="Templates WhatsApp"
-      descricao="Mensagens pré-aprovadas pela Meta. Fora da janela de 24h, só template chega ao cliente."
-      className="mx-auto max-w-7xl"
+      trilha={[{ rotulo: 'Campanhas', href: '/marketing' }, { rotulo: 'Modelos' }]}
+      titulo="Modelos de mensagem"
+      descricao="Mensagens prontas para o WhatsApp. Escolha uma, preencha os campos e veja como o cliente recebe."
+      filtros={
+        <PeriodChips<Categoria>
+          options={opcoes}
+          value={categoria}
+          onChange={setCategoria}
+          ariaLabel="Filtrar modelos por categoria"
+        />
+      }
     >
-      {/* Os quatro cards eram <div> com sombra e cor crua (blue-600,
-          purple-600, green-600), fora dos tokens e sem dizer o que cada
-          categoria significa. Categoria de template não é enfeite: ela decide
-          se a Meta deixa você disparar. */}
-      <KpiGrid
-        itens={[
-          {
-            label: 'Total',
-            value: whatsappTemplates.length,
-            definicao: 'Todos os templates cadastrados nesta conta.',
-            icone: <Squares2X2Icon />,
-          },
-          {
-            label: 'Transacionais',
-            value: getTemplatesByCategory('transactional').length,
-            definicao: 'Confirmação, status do pedido, entrega. Podem ser enviados a qualquer momento.',
-            icone: <TruckIcon />,
-            tone: 'success',
-          },
-          {
-            label: 'Marketing',
-            value: getTemplatesByCategory('marketing').length,
-            definicao: 'Promoção e reativação. Exigem opt-in e contam no limite da Meta.',
-            icone: <MegaphoneIcon />,
-            tone: 'brand',
-          },
-          {
-            label: 'Suporte',
-            value: getTemplatesByCategory('support').length,
-            definicao: 'Atendimento e resposta a dúvida do cliente.',
-            icone: <ChatBubbleLeftRightIcon />,
-          },
-        ]}
-      />
-
-      <div className="grid grid-cols-2 gap-8">
-        {/* Templates List */}
-        <div>
-          {/* Filters */}
-          <div className="flex gap-2 mb-4">
-            {(['all', 'transactional', 'marketing', 'support'] as const).map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  selectedCategory === cat
-                    ? 'bg-brand text-on-brand'
-                    : 'bg-surface-2 text-fg-token hover:bg-brand-soft'
-                }`}
-              >
-                {cat === 'all' ? 'Todos' : getCategoryLabel(cat)}
-              </button>
-            ))}
-          </div>
-
-          {/* Templates Grid */}
-          <div className="space-y-3">
-            {filteredTemplates.map((template) => (
-              <div
-                key={template.id}
-                onClick={() => handleTemplateSelect(template)}
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md ${
-                  selectedTemplate?.id === template.id
-                    ? 'border-brand bg-brand-soft'
-                    : 'border-border-token bg-surface'
-                }`}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-semibold text-fg-token">{template.name}</h3>
-                  <Badge variant={getCategoryVariant(template.category)}>
-                    {getCategoryLabel(template.category)}
-                  </Badge>
-                </div>
-                <p className="text-sm text-fg-muted-token mb-3">{template.description}</p>
-                <div className="flex flex-wrap gap-1">
-                  {template.variables.map((variable) => (
-                    <span
-                      key={variable}
-                      className="text-xs px-2 py-1 bg-surface-2 text-fg-muted-token rounded"
-                    >
-                      {`{{${variable}}}`}
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
+        <Secao
+          titulo="Modelos"
+          contador={lista.length}
+          descricao={categoria === 'all' ? DESCRICAO_TODOS : CATEGORIAS[categoria].descricao}
+        >
+          <ul className="-mx-2 flex flex-col gap-1">
+            {lista.map((modelo) => {
+              const ativo = escolhido?.id === modelo.id;
+              return (
+                <li key={modelo.id}>
+                  <button
+                    type="button"
+                    aria-pressed={ativo}
+                    onClick={() => escolher(modelo)}
+                    className={cn(
+                      'flex w-full items-start justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                      ativo ? 'bg-brand-soft' : 'hover:bg-surface-2',
+                    )}
+                  >
+                    <span className="min-w-0">
+                      <span className="block font-medium text-fg-token">{modelo.name}</span>
+                      <span className="block text-caption text-fg-muted-token">{modelo.description}</span>
                     </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+                    <Badge tone="neutral" className="shrink-0">
+                      {CATEGORIAS[modelo.category]?.rotulo ?? modelo.category}
+                    </Badge>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </Secao>
 
-        {/* Preview Panel */}
-        <div>
-          {selectedTemplate ? (
-            <div className="bg-surface rounded-lg shadow-lg border border-border-token sticky top-6">
-              <div className="p-4 border-b border-border-token bg-surface-2 rounded-t-lg">
-                <h2 className="font-semibold text-fg-token">Preview</h2>
-                <p className="text-sm text-fg-muted-token">{selectedTemplate.name}</p>
-              </div>
-
-              {/* Variables Input */}
-              <div className="p-4 border-b border-border-token">
-                <h3 className="text-sm font-medium text-fg-token mb-3">Variáveis</h3>
-                <div className="space-y-3">
-                  {selectedTemplate.variables.map((variable) => (
-                    <div key={variable}>
-                      <label className="block text-xs text-fg-muted-token mb-1 capitalize">
-                        {variable}
-                      </label>
-                      <input
-                        type="text"
-                        value={previewVariables[variable] || ''}
-                        onChange={(e) => setPreviewVariables(prev => ({
-                          ...prev,
-                          [variable]: e.target.value
-                        }))}
-                        className="w-full px-3 py-2 bg-surface-2 text-fg-token border border-border-token rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand"
-                        placeholder={`Valor para {{${variable}}}`}
+        <div className="lg:sticky lg:top-6">
+          {escolhido ? (
+            <Secao
+              titulo="Prévia"
+              descricao={escolhido.name}
+              acoes={
+                <Button size="sm" onClick={copiar} leftIcon={<DocumentDuplicateIcon className="h-4 w-4" />}>
+                  Copiar mensagem
+                </Button>
+              }
+            >
+              <div className="flex flex-col gap-4">
+                {escolhido.variables.length > 0 && (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {escolhido.variables.map((variavel) => (
+                      <Input
+                        key={variavel}
+                        id={`variavel-${variavel}`}
+                        label={variavel}
+                        size="sm"
+                        value={valores[variavel] ?? ''}
+                        onChange={(e) => setValores((v) => ({ ...v, [variavel]: e.target.value }))}
+                        placeholder={`Exemplo para ${variavel}`}
                       />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* WhatsApp Preview */}
-              <div className="p-4 bg-[#e5ddd5] min-h-[300px]">
-                <div className="bg-surface rounded-lg rounded-tl-none shadow-sm p-3 max-w-[90%] relative">
-                  <div className="absolute -left-2 top-0 w-0 h-0 border-t-[10px] border-t-transparent border-r-[10px] border-r-white border-b-[10px] border-b-transparent"></div>
-                  <pre className="text-sm text-fg-token whitespace-pre-wrap font-sans">
-                    {getPreviewContent()}
-                  </pre>
-                  <div className="text-right mt-1">
-                    <span className="text-xs text-fg-muted-token">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    ))}
                   </div>
-                </div>
+                )}
+                <BalaoDeWhatsApp remetente="Sua loja" texto={texto} />
               </div>
-
-              {/* Actions */}
-              <div className="p-4 border-t border-border-token flex gap-3">
-                <button className="flex-1 bg-brand text-on-brand px-4 py-2 rounded-lg font-medium hover:bg-brand-hover transition-colors">
-                  Usar Template
-                </button>
-                <button className="px-4 py-2 border border-border-token rounded-lg font-medium text-fg-token hover:bg-surface-2 transition-colors">
-                  Editar
-                </button>
-              </div>
-            </div>
+            </Secao>
           ) : (
-            <div className="bg-surface-2 rounded-lg border-2 border-dashed border-border-token p-12 text-center">
-              <div className="text-4xl mb-4">📱</div>
-              <h3 className="text-lg font-medium text-fg-token mb-2">Selecione um template</h3>
-              <p className="text-fg-muted-token">Clique em um template à esquerda para visualizar</p>
+            <div className="superficie">
+              <EmptyState
+                icone={<ChatBubbleLeftRightIcon className="h-10 w-10" />}
+                titulo="Escolha um modelo"
+                descricao="Clique num modelo da lista para ver como ele chega no WhatsApp do cliente."
+              />
             </div>
           )}
         </div>

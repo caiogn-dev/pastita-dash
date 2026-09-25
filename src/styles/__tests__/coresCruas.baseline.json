@@ -62,7 +62,6 @@
   "pages/customers/CustomersPage.tsx": 32,
   "pages/dashboard/DashboardPage.tsx": 44,
   "pages/marketing/AutomationsPage.tsx": 28,
-  "pages/marketing/MarketingPage.tsx": 17,
   "pages/marketing/email/NewCampaignPage.tsx": 1,
   "pages/messenger/MessengerAccounts.tsx": 6,
   "pages/messenger/MessengerInbox.tsx": 23,

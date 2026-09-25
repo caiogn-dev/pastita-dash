@@ -15,7 +15,7 @@ import { Secao } from '../Secao';
 import { NumberField } from '../NumberField';
 import { Verificacao } from '../Verificacao';
 import { AcaoCard } from '../AcaoCard';
-import { estadoDePagamento, estadoDeCampanha } from '../estados';
+import { estadoDePagamento, estadoDeCampanha, estadoDeEnvio } from '../estados';
 
 describe('Switch', () => {
   it('é um switch acessível com o nome do que liga', async () => {
@@ -95,5 +95,21 @@ describe('estados', () => {
     expect(estadoDePagamento('xyz').tone).toBe('neutral');
     expect(estadoDeCampanha('sent')).toEqual({ rotulo: 'Enviada', tone: 'success' });
     expect(estadoDeCampanha('scheduled').tone).toBe('info');
+  });
+
+  it('campanha do WhatsApp chega como "running" e é a mesma coisa que "sending"', () => {
+    expect(estadoDeCampanha('running')).toEqual(estadoDeCampanha('sending'));
+    expect(estadoDeCampanha('running')).toEqual({ rotulo: 'Enviando', tone: 'info' });
+    expect(estadoDeCampanha(null)).toEqual({ rotulo: '—', tone: 'neutral' });
+  });
+
+  it('envio para UMA pessoa (e-mail ou WhatsApp) tem o seu mapa', () => {
+    expect(estadoDeEnvio('delivered')).toEqual({ rotulo: 'Entregue', tone: 'success' });
+    expect(estadoDeEnvio('opened').tone).toBe('success');
+    expect(estadoDeEnvio('read')).toEqual({ rotulo: 'Lida', tone: 'success' });
+    expect(estadoDeEnvio('bounced')).toEqual({ rotulo: 'Devolvido', tone: 'danger' });
+    expect(estadoDeEnvio('failed').tone).toBe('danger');
+    expect(estadoDeEnvio('pending').tone).toBe('neutral');
+    expect(estadoDeEnvio('xyz')).toEqual({ rotulo: 'xyz', tone: 'neutral' });
   });
 });
