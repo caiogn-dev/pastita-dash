@@ -649,7 +649,7 @@ const EtiquetasPage: React.FC = () => {
           ) : nutricaoBloqueada ? (
             <AdicionalBloqueado etiqueta={etiqueta} />
           ) : template === 'nutricao' || template === 'nutricao-qr' ? (
-            <section className="rounded-lg border border-border-token bg-surface p-3 text-sm space-y-1.5">
+            <section className="superficie p-3 text-sm space-y-1.5">
               <p className="font-semibold text-fg-token">{template === 'nutricao' ? 'Zebra, 100 × 80 mm' : 'QR compacto, 30 × 22 mm'}</p>
               <p className="text-fg-muted-token">{template === 'nutricao' ? 'Tabela completa: por 100 g, por porção, %VD, alergênicos e QR Code.' : 'Para embalagens pequenas: o QR abre a tabela nutricional completa no celular.'}</p>
               <p className="text-xs text-fg-muted-token">Os valores vêm da receita de cada produto, em Cardápio → Ingredientes e TACO.</p>
