@@ -15,7 +15,8 @@ const PARADA = {
   station: 'kitchen',
   is_active: true,
   situacao: 'impressora_indisponivel',
-  situacao_desde: '2026-09-24T22:00:00Z',
+  // uma hora atrás: sempre "hoje", então a frase mostra só a hora
+  situacao_desde: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
   situacao_detalhe: 'EPSON TM-T20 não responde — 10 impressões presas no Windows',
 };
 
@@ -34,7 +35,7 @@ describe('<AlertaDeImpressora />', () => {
     abrir();
 
     const faixa = await screen.findByRole('alert');
-    expect(faixa).toHaveTextContent('Impressora da cozinha parada desde 19:00 — EPSON TM-T20 não responde');
+    expect(faixa).toHaveTextContent(/Impressora da cozinha parada desde \d{2}:\d{2} — EPSON TM-T20 não responde/);
     expect(faixa.className).toMatch(/--danger/);
     expect(screen.getByRole('link', { name: /ver impressão/i })).toHaveAttribute('href', '/stores/loja-x/printing');
     expect(listar).toHaveBeenCalledWith('loja-x');

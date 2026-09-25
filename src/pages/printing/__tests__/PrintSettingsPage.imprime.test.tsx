@@ -9,6 +9,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 const listarAgentes = jest.fn();
 const atualizar = jest.fn().mockResolvedValue({ data: {} });
+jest.mock('../../../services/api', () => ({ __esModule: true, default: { get: jest.fn(), post: jest.fn(), patch: jest.fn() } }));
 jest.mock('../../../services/printing', () => ({
   ...jest.requireActual('../../../services/printing'),
   listPrintAgents: (...a: unknown[]) => listarAgentes(...a),
