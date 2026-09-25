@@ -4,11 +4,12 @@ import {
   Badge, Button, Card, Input, PageShell, EmptyState, ChoiceCards, Tabela, PageTabs, FormSummary,
 } from '../../components/ui';
 import type { LinhaDeResumo } from '../../components/ui';
-import { CartaoDeFidelidadePreview, SecaoDoPrograma } from '../../components/loyalty';
+import { CartaoDeFidelidadePreview, ImpactoDaFidelidade, SecaoDoPrograma } from '../../components/loyalty';
 import { Loading } from '../../components/common';
 import { couponsService } from '../../services/coupons';
 import { loyaltyService, LoyaltyAccountRow, LoyaltyResumo } from '../../services/loyalty';
 import { cashbackService, CashbackResponse } from '../../services/cashback';
+import { loyaltyImpactoService, LoyaltyImpacto } from '../../services/loyaltyImpacto';
 import CashbackSection from './CashbackSection';
 import { IndicacoesCard } from './IndicacoesCard';
 import { getStores, updateStore, getCategories, Store, StoreCategory } from '../../services/storesApi';
@@ -106,6 +107,8 @@ const FidelidadePage: React.FC = () => {
     }
   };
   const [resumo, setResumo] = useState<LoyaltyResumo | null>(null);
+  /** `undefined` = carregando; `null` = backend sem o endpoint ou falhou. */
+  const [impacto, setImpacto] = useState<LoyaltyImpacto | null | undefined>(undefined);
 
   useEffect(() => {
     let active = true;
@@ -180,6 +183,25 @@ const FidelidadePage: React.FC = () => {
       active = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeIdentifier]);
+
+  // Quanto custa e se funciona. O painel sobe antes do backend: sem o
+  // endpoint (ou com erro) a coluna diz "sem dados ainda" e a página segue.
+  useEffect(() => {
+    if (!storeIdentifier) return;
+    let active = true;
+    setImpacto(undefined);
+    loyaltyImpactoService
+      .get(String(storeIdentifier))
+      .then((res) => {
+        if (active) setImpacto(res);
+      })
+      .catch(() => {
+        if (active) setImpacto(null);
+      });
+    return () => {
+      active = false;
+    };
   }, [storeIdentifier]);
 
   const handleSalvarCashback = async (e: React.FormEvent) => {
@@ -590,6 +612,12 @@ const FidelidadePage: React.FC = () => {
                   aria-label="Prévia e números do programa"
                   className="min-w-0 space-y-4 lg:sticky lg:top-4"
                 >
+                  <ImpactoDaFidelidade
+                    tipo={programa}
+                    dados={impacto}
+                    itensParaGanhar={threshold}
+                    percentual={cbPercent}
+                  />
                   {programa === 'carimbo' ? (
                     <CartaoDeFidelidadePreview
                       tipo="carimbo"
