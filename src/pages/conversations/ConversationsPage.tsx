@@ -1,3 +1,13 @@
+/**
+ * Conversas — todas as plataformas numa lista (aba "Todas" do inbox).
+ *
+ * PageShell → KpiGrid → Secao com busca, filtro por plataforma (chips) e a
+ * Tabela do kit (que vira cartão no celular; a grade de colunas fixas de antes
+ * estourava a tela). Status e modo vêm de `estados.ts` — a linha dizia
+ * "Status: active", cru e em inglês. Os ícones de plataforma eram o degradê do
+ * Instagram, esmeralda do WhatsApp e avatar com cor sorteada por nome: cor de
+ * decoração, não de estado. Saíram.
+ */
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -6,16 +16,34 @@ import toast from 'react-hot-toast';
 import {
   ArrowPathIcon,
   ChatBubbleLeftRightIcon,
+  EnvelopeIcon,
+  InboxIcon,
   MagnifyingGlassIcon,
   PhoneIcon,
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
 
-import { Button, Modal, PageLoading, Textarea } from '../../components/common';
+import { PageLoading } from '../../components/common';
+import {
+  Badge,
+  Button,
+  Input,
+  KpiGrid,
+  Modal,
+  PageShell,
+  PeriodChips,
+  Secao,
+  SeloDeEstado,
+  Tabela,
+  Textarea,
+  estadoDeConversa,
+  modoDeAtendimento,
+} from '../../components/ui';
+import type { ColunaDaTabela } from '../../components/ui';
 import { conversationsService, getErrorMessage } from '../../services';
-import { getAvatarColor, getInitials } from '../../utils/avatar';
+import { getInitials } from '../../utils/avatar';
 import type { Conversation, ConversationNote, Message, UniversalConversation } from '../../types';
-import { PageShell } from '../../components/ui';
+import { cn } from '../../utils/cn';
 
 type PlatformFilter = 'all' | 'whatsapp' | 'instagram' | 'messenger';
 type WhatsAppAction = 'markAsRead' | 'switchToHuman' | 'switchToAuto' | 'resolve' | 'close' | 'reopen';
@@ -29,38 +57,6 @@ const platformLabels: Record<UniversalConversation['platform'], string> = {
 function buildRoute(route: string, params: Record<string, string>) {
   const search = new URLSearchParams(params).toString();
   return search ? `${route}?${search}` : route;
-}
-
-function PlatformGlyph({ platform }: { platform: UniversalConversation['platform'] }) {
-  if (platform === 'instagram') {
-    return (
-      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 text-white shadow-sm">
-        <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="2">
-          <rect x="4" y="4" width="16" height="16" rx="5" />
-          <circle cx="12" cy="12" r="3.5" />
-          <circle cx="17.3" cy="6.7" r="0.9" fill="currentColor" stroke="none" />
-        </svg>
-      </div>
-    );
-  }
-
-  if (platform === 'messenger') {
-    return (
-      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--info)] text-white shadow-sm">
-        <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current">
-          <path d="M12 3C6.76 3 2.5 6.93 2.5 11.75c0 2.74 1.38 5.19 3.54 6.8V21l2.81-1.56c.9.25 1.85.38 2.85.38 5.24 0 9.5-3.93 9.5-8.75S17.24 3 12 3Zm1.06 10.03-2.37-2.53-4.38 2.53 4.84-5.14 2.39 2.53 4.34-2.53-4.82 5.14Z" />
-        </svg>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-sm">
-      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current">
-        <path d="M20.52 3.48A11.82 11.82 0 0 0 12.08.25C5.6.25.33 5.49.33 11.95c0 2.06.54 4.07 1.56 5.85L.25 23.75l6.12-1.61a11.84 11.84 0 0 0 5.71 1.45h.01c6.48 0 11.75-5.25 11.75-11.71 0-3.13-1.22-6.06-3.32-8.4Zm-8.44 18.13h-.01a9.83 9.83 0 0 1-5.01-1.37l-.36-.21-3.63.96.97-3.53-.24-.37a9.76 9.76 0 0 1-1.5-5.16c0-5.4 4.41-9.79 9.83-9.79 2.62 0 5.08 1.02 6.93 2.87a9.69 9.69 0 0 1 2.89 6.92c0 5.4-4.41 9.78-9.87 9.78Zm5.37-7.36c-.29-.14-1.73-.85-2-.95-.27-.1-.47-.14-.66.14-.19.29-.76.95-.93 1.15-.17.19-.34.22-.63.08-.29-.14-1.21-.45-2.31-1.43-.85-.76-1.43-1.7-1.6-1.99-.17-.29-.02-.45.13-.59.13-.13.29-.34.44-.51.14-.17.19-.29.29-.48.1-.19.05-.36-.02-.51-.07-.14-.66-1.58-.91-2.16-.24-.57-.49-.49-.66-.5h-.56c-.19 0-.51.07-.78.36-.27.29-1.02 1-1.02 2.43 0 1.43 1.04 2.81 1.19 3 .14.19 2.03 3.1 4.92 4.34.69.29 1.23.47 1.65.6.69.22 1.31.19 1.8.12.55-.08 1.73-.71 1.97-1.39.24-.68.24-1.26.17-1.39-.07-.12-.27-.19-.56-.33Z" />
-      </svg>
-    </div>
-  );
 }
 
 function formatRelative(value?: string | null) {
@@ -83,11 +79,11 @@ function previewText(message: Message) {
   }
   if (message.content) {
     if (typeof message.content === 'string') return message.content;
-    if (message.message_type === 'audio') return '🎵 Áudio';
-    if (message.message_type === 'image') return '📷 Imagem';
-    if (message.message_type === 'video') return '🎬 Vídeo';
-    if (message.message_type === 'document') return '📄 Documento';
-    if (message.message_type === 'sticker') return '🏷️ Sticker';
+    if (message.message_type === 'audio') return 'Áudio';
+    if (message.message_type === 'image') return 'Imagem';
+    if (message.message_type === 'video') return 'Vídeo';
+    if (message.message_type === 'document') return 'Documento';
+    if (message.message_type === 'sticker') return 'Figurinha';
     return '';
   }
   if (message.media_filename) {
@@ -297,161 +293,157 @@ export const ConversationsPage: React.FC = () => {
     return <PageLoading />;
   }
 
+  const colunas: ColunaDaTabela<UniversalConversation>[] = [
+    {
+      chave: 'conversa',
+      cabecalho: 'Conversa',
+      render: (conversation) => (
+        <div className="flex min-w-0 items-center gap-3">
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-pill bg-surface-2 text-sm font-semibold text-fg-muted-token max-md:hidden"
+            aria-hidden
+          >
+            {getInitials(conversation.display_name)}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-fg-token">{conversation.display_name}</p>
+            <div className="mt-1 flex items-center gap-2">
+              <Badge tone="neutral" size="sm">{platformLabels[conversation.platform]}</Badge>
+              {conversation.secondary_identifier && (
+                <span className="truncate text-xs text-fg-muted-token">{conversation.secondary_identifier}</span>
+              )}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      chave: 'mensagem',
+      cabecalho: 'Última mensagem',
+      classe: 'max-w-0 w-[40%]',
+      render: (conversation) => {
+        const estado = estadoDeConversa(conversation.status);
+        return (
+          <div className="min-w-0">
+            {/* Preview pode vir vazio da API (mídia sem texto) — omitimos em vez de repetir placeholder em toda linha */}
+            {conversation.last_message_preview && (
+              <p className="truncate text-sm text-fg-token">{conversation.last_message_preview}</p>
+            )}
+            <SeloDeEstado tone={estado.tone} className="mt-1">{estado.rotulo}</SeloDeEstado>
+          </div>
+        );
+      },
+    },
+    {
+      chave: 'atividade',
+      cabecalho: 'Última atividade',
+      render: (conversation) => (
+        <div className="flex flex-col">
+          <span className="text-sm font-medium text-fg-token">{formatRelative(conversation.last_message_at)}</span>
+          <span className="text-xs text-fg-muted-token">{formatClock(conversation.last_message_at)}</span>
+        </div>
+      ),
+    },
+    {
+      chave: 'naoLidas',
+      cabecalho: 'Não lidas',
+      alinhamento: 'direita',
+      render: (conversation) =>
+        conversation.unread_count > 0 ? (
+          <span className="inline-flex min-w-[28px] items-center justify-center rounded-pill bg-brand px-2 py-1 text-xs font-semibold tabular-nums text-on-brand">
+            {conversation.unread_count}
+          </span>
+        ) : (
+          <span className="text-xs text-fg-muted-token">—</span>
+        ),
+    },
+  ];
+
+  const filtrosDePlataforma = (['all', 'whatsapp', 'instagram', 'messenger'] as PlatformFilter[]).map((platform) => ({
+    value: platform,
+    label: platform === 'all' ? 'Todas' : platformLabels[platform as UniversalConversation['platform']],
+    count: platform === 'all' ? counters.total : counters[platform as UniversalConversation['platform']],
+  }));
+
+  const estadoDoModal = whatsAppConversation ? estadoDeConversa(whatsAppConversation.status) : null;
+  const modoDoModal = whatsAppConversation ? modoDeAtendimento(whatsAppConversation.mode) : null;
+
   return (
     <PageShell
       titulo="Conversas"
+      descricao="Todas as conversas de WhatsApp, Instagram e Messenger num lugar só."
       acoes={
-        <Button variant="secondary" onClick={() => void loadConversations(false)}>
-          <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+        <Button
+          variant="secondary"
+          onClick={() => void loadConversations(false)}
+          leftIcon={<ArrowPathIcon className={cn('h-4 w-4', refreshing && 'animate-spin')} />}
+        >
           Atualizar
         </Button>
       }
     >
+      <KpiGrid
+        itens={[
+          {
+            label: 'Conversas',
+            value: counters.total,
+            definicao: 'Todas as conversas, somando as plataformas conectadas.',
+            icone: <InboxIcon />,
+          },
+          {
+            label: 'Não lidas',
+            value: counters.unread,
+            definicao: 'Mensagens de clientes ainda não abertas, em todas as plataformas.',
+            tone: counters.unread > 0 ? 'warning' : 'default',
+            icone: <EnvelopeIcon />,
+          },
+          {
+            label: 'Instagram',
+            value: counters.instagram,
+            definicao: 'Conversas do Direct sincronizadas.',
+            icone: <ChatBubbleLeftRightIcon />,
+          },
+          {
+            label: 'WhatsApp',
+            value: counters.whatsapp,
+            definicao: 'Abrem aqui mesmo, num resumo rápido para triagem.',
+            icone: <PhoneIcon />,
+          },
+        ]}
+      />
 
-      <section className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-2xl border border-border-primary bg-bg-card p-4">
-          <p className="text-xs uppercase tracking-wide text-fg-muted">Conversas</p>
-          <p className="mt-2 text-3xl font-semibold text-fg-primary">{counters.total}</p>
-          <p className="mt-1 text-sm text-fg-muted">Hub multicanal ativo</p>
-        </div>
-        <div className="rounded-2xl border border-border-primary bg-bg-card p-4">
-          <p className="text-xs uppercase tracking-wide text-fg-muted">Nao lidas</p>
-          <p className="mt-2 text-3xl font-semibold text-fg-primary">{counters.unread}</p>
-          <p className="mt-1 text-sm text-fg-muted">Somadas entre todas as plataformas</p>
-        </div>
-        <div className="rounded-2xl border border-border-primary bg-bg-card p-4">
-          <p className="text-xs uppercase tracking-wide text-fg-muted">Instagram</p>
-          <p className="mt-2 text-3xl font-semibold text-fg-primary">{counters.instagram}</p>
-          <p className="mt-1 text-sm text-fg-muted">Conversas do DM sincronizadas</p>
-        </div>
-        <div className="rounded-2xl border border-border-primary bg-bg-card p-4">
-          <p className="text-xs uppercase tracking-wide text-fg-muted">WhatsApp</p>
-          <p className="mt-2 text-3xl font-semibold text-fg-primary">{counters.whatsapp}</p>
-          <p className="mt-1 text-sm text-fg-muted">Com modal rapido de triagem</p>
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-border-primary bg-bg-card p-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-          <div className="relative flex-1">
-            <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" />
-            <input
+      <Secao titulo="Lista de conversas" contador={filteredConversations.length}>
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="flex-1">
+            <Input
+              aria-label="Buscar conversas"
+              leftIcon={<MagnifyingGlassIcon className="h-4 w-4" />}
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Buscar por nome, identificador ou trecho da ultima mensagem"
-              className="w-full rounded-xl border border-border-primary bg-bg-subtle py-2 pl-9 pr-3 text-sm text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand"
+              placeholder="Buscar por nome, identificador ou trecho da última mensagem"
             />
           </div>
-
-          <div className="flex flex-wrap gap-2">
-            {(['all', 'whatsapp', 'instagram', 'messenger'] as PlatformFilter[]).map((platform) => {
-              const isActive = platformFilter === platform;
-              const label =
-                platform === 'all'
-                  ? 'Todas'
-                  : platformLabels[platform as UniversalConversation['platform']];
-              return (
-                <button
-                  key={platform}
-                  type="button"
-                  onClick={() => setPlatformFilter(platform)}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-bg-subtle text-fg-primary hover:bg-bg-hover'
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
+          <PeriodChips
+            ariaLabel="Filtrar por plataforma"
+            options={filtrosDePlataforma}
+            value={platformFilter}
+            onChange={setPlatformFilter}
+          />
         </div>
 
-        <div className="mt-5 overflow-hidden rounded-2xl border border-border-primary">
-          <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_180px_120px] gap-4 border-b border-border-primary bg-bg-subtle px-5 py-3 text-xs font-semibold uppercase tracking-wide text-fg-muted">
-            <div>Conversa</div>
-            <div>Ultima mensagem</div>
-            <div>Ultima atividade</div>
-            <div className="text-right">Acoes</div>
-          </div>
-
-          {filteredConversations.length === 0 ? (
-            <div className="px-5 py-12 text-center text-sm text-fg-muted">
-              Nenhuma conversa encontrada com os filtros atuais.
-            </div>
-          ) : (
-            filteredConversations.map((conversation) => (
-              <button
-                key={conversation.id}
-                type="button"
-                onClick={() => void openConversation(conversation)}
-                className="grid w-full grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_180px_120px] gap-4 border-b border-border-primary px-5 py-4 text-left transition-colors last:border-b-0 hover:bg-bg-hover"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  {conversation.platform === 'whatsapp' ? (
-                    <div
-                      className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
-                      style={{ backgroundColor: getAvatarColor(conversation.display_name) }}
-                    >
-                      {getInitials(conversation.display_name)}
-                    </div>
-                  ) : (
-                    <PlatformGlyph platform={conversation.platform} />
-                  )}
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-fg-primary">
-                      {conversation.display_name}
-                    </p>
-                    <div className="mt-1 flex items-center gap-2">
-                      <span className="rounded-full bg-bg-subtle px-2 py-0.5 text-badge font-medium text-fg-muted">
-                        {platformLabels[conversation.platform]}
-                      </span>
-                      {conversation.secondary_identifier && (
-                        <span className="truncate text-xs text-fg-muted">
-                          {conversation.secondary_identifier}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="min-w-0">
-                  {/* Preview pode vir vazio da API (mídia sem texto) — omitimos em vez de repetir placeholder em toda linha */}
-                  {conversation.last_message_preview && (
-                    <p className="truncate text-sm text-fg-primary">
-                      {conversation.last_message_preview}
-                    </p>
-                  )}
-                  <p className="mt-1 text-xs text-fg-muted">
-                    Status: {conversation.status || 'active'}
-                  </p>
-                </div>
-
-                <div className="flex flex-col justify-center">
-                  <span className="text-sm font-medium text-fg-primary">
-                    {formatRelative(conversation.last_message_at)}
-                  </span>
-                  <span className="text-xs text-fg-muted">
-                    {formatClock(conversation.last_message_at)}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-end gap-3">
-                  {conversation.unread_count > 0 && (
-                    <span className="flex min-w-[28px] items-center justify-center rounded-full bg-brand px-2 py-1 text-xs font-semibold text-white">
-                      {conversation.unread_count}
-                    </span>
-                  )}
-                  <span className="text-xs font-medium text-fg-muted">
-                    {conversation.platform === 'whatsapp' ? 'Modal' : 'Abrir'}
-                  </span>
-                </div>
-              </button>
-            ))
-          )}
-        </div>
-      </section>
+        <Tabela
+          itens={filteredConversations}
+          colunas={colunas}
+          chave={(conversation) => conversation.id}
+          rotuloDaLinha={(conversation) => `Abrir conversa com ${conversation.display_name}`}
+          onAbrir={(conversation) => void openConversation(conversation)}
+          vazio={{
+            titulo: 'Nenhuma conversa encontrada',
+            descricao: 'Nada bate com a busca e a plataforma escolhidas. Limpe os filtros para ver todas.',
+            icone: <ChatBubbleLeftRightIcon className="h-12 w-12" />,
+          }}
+        />
+      </Secao>
 
       <Modal
         isOpen={Boolean(selectedWhatsAppId)}
@@ -460,35 +452,31 @@ export const ConversationsPage: React.FC = () => {
         size="xl"
       >
         {modalLoading || !whatsAppConversation ? (
-          <div className="py-10 text-center text-sm text-fg-muted">Carregando conversa...</div>
+          <div className="py-10 text-center text-sm text-fg-muted-token">Carregando conversa...</div>
         ) : (
           <div className="space-y-6">
-            <section className="rounded-2xl border border-border-primary bg-bg-subtle p-4">
+            <section className="superficie p-4" aria-label="Contato">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-success-token text-white">
+                  <span className="rounded-lg bg-brand-soft p-3 text-brand-ink" aria-hidden>
                     <PhoneIcon className="h-6 w-6" />
-                  </div>
+                  </span>
                   <div>
-                    <p className="text-lg font-semibold text-fg-primary">
+                    <p className="text-lg font-semibold text-fg-token">
                       {whatsAppConversation.contact_name || 'Contato sem nome'}
                     </p>
-                    <p className="text-sm text-fg-muted">{whatsAppConversation.phone_number}</p>
-                    <p className="mt-1 text-xs text-fg-muted">
-                      Ultima atividade {formatRelative(whatsAppConversation.last_message_at)}
+                    <p className="text-sm text-fg-muted-token">{whatsAppConversation.phone_number}</p>
+                    <p className="mt-1 text-xs text-fg-muted-token">
+                      Última atividade {formatRelative(whatsAppConversation.last_message_at)}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  <span className="rounded-full bg-bg-card px-3 py-1 text-xs font-medium text-fg-primary">
-                    Status: {whatsAppConversation.status}
-                  </span>
-                  <span className="rounded-full bg-bg-card px-3 py-1 text-xs font-medium text-fg-primary">
-                    Modo: {whatsAppConversation.mode || 'auto'}
-                  </span>
-                  <span className="rounded-full bg-bg-card px-3 py-1 text-xs font-medium text-fg-primary">
-                    Nao lidas: {whatsAppConversation.unread_count}
+                <div className="flex flex-wrap items-center gap-2">
+                  {estadoDoModal && <SeloDeEstado tone={estadoDoModal.tone}>{estadoDoModal.rotulo}</SeloDeEstado>}
+                  {modoDoModal && <SeloDeEstado tone={modoDoModal.tone}>{modoDoModal.rotulo}</SeloDeEstado>}
+                  <span className="text-xs text-fg-muted-token">
+                    {whatsAppConversation.unread_count} não lida(s)
                   </span>
                 </div>
               </div>
@@ -514,7 +502,7 @@ export const ConversationsPage: React.FC = () => {
                     actionLoading === 'switchToHuman' || actionLoading === 'switchToAuto'
                   }
                 >
-                  {whatsAppConversation.mode === 'human' ? 'Voltar para auto' : 'Assumir no humano'}
+                  {whatsAppConversation.mode === 'human' ? 'Devolver ao robô' : 'Assumir a conversa'}
                 </Button>
                 {(whatsAppConversation.status === 'open' || whatsAppConversation.status === 'pending') && (
                   <>
@@ -551,19 +539,19 @@ export const ConversationsPage: React.FC = () => {
                   variant="ghost"
                   onClick={() => navigate(`/inbox/whatsapp?conversation=${whatsAppConversation.id}`)}
                 >
-                  Abrir inbox completa
+                  Abrir no inbox
                 </Button>
               </div>
             </section>
 
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_380px]">
-              <section className="min-w-0 rounded-2xl border border-border-primary bg-bg-card">
-                <div className="border-b border-border-primary px-4 py-3">
-                  <h3 className="text-sm font-semibold text-fg-primary">Mensagens recentes</h3>
+              <section className="superficie min-w-0" aria-label="Mensagens recentes">
+                <div className="border-b border-border-token px-4 py-3">
+                  <h3 className="text-sm font-semibold text-fg-token">Mensagens recentes</h3>
                 </div>
                 <div className="max-h-[420px] space-y-3 overflow-y-auto px-4 py-4">
                   {whatsAppMessages.length === 0 ? (
-                    <div className="py-8 text-center text-sm text-fg-muted">
+                    <div className="py-8 text-center text-sm text-fg-muted-token">
                       Sem mensagens registradas nesta conversa.
                     </div>
                   ) : (
@@ -575,18 +563,15 @@ export const ConversationsPage: React.FC = () => {
                           className={`flex ${inbound ? 'justify-start' : 'justify-end'}`}
                         >
                           <div
-                            className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm ${
+                            className={cn(
+                              'max-w-[78%] rounded-2xl px-4 py-3 text-sm text-fg-token',
                               inbound
-                                ? 'rounded-bl-sm border border-border-primary bg-bg-subtle text-fg-primary'
-                                : 'rounded-br-sm bg-emerald-500 text-white'
-                            }`}
+                                ? 'rounded-bl-sm border border-border-token bg-surface-2'
+                                : 'rounded-br-sm bg-brand-soft',
+                            )}
                           >
                             <p className="whitespace-pre-wrap break-words">{previewText(message)}</p>
-                            <div
-                              className={`mt-2 flex items-center gap-2 text-xs ${
-                                inbound ? 'text-fg-muted' : 'text-white/80'
-                              }`}
-                            >
+                            <div className="mt-2 flex items-center gap-2 text-xs text-fg-muted-token">
                               <span>{format(new Date(message.created_at), 'dd/MM HH:mm', { locale: ptBR })}</span>
                               <span>{inbound ? 'Cliente' : 'Equipe'}</span>
                             </div>
@@ -599,34 +584,27 @@ export const ConversationsPage: React.FC = () => {
               </section>
 
               <aside className="space-y-4">
-                <section className="rounded-2xl border border-border-primary bg-bg-card p-4">
+                <section className="superficie p-4" aria-label="Resumo rápido">
                   <div className="mb-3 flex items-center gap-2">
-                    <UserCircleIcon className="h-5 w-5 text-fg-muted" />
-                    <h3 className="text-sm font-semibold text-fg-primary">Resumo rapido</h3>
+                    <UserCircleIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
+                    <h3 className="text-sm font-semibold text-fg-token">Resumo rápido</h3>
                   </div>
                   <div className="space-y-3 text-sm">
                     {/* Sem preview da API → omitimos o bloco em vez de mostrar placeholder */}
                     {whatsAppConversation.last_message_preview && (
                       <div>
-                        <p className="text-fg-muted">Ultima mensagem</p>
-                        <p className="text-fg-primary">
-                          {whatsAppConversation.last_message_preview}
-                        </p>
+                        <p className="text-fg-muted-token">Última mensagem</p>
+                        <p className="text-fg-token">{whatsAppConversation.last_message_preview}</p>
                       </div>
                     )}
                     <div>
-                      <p className="text-fg-muted">Etiquetas</p>
+                      <p className="text-fg-muted-token">Etiquetas</p>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {(whatsAppConversation.tags || []).length === 0 ? (
-                          <span className="text-fg-muted">Sem tags</span>
+                          <span className="text-fg-muted-token">Sem etiquetas</span>
                         ) : (
                           whatsAppConversation.tags?.map((tag) => (
-                            <span
-                              key={tag}
-                              className="rounded-full bg-bg-subtle px-3 py-1 text-xs font-medium text-fg-primary"
-                            >
-                              {tag}
-                            </span>
+                            <Badge key={tag} tone="neutral">{tag}</Badge>
                           ))
                         )}
                       </div>
@@ -634,14 +612,15 @@ export const ConversationsPage: React.FC = () => {
                   </div>
                 </section>
 
-                <section className="rounded-2xl border border-border-primary bg-bg-card p-4">
+                <section className="superficie p-4" aria-label="Notas internas">
                   <div className="mb-3 flex items-center gap-2">
-                    <ChatBubbleLeftRightIcon className="h-5 w-5 text-fg-muted" />
-                    <h3 className="text-sm font-semibold text-fg-primary">Notas internas</h3>
+                    <ChatBubbleLeftRightIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
+                    <h3 className="text-sm font-semibold text-fg-token">Notas internas</h3>
                   </div>
                   <Textarea
+                    aria-label="Nova nota interna"
                     rows={3}
-                    placeholder="Registrar contexto rapido para a equipe..."
+                    placeholder="Registre um contexto rápido para a equipe..."
                     value={noteDraft}
                     onChange={(event) => setNoteDraft(event.target.value)}
                   />
@@ -652,12 +631,12 @@ export const ConversationsPage: React.FC = () => {
                   </div>
                   <div className="mt-4 max-h-[220px] space-y-3 overflow-y-auto">
                     {whatsAppNotes.length === 0 ? (
-                      <p className="text-sm text-fg-muted">Nenhuma nota ainda.</p>
+                      <p className="text-sm text-fg-muted-token">Nenhuma nota ainda.</p>
                     ) : (
                       whatsAppNotes.map((note) => (
-                        <div key={note.id} className="rounded-xl bg-bg-subtle p-3">
-                          <p className="text-sm text-fg-primary">{note.content}</p>
-                          <p className="mt-2 text-xs text-fg-muted">
+                        <div key={note.id} className="rounded-lg bg-surface-2 p-3">
+                          <p className="text-sm text-fg-token">{note.content}</p>
+                          <p className="mt-2 text-xs text-fg-muted-token">
                             {(note.author_name || 'Equipe')} em{' '}
                             {format(new Date(note.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                           </p>

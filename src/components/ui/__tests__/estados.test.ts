@@ -6,7 +6,15 @@
  */
 import { describe, expect, it } from '@jest/globals';
 
-import { estadoDeCliente, estadoDePedido, estadoDeSaude, estadoDeSegmento } from '../estados';
+import {
+  estadoDeAutomacao,
+  estadoDeCliente,
+  estadoDeConversa,
+  estadoDePedido,
+  estadoDeSaude,
+  estadoDeSegmento,
+  modoDeAtendimento,
+} from '../estados';
 
 describe('estadoDePedido', () => {
   it('traduz e dá o tom pelo significado, não pela tela', () => {
@@ -73,5 +81,40 @@ describe('estadoDeSaude', () => {
   it('sem dado é indefinido, neutro', () => {
     expect(estadoDeSaude(undefined)).toEqual({ rotulo: 'Indefinido', tone: 'neutral' });
     expect(estadoDeSaude('outra')).toEqual({ rotulo: 'Indefinido', tone: 'neutral' });
+  });
+});
+
+describe('estadoDeAutomacao', () => {
+  it('ativa é sucesso, pausada é neutra — igual para e-mail e WhatsApp', () => {
+    expect(estadoDeAutomacao(true)).toEqual({ rotulo: 'Ativa', tone: 'success' });
+    expect(estadoDeAutomacao(false)).toEqual({ rotulo: 'Pausada', tone: 'neutral' });
+    expect(estadoDeAutomacao(undefined)).toEqual({ rotulo: 'Pausada', tone: 'neutral' });
+  });
+});
+
+describe('estadoDeConversa', () => {
+  it('traduz o status da conversa e dá o tom pelo significado', () => {
+    expect(estadoDeConversa('open')).toEqual({ rotulo: 'Aberta', tone: 'info' });
+    // O agregador manda `active` quando a plataforma não tem status próprio.
+    expect(estadoDeConversa('active')).toEqual({ rotulo: 'Aberta', tone: 'info' });
+    expect(estadoDeConversa('pending')).toEqual({ rotulo: 'Aguardando', tone: 'warning' });
+    expect(estadoDeConversa('resolved')).toEqual({ rotulo: 'Resolvida', tone: 'success' });
+    expect(estadoDeConversa('closed')).toEqual({ rotulo: 'Encerrada', tone: 'neutral' });
+  });
+
+  it('sem status é aberta; status desconhecido aparece como veio, neutro', () => {
+    expect(estadoDeConversa(null)).toEqual({ rotulo: 'Aberta', tone: 'info' });
+    expect(estadoDeConversa('archived')).toEqual({ rotulo: 'archived', tone: 'neutral' });
+    expect(estadoDeConversa('CLOSED').rotulo).toBe('Encerrada');
+  });
+});
+
+describe('modoDeAtendimento', () => {
+  it('quem responde a conversa: robô, atendente ou os dois', () => {
+    expect(modoDeAtendimento('auto')).toEqual({ rotulo: 'Robô', tone: 'neutral' });
+    expect(modoDeAtendimento(undefined)).toEqual({ rotulo: 'Robô', tone: 'neutral' });
+    // Com atendente o robô está calado: é o que o dono precisa ver de relance.
+    expect(modoDeAtendimento('human')).toEqual({ rotulo: 'Atendente', tone: 'warning' });
+    expect(modoDeAtendimento('hybrid')).toEqual({ rotulo: 'Robô e atendente', tone: 'info' });
   });
 });

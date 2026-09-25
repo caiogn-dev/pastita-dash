@@ -141,3 +141,40 @@ const SAUDE: Record<string, Estado> = {
 export function estadoDeSaude(status?: string | null): Estado {
   return SAUDE[status || ''] ?? { rotulo: 'Indefinido', tone: 'neutral' };
 }
+
+// ─── Automação (e-mail automático, mensagem automática do WhatsApp) ─────────
+
+/** As duas telas de automação diziam "Ativa/Pausada" e "Ativo/Inativo" para a
+ *  mesma coisa, cada uma com a sua paleta (uma em verde cru). */
+export function estadoDeAutomacao(ativa?: boolean | null): Estado {
+  return ativa ? { rotulo: 'Ativa', tone: 'success' } : { rotulo: 'Pausada', tone: 'neutral' };
+}
+
+// ─── Conversa (WhatsApp, Instagram, Messenger) ───────────────────────────────
+
+const CONVERSA: Record<string, Estado> = {
+  open: { rotulo: 'Aberta', tone: 'info' },
+  // O agregador de conversas manda `active` quando a plataforma não tem status.
+  active: { rotulo: 'Aberta', tone: 'info' },
+  pending: { rotulo: 'Aguardando', tone: 'warning' },
+  resolved: { rotulo: 'Resolvida', tone: 'success' },
+  closed: { rotulo: 'Encerrada', tone: 'neutral' },
+};
+
+/** Status da conversa. A tela escrevia "Status: active" cru, em inglês. */
+export function estadoDeConversa(status?: string | null): Estado {
+  const chave = (status || 'open').toLowerCase();
+  return CONVERSA[chave] ?? { rotulo: status || '—', tone: 'neutral' };
+}
+
+const MODO: Record<string, Estado> = {
+  auto: { rotulo: 'Robô', tone: 'neutral' },
+  // Com atendente o robô fica calado: é o que o dono precisa ver de relance.
+  human: { rotulo: 'Atendente', tone: 'warning' },
+  hybrid: { rotulo: 'Robô e atendente', tone: 'info' },
+};
+
+/** Quem responde a conversa agora. */
+export function modoDeAtendimento(modo?: string | null): Estado {
+  return MODO[(modo || 'auto').toLowerCase()] ?? { rotulo: modo || '—', tone: 'neutral' };
+}

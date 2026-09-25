@@ -71,6 +71,7 @@ export { AcaoCard } from './AcaoCard';
 export type { AcaoCardProps } from './AcaoCard';
 export { estadoDePagamento, estadoDeCampanha, estadoDePedido, tomDoPrazo, estadoDeEnvio } from './estados';
 export { estadoDeCliente, estadoDeSegmento, estadoDeSaude } from './estados';
+export { estadoDeAutomacao, estadoDeConversa, modoDeAtendimento } from './estados';
 export type { Estado, Prazo, EstadoDeSegmento } from './estados';
 export { FalhaAoCarregar } from './FalhaAoCarregar';
 export type { FalhaAoCarregarProps } from './FalhaAoCarregar';
