@@ -24,12 +24,22 @@ export interface LinhaDeResumo {
 export interface FormSummaryProps {
   linhas: LinhaDeResumo[];
   titulo?: string;
+  /**
+   * `rotulo` (padrão) é a etiqueta miúda de seção. `frase` é título em frase,
+   * para telas que falam com o dono em sentence case (Fidelidade) e não
+   * querem um rótulo em caixa alta no meio da conversa.
+   */
+  estiloDoTitulo?: 'rotulo' | 'frase';
+  /** Linha de rodapé sob os números — a ressalva que muda a leitura deles. */
+  nota?: React.ReactNode;
   className?: string;
 }
 
 export const FormSummary: React.FC<FormSummaryProps> = ({
   linhas,
   titulo = 'Resumo',
+  estiloDoTitulo = 'rotulo',
+  nota,
   className,
 }) => {
   if (!linhas.length) return null;
@@ -39,7 +49,13 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
       aria-label={titulo}
       className={cn('rounded border border-border-token bg-surface p-4', className)}
     >
-      <h3 className="overline">{titulo}</h3>
+      <h3
+        className={
+          estiloDoTitulo === 'frase' ? 'text-body font-semibold text-fg-token' : 'overline'
+        }
+      >
+        {titulo}
+      </h3>
       <dl className="mt-2.5 space-y-1.5">
         {linhas.map((l) => {
           const vazio =
@@ -59,6 +75,7 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
           );
         })}
       </dl>
+      {nota && <p className="mt-3 text-caption text-fg-muted-token">{nota}</p>}
     </section>
   );
 };

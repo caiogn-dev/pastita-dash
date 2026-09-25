@@ -263,7 +263,7 @@ describe('FidelidadePage — os dois programas rodam juntos, o dono decide', () 
     (updateStore as jest.Mock).mockResolvedValue(lojaComOsDois);
     renderPage();
 
-    await userEvent.click(await screen.findByRole('button', { name: /^Salvar$/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /^Salvar programa$/i }));
 
     await waitFor(() => expect(updateStore).toHaveBeenCalled());
     const [, payload] = (updateStore as jest.Mock).mock.calls.at(-1)!;
@@ -276,7 +276,7 @@ describe('FidelidadePage — os dois programas rodam juntos, o dono decide', () 
     renderPage();
 
     await userEvent.click(await screen.findByRole('checkbox', { name: /Programa ativo/i }));
-    await userEvent.click(screen.getByRole('button', { name: /^Salvar$/i }));
+    await userEvent.click(screen.getByRole('button', { name: /^Salvar programa$/i }));
 
     await waitFor(() => expect(updateStore).toHaveBeenCalled());
     const [, payload] = (updateStore as jest.Mock).mock.calls.at(-1)!;

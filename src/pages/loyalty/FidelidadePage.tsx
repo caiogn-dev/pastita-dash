@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Badge, Button, Card, Input, PageShell, KpiGrid, EmptyState, ChoiceCards, Tabela, PageTabs } from '../../components/ui';
 import {
-  UserGroupIcon, GiftIcon, FireIcon, CheckBadgeIcon,
-} from '@heroicons/react/24/outline';
+  Badge, Button, Card, Input, PageShell, EmptyState, ChoiceCards, Tabela, PageTabs, FormSummary,
+} from '../../components/ui';
+import type { LinhaDeResumo } from '../../components/ui';
+import { CartaoDeFidelidadePreview, SecaoDoPrograma } from '../../components/loyalty';
 import { Loading } from '../../components/common';
 import { couponsService } from '../../services/coupons';
 import { loyaltyService, LoyaltyAccountRow, LoyaltyResumo } from '../../services/loyalty';
@@ -13,7 +14,7 @@ import { IndicacoesCard } from './IndicacoesCard';
 import { getStores, updateStore, getCategories, Store, StoreCategory } from '../../services/storesApi';
 import toast from 'react-hot-toast';
 import { publicEmail } from '../../utils/internalEmail';
-import { formatPhone } from '../../utils/formatters';
+import { formatCurrency, formatPhone } from '../../utils/formatters';
 
 /**
  * Extrai a mensagem que o servidor mandou, em vez de descartá-la.
@@ -201,9 +202,13 @@ const FidelidadePage: React.FC = () => {
         },
       });
       setStore(updated);
+      toast.success('Cashback salvo');
       if (storeIdentifier) {
         setCashback(await cashbackService.get(storeIdentifier));
       }
+    } catch (e) {
+      const resposta = (e as { response?: { data?: unknown } })?.response?.data;
+      toast.error(mensagemDoServidor(resposta) ?? 'Não foi possível salvar o cashback.');
     } finally {
       setSalvandoCashback(false);
     }
@@ -247,8 +252,11 @@ const FidelidadePage: React.FC = () => {
    * `ligado` é passado explicitamente porque o botão "Ativar programa" precisa
    * salvar já com true — o `setEnabled` do React só vale no próximo render, e
    * confiar nele fazia o clique gravar o valor ANTIGO.
+   *
+   * O aviso repete o verbo do botão ("Salvar programa" → "Programa salvo";
+   * "Ativar programa" → "Programa ativado"): o dono confirma o que pediu.
    */
-  const salvarCarimbo = async (ligado: boolean) => {
+  const salvarCarimbo = async (ligado: boolean, aviso = 'Programa salvo') => {
     if (!store) return;
     setSaving(true);
     try {
@@ -264,6 +272,10 @@ const FidelidadePage: React.FC = () => {
       });
       setStore(updated);
       setEnabled(ligado);
+      toast.success(aviso);
+    } catch (e) {
+      const resposta = (e as { response?: { data?: unknown } })?.response?.data;
+      toast.error(mensagemDoServidor(resposta) ?? 'Não foi possível salvar o programa.');
     } finally {
       setSaving(false);
     }
@@ -322,90 +334,105 @@ const FidelidadePage: React.FC = () => {
     return <p className="text-fg-muted-token">{storeError || 'Loja não encontrada.'}</p>;
   }
 
+  // O que está GRAVADO, não o que está marcado no formulário. O selo e o
+  // "ligado/desligado" dos cartões de escolha dizem o estado da loja; se
+  // seguissem o checkbox, desmarcar sem salvar já anunciaria "desligado".
+  const metadataGravado = (store.metadata as Record<string, unknown>) || {};
+  const carimboGravado = metadataGravado.loyalty_enabled !== false;
+  const cashbackGravado = cashback ? cashback.enabled : cbLigado;
+
+  const nomesDasCategorias = storeCategories
+    .filter((c) => qualifyingCategoryIds.includes(c.id))
+    .map((c) => c.name);
+
+  // Número que ainda não chegou fica `undefined` (vira "—" no resumo); número
+  // que chegou vira texto, para o zero aparecer como 0 e não como vazio.
+  const contagem = (n: number | undefined) => (n === undefined ? undefined : String(n));
+  const dinheiro = (v: string | number | undefined) =>
+    v === undefined || v === null ? undefined : formatCurrency(Number(v));
+
+  const cbResumo = cashback?.resumo;
+  const linhasDoResumo: LinhaDeResumo[] =
+    programa === 'carimbo'
+      ? [
+          {
+            rotulo: 'Participantes',
+            valor: contagem(resumo?.participantes ?? (loadingAccounts ? undefined : accountsCount)),
+          },
+          { rotulo: 'A um item de ganhar', valor: contagem(resumo?.quase_la) },
+          { rotulo: 'Brindes a resgatar', valor: contagem(resumo?.brindes_disponiveis) },
+          { rotulo: 'Brindes entregues', valor: contagem(resumo?.brindes_resgatados) },
+        ]
+      : [
+          { rotulo: 'Clientes com saldo', valor: contagem(cbResumo?.clientes_com_saldo) },
+          { rotulo: 'Vence em 7 dias', valor: dinheiro(cbResumo?.vence_em_7_dias) },
+          { rotulo: 'Saldo em circulação', valor: dinheiro(cbResumo?.saldo_em_circulacao) },
+          { rotulo: 'Custo até hoje', valor: dinheiro(cbResumo?.ja_resgatado) },
+          // Carteira e concedido só existem nas respostas mais novas do
+          // backend. Linha ausente é melhor que um "—" que sugere zero.
+          ...(cbResumo?.saldo_pago_pelo_cliente !== undefined
+            ? [{ rotulo: 'Comprado na carteira', valor: dinheiro(cbResumo.saldo_pago_pelo_cliente) }]
+            : []),
+          ...(cbResumo?.saldo_concedido_pela_loja !== undefined
+            ? [{ rotulo: 'Concedido pela loja', valor: dinheiro(cbResumo.saldo_concedido_pela_loja) }]
+            : []),
+        ];
+
+  const notaDoResumo =
+    programa === 'carimbo'
+      ? accountsError
+        ?? ((resumo?.brindes_disponiveis ?? 0) > 0
+          ? 'Entregou algum brinde pelo WhatsApp? Marque o resgate em Cartões dos clientes.'
+          : undefined)
+      : Number(cbResumo?.vence_em_7_dias ?? 0) > 0
+        ? 'Tem saldo vencendo nesta semana. Mande mensagem para esses clientes em Saldo dos clientes.'
+        : 'Custo até hoje é o saldo que já virou desconto. O que o cliente comprou na carteira não é custo: esse dinheiro já entrou.';
+
+  const recarregarCashback = async () => {
+    // Recarrega depois do crédito manual: sem isto o dono credita e a
+    // tela continua mostrando o saldo antigo, o que leva a creditar
+    // duas vezes achando que a primeira não pegou.
+    if (storeIdentifier) setCashback(await cashbackService.get(storeIdentifier));
+  };
+
+  const propsDoCashback = {
+    dados: cashback,
+    carregando: carregandoCashback,
+    ligado: cbLigado,
+    onLigado: setCbLigado,
+    percent: cbPercent,
+    referralPercent: cbIndicacao,
+    expiryDays: cbValidade,
+    onPercent: setCbPercent,
+    onReferralPercent: setCbIndicacao,
+    onExpiryDays: setCbValidade,
+    onSalvar: handleSalvarCashback,
+    salvando: salvandoCashback,
+    storeSlug: String(storeIdentifier || ''),
+    onAjustou: recarregarCashback,
+  };
+
   return (
     <PageShell
       trilha={[{ rotulo: 'Cardápio' }, { rotulo: 'Fidelidade' }]}
       titulo="Fidelidade & Cupons"
-      acoes={
-        <Badge tone={enabled || cbLigado ? 'success' : 'neutral'}>
-          {enabled && cbLigado
+      descricao="Dê ao cliente um motivo para voltar. Configure o programa e veja como ele aparece no cardápio."
+      selo={
+        <Badge tone={carimboGravado || cashbackGravado ? 'success' : 'neutral'}>
+          {carimboGravado && cashbackGravado
             ? 'Cartão e cashback ativos'
-            : enabled ? 'Cartão ativo' : cbLigado ? 'Cashback ativo' : 'Nenhum programa ativo'}
+            : carimboGravado ? 'Cartão ativo' : cashbackGravado ? 'Cashback ativo' : 'Nenhum programa ativo'}
         </Badge>
       }
     >
-      {/* Os números ficam FORA das abas: respondem "como está o programa", e a
-          resposta não muda com a seção aberta — mesmo padrão das Configurações
-          da Loja. */}
-      {programa === 'carimbo' && enabled && (
-        <KpiGrid
-          titulo="Como está o programa"
-          itens={[
-            {
-              label: 'Participantes',
-              value: resumo?.participantes ?? accountsCount,
-              definicao: 'Clientes com pelo menos um item já acumulado.',
-              icone: <UserGroupIcon />,
-            },
-            {
-              // O número que vira ação hoje: dá para mandar "falta 1 para
-              // você ganhar" e o cliente pede.
-              label: 'A um item de ganhar',
-              value: resumo?.quase_la ?? '—',
-              definicao: `Clientes que precisam de mais 1 item para fechar o cartão de ${threshold}.`,
-              icone: <FireIcon />,
-              tone: (resumo?.quase_la ?? 0) > 0 ? 'brand' : 'default',
-            },
-            {
-              label: 'Brindes a resgatar',
-              value: resumo?.brindes_disponiveis ?? '—',
-              definicao: 'Já conquistados e ainda não usados. Saem no próximo pedido.',
-              icone: <GiftIcon />,
-              tone: (resumo?.brindes_disponiveis ?? 0) > 0 ? 'warning' : 'default',
-            },
-            {
-              label: 'Brindes já entregues',
-              value: resumo?.brindes_resgatados ?? '—',
-              definicao: 'Total de grátis que o programa já pagou desde o início.',
-              icone: <CheckBadgeIcon />,
-            },
-          ]}
-        />
-      )}
-
-      {programa === 'cashback' && (
-        <CashbackSection
-          parte="numeros"
-          dados={cashback}
-          carregando={carregandoCashback}
-          ligado={cbLigado}
-          onLigado={setCbLigado}
-          percent={cbPercent}
-          referralPercent={cbIndicacao}
-          expiryDays={cbValidade}
-          onPercent={setCbPercent}
-          onReferralPercent={setCbIndicacao}
-          onExpiryDays={setCbValidade}
-          onSalvar={handleSalvarCashback}
-          salvando={salvandoCashback}
-          storeSlug={String(storeIdentifier || '')}
-          onAjustou={async () => {
-            // Recarrega depois do crédito manual: sem isto o dono credita e a
-            // tela continua mostrando o saldo antigo, o que leva a creditar
-            // duas vezes achando que a primeira não pegou.
-            if (storeIdentifier) setCashback(await cashbackService.get(storeIdentifier));
-          }}
-        />
-      )}
-
-      {programa === 'carimbo' && !enabled && (
+      {programa === 'carimbo' && !carimboGravado && (
         <EmptyState
           variante="ativacao"
           estado="Programa inativo"
           titulo="Ative a fidelidade e transforme compra avulsa em hábito."
           descricao={`A cada ${threshold || '10'} itens comprados, o cliente ganha 1 grátis. O cartão anda sozinho a cada pedido pago — você não precisa marcar nada.`}
           acao={
-            <Button onClick={() => salvarCarimbo(true)} isLoading={saving}>
+            <Button onClick={() => salvarCarimbo(true, 'Programa ativado')} isLoading={saving}>
               Ativar programa
             </Button>
           }
@@ -444,117 +471,149 @@ const FidelidadePage: React.FC = () => {
         {(aba) => (
           <>
             {aba === 'programa' && (
-              <div className="space-y-5">
-                {/* Escolhe qual CONFIGURAR, não qual roda: os dois podem ficar
-                    ligados ao mesmo tempo, e quem decide é o dono da loja. Até
-                    16/set isto era "um OU outro" e salvar um desligava o outro. */}
-                <ChoiceCards<'carimbo' | 'cashback'>
-                  rotulo="Programas da sua loja"
-                  descricao="Os dois podem rodar juntos. Escolha qual configurar — cada um liga e desliga no próprio salvar."
-                  valor={programa}
-                  onChange={setPrograma}
-                  opcoes={[
-                    {
-                      valor: 'carimbo',
-                      titulo: `Cartão de carimbo · ${enabled ? 'ligado' : 'desligado'}`,
-                      descricao: `Junta ${threshold || '10'} itens, ganha 1 grátis. A recompensa é grande e demora — puxa quem já é frequente.`,
-                    },
-                    {
-                      valor: 'cashback',
-                      titulo: `Cashback · ${cbLigado ? 'ligado' : 'desligado'}`,
-                      descricao: 'Volta uma parte em saldo a cada pedido. Recompensa pequena e imediata — alcança quem comprou uma vez só.',
-                    },
-                  ]}
-                />
-                {programa === 'carimbo' && (
-                  <Card title="Programa de fidelidade">
-                    <form className="space-y-4" onSubmit={handleSaveConfig}>
-                      {/* Era um checkbox nu escrito "Programa ativo". Um quadradinho não
-                          diz o que acontece ao marcar, e o cliente é quem sente o efeito —
-                          a linha explica antes de você clicar. */}
-                      <label className="flex cursor-pointer items-start justify-between gap-4 rounded border border-border-token bg-surface-2 p-3">
-                        <span className="min-w-0">
-                          <span className="block text-body font-semibold text-fg-token">
-                            Programa ativo
-                          </span>
-                          <span className="mt-0.5 block text-caption text-fg-muted-token">
-                            Ligado, o cartão do cliente anda a cada pedido pago e o grátis
-                            aparece sozinho no carrinho dele.
-                          </span>
-                        </span>
-                        <input
-                          type="checkbox"
-                          className="mt-1 h-5 w-5 shrink-0 accent-[var(--brand)]"
-                          checked={enabled}
-                          onChange={(e) => setEnabled(e.target.checked)}
-                        />
-                      </label>
-  
-                      <Input
-                        id="loyalty-threshold"
-                        label="Itens para ganhar 1 grátis"
-                        type="number"
-                        min={1}
-                        value={threshold}
-                        onChange={(e) => setThreshold(e.target.value)}
-                      />
-  
-                      <div>
-                        <p className="block text-sm font-medium text-fg-token mb-1">Categorias que pontuam</p>
-                        {storeCategories.length > 0 ? (
-                          <div className="space-y-1.5 rounded-md border border-border-token bg-surface p-3">
-                            {storeCategories.map((cat) => (
-                              <label
-                                key={cat.id}
-                                className="flex items-center gap-2 text-sm text-fg-token"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={qualifyingCategoryIds.includes(cat.id)}
-                                  onChange={() => toggleQualifyingCategory(cat.id)}
-                                />
-                                {cat.name}
-                              </label>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-fg-muted-token">Nenhuma categoria cadastrada nesta loja.</p>
-                        )}
-                        <p className="text-xs text-fg-muted-token mt-1">
-                          Nenhuma marcada = todos os itens do cardápio contam
-                        </p>
-                      </div>
-  
-                      <Button type="submit" isLoading={saving}>
-                        Salvar
-                      </Button>
-                    </form>
-                  </Card>
-                )}
-                {programa === 'cashback' && (
-                  <CashbackSection
-                    parte="config"
-                    dados={cashback}
-                    carregando={carregandoCashback}
-                    ligado={cbLigado}
-                    onLigado={setCbLigado}
-                    percent={cbPercent}
-                    referralPercent={cbIndicacao}
-                    expiryDays={cbValidade}
-                    onPercent={setCbPercent}
-                    onReferralPercent={setCbIndicacao}
-                    onExpiryDays={setCbValidade}
-                    onSalvar={handleSalvarCashback}
-                    salvando={salvandoCashback}
-                    storeSlug={String(storeIdentifier || '')}
-                    onAjustou={async () => {
-                      // Recarrega depois do crédito manual: sem isto o dono credita e a
-                      // tela continua mostrando o saldo antigo, o que leva a creditar
-                      // duas vezes achando que a primeira não pegou.
-                      if (storeIdentifier) setCashback(await cashbackService.get(storeIdentifier));
-                    }}
+              /* "Prévia ao lado com números" (direção do dono, 25/09): a
+                 configuração à esquerda; à direita, fixa, o cartão como o
+                 cliente vê e o que o programa já rendeu. No celular a prévia
+                 desce para baixo do formulário — sticky numa coluna só
+                 cobriria os campos. */
+              <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
+                <div className="min-w-0 space-y-5">
+                  {/* Escolhe qual CONFIGURAR, não qual roda: os dois podem ficar
+                      ligados ao mesmo tempo, e quem decide é o dono da loja. Até
+                      16/set isto era "um OU outro" e salvar um desligava o outro. */}
+                  <ChoiceCards<'carimbo' | 'cashback'>
+                    rotulo="Programas da sua loja"
+                    descricao="Os dois podem rodar juntos. Escolha qual configurar — cada um liga e desliga no próprio salvar."
+                    valor={programa}
+                    onChange={setPrograma}
+                    opcoes={[
+                      {
+                        valor: 'carimbo',
+                        titulo: `Cartão de carimbo · ${carimboGravado ? 'ligado' : 'desligado'}`,
+                        descricao: `Junta ${threshold || '10'} itens, ganha 1 grátis. A recompensa é grande e demora — puxa quem já é frequente.`,
+                      },
+                      {
+                        valor: 'cashback',
+                        titulo: `Cashback · ${cashbackGravado ? 'ligado' : 'desligado'}`,
+                        descricao: 'Volta uma parte em saldo a cada pedido. Recompensa pequena e imediata — alcança quem comprou uma vez só.',
+                      },
+                    ]}
                   />
-                )}
+
+                  {programa === 'carimbo' && (
+                    <Card size="lg">
+                      <form className="space-y-5" onSubmit={handleSaveConfig}>
+                        {/* Era um checkbox nu escrito "Programa ativo". Um quadradinho não
+                            diz o que acontece ao marcar, e o cliente é quem sente o efeito —
+                            a linha explica antes de você clicar. */}
+                        <label className="flex cursor-pointer items-start justify-between gap-4 rounded border border-border-token bg-surface-2 p-3">
+                          <span className="min-w-0">
+                            <span className="block text-body font-semibold text-fg-token">
+                              Programa ativo
+                            </span>
+                            <span className="mt-0.5 block text-caption text-fg-muted-token">
+                              Ligado, o cartão do cliente anda a cada pedido pago e o grátis
+                              aparece sozinho no carrinho dele.
+                            </span>
+                          </span>
+                          <input
+                            type="checkbox"
+                            className="mt-1 h-5 w-5 shrink-0 accent-[var(--brand)]"
+                            checked={enabled}
+                            onChange={(e) => setEnabled(e.target.checked)}
+                          />
+                        </label>
+
+                        <SecaoDoPrograma
+                          titulo="Como o cliente ganha"
+                          descricao="Cada item comprado num pedido pago vale um carimbo."
+                        >
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <Input
+                              id="loyalty-threshold"
+                              label="Itens para ganhar 1 grátis"
+                              type="number"
+                              min={1}
+                              value={threshold}
+                              onChange={(e) => setThreshold(e.target.value)}
+                            />
+                          </div>
+                        </SecaoDoPrograma>
+
+                        <SecaoDoPrograma titulo="O que ele recebe">
+                          <p className="text-caption text-fg-muted-token">
+                            1 item grátis quando o cartão fecha. O brinde aparece sozinho
+                            no carrinho do próximo pedido e o cartão recomeça do zero.
+                          </p>
+                        </SecaoDoPrograma>
+
+                        <SecaoDoPrograma
+                          titulo="Onde vale"
+                          descricao="Sem nenhuma marcada, todo o cardápio conta."
+                        >
+                          {storeCategories.length > 0 ? (
+                            <div className="grid gap-x-4 gap-y-2 rounded-lg border border-border-token p-3 sm:grid-cols-2">
+                              {storeCategories.map((cat) => (
+                                <label
+                                  key={cat.id}
+                                  className="flex min-w-0 cursor-pointer items-center gap-2 text-body text-fg-token"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    className="h-4 w-4 shrink-0 accent-[var(--brand)]"
+                                    checked={qualifyingCategoryIds.includes(cat.id)}
+                                    onChange={() => toggleQualifyingCategory(cat.id)}
+                                  />
+                                  <span className="truncate">{cat.name}</span>
+                                </label>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-caption text-fg-muted-token">
+                              Esta loja ainda não tem categorias. O cartão vale para todo o cardápio.
+                            </p>
+                          )}
+                        </SecaoDoPrograma>
+
+                        <div className="border-t border-border-token pt-5">
+                          <Button type="submit" isLoading={saving}>
+                            Salvar programa
+                          </Button>
+                        </div>
+                      </form>
+                    </Card>
+                  )}
+                  {programa === 'cashback' && <CashbackSection parte="config" {...propsDoCashback} />}
+                </div>
+
+                <aside
+                  aria-label="Prévia e números do programa"
+                  className="min-w-0 space-y-4 lg:sticky lg:top-4"
+                >
+                  {programa === 'carimbo' ? (
+                    <CartaoDeFidelidadePreview
+                      tipo="carimbo"
+                      nomeDaLoja={store.name}
+                      itensParaGanhar={threshold}
+                      categorias={nomesDasCategorias}
+                      ligado={enabled}
+                    />
+                  ) : (
+                    <CartaoDeFidelidadePreview
+                      tipo="cashback"
+                      nomeDaLoja={store.name}
+                      percentual={cbPercent}
+                      validadeDias={cbValidade}
+                      ligado={cbLigado}
+                    />
+                  )}
+                  <FormSummary
+                    titulo={programa === 'carimbo' ? 'Como está o programa' : 'Como está o cashback'}
+                    estiloDoTitulo="frase"
+                    linhas={linhasDoResumo}
+                    nota={notaDoResumo}
+                  />
+                </aside>
               </div>
             )}
 
@@ -712,30 +771,7 @@ const FidelidadePage: React.FC = () => {
                     )}
                   </Card>
                 )}
-                {programa === 'cashback' && (
-                  <CashbackSection
-                    parte="clientes"
-                    dados={cashback}
-                    carregando={carregandoCashback}
-                    ligado={cbLigado}
-                    onLigado={setCbLigado}
-                    percent={cbPercent}
-                    referralPercent={cbIndicacao}
-                    expiryDays={cbValidade}
-                    onPercent={setCbPercent}
-                    onReferralPercent={setCbIndicacao}
-                    onExpiryDays={setCbValidade}
-                    onSalvar={handleSalvarCashback}
-                    salvando={salvandoCashback}
-                    storeSlug={String(storeIdentifier || '')}
-                    onAjustou={async () => {
-                      // Recarrega depois do crédito manual: sem isto o dono credita e a
-                      // tela continua mostrando o saldo antigo, o que leva a creditar
-                      // duas vezes achando que a primeira não pegou.
-                      if (storeIdentifier) setCashback(await cashbackService.get(storeIdentifier));
-                    }}
-                  />
-                )}
+                {programa === 'cashback' && <CashbackSection parte="clientes" {...propsDoCashback} />}
               </>
             )}
 
