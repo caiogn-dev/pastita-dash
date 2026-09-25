@@ -53,3 +53,21 @@ export type { SparklineProps } from './Sparkline';
 // Lista ranqueada — o formato canônico de 'pessoas/coisas com um valor':
 // rótulo (link quando há destino), sublinha, barra proporcional e valor.
 export { RankedList, EmptyNote, type RankedItem } from './RankedList';
+
+// Primitivas de 25/09 — o que as páginas reinventavam, uma vez só.
+export { Switch } from './Switch';
+export type { SwitchProps } from './Switch';
+export { Progresso } from './Progresso';
+export type { ProgressoProps } from './Progresso';
+export { SeloDeEstado } from './SeloDeEstado';
+export type { SeloDeEstadoProps } from './SeloDeEstado';
+export { Secao } from './Secao';
+export type { SecaoProps } from './Secao';
+export { NumberField } from './NumberField';
+export type { NumberFieldProps } from './NumberField';
+export { Verificacao } from './Verificacao';
+export type { VerificacaoProps } from './Verificacao';
+export { AcaoCard } from './AcaoCard';
+export type { AcaoCardProps } from './AcaoCard';
+export { estadoDePagamento, estadoDeCampanha } from './estados';
+export type { Estado } from './estados';
