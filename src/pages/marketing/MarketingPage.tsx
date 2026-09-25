@@ -1,196 +1,43 @@
 /**
- * Marketing Hub Page
- * 
- * Central hub for all marketing activities:
- * - Email campaigns
- * - WhatsApp campaigns
- * - Templates management
- * - Analytics
+ * Marketing — o ponto de partida das campanhas.
+ *
+ * Simples (25/09): a página redefinia StatCard, QuickAction e TemplateCard,
+ * cada um com a sua cor (azul, verde, roxo, laranja, quatro degradês e um
+ * rosa cru). Agora é o kit: números no KpiGrid, entradas em AcaoCard (chip
+ * dourado, sem cor por cartão), modelos também em AcaoCard e campanhas
+ * recentes numa Tabela com o estado no SeloDeEstado.
  */
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  EnvelopeIcon,
+  ClockIcon,
   DevicePhoneMobileIcon,
+  DocumentTextIcon,
   MegaphoneIcon,
   PlusIcon,
-  ClockIcon,
-  EyeIcon,
-  UserGroupIcon,
-  ArrowTrendingUpIcon,
   SparklesIcon,
-  PaperAirplaneIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
-import { Card, Button, Modal, Loading } from '../../components/common';
-import { PageShell } from '../../components/ui';
-import { useStore } from '../../hooks';
+
 import {
-  marketingService,
-  EmailTemplate,
-  MarketingStats,
-} from '../../services/marketingService';
+  AcaoCard,
+  Button,
+  EmptyState,
+  KpiGrid,
+  Modal,
+  PageShell,
+  Secao,
+  SeloDeEstado,
+  StatsSkeleton,
+  Tabela,
+  TableSkeleton,
+  estadoDeCampanha,
+} from '../../components/ui';
+import { useStore } from '../../hooks/useStore';
+import { marketingService, EmailTemplate, MarketingStats } from '../../services/marketingService';
 import logger from '../../services/logger';
 
-// =============================================================================
-// STATS CARD COMPONENT
-// =============================================================================
-
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  subtitle?: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  trend?: number;
-}
-
-const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon: Icon, color, trend }) => (
-  <Card className="p-6">
-    <div className="flex items-start justify-between">
-      <div>
-        <p className="text-sm text-fg-muted-token">{title}</p>
-        <p className={`text-3xl font-bold ${color} mt-1`}>{value}</p>
-        {subtitle && <p className="text-xs text-fg-muted-token mt-1">{subtitle}</p>}
-        {trend !== undefined && (
-          <div className={`flex items-center gap-1 mt-2 text-sm ${trend >= 0 ? 'text-success-token' : 'text-danger-token'}`}>
-            <ArrowTrendingUpIcon className={`w-4 h-4 ${trend < 0 ? 'rotate-180' : ''}`} />
-            <span>{Math.abs(trend)}% vs mês anterior</span>
-          </div>
-        )}
-      </div>
-      <div className={`p-3 rounded-xl ${color.replace('text-', 'bg-').replace('600', '100')}`}>
-        <Icon className={`w-6 h-6 ${color}`} />
-      </div>
-    </div>
-  </Card>
-);
-
-// =============================================================================
-// TEMPLATE CARD COMPONENT
-// =============================================================================
-
-interface TemplateCardProps {
-  template: EmailTemplate;
-  onPreview: () => void;
-  onUse: () => void;
-}
-
-const TemplateCard: React.FC<TemplateCardProps> = ({ template, onPreview, onUse }) => {
-  const typeColors: Record<string, string> = {
-    coupon: 'bg-success-soft text-success-token',
-    welcome: 'bg-info-soft text-info-token',
-    promotional: 'bg-warning-soft text-warning-token',
-    order_confirmation: 'bg-info-soft text-info-token',
-    abandoned_cart: 'bg-warning-soft text-warning-token',
-    newsletter: 'bg-pink-100 text-pink-700',
-    transactional: 'bg-surface-2 text-fg-token',
-    custom: 'bg-surface-2 text-fg-token',
-  };
-
-  const typeLabels: Record<string, string> = {
-    coupon: '🎁 Cupom',
-    welcome: '👋 Boas-vindas',
-    promotional: '🔥 Promoção',
-    order_confirmation: '✅ Confirmação',
-    abandoned_cart: '🛒 Carrinho',
-    newsletter: '📰 Newsletter',
-    transactional: '📧 Transacional',
-    custom: '✏️ Personalizado',
-  };
-
-  return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow group">
-      {/* Preview Area */}
-      <div className="h-40 bg-surface-2 relative overflow-hidden">
-        {/* sandbox="" blocks all scripts, plugins, forms — safe for untrusted HTML */}
-        <iframe
-          sandbox=""
-          srcDoc={template.html_content.slice(0, 2000)}
-          className="absolute inset-0 scale-[0.3] origin-top-left pointer-events-none border-0 w-full h-full"
-          title="Email template preview"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-white/80 to-transparent" />
-        
-        {/* Overlay Actions */}
-        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-          <button aria-label="Pré-visualizar modelo"
-            onClick={onPreview}
-            className="p-2 bg-surface rounded-full hover:bg-surface-2 dark:hover:bg-surface-2"
-            title="Visualizar"
-          >
-            <EyeIcon className="w-5 h-5 text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]" />
-          </button>
-          <button aria-label="Usar este modelo"
-            onClick={onUse}
-            className="p-2 bg-primary-500 rounded-full hover:bg-primary-600"
-            title="Usar Template"
-          >
-            <PaperAirplaneIcon className="w-5 h-5 text-white" />
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <span className={`text-xs px-2 py-0.5 rounded-full ${typeColors[template.template_type]}`}>
-            {typeLabels[template.template_type]}
-          </span>
-        </div>
-        <h3 className="font-semibold text-fg-token mb-1">{template.name}</h3>
-        <p className="text-sm text-fg-muted-token line-clamp-1">{template.subject}</p>
-        
-        {/* Variables */}
-        {template.variables.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-3">
-            {template.variables.slice(0, 3).map((v) => (
-              <span key={v} className="text-xs bg-surface-2 text-fg-muted-token px-1.5 py-0.5 rounded">
-                {`{{${v}}}`}
-              </span>
-            ))}
-            {template.variables.length > 3 && (
-              <span className="text-xs text-fg-muted-token">+{template.variables.length - 3}</span>
-            )}
-          </div>
-        )}
-      </div>
-    </Card>
-  );
-};
-
-// =============================================================================
-// QUICK ACTION CARD
-// =============================================================================
-
-interface QuickActionProps {
-  title: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  onClick: () => void;
-}
-
-const QuickAction: React.FC<QuickActionProps> = ({ title, description, icon: Icon, color, onClick }) => (
-  <button
-    onClick={onClick}
-    className="flex items-start gap-4 p-4 bg-surface rounded-xl border border-border-token hover:border-primary-300 hover:shadow-md transition-all text-left w-full"
-  >
-    <div className={`p-3 rounded-xl ${color}`}>
-      <Icon className="w-6 h-6 text-white" />
-    </div>
-    <div>
-      <h3 className="font-semibold text-fg-token">{title}</h3>
-      <p className="text-sm text-fg-muted-token">{description}</p>
-    </div>
-  </button>
-);
-
-// =============================================================================
-// MAIN PAGE COMPONENT
-// =============================================================================
-
-interface Campaign {
+interface CampanhaRecente {
   id: string;
   name: string;
   subject: string;
@@ -200,260 +47,262 @@ interface Campaign {
   created_at: string;
 }
 
+const numero = (n: number | undefined | null) => (n ?? 0).toLocaleString('pt-BR');
+const percentual = (n: number | undefined | null) =>
+  `${(n ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+
 export const MarketingPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
-  const { storeId: contextStoreId, storeName, stores } = useStore();
+  const { storeId: contextStoreId, stores } = useStore();
 
   const storeId = useMemo(() => {
     if (!routeStoreId) return contextStoreId || null;
-    const match = stores.find(s => s.id === routeStoreId || s.slug === routeStoreId);
+    const match = (stores ?? []).find((s) => s.id === routeStoreId || s.slug === routeStoreId);
     return match?.id || contextStoreId || null;
   }, [routeStoreId, contextStoreId, stores]);
 
-  const [loading, setLoading] = useState(true);
+  const [carregando, setCarregando] = useState(true);
+  const [falhou, setFalhou] = useState(false);
   const [stats, setStats] = useState<MarketingStats | null>(null);
-  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
+  const [modelos, setModelos] = useState<EmailTemplate[]>([]);
+  const [campanhas, setCampanhas] = useState<CampanhaRecente[]>([]);
+  const [previa, setPrevia] = useState<EmailTemplate | null>(null);
 
-  const loadData = useCallback(async () => {
+  const carregar = useCallback(async () => {
     if (!storeId) {
-      setLoading(false);
+      setCarregando(false);
       return;
     }
-
+    setCarregando(true);
+    setFalhou(false);
     try {
-      setLoading(true);
-      const [statsData, templatesData, campaignsData] = await Promise.all([
+      const [statsData, modelosData, campanhasData] = await Promise.all([
         marketingService.stats.get(storeId),
         marketingService.emailTemplates.list(storeId),
         marketingService.emailCampaigns.list(storeId),
       ]);
       setStats(statsData);
-      setTemplates(templatesData);
-      setCampaigns((campaignsData as Campaign[]).slice(0, 5)); // Last 5 campaigns
+      setModelos(modelosData);
+      setCampanhas((campanhasData as unknown as CampanhaRecente[]).slice(0, 5));
     } catch (error) {
       logger.error('Error loading marketing data:', error);
-      toast.error('Erro ao carregar dados de marketing');
+      setFalhou(true);
     } finally {
-      setLoading(false);
+      setCarregando(false);
     }
   }, [storeId]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    carregar();
+  }, [carregar]);
 
-  const handleUseTemplate = (template: EmailTemplate) => {
-    navigate(`/marketing/email/new?template=${template.slug}`);
-  };
+  const usarModelo = (modelo: EmailTemplate) => navigate(`/marketing/email/new?template=${modelo.slug}`);
 
   if (!storeId) {
     return (
-      <div className="p-6 text-center">
-        <MegaphoneIcon className="w-16 h-16 text-fg-muted-token mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-fg-token mb-2">Nenhuma loja selecionada</h2>
-        <p className="text-fg-muted-token mb-4">Selecione uma loja para acessar o marketing.</p>
-        <Button onClick={() => navigate('/stores')}>Ver Lojas</Button>
-      </div>
+      <PageShell titulo="Marketing">
+        <div className="superficie">
+          <EmptyState
+            icone={<MegaphoneIcon className="h-10 w-10" />}
+            titulo="Escolha uma loja"
+            descricao="As campanhas são de cada loja. Escolha uma para ver os números e criar campanhas."
+            acao={<Button onClick={() => navigate('/stores')}>Ver lojas</Button>}
+          />
+        </div>
+      </PageShell>
     );
-  }
-
-  if (loading) {
-    return <Loading />;
   }
 
   return (
     <PageShell
       trilha={[{ rotulo: 'Campanhas' }, { rotulo: 'Marketing' }]}
       titulo="Marketing"
+      descricao="Fale com quem já comprou de você, por WhatsApp ou e-mail."
       acoes={
-        <>
-          <Button variant="secondary" onClick={() => navigate('/marketing/subscribers')}>
-            <UserGroupIcon className="w-5 h-5 mr-2" />
-            Contatos
-          </Button>
-          <Button onClick={() => navigate('/marketing/email/new')}>
-            <PlusIcon className="w-5 h-5 mr-2" />
-            Nova Campanha
-          </Button>
-        </>
+        <Button
+          variant="secondary"
+          onClick={() => navigate('/marketing/subscribers')}
+          leftIcon={<UserGroupIcon className="h-4 w-4" />}
+        >
+          Ver contatos
+        </Button>
       }
     >
-
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-4 max-lg:grid-cols-2 max-md:grid-cols-1 gap-4">
-          <StatCard
-            title="Emails Enviados"
-            value={stats.email.total_sent.toLocaleString()}
-            subtitle={`${stats.email.open_rate.toFixed(1)}% taxa de abertura`}
-            icon={EnvelopeIcon}
-            color="text-blue-600 dark:text-blue-400"
-          />
-          <StatCard
-            title="WhatsApp Enviados"
-            value={stats.whatsapp.total_sent.toLocaleString()}
-            subtitle={`${stats.whatsapp.read_rate.toFixed(1)}% taxa de leitura`}
-            icon={DevicePhoneMobileIcon}
-            color="text-green-600 dark:text-green-400"
-          />
-          <StatCard
-            title="Campanhas Ativas"
-            value={stats.email.total_campaigns + stats.whatsapp.total_campaigns}
-            subtitle="Email + WhatsApp"
-            icon={MegaphoneIcon}
-            color="text-purple-600 dark:text-purple-400"
-          />
-          <StatCard
-            title="Inscritos"
-            value={stats.subscribers.total.toLocaleString()}
-            subtitle={`+${stats.subscribers.new_this_month} este mês`}
-            icon={UserGroupIcon}
-            color="text-orange-600"
+      {carregando ? (
+        <div className="flex flex-col gap-5" aria-busy="true">
+          <StatsSkeleton />
+          <TableSkeleton rows={4} columns={3} />
+        </div>
+      ) : falhou ? (
+        <div role="alert" className="superficie">
+          <EmptyState
+            icone={<MegaphoneIcon className="h-10 w-10" />}
+            titulo="Não foi possível carregar o marketing"
+            descricao="A conexão falhou. Seus números e campanhas continuam lá: tente de novo."
+            acao={<Button variant="secondary" onClick={() => carregar()}>Tentar de novo</Button>}
           />
         </div>
+      ) : (
+        <>
+          {stats && (
+            <section aria-label="Números do marketing">
+              <KpiGrid
+                itens={[
+                  {
+                    label: 'E-mails enviados',
+                    value: numero(stats.email?.total_sent),
+                    definicao: `${percentual(stats.email?.open_rate)} foram abertos`,
+                  },
+                  {
+                    label: 'WhatsApp enviados',
+                    value: numero(stats.whatsapp?.total_sent),
+                    definicao: `${percentual(stats.whatsapp?.read_rate)} foram lidos`,
+                  },
+                  {
+                    label: 'Campanhas',
+                    value: numero((stats.email?.total_campaigns ?? 0) + (stats.whatsapp?.total_campaigns ?? 0)),
+                    definicao: 'e-mail e WhatsApp, em qualquer estado',
+                  },
+                  {
+                    label: 'Contatos',
+                    value: numero(stats.subscribers?.total),
+                    definicao: `${numero(stats.subscribers?.new_this_month)} novos neste mês`,
+                  },
+                ]}
+              />
+            </section>
+          )}
+
+          <Secao titulo="Começar uma campanha" descricao="Escolha o que você quer fazer; o resto vem preenchido.">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <AcaoCard
+                titulo="Campanha no WhatsApp"
+                descricao="Escolha quem recebe e envie para a sua base."
+                icone={DevicePhoneMobileIcon}
+                onClick={() => navigate('/marketing/whatsapp/new')}
+              />
+              <AcaoCard
+                titulo="Enviar cupom por e-mail"
+                descricao="Um desconto para trazer o cliente de volta."
+                icone={SparklesIcon}
+                onClick={() => navigate('/marketing/email/new?template=coupon')}
+              />
+              <AcaoCard
+                titulo="Anunciar promoção"
+                descricao="Oferta por tempo limitado, por e-mail."
+                icone={MegaphoneIcon}
+                onClick={() => navigate('/marketing/email/new?template=promotion')}
+              />
+              <AcaoCard
+                titulo="Recuperar carrinhos"
+                descricao="Lembre quem deixou o pedido pela metade."
+                icone={ClockIcon}
+                onClick={() => navigate('/marketing/email/new?template=abandoned_cart')}
+              />
+            </div>
+          </Secao>
+
+          <Secao
+            titulo="Campanhas recentes"
+            acoes={
+              campanhas.length > 0 ? (
+                <Button variant="secondary" size="sm" onClick={() => navigate('/marketing/email')}>
+                  Ver todas
+                </Button>
+              ) : undefined
+            }
+          >
+            <Tabela<CampanhaRecente>
+              itens={campanhas}
+              chave={(c) => c.id}
+              rotuloDaLinha={(c) => `Abrir campanhas de e-mail (${c.name})`}
+              onAbrir={() => navigate('/marketing/email')}
+              vazio={{
+                titulo: 'Nenhuma campanha ainda',
+                descricao: 'A primeira campanha aparece aqui assim que for criada.',
+                icone: <MegaphoneIcon className="h-10 w-10" />,
+                acao: (
+                  <Button onClick={() => navigate('/marketing/email/new')} leftIcon={<PlusIcon className="h-4 w-4" />}>
+                    Criar campanha
+                  </Button>
+                ),
+              }}
+              colunas={[
+                {
+                  chave: 'nome',
+                  cabecalho: 'Campanha',
+                  render: (c) => (
+                    <span className="block min-w-0">
+                      <span className="block truncate font-medium text-fg-token">{c.name}</span>
+                      <span className="block truncate text-caption text-fg-muted-token">{c.subject}</span>
+                    </span>
+                  ),
+                },
+                {
+                  chave: 'enviados',
+                  cabecalho: 'Enviados',
+                  alinhamento: 'direita',
+                  render: (c) => <span className="tabular-nums">{numero(c.emails_sent)}</span>,
+                },
+                {
+                  chave: 'estado',
+                  cabecalho: 'Estado',
+                  render: (c) => {
+                    const e = estadoDeCampanha(c.status);
+                    return <SeloDeEstado tone={e.tone}>{e.rotulo}</SeloDeEstado>;
+                  },
+                },
+              ]}
+            />
+          </Secao>
+
+          {modelos.length > 0 && (
+            <Secao
+              titulo="Modelos de e-mail"
+              descricao="Abra um modelo para ver como ele chega e começar uma campanha com ele."
+              acoes={
+                <Button variant="secondary" size="sm" onClick={() => navigate('/marketing/email/templates')}>
+                  Ver todos
+                </Button>
+              }
+            >
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {modelos.slice(0, 4).map((modelo) => (
+                  <AcaoCard
+                    key={modelo.id}
+                    titulo={modelo.name}
+                    descricao={modelo.subject}
+                    icone={DocumentTextIcon}
+                    onClick={() => setPrevia(modelo)}
+                  />
+                ))}
+              </div>
+            </Secao>
+          )}
+        </>
       )}
 
-      {/* Quick Actions */}
-      <div>
-        <h2 className="text-lg font-semibold text-fg-token mb-4">Ações Rápidas</h2>
-        <div className="grid grid-cols-4 max-lg:grid-cols-2 max-md:grid-cols-1 gap-4">
-          <QuickAction
-            title="Enviar Cupom"
-            description="Crie e envie cupons de desconto"
-            icon={SparklesIcon}
-            color="bg-gradient-to-br from-green-500 to-emerald-600"
-            onClick={() => navigate('/marketing/email/new?template=coupon')}
-          />
-          <QuickAction
-            title="Promoção Relâmpago"
-            description="Anuncie ofertas por tempo limitado"
-            icon={MegaphoneIcon}
-            color="bg-gradient-to-br from-orange-500 to-red-500"
-            onClick={() => navigate('/marketing/email/new?template=promotion')}
-          />
-          <QuickAction
-            title="Recuperar Carrinhos"
-            description="Reengaje clientes que abandonaram"
-            icon={ClockIcon}
-            color="bg-gradient-to-br from-yellow-500 to-amber-600"
-            onClick={() => navigate('/marketing/email/new?template=abandoned_cart')}
-          />
-          <QuickAction
-            title="WhatsApp em Massa"
-            description="Envie mensagens para sua base"
-            icon={DevicePhoneMobileIcon}
-            color="bg-gradient-to-br from-green-600 to-teal-600"
-            onClick={() => navigate('/marketing/whatsapp/new')}
-          />
-        </div>
-      </div>
-
-      {/* Email Templates */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-fg-token">Templates de Email</h2>
-          <Button variant="secondary" size="sm" onClick={() => navigate('/marketing/email/templates')}>
-            Ver Todos
-          </Button>
-        </div>
-        <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
-          {templates.slice(0, 4).map((template) => (
-            <TemplateCard
-              key={template.id}
-              template={template}
-              onPreview={() => setPreviewTemplate(template)}
-              onUse={() => handleUseTemplate(template)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Recent Campaigns */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-fg-token">Campanhas Recentes</h2>
-          <Button variant="secondary" size="sm" onClick={() => navigate('/marketing/email')}>
-            Ver Todas ({campaigns.length || stats?.email?.total_campaigns || 0})
-          </Button>
-        </div>
-        {campaigns.length > 0 ? (
-          <div className="space-y-3">
-            {campaigns.map((campaign) => (
-              <div 
-                key={campaign.id} 
-                className="bg-surface rounded-lg border border-border-token p-4 hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate('/marketing/email')}
+      <Modal open={Boolean(previa)} onClose={() => setPrevia(null)} title={previa?.name || 'Prévia do modelo'} size="xl">
+        {previa && (
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-caption text-fg-muted-token">Assunto</p>
+                <p className="font-medium text-fg-token">{previa.subject}</p>
+              </div>
+              <Button
+                onClick={() => {
+                  usarModelo(previa);
+                  setPrevia(null);
+                }}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-fg-token truncate">{campaign.name}</h3>
-                    <p className="text-sm text-fg-muted-token truncate">{campaign.subject}</p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      campaign.status === 'sent' ? 'bg-success-soft text-success-token' :
-                      campaign.status === 'draft' ? 'bg-surface-2 text-fg-token' :
-                      campaign.status === 'sending' ? 'bg-warning-soft text-warning-token' :
-                      'bg-info-soft text-info-token'
-                    }`}>
-                      {campaign.status === 'sent' ? 'Enviada' :
-                       campaign.status === 'draft' ? 'Rascunho' :
-                       campaign.status === 'sending' ? 'Enviando' :
-                       campaign.status}
-                    </span>
-                    <span className="text-sm text-fg-muted-token">{campaign.emails_sent || 0} enviados</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <Card className="p-8 text-center">
-            <MegaphoneIcon className="w-12 h-12 text-fg-muted-token mx-auto mb-3" />
-            <p className="text-fg-muted-token mb-4">Nenhuma campanha criada ainda</p>
-            <Button onClick={() => navigate('/marketing/email/new')}>
-              <PlusIcon className="w-5 h-5 mr-2" />
-              Criar Primeira Campanha
-            </Button>
-          </Card>
-        )}
-      </div>
-
-      {/* Template Preview Modal */}
-      <Modal
-        isOpen={!!previewTemplate}
-        onClose={() => setPreviewTemplate(null)}
-        title={previewTemplate?.name || 'Preview'}
-        size="xl"
-      >
-        {previewTemplate && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-surface-2 dark:bg-black rounded-lg">
-              <div>
-                <p className="text-sm text-fg-muted-token">Assunto:</p>
-                <p className="font-medium">{previewTemplate.subject}</p>
-              </div>
-              <Button onClick={() => {
-                handleUseTemplate(previewTemplate);
-                setPreviewTemplate(null);
-              }}>
-                Usar Template
+                Usar este modelo
               </Button>
             </div>
-            <div 
-              className="border rounded-lg overflow-hidden"
-              style={{ height: '500px' }}
-            >
-              {/* sandbox="" blocks scripts, forms, plugins — safe for untrusted email HTML */}
-              <iframe
-                sandbox=""
-                srcDoc={previewTemplate.html_content}
-                className="w-full h-full border-0"
-                title="Email Preview"
-              />
+            <div className="superficie h-[500px] overflow-hidden">
+              {/* sandbox="" bloqueia script, formulário e plugin: HTML de e-mail não é confiável. */}
+              <iframe sandbox="" srcDoc={previa.html_content} className="h-full w-full border-0" title="Prévia do e-mail" />
             </div>
           </div>
         )}

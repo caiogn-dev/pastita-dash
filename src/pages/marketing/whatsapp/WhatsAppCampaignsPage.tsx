@@ -1,32 +1,48 @@
 /**
- * WhatsApp Campaigns List Page
+ * Campanhas do WhatsApp — a lista.
+ *
+ * "As campanhas que já foram estão feias; quero simples" (dono, 25/09). Era um
+ * cartão grande por campanha, com fileira de botões, métricas em caixa alta e
+ * barra de progresso escrita à mão. Agora é o desenho de toda lista do painel:
+ *
+ *   PageShell → quatro números que mudam a decisão (KpiGrid)
+ *             → Secao com uma Tabela: nome, quando, para quantos,
+ *               entregues/lidas em barra, estado no SeloDeEstado
+ *             → ações no menu da linha (RowActions); clicar na linha abre o relatório
+ *
+ * Cor só em estado, e o estado vem de `estadoDeCampanha` (um mapa por domínio).
  */
-import { CampanhaAoVivo } from '../../../components/campanhas/CampanhaAoVivo';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  PlusIcon,
-  PlayIcon,
-  PauseIcon,
-  StopIcon,
-  ChartBarIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ArrowPathIcon,
-} from '@heroicons/react/24/outline';
+import { MegaphoneIcon, PlusIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, Loading } from '../../../components/common';
-import { PageShell, EmptyState, KpiGrid, InsightList, Modal } from '../../../components/ui';
-import { resumoDeCampanha, insightsDeCampanhas, type TomDeMetrica } from './resumoDeCampanha';
-import { useConfirm } from '../../../hooks';
-import { campaignsService, Campaign } from '../../../services/campaigns';
-import { QuemRecebeu } from './QuemRecebeu';
-import { PediramParaParar } from './PediramParaParar';
-import logger from '../../../services/logger';
 
-// Local type definitions
-type CampaignStats = {
+import { CampanhaAoVivo } from '../../../components/campanhas/CampanhaAoVivo';
+import {
+  Button,
+  EmptyState,
+  InsightList,
+  KpiGrid,
+  Modal,
+  PageShell,
+  Progresso,
+  RowActions,
+  Secao,
+  SeloDeEstado,
+  Skeleton,
+  Tabela,
+  estadoDeCampanha,
+} from '../../../components/ui';
+import type { ColunaDaTabela, RowAction } from '../../../components/ui';
+import { useConfirm } from '../../../hooks/useConfirm';
+import { campaignsService, Campaign } from '../../../services/campaigns';
+import logger from '../../../services/logger';
+import { estadoDaLista } from '../../../utils/estadoDaLista';
+import { PediramParaParar } from './PediramParaParar';
+import { QuemRecebeu } from './QuemRecebeu';
+import { insightsDeCampanhas, resumoDeCampanha } from './resumoDeCampanha';
+
+type RelatorioDaCampanha = {
   id: string;
   name: string;
   status: string;
@@ -42,269 +58,340 @@ type CampaignStats = {
   completed_at: string | null;
 };
 
-// =============================================================================
-// COMPONENT
-// =============================================================================
+const NOVA_CAMPANHA = '/marketing/whatsapp/new';
+
+const pct = (parte: number, todo: number): number | null =>
+  todo > 0 ? Math.round((parte / todo) * 100) : null;
+
+const dataCurta = (iso: string) =>
+  new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+const dataLonga = (iso: string) => new Date(iso).toLocaleString('pt-BR');
+
+function mesmoMes(iso: string | null | undefined, hoje: Date): boolean {
+  if (!iso) return false;
+  const d = new Date(iso);
+  return d.getFullYear() === hoje.getFullYear() && d.getMonth() === hoje.getMonth();
+}
+
+/** Quando a campanha acontece, na frase que responde à pergunta do dono. */
+function quando(c: Campaign): string {
+  if (c.status === 'scheduled' && c.scheduled_at) return `Agendada para ${dataCurta(c.scheduled_at)}`;
+  if (c.started_at) return dataCurta(c.started_at);
+  return `Criada em ${dataCurta(c.created_at)}`;
+}
+
+/** Campanha grátis sai em levas ao longo do dia (janela de 24 h de cada cliente). */
+const saiEmLevas = (c: Campaign) =>
+  Boolean((c.audience_filters as Record<string, unknown> | undefined)?.somente_janela_aberta);
 
 export const WhatsAppCampaignsPage: React.FC = () => {
   const navigate = useNavigate();
   const [ConfirmDialog, confirm] = useConfirm();
 
-  const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
-  const [stats, setStats] = useState<CampaignStats | null>(null);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [buscando, setBuscando] = useState(true);
+  const [falhou, setFalhou] = useState(false);
+  const [carregouAlgumaVez, setCarregouAlgumaVez] = useState(false);
+  const [emAcao, setEmAcao] = useState<string | null>(null);
+  const [aberta, setAberta] = useState<Campaign | null>(null);
+  const [relatorio, setRelatorio] = useState<RelatorioDaCampanha | null>(null);
+  // Sequência da busca em voo: uma resposta velha não apaga a mais nova.
+  const requisicao = useRef(0);
+  const jaCarregou = useRef(false);
 
-  // =============================================================================
-  // DATA LOADING
-  // =============================================================================
-
-  const loadCampaigns = useCallback(async () => {
+  const carregar = useCallback(async () => {
+    const minha = ++requisicao.current;
+    setBuscando(true);
+    setFalhou(false);
     try {
-      setLoading(true);
-      const response = await campaignsService.getCampaigns();
-      setCampaigns(response.results || []);
+      const resposta = await campaignsService.getCampaigns();
+      if (minha !== requisicao.current) return;
+      setCampaigns(resposta.results || []);
+      jaCarregou.current = true;
+      setCarregouAlgumaVez(true);
     } catch (error) {
+      if (minha !== requisicao.current) return;
       logger.error('Failed to load campaigns', error);
-      setCampaigns([]);
+      setFalhou(true);
+      // Com lista na tela, a falha é só de atualização: a tabela fica e o toast avisa.
+      if (jaCarregou.current) toast.error('Não foi possível atualizar as campanhas');
     } finally {
-      setLoading(false);
+      if (minha === requisicao.current) setBuscando(false);
     }
   }, []);
 
   useEffect(() => {
-    loadCampaigns();
-  }, [loadCampaigns]);
+    carregar();
+  }, [carregar]);
 
-  const loadStats = async (campaignId: string) => {
+  const estado = estadoDaLista({
+    temDados: carregouAlgumaVez,
+    buscando,
+    falhou,
+    quantidade: campaigns.length,
+  });
+
+  // ── Ações ──────────────────────────────────────────────────────────────────
+  const executar = async (c: Campaign, acao: () => Promise<unknown>, sucesso: string, erro: string) => {
+    setEmAcao(c.id);
     try {
-      const statsData = await campaignsService.getCampaignStats(campaignId);
-      setStats(statsData as CampaignStats);
+      await acao();
+      toast.success(sucesso);
+      carregar();
     } catch (error) {
-      logger.error('Failed to load stats', error);
-    }
-  };
-
-  // =============================================================================
-  // HANDLERS
-  // =============================================================================
-
-  const handleStartCampaign = async (campaign: Campaign) => {
-    setActionLoading(campaign.id);
-    try {
-      await campaignsService.startCampaign(campaign.id);
-      toast.success('Campanha iniciada!');
-      loadCampaigns();
-    } catch (error) {
-      logger.error('Failed to start campaign', error);
-      toast.error('Erro ao iniciar campanha');
+      logger.error(erro, error);
+      toast.error(erro);
     } finally {
-      setActionLoading(null);
+      setEmAcao(null);
     }
   };
 
-  const handlePauseCampaign = async (campaign: Campaign) => {
-    setActionLoading(campaign.id);
-    try {
-      await campaignsService.pauseCampaign(campaign.id);
-      toast.success('Campanha pausada');
-      loadCampaigns();
-    } catch (error) {
-      logger.error('Failed to pause campaign', error);
-      toast.error('Erro ao pausar campanha');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleResumeCampaign = async (campaign: Campaign) => {
-    setActionLoading(campaign.id);
-    try {
-      await campaignsService.resumeCampaign(campaign.id);
-      toast.success('Campanha retomada!');
-      loadCampaigns();
-    } catch (error) {
-      logger.error('Failed to resume campaign', error);
-      toast.error('Erro ao retomar campanha');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleCancelCampaign = async (campaign: Campaign) => {
-    const confirmed = await confirm({
+  const cancelar = async (c: Campaign) => {
+    const ok = await confirm({
       title: 'Cancelar campanha',
-      message: 'Tem certeza que deseja cancelar esta campanha?',
+      message: `"${c.name}" para de enviar agora. Quem já recebeu não é afetado.`,
+      confirmText: 'Cancelar campanha',
+      cancelText: 'Manter',
       variant: 'warning',
     });
-    if (!confirmed) return;
+    if (!ok) return;
+    executar(c, () => campaignsService.cancelCampaign(c.id), 'Campanha cancelada', 'Não foi possível cancelar a campanha');
+  };
 
-    setActionLoading(campaign.id);
+  const abrirRelatorio = async (c: Campaign) => {
+    setAberta(c);
+    setRelatorio(null);
     try {
-      await campaignsService.cancelCampaign(campaign.id);
-      toast.success('Campanha cancelada');
-      loadCampaigns();
+      setRelatorio((await campaignsService.getCampaignStats(c.id)) as RelatorioDaCampanha);
     } catch (error) {
-      logger.error('Failed to cancel campaign', error);
-      toast.error('Erro ao cancelar campanha');
-    } finally {
-      setActionLoading(null);
+      logger.error('Failed to load stats', error);
+      toast.error('Não foi possível carregar o relatório');
+      setAberta(null);
     }
   };
 
-  const handleForceProcess = async (campaign: Campaign) => {
-    setActionLoading(campaign.id);
-    try {
-      // Process campaign by triggering a batch via getRecipients
-      const recipients = await campaignsService.getCampaignRecipients(campaign.id, 'pending');
-      toast.success(`Processando: ${recipients.length} pendentes`);
-      loadCampaigns();
-      if (selectedCampaign?.id === campaign.id) {
-        await loadStats(campaign.id);
-      }
-    } catch (error) {
-      logger.error('Failed to process campaign', error);
-      toast.error('Erro ao processar campanha');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleViewStats = async (campaign: Campaign) => {
-    setSelectedCampaign(campaign);
-    await loadStats(campaign.id);
-  };
-
-  // =============================================================================
-  // DERIVADOS
-  // =============================================================================
-
-  const insights = React.useMemo(() => insightsDeCampanhas(campaigns), [campaigns]);
-
-  const totalEnviadas = campaigns.reduce((a, c) => a + (c.messages_sent ?? 0), 0);
-  const totalEntregues = campaigns.reduce((a, c) => a + (c.messages_delivered ?? 0), 0);
-  const totalLidas = campaigns.reduce((a, c) => a + (c.messages_read ?? 0), 0);
-  const totalFalhas = campaigns.reduce((a, c) => a + (c.messages_failed ?? 0), 0);
-  // O custo do canal. Até 28/ago/2026 esta tela só somava o lado bom do
-  // disparo: oito pessoas já tinham apertado "Parar promoções" e não havia
-  // onde ver isso.
-  // `null` sem envio: "0%" acusaria um canal ruim que nem foi usado.
-  const leituraMedia = totalEnviadas > 0 ? Math.round((totalLidas / totalEnviadas) * 100) : null;
-
-  // =============================================================================
-  // HELPERS
-  // =============================================================================
-
-  // Estados em tokens do tema. Antes eram `bg-surface-2 text-fg-token` fixos:
-  // no modo escuro o cinza claro brigava com o fundo, e a página parecia de
-  // outro sistema depois que o resto migrou para os tokens.
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { className: string; label: string; icon: React.ReactNode }> = {
-      draft: {
-        className: 'bg-surface-2 text-fg-muted-token',
-        label: 'Rascunho',
-        icon: null,
-      },
-      scheduled: {
-        className: 'bg-surface-2 text-fg-token',
-        label: 'Agendada',
-        icon: <ClockIcon className="w-3 h-3" />,
-      },
-      running: {
-        className: 'bg-brand-soft text-brand-ink',
-        label: 'Enviando',
-        icon: <ArrowPathIcon className="w-3 h-3 animate-spin" />,
-      },
-      paused: {
-        className: 'bg-surface-2 text-fg-token',
-        label: 'Pausada',
-        icon: <PauseIcon className="w-3 h-3" />,
-      },
-      completed: {
-        className: 'bg-[color-mix(in_srgb,var(--success)_14%,transparent)] text-[var(--success)]',
-        label: 'Concluída',
-        icon: <CheckCircleIcon className="w-3 h-3" />,
-      },
-      cancelled: {
-        className: 'bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] text-[var(--danger)]',
-        label: 'Cancelada',
-        icon: <XCircleIcon className="w-3 h-3" />,
-      },
+  const acoesDa = (c: Campaign): RowAction[] => {
+    const ocupada = emAcao === c.id;
+    const enviarAgora: RowAction = {
+      rotulo: 'Enviar agora',
+      desabilitada: ocupada,
+      onClick: () => executar(c, () => campaignsService.startCampaign(c.id), 'Campanha enviando', 'Não foi possível iniciar a campanha'),
     };
-
-    const config = statusConfig[status] || {
-      className: 'bg-surface-2 text-fg-muted-token',
-      label: status,
-      icon: null,
+    const cancelarCampanha: RowAction = { rotulo: 'Cancelar campanha', destrutiva: true, desabilitada: ocupada, onClick: () => cancelar(c) };
+    const porEstado: Record<string, RowAction[]> = {
+      draft: [enviarAgora],
+      scheduled: [enviarAgora, cancelarCampanha],
+      running: [
+        {
+          rotulo: 'Pausar envio',
+          desabilitada: ocupada,
+          onClick: () => executar(c, () => campaignsService.pauseCampaign(c.id), 'Campanha pausada', 'Não foi possível pausar a campanha'),
+        },
+        {
+          // Útil quando a fila do servidor parou: empurra os pendentes.
+          rotulo: 'Processar fila',
+          desabilitada: ocupada,
+          onClick: () =>
+            executar(
+              c,
+              () => campaignsService.getCampaignRecipients(c.id, 'pending'),
+              'Fila processada',
+              'Não foi possível processar a fila',
+            ),
+        },
+      ],
+      paused: [
+        {
+          rotulo: 'Retomar envio',
+          desabilitada: ocupada,
+          onClick: () => executar(c, () => campaignsService.resumeCampaign(c.id), 'Campanha retomada', 'Não foi possível retomar a campanha'),
+        },
+        cancelarCampanha,
+      ],
     };
-
-    return (
-      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-pill text-xs font-semibold ${config.className}`}>
-        {config.icon}
-        {config.label}
-      </span>
-    );
+    return [{ rotulo: 'Ver relatório', onClick: () => abrirRelatorio(c) }, ...(porEstado[c.status] ?? [])];
   };
 
-  /** Cor do número na linha. O rótulo já diz o que é; a cor só apressa a leitura. */
-  const TOM_METRICA: Record<TomDeMetrica, string> = {
-    neutro: 'text-fg-token',
-    bom: 'text-[var(--success)]',
-    perigo: 'text-[var(--danger)]',
-  };
+  // ── Números ────────────────────────────────────────────────────────────────
+  const numeros = useMemo(() => {
+    const hoje = new Date();
+    const soma = (campo: 'messages_sent' | 'messages_delivered' | 'messages_read') =>
+      campaigns.reduce((a, c) => a + (c[campo] ?? 0), 0);
+    const enviadas = soma('messages_sent');
+    const entregues = soma('messages_delivered');
+    const lidas = soma('messages_read');
+    return {
+      enviadasNoMes: campaigns
+        .filter((c) => mesmoMes(c.started_at ?? c.created_at, hoje))
+        .reduce((a, c) => a + (c.messages_sent ?? 0), 0),
+      enviadas,
+      entregues,
+      lidas,
+      // `null` sem envio: "0%" acusaria um canal ruim que nem foi usado.
+      taxaEntrega: pct(entregues, enviadas),
+      taxaLeitura: pct(lidas, enviadas),
+      agendadas: campaigns.filter((c) => c.status === 'scheduled').length,
+    };
+  }, [campaigns]);
 
-  // =============================================================================
-  // RENDER
-  // =============================================================================
+  const insights = useMemo(() => insightsDeCampanhas(campaigns), [campaigns]);
 
-  if (loading) {
-    return <Loading />;
-  }
+  // ── Tabela ─────────────────────────────────────────────────────────────────
+  const colunas: ColunaDaTabela<Campaign>[] = [
+    {
+      chave: 'nome',
+      cabecalho: 'Campanha',
+      render: (c) => <span className="font-medium text-fg-token">{c.name}</span>,
+    },
+    {
+      chave: 'quando',
+      cabecalho: 'Quando',
+      render: (c) => (
+        <span className="text-fg-muted-token">
+          {quando(c)}
+          {saiEmLevas(c) && ['scheduled', 'running'].includes(c.status) && (
+            <span className="block text-caption">Sai em levas ao longo do dia</span>
+          )}
+        </span>
+      ),
+    },
+    {
+      chave: 'para',
+      cabecalho: 'Para quantos',
+      alinhamento: 'direita',
+      render: (c) => (
+        <span className="tabular-nums">
+          {c.status === 'running' ? `${c.messages_sent ?? 0} de ${c.total_recipients ?? 0}` : (c.total_recipients ?? 0)}
+        </span>
+      ),
+    },
+    {
+      chave: 'entregues',
+      cabecalho: 'Entregues',
+      render: (c) => {
+        const taxa = resumoDeCampanha(c).taxaEntrega;
+        return taxa === null ? (
+          <span className="text-fg-muted-token">—</span>
+        ) : (
+          <Progresso pct={taxa} rotulo={`Entregues em ${c.name}`} mostrarValor className="min-w-[7rem]" />
+        );
+      },
+    },
+    {
+      chave: 'lidas',
+      cabecalho: 'Lidas',
+      soNoDesktop: true,
+      render: (c) => {
+        const taxa = resumoDeCampanha(c).taxaLeitura;
+        return taxa === null ? (
+          <span className="text-fg-muted-token">—</span>
+        ) : (
+          <Progresso pct={taxa} rotulo={`Lidas em ${c.name}`} mostrarValor className="min-w-[7rem]" />
+        );
+      },
+    },
+    {
+      chave: 'estado',
+      cabecalho: 'Estado',
+      render: (c) => {
+        const e = estadoDeCampanha(c.status);
+        return (
+          <SeloDeEstado tone={e.tone} ponto={c.status === 'running'}>
+            {e.rotulo}
+          </SeloDeEstado>
+        );
+      },
+    },
+    {
+      chave: 'acoes',
+      cabecalho: 'Ações',
+      alinhamento: 'direita',
+      render: (c) => <RowActions rotulo={`Ações de ${c.name}`} acoes={acoesDa(c)} />,
+    },
+  ];
+
+  const criar = (
+    <Button onClick={() => navigate(NOVA_CAMPANHA)} leftIcon={<PlusIcon className="h-4 w-4" />}>
+      Criar campanha
+    </Button>
+  );
+
+  const e = relatorio ? estadoDeCampanha(relatorio.status) : null;
 
   return (
     <PageShell
       trilha={[{ rotulo: 'Campanhas', href: '/marketing' }, { rotulo: 'WhatsApp' }]}
-      titulo="Campanhas WhatsApp"
-      acoes={
-        <Button onClick={() => navigate('/marketing/whatsapp/new')}>
-          <PlusIcon className="w-5 h-5 mr-2" />
-          Nova Campanha
-        </Button>
-      }
+      titulo="Campanhas no WhatsApp"
+      descricao="O que saiu, o que chegou e o que foi lido. Clique numa campanha para ver quem recebeu."
+      acoes={estado === 'lista' ? criar : undefined}
     >
-
-      {/* Duas campanhas com "Concluída" não dizem se o canal está funcionando.
-          O agregado diz — e o insight diz o que fazer a respeito. */}
-      {campaigns.length > 0 && (
-        <div className="space-y-5 mb-5">
+      {estado === 'lista' && (
+        <section aria-label="Números das campanhas">
           <KpiGrid
             itens={[
               {
-                label: 'Campanhas',
-                value: campaigns.length,
-                definicao: 'todas já criadas nesta conta, em qualquer estado',
+                label: 'Enviadas no mês',
+                value: numeros.enviadasNoMes,
+                definicao: 'mensagens que saíram em campanhas começadas neste mês',
               },
               {
-                label: 'Pessoas alcançadas',
-                value: totalEntregues,
-                definicao: 'mensagens confirmadas no aparelho, somando as campanhas',
+                label: 'Entregues',
+                value: numeros.taxaEntrega === null ? '—' : `${numeros.taxaEntrega}%`,
+                definicao:
+                  numeros.taxaEntrega === null
+                    ? 'nenhuma mensagem enviada ainda'
+                    : `${numeros.entregues} de ${numeros.enviadas} enviadas chegaram no aparelho`,
               },
               {
-                label: 'Leitura média',
-                value: leituraMedia === null ? '—' : `${leituraMedia}%`,
-                tone: 'brand',
-                definicao: 'lidas ÷ enviadas no total — abaixo de 50% o texto pede revisão',
+                label: 'Lidas',
+                value: numeros.taxaLeitura === null ? '—' : `${numeros.taxaLeitura}%`,
+                definicao: 'lidas sobre enviadas; abaixo de 50% o texto pede revisão',
               },
               {
-                label: 'Falhas',
-                value: totalFalhas,
-                definicao: 'não chegaram — o motivo de cada uma está no relatório da campanha',
+                label: 'Agendadas',
+                value: numeros.agendadas,
+                definicao: 'saem sozinhas no horário marcado',
               },
             ]}
           />
-          {/* O card somava um contador por campanha e mostrava 0 com 11
-              pessoas fora da lista; a fonte agora é o próprio pedido de saída. */}
+        </section>
+      )}
+
+      {estado === 'falhou' ? (
+        <div role="alert" className="superficie">
+          <EmptyState
+            icone={<MegaphoneIcon className="h-10 w-10" />}
+            titulo="Não foi possível carregar as campanhas"
+            descricao="A conexão falhou. Isso não quer dizer que não há campanhas: tente de novo."
+            acao={<Button variant="secondary" onClick={() => carregar()}>Tentar de novo</Button>}
+          />
+        </div>
+      ) : estado === 'vazio' ? (
+        <div className="superficie">
+          <EmptyState
+            icone={<MegaphoneIcon className="h-10 w-10" />}
+            titulo="Nenhuma campanha ainda"
+            descricao="Fale com quem já comprou de você: escolha quem recebe, escreva a mensagem e envie agora ou agende."
+            acao={criar}
+          />
+        </div>
+      ) : (
+        <Secao titulo="Campanhas" contador={estado === 'lista' ? campaigns.length : undefined}>
+          <Tabela<Campaign>
+            itens={campaigns}
+            colunas={colunas}
+            chave={(c) => c.id}
+            rotuloDaLinha={(c) => `Abrir relatório de ${c.name}`}
+            onAbrir={abrirRelatorio}
+            carregando={estado === 'carregando'}
+          />
+        </Secao>
+      )}
+
+      {estado === 'lista' && (
+        <>
+          {/* O custo do canal: quem pediu para parar. A fonte é o próprio pedido de saída. */}
           <PediramParaParar />
           {insights.length > 0 && (
             <InsightList
@@ -313,297 +400,54 @@ export const WhatsAppCampaignsPage: React.FC = () => {
               itens={insights}
             />
           )}
-        </div>
+        </>
       )}
 
-      {/* Campaigns List */}
-      {campaigns.length === 0 ? (
-        // Vazio que VENDE: dizia só "nenhuma campanha criada", que é o que a
-        // pessoa já estava vendo. O que falta é o motivo de criar a primeira.
-        <EmptyState
-          variante="ativacao"
-          estado="Nenhuma campanha ainda"
-          titulo="Fale com quem já comprou de você."
-          descricao="Sua base de clientes é a lista mais barata que existe: eles já conhecem a comida e já confiam no seu WhatsApp."
-          acao={
-            <Button onClick={() => navigate('/marketing/whatsapp/new')}>
-              <PlusIcon className="w-5 h-5 mr-2" />
-              Criar campanha
-            </Button>
-          }
-          beneficios={[
-            {
-              titulo: 'Trazer de volta quem sumiu',
-              descricao: 'Cliente parado há 30 dias costuma voltar com um empurrão.',
-            },
-            {
-              titulo: 'Avisar de novidade',
-              descricao: 'Prato novo ou promoção chega na hora em quem já compra.',
-            },
-            {
-              titulo: 'Encher o dia fraco',
-              descricao: 'Dispare na terça de manhã e veja o movimento reagir.',
-            },
-            {
-              titulo: 'Você escolhe quem recebe',
-              descricao: 'Toda a base ou só um grupo — não é disparo às cegas.',
-            },
-          ]}
-        />
-      ) : (
-        <div className="space-y-4">
-          {campaigns.map((campaign) => {
-            const r = resumoDeCampanha(campaign);
-            return (
-            <Card key={campaign.id} className="p-5">
-              <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="font-semibold text-fg-token truncate">
-                      {campaign.name}
-                    </h3>
-                    {getStatusBadge(campaign.status)}
-                  </div>
-
-                  <p className="text-sm text-fg-muted-token">
-                    {r.publico}
-                    {campaign.started_at && (
-                      <> · enviada em {new Date(campaign.started_at).toLocaleDateString('pt-BR')}</>
-                    )}
-                  </p>
-
-                  {campaign.scheduled_at && campaign.status === 'scheduled' && (
-                    <p className="text-sm text-brand-ink mt-1">
-                      <ClockIcon className="w-4 h-4 inline mr-1" />
-                      Agendada para {new Date(campaign.scheduled_at).toLocaleString('pt-BR')}
-                    </p>
-                  )}
-
-                  {/* Campanha grátis sai em levas ao longo do dia — cada cliente
-                      no horário em que a janela dele ainda está aberta. Sem isto,
-                      "12 de 40" às 11h parece campanha travada. */}
-                  {Boolean((campaign.audience_filters as Record<string, unknown> | undefined)?.somente_janela_aberta)
-                    && ['scheduled', 'running'].includes(campaign.status) && (
-                    <CampanhaAoVivo campanhaId={campaign.id} horarioDaCampanha={campaign.scheduled_at} />
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  {/* Action Buttons based on status */}
-                  {campaign.status === 'draft' && (
-                    <Button
-                      size="sm"
-                      onClick={() => handleStartCampaign(campaign)}
-                      disabled={actionLoading === campaign.id}
-                    >
-                      <PlayIcon className="w-4 h-4 mr-1" />
-                      Iniciar
-                    </Button>
-                  )}
-
-                  {campaign.status === 'scheduled' && (
-                    <>
-                      <Button
-                        size="sm"
-                        onClick={() => handleStartCampaign(campaign)}
-                        disabled={actionLoading === campaign.id}
-                      >
-                        <PlayIcon className="w-4 h-4 mr-1" />
-                        Iniciar agora
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => handleCancelCampaign(campaign)}
-                        disabled={actionLoading === campaign.id}
-                      >
-                        <StopIcon className="w-4 h-4 mr-1" />
-                        Cancelar
-                      </Button>
-                    </>
-                  )}
-
-                  {campaign.status === 'running' && (
-                    <>
-                      <Button
-                        size="sm"
-                        onClick={() => handleForceProcess(campaign)}
-                        disabled={actionLoading === campaign.id}
-                        title="Forçar processamento (útil se Celery não está rodando)"
-                      >
-                        <ArrowPathIcon className={`w-4 h-4 mr-1 ${actionLoading === campaign.id ? 'animate-spin' : ''}`} />
-                        Processar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => handlePauseCampaign(campaign)}
-                        disabled={actionLoading === campaign.id}
-                      >
-                        <PauseIcon className="w-4 h-4 mr-1" />
-                        Pausar
-                      </Button>
-                    </>
-                  )}
-
-                  {campaign.status === 'paused' && (
-                    <>
-                      <Button
-                        size="sm"
-                        onClick={() => handleResumeCampaign(campaign)}
-                        disabled={actionLoading === campaign.id}
-                      >
-                        <PlayIcon className="w-4 h-4 mr-1" />
-                        Retomar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => handleCancelCampaign(campaign)}
-                        disabled={actionLoading === campaign.id}
-                      >
-                        <StopIcon className="w-4 h-4 mr-1" />
-                        Cancelar
-                      </Button>
-                    </>
-                  )}
-
-                  {/* Era um botão só com o ícone de gráfico. Ícone sozinho não
-                      se descobre: quem não clicou nunca não sabe que existe
-                      relatório. O rótulo custa 60px e resolve. */}
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => handleViewStats(campaign)}
-                  >
-                    <ChartBarIcon className="w-4 h-4 mr-1" />
-                    Relatório
-                  </Button>
-                </div>
-              </div>
-
-              {/* O RESULTADO na linha, não no modal. A pergunta da tela é "deu
-                  retorno?" — enviadas é esforço, lidas é resultado. */}
-              {r.metricas.length > 0 ? (
-                <div className="mt-4 flex flex-wrap gap-x-8 gap-y-3 border-t border-border-token pt-3">
-                  {r.metricas.map((m) => (
-                    <div key={m.rotulo}>
-                      <p className="text-xs font-bold text-fg-muted-token uppercase tracking-widest">{m.rotulo}</p>
-                      <p className={`text-lg font-bold leading-tight ${TOM_METRICA[m.tom]}`}>{m.valor}</p>
-                      {m.detalhe && <p className="text-xs text-fg-muted-token">{m.detalhe}</p>}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                r.chamada && (
-                  <p className="mt-3 border-t border-border-token pt-3 text-sm text-fg-muted-token">
-                    {r.chamada}
-                  </p>
-                )
-              )}
-
-              {/* Progress Bar for running campaigns */}
-              {r.progresso !== null && (
-                <div className="mt-4">
-                  <div className="flex justify-between text-xs text-fg-muted-token mb-1">
-                    <span>Progresso do envio</span>
-                    <span>{r.progresso}%</span>
-                  </div>
-                  <div
-                    className="w-full bg-surface-2 rounded-pill h-2"
-                    role="progressbar"
-                    aria-valuenow={r.progresso}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label={`Envio de ${campaign.name}`}
-                  >
-                    <div
-                      className="bg-brand h-2 rounded-pill transition-all"
-                      style={{ width: `${r.progresso}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-            </Card>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Era um `fixed inset-0` caseiro: sem Escape, sem foco preso, sem
-          role=dialog. Leitor de tela continuava lendo a página atrás. */}
       <Modal
-        open={Boolean(selectedCampaign && stats)}
-        onClose={() => { setSelectedCampaign(null); setStats(null); }}
-        title="Relatório da campanha"
+        open={Boolean(aberta)}
+        onClose={() => {
+          setAberta(null);
+          setRelatorio(null);
+        }}
+        title={aberta ? `Relatório de ${aberta.name}` : 'Relatório da campanha'}
         size="lg"
       >
-        {stats && (
+        {!relatorio || !aberta ? (
+          <div className="space-y-3" aria-busy="true">
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        ) : (
           <div className="space-y-5">
-            <div className="flex items-center gap-3">
-              <h3 className="font-semibold text-fg-token">{stats.name}</h3>
-              {getStatusBadge(stats.status)}
-            </div>
+            {e && <SeloDeEstado tone={e.tone}>{e.rotulo}</SeloDeEstado>}
 
             <KpiGrid
               itens={[
-                {
-                  label: 'Destinatários',
-                  value: stats.total_recipients,
-                  definicao: 'quantas pessoas entraram na lista de envio',
-                },
-                {
-                  label: 'Enviadas',
-                  value: stats.messages_sent,
-                  definicao: 'saíram do nosso lado — não garante que chegaram',
-                },
+                { label: 'Destinatários', value: relatorio.total_recipients, definicao: 'quantas pessoas entraram na lista de envio' },
+                { label: 'Enviadas', value: relatorio.messages_sent, definicao: 'saíram do nosso lado; não garante que chegaram' },
                 {
                   label: 'Entregues',
-                  // A taxa vai colada no número: "90" sozinho não diz se é bom,
-                  // e o operador não deveria dividir de cabeça.
-                  value: (
-                    <>
-                      {stats.messages_delivered}
-                      {stats.delivery_rate != null && (
-                        <span className="text-base font-semibold text-fg-muted-token ml-2">
-                          {stats.delivery_rate.toFixed(0)}%
-                        </span>
-                      )}
-                    </>
-                  ),
+                  value: relatorio.delivery_rate != null ? `${relatorio.messages_delivered} · ${relatorio.delivery_rate.toFixed(0)}%` : relatorio.messages_delivered,
                   definicao: 'confirmadas pelo WhatsApp no aparelho do cliente',
                 },
                 {
                   label: 'Lidas',
-                  value: (
-                    <>
-                      {stats.messages_read}
-                      {stats.read_rate != null && (
-                        <span className="text-base font-semibold text-fg-muted-token ml-2">
-                          {stats.read_rate.toFixed(0)}%
-                        </span>
-                      )}
-                    </>
-                  ),
-                  tone: 'brand',
-                  definicao: 'a única métrica que mostra atenção de verdade',
+                  value: relatorio.read_rate != null ? `${relatorio.messages_read} · ${relatorio.read_rate.toFixed(0)}%` : relatorio.messages_read,
+                  definicao: 'a métrica que mostra atenção de verdade',
                 },
               ]}
             />
 
-            {/* Antes: um chute ("quase sempre número inválido"). Agora a lista
-                de pessoas com o motivo real de cada uma. */}
-            {selectedCampaign && <QuemRecebeu campaignId={selectedCampaign.id} />}
-
-            {stats.pending > 0 && (
-              <p className="text-sm text-fg-muted-token">
-                {stats.pending} ainda na fila de envio.
-              </p>
+            {saiEmLevas(aberta) && ['scheduled', 'running'].includes(aberta.status) && (
+              <CampanhaAoVivo campanhaId={aberta.id} horarioDaCampanha={aberta.scheduled_at} />
             )}
 
-            <div className="text-xs text-fg-muted-token space-y-1 border-t border-border-token pt-3">
-              {stats.started_at && <p>Iniciada em {new Date(stats.started_at).toLocaleString('pt-BR')}</p>}
-              {stats.completed_at && <p>Concluída em {new Date(stats.completed_at).toLocaleString('pt-BR')}</p>}
+            <QuemRecebeu campaignId={aberta.id} />
+
+            <div className="space-y-1 border-t border-border-token pt-3 text-caption text-fg-muted-token">
+              {relatorio.pending > 0 && <p>{relatorio.pending} ainda na fila de envio.</p>}
+              {relatorio.started_at && <p>Começou em {dataLonga(relatorio.started_at)}</p>}
+              {relatorio.completed_at && <p>Terminou em {dataLonga(relatorio.completed_at)}</p>}
             </div>
           </div>
         )}

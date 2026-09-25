@@ -1,30 +1,38 @@
 /**
- * Email Campaigns List Page
- * 
- * Lists all email campaigns with status, stats, and actions.
+ * Campanhas de e-mail — a lista, com o mesmo desenho da do WhatsApp.
+ *
+ * Era um cartão por campanha com selo pintado por um mapa de status próprio,
+ * ícone por estado e uma caixinha de métricas que só aparecia nas enviadas.
+ * Agora: quatro números, uma Tabela com a abertura em barra e o estado no
+ * SeloDeEstado (tom de `estadoDeCampanha`), ações no menu da linha.
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  PlusIcon,
-  PaperAirplaneIcon,
-  PauseIcon,
-  TrashIcon,
-  EyeIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  EnvelopeIcon,
-  ArrowPathIcon,
-} from '@heroicons/react/24/outline';
+import { EnvelopeIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { Card, Button, Modal, Loading } from '../../../components/common';
-import { useStore, useConfirm } from '../../../hooks';
+
 import api from '@/services/api';
-import { EMAIL_RECIPIENT_STATUS_LABELS } from '../../../utils/rotulosDeEstado';
-import { PageShell, Tabela, Badge, KpiGrid } from '../../../components/ui';
+import {
+  Button,
+  EmptyState,
+  KpiGrid,
+  Modal,
+  PageShell,
+  Progresso,
+  RowActions,
+  Secao,
+  SeloDeEstado,
+  Tabela,
+  TableSkeleton,
+  estadoDeCampanha,
+  estadoDeEnvio,
+} from '../../../components/ui';
+import type { ColunaDaTabela, RowAction } from '../../../components/ui';
+import { useConfirm } from '../../../hooks/useConfirm';
+import { useStore } from '../../../hooks/useStore';
+import { estadoDaLista } from '../../../utils/estadoDaLista';
 
 interface EmailCampaign {
   id: string;
@@ -54,326 +62,351 @@ interface CampaignRecipient {
   error_message: string | null;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
-  draft: { label: 'Rascunho', color: 'bg-surface-2 text-fg-token', icon: ClockIcon },
-  scheduled: { label: 'Agendada', color: 'bg-info-soft text-info-token', icon: ClockIcon },
-  sending: { label: 'Enviando', color: 'bg-warning-soft text-warning-token', icon: ArrowPathIcon },
-  sent: { label: 'Enviada', color: 'bg-success-soft text-success-token', icon: CheckCircleIcon },
-  paused: { label: 'Pausada', color: 'bg-warning-soft text-warning-token', icon: PauseIcon },
-  cancelled: { label: 'Cancelada', color: 'bg-danger-soft text-danger-token', icon: XCircleIcon },
-};
+const NOVA_CAMPANHA = '/marketing/email/new';
 
-const AUDIENCE_LABELS: Record<string, string> = {
-  all: 'Todos',
-  customers: 'Clientes',
-  subscribers: 'Inscritos',
-  segment: 'Segmento',
-  custom: 'Personalizado',
-};
+const pct = (parte: number, todo: number): number | null =>
+  todo > 0 ? Math.round((parte / todo) * 100) : null;
+
+const dataCurta = (iso: string) => format(new Date(iso), "dd/MM 'às' HH:mm", { locale: ptBR });
+
+function mesmoMes(iso: string | null | undefined, hoje: Date): boolean {
+  if (!iso) return false;
+  const d = new Date(iso);
+  return d.getFullYear() === hoje.getFullYear() && d.getMonth() === hoje.getMonth();
+}
+
+function quando(c: EmailCampaign): string {
+  if (c.status === 'scheduled' && c.scheduled_at) return `Agendada para ${dataCurta(c.scheduled_at)}`;
+  const saiu = c.completed_at ?? c.started_at;
+  if (saiu) return dataCurta(saiu);
+  return `Criada em ${dataCurta(c.created_at)}`;
+}
+
+const ENTREGUES = ['sent', 'delivered', 'opened', 'clicked'];
+const ABERTOS = ['opened', 'clicked'];
+const FALHAS = ['failed', 'bounced'];
 
 export const CampaignsListPage: React.FC = () => {
   const navigate = useNavigate();
   const { storeId } = useStore();
   const [ConfirmDialog, confirm] = useConfirm();
 
-  const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
-  const [selectedCampaign, setSelectedCampaign] = useState<EmailCampaign | null>(null);
+  const [buscando, setBuscando] = useState(true);
+  const [falhou, setFalhou] = useState(false);
+  const [carregouAlgumaVez, setCarregouAlgumaVez] = useState(false);
+  const [emAcao, setEmAcao] = useState<string | null>(null);
+  const [aberta, setAberta] = useState<EmailCampaign | null>(null);
   const [recipients, setRecipients] = useState<CampaignRecipient[]>([]);
-  const [loadingRecipients, setLoadingRecipients] = useState(false);
-  const [showRecipientsModal, setShowRecipientsModal] = useState(false);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [carregandoDestinatarios, setCarregandoDestinatarios] = useState(false);
+  const requisicao = useRef(0);
+  const jaCarregou = useRef(false);
 
-  const loadCampaigns = useCallback(async () => {
+  const carregar = useCallback(async () => {
+    const minha = ++requisicao.current;
+    setBuscando(true);
+    setFalhou(false);
     try {
-      setLoading(true);
-      const params: Record<string, string> = {};
-      if (storeId) {
-        params.store = storeId;
-      }
-
-      const response = await api.get(`/marketing/campaigns/`, { params });
-      
+      const params: Record<string, string> = storeId ? { store: storeId } : {};
+      const response = await api.get('/marketing/campaigns/', { params });
+      if (minha !== requisicao.current) return;
       const data = response.data?.results || response.data || [];
       setCampaigns(Array.isArray(data) ? data : []);
+      jaCarregou.current = true;
+      setCarregouAlgumaVez(true);
     } catch (error) {
+      if (minha !== requisicao.current) return;
       console.error('Error loading campaigns:', error);
-      toast.error('Erro ao carregar campanhas');
+      setFalhou(true);
+      if (jaCarregou.current) toast.error('Não foi possível atualizar as campanhas');
     } finally {
-      setLoading(false);
+      if (minha === requisicao.current) setBuscando(false);
     }
   }, [storeId]);
 
   useEffect(() => {
-    loadCampaigns();
-  }, [loadCampaigns]);
+    carregar();
+  }, [carregar]);
 
-  const loadRecipients = async (campaignId: string) => {
+  const estado = estadoDaLista({
+    temDados: carregouAlgumaVez,
+    buscando,
+    falhou,
+    quantidade: campaigns.length,
+  });
+
+  // ── Ações ──────────────────────────────────────────────────────────────────
+  const abrirDestinatarios = async (c: EmailCampaign) => {
+    setAberta(c);
+    setRecipients([]);
+    setCarregandoDestinatarios(true);
     try {
-      setLoadingRecipients(true);
-      const response = await api.get(`/marketing/campaigns/${campaignId}/recipients/`);
+      const response = await api.get(`/marketing/campaigns/${c.id}/recipients/`);
       setRecipients(response.data?.results || response.data || []);
     } catch (error) {
       console.error('Error loading recipients:', error);
-      toast.error('Erro ao carregar destinatários');
+      toast.error('Não foi possível carregar os destinatários');
     } finally {
-      setLoadingRecipients(false);
+      setCarregandoDestinatarios(false);
     }
   };
 
-  const handleViewRecipients = async (campaign: EmailCampaign) => {
-    setSelectedCampaign(campaign);
-    setShowRecipientsModal(true);
-    await loadRecipients(campaign.id);
-  };
-
-  const handleSendCampaign = async (campaign: EmailCampaign) => {
-    const confirmed = await confirm({
+  const enviar = async (c: EmailCampaign) => {
+    const ok = await confirm({
       title: 'Enviar campanha',
-      message: `Enviar campanha "${campaign.name}" agora?`,
+      message: `"${c.name}" sai agora para o público escolhido. Não dá para desfazer.`,
+      confirmText: 'Enviar campanha',
+      cancelText: 'Agora não',
       variant: 'info',
     });
-    if (!confirmed) return;
-
+    if (!ok) return;
+    setEmAcao(c.id);
     try {
-      setActionLoading(campaign.id);
-      const response = await api.post(`/marketing/campaigns/${campaign.id}/send/`);
-      toast.success(`Campanha enviada! ${response.data?.sent ?? 0} emails enviados.`);
-      loadCampaigns();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Erro ao enviar campanha');
+      const response = await api.post(`/marketing/campaigns/${c.id}/send/`);
+      const n = response.data?.sent ?? 0;
+      toast.success(`Campanha enviada para ${n} ${n === 1 ? 'pessoa' : 'pessoas'}`);
+      carregar();
+    } catch (error: unknown) {
+      const msg = (error as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      toast.error(msg || 'Não foi possível enviar a campanha');
     } finally {
-      setActionLoading(null);
+      setEmAcao(null);
     }
   };
 
-  const handleDeleteCampaign = async (campaign: EmailCampaign) => {
-    const confirmed = await confirm({
-      title: 'Excluir campanha',
-      message: `Excluir campanha "${campaign.name}"?`,
+  const excluir = async (c: EmailCampaign) => {
+    const ok = await confirm({
+      title: 'Excluir rascunho',
+      message: `"${c.name}" some da lista. Não dá para desfazer.`,
+      confirmText: 'Excluir rascunho',
+      cancelText: 'Manter',
     });
-    if (!confirmed) return;
-
+    if (!ok) return;
+    setEmAcao(c.id);
     try {
-      setActionLoading(campaign.id);
-      await api.delete(`/marketing/campaigns/${campaign.id}/`);
-      toast.success('Campanha excluída');
-      loadCampaigns();
-    } catch (error) {
-      toast.error('Erro ao excluir campanha');
+      await api.delete(`/marketing/campaigns/${c.id}/`);
+      toast.success('Rascunho excluído');
+      carregar();
+    } catch {
+      toast.error('Não foi possível excluir o rascunho');
     } finally {
-      setActionLoading(null);
+      setEmAcao(null);
     }
   };
 
-  const getOpenRate = (campaign: EmailCampaign) => {
-    if (!campaign.emails_delivered || campaign.emails_delivered === 0) return 0;
-    return ((campaign.emails_opened / campaign.emails_delivered) * 100).toFixed(1);
+  const acoesDa = (c: EmailCampaign): RowAction[] => {
+    const ocupada = emAcao === c.id;
+    const acoes: RowAction[] = [];
+    if (c.status === 'draft') acoes.push({ rotulo: 'Enviar agora', desabilitada: ocupada, onClick: () => enviar(c) });
+    acoes.push({ rotulo: 'Ver destinatários', onClick: () => abrirDestinatarios(c) });
+    if (c.status === 'draft') acoes.push({ rotulo: 'Excluir rascunho', destrutiva: true, desabilitada: ocupada, onClick: () => excluir(c) });
+    return acoes;
   };
 
-  const getClickRate = (campaign: EmailCampaign) => {
-    if (!campaign.emails_opened || campaign.emails_opened === 0) return 0;
-    return ((campaign.emails_clicked / campaign.emails_opened) * 100).toFixed(1);
-  };
+  // ── Números ────────────────────────────────────────────────────────────────
+  const numeros = useMemo(() => {
+    const hoje = new Date();
+    const soma = (campo: 'emails_delivered' | 'emails_opened' | 'emails_clicked') =>
+      campaigns.reduce((a, c) => a + (c[campo] ?? 0), 0);
+    const entregues = soma('emails_delivered');
+    const abertos = soma('emails_opened');
+    const cliques = soma('emails_clicked');
+    return {
+      enviadosNoMes: campaigns
+        .filter((c) => mesmoMes(c.completed_at ?? c.started_at, hoje))
+        .reduce((a, c) => a + (c.emails_sent ?? 0), 0),
+      entregues,
+      abertos,
+      cliques,
+      abertura: pct(abertos, entregues),
+      cliqueSobreAbertura: pct(cliques, abertos),
+      agendadas: campaigns.filter((c) => c.status === 'scheduled').length,
+    };
+  }, [campaigns]);
 
-  if (loading) {
-    return <Loading />;
-  }
+  // ── Tabela ─────────────────────────────────────────────────────────────────
+  const colunas: ColunaDaTabela<EmailCampaign>[] = [
+    {
+      chave: 'nome',
+      cabecalho: 'Campanha',
+      render: (c) => (
+        <span className="block min-w-0">
+          <span className="block truncate font-medium text-fg-token">{c.name}</span>
+          <span className="block truncate text-caption text-fg-muted-token">{c.subject}</span>
+        </span>
+      ),
+    },
+    { chave: 'quando', cabecalho: 'Quando', render: (c) => <span className="text-fg-muted-token">{quando(c)}</span> },
+    {
+      chave: 'para',
+      cabecalho: 'Para quantos',
+      alinhamento: 'direita',
+      render: (c) => <span className="tabular-nums">{c.total_recipients ?? 0}</span>,
+    },
+    {
+      chave: 'abertos',
+      cabecalho: 'Abertos',
+      render: (c) => {
+        const taxa = pct(c.emails_opened ?? 0, c.emails_delivered ?? 0);
+        return taxa === null ? (
+          <span className="text-fg-muted-token">—</span>
+        ) : (
+          <Progresso pct={taxa} rotulo={`Abertos em ${c.name}`} mostrarValor className="min-w-[7rem]" />
+        );
+      },
+    },
+    {
+      chave: 'estado',
+      cabecalho: 'Estado',
+      render: (c) => {
+        const e = estadoDeCampanha(c.status);
+        return (
+          <SeloDeEstado tone={e.tone} ponto={c.status === 'sending'}>
+            {e.rotulo}
+          </SeloDeEstado>
+        );
+      },
+    },
+    {
+      chave: 'acoes',
+      cabecalho: 'Ações',
+      alinhamento: 'direita',
+      render: (c) => <RowActions rotulo={`Ações de ${c.name}`} acoes={acoesDa(c)} />,
+    },
+  ];
+
+  const criar = (
+    <Button onClick={() => navigate(NOVA_CAMPANHA)} leftIcon={<PlusIcon className="h-4 w-4" />}>
+      Criar campanha
+    </Button>
+  );
 
   return (
     <PageShell
+      trilha={[{ rotulo: 'Campanhas', href: '/marketing' }, { rotulo: 'E-mail' }]}
       titulo="Campanhas de e-mail"
-      acoes={
-        <Button onClick={() => navigate('/marketing/email/new')}>
-        <PlusIcon className="w-5 h-5 mr-2" />
-        Nova Campanha
-        </Button>
-      }
+      descricao="O que saiu, quem abriu e quem clicou. Clique numa campanha para ver os destinatários."
+      acoes={estado === 'lista' ? criar : undefined}
     >
-
-      {campaigns.length === 0 ? (
-        <Card className="p-12 text-center">
-          <EnvelopeIcon className="w-16 h-16 text-fg-muted-token mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-fg-token mb-2">Nenhuma campanha criada</h3>
-          <p className="text-fg-muted-token mb-6">Crie sua primeira campanha de email marketing</p>
-          <Button onClick={() => navigate('/marketing/email/new')}>
-            <PlusIcon className="w-5 h-5 mr-2" />
-            Criar Campanha
-          </Button>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {campaigns.map((campaign) => {
-            const statusConfig = STATUS_CONFIG[campaign.status] || STATUS_CONFIG.draft;
-            const StatusIcon = statusConfig.icon;
-            
-            return (
-              <Card key={campaign.id} className="p-4 hover:shadow-md transition-shadow">
-                <div className="flex flex-row max-lg:flex-col lg:items-center gap-4">
-                  {/* Campaign Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-fg-token truncate">{campaign.name}</h3>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}>
-                        <StatusIcon className="w-3 h-3" />
-                        {statusConfig.label}
-                      </span>
-                    </div>
-                    <p className="text-sm text-fg-muted-token truncate mb-2">{campaign.subject}</p>
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-fg-muted-token">
-                      <span>Audiência: {AUDIENCE_LABELS[campaign.audience_type] || campaign.audience_type}</span>
-                      <span>Criada: {format(new Date(campaign.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
-                      {campaign.completed_at && (
-                        <span>Enviada: {format(new Date(campaign.completed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Stats */}
-                  {campaign.status === 'sent' && (
-                    <div className="flex items-center gap-6 px-4 py-2 bg-surface-2 rounded-lg">
-                      <div className="text-center">
-                        <p className="text-lg font-bold text-fg-token">{campaign.emails_sent}</p>
-                        <p className="text-xs text-fg-muted-token">Enviados</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-lg font-bold text-info-token">{getOpenRate(campaign)}%</p>
-                        <p className="text-xs text-fg-muted-token">Abertura</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-lg font-bold text-success-token">{getClickRate(campaign)}%</p>
-                        <p className="text-xs text-fg-muted-token">Cliques</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    {campaign.status === 'draft' && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleSendCampaign(campaign)}
-                        disabled={actionLoading === campaign.id}
-                      >
-                        {actionLoading === campaign.id ? (
-                          <ArrowPathIcon className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>
-                            <PaperAirplaneIcon className="w-4 h-4 mr-1" />
-                            Enviar
-                          </>
-                        )}
-                      </Button>
-                    )}
-                    
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => handleViewRecipients(campaign)}
-                    >
-                      <EyeIcon className="w-4 h-4 mr-1" />
-                      Detalhes
-                    </Button>
-
-                    {campaign.status === 'draft' && (
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleDeleteCampaign(campaign)}
-                        disabled={actionLoading === campaign.id}
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
+      {estado === 'lista' && (
+        <section aria-label="Números das campanhas">
+          <KpiGrid
+            itens={[
+              {
+                label: 'Enviados no mês',
+                value: numeros.enviadosNoMes,
+                definicao: 'e-mails de campanhas enviadas neste mês',
+              },
+              {
+                label: 'Abertura',
+                value: numeros.abertura === null ? '—' : `${numeros.abertura}%`,
+                definicao:
+                  numeros.abertura === null
+                    ? 'nenhum e-mail entregue ainda'
+                    : `${numeros.abertos} de ${numeros.entregues} entregues foram abertos`,
+              },
+              {
+                label: 'Cliques',
+                value: numeros.cliqueSobreAbertura === null ? '—' : `${numeros.cliqueSobreAbertura}%`,
+                definicao: 'de quem abriu, quantos clicaram num link',
+              },
+              {
+                label: 'Agendadas',
+                value: numeros.agendadas,
+                definicao: 'saem sozinhas no horário marcado',
+              },
+            ]}
+          />
+        </section>
       )}
 
-      {/* Recipients Modal */}
+      {estado === 'falhou' ? (
+        <div role="alert" className="superficie">
+          <EmptyState
+            icone={<EnvelopeIcon className="h-10 w-10" />}
+            titulo="Não foi possível carregar as campanhas"
+            descricao="A conexão falhou. Isso não quer dizer que não há campanhas: tente de novo."
+            acao={<Button variant="secondary" onClick={() => carregar()}>Tentar de novo</Button>}
+          />
+        </div>
+      ) : estado === 'vazio' ? (
+        <div className="superficie">
+          <EmptyState
+            icone={<EnvelopeIcon className="h-10 w-10" />}
+            titulo="Nenhuma campanha de e-mail ainda"
+            descricao="Escolha um modelo, escreva o assunto e envie para seus contatos."
+            acao={criar}
+          />
+        </div>
+      ) : (
+        <Secao titulo="Campanhas" contador={estado === 'lista' ? campaigns.length : undefined}>
+          <Tabela<EmailCampaign>
+            itens={campaigns}
+            colunas={colunas}
+            chave={(c) => c.id}
+            rotuloDaLinha={(c) => `Ver destinatários de ${c.name}`}
+            onAbrir={abrirDestinatarios}
+            carregando={estado === 'carregando'}
+          />
+        </Secao>
+      )}
+
       <Modal
-        isOpen={showRecipientsModal}
+        open={Boolean(aberta)}
         onClose={() => {
-          setShowRecipientsModal(false);
-          setSelectedCampaign(null);
+          setAberta(null);
           setRecipients([]);
         }}
-        title={`Destinatários - ${selectedCampaign?.name || ''}`}
+        title={aberta ? `Destinatários de ${aberta.name}` : 'Destinatários'}
         size="xl"
       >
-        {loadingRecipients ? (
-          <div className="py-12 text-center">
-            <ArrowPathIcon className="w-8 h-8 text-fg-muted-token animate-spin mx-auto mb-2" />
-            <p className="text-fg-muted-token">Carregando destinatários...</p>
-          </div>
+        {carregandoDestinatarios ? (
+          <TableSkeleton rows={4} columns={4} />
         ) : recipients.length === 0 ? (
-          <div className="py-12 text-center">
-            <EnvelopeIcon className="w-12 h-12 text-fg-muted-token mx-auto mb-2" />
-            <p className="text-fg-muted-token">Nenhum destinatário encontrado</p>
-          </div>
+          <EmptyState
+            icone={<EnvelopeIcon className="h-10 w-10" />}
+            titulo="Nenhum destinatário ainda"
+            descricao="A lista é montada quando a campanha é enviada."
+          />
         ) : (
           <div className="space-y-4">
             <KpiGrid
               itens={[
-                {
-                  label: 'Destinatários',
-                  value: recipients.length,
-                  definicao: 'Quantos entraram nesta campanha.',
-                },
+                { label: 'Destinatários', value: recipients.length, definicao: 'quantos entraram nesta campanha' },
                 {
                   label: 'Entregues',
-                  value: recipients.filter((r) =>
-                    ['sent', 'delivered', 'opened', 'clicked'].includes(r.status),
-                  ).length,
-                  definicao: 'Saíram e chegaram na caixa de entrada.',
-                  tone: 'success',
+                  value: recipients.filter((r) => ENTREGUES.includes(r.status)).length,
+                  definicao: 'saíram e chegaram na caixa de entrada',
                 },
                 {
                   label: 'Abertos',
-                  value: recipients.filter((r) => ['opened', 'clicked'].includes(r.status)).length,
-                  definicao: 'Abriram o e-mail. É este número que diz se o assunto funcionou.',
-                  tone: 'brand',
+                  value: recipients.filter((r) => ABERTOS.includes(r.status)).length,
+                  definicao: 'é este número que diz se o assunto funcionou',
                 },
                 {
                   label: 'Falhas',
-                  value: recipients.filter((r) => ['failed', 'bounced'].includes(r.status)).length,
-                  definicao: 'Não chegaram — endereço inválido ou recusado pelo servidor.',
-                  tone: recipients.some((r) => ['failed', 'bounced'].includes(r.status))
-                    ? 'danger'
-                    : 'default',
+                  value: recipients.filter((r) => FALHAS.includes(r.status)).length,
+                  definicao: 'endereço inválido ou recusado pelo servidor',
+                  tone: recipients.some((r) => FALHAS.includes(r.status)) ? 'danger' : 'default',
                 },
               ]}
             />
 
             <div className="max-h-96 overflow-y-auto">
-              <Tabela<(typeof recipients)[number]>
+              <Tabela<CampaignRecipient>
                 itens={recipients}
                 chave={(r) => String(r.id)}
                 rotuloDaLinha={(r) => r.email}
                 colunas={[
                   { chave: 'email', cabecalho: 'E-mail', render: (r) => r.email },
-                  { chave: 'nome', cabecalho: 'Nome', classe: 'max-lg:hidden', render: (r) => r.name || '—' },
+                  { chave: 'nome', cabecalho: 'Nome', soNoDesktop: true, render: (r) => r.name || '—' },
                   {
-                    chave: 'status',
-                    cabecalho: 'Status',
-                    render: (r) => (
-                      <Badge
-                        tone={
-                          r.status === 'sent' || r.status === 'delivered'
-                            ? 'success'
-                            : r.status === 'opened' || r.status === 'clicked'
-                              ? 'info'
-                              : r.status === 'failed' || r.status === 'bounced'
-                                ? 'danger'
-                                : 'neutral'
-                        }
-                      >
-                        {EMAIL_RECIPIENT_STATUS_LABELS[r.status] ?? r.status}
-                      </Badge>
-                    ),
+                    chave: 'estado',
+                    cabecalho: 'Estado',
+                    render: (r) => {
+                      const e = estadoDeEnvio(r.status);
+                      return <SeloDeEstado tone={e.tone}>{e.rotulo}</SeloDeEstado>;
+                    },
                   },
                   {
                     chave: 'enviado',
@@ -382,16 +415,16 @@ export const CampaignsListPage: React.FC = () => {
                   },
                   {
                     chave: 'erro',
-                    cabecalho: 'Erro',
-                    classe: 'max-lg:hidden',
-                    render: (r) => (
-                      <span
-                        className="block max-w-xs truncate text-[var(--danger)]"
-                        title={r.error_message || ''}
-                      >
-                        {r.error_message || '—'}
-                      </span>
-                    ),
+                    cabecalho: 'Motivo da falha',
+                    soNoDesktop: true,
+                    render: (r) =>
+                      r.error_message ? (
+                        <span className="block max-w-xs truncate text-danger-token" title={r.error_message}>
+                          {r.error_message}
+                        </span>
+                      ) : (
+                        <span className="text-fg-muted-token">—</span>
+                      ),
                   },
                 ]}
               />
