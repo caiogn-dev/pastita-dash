@@ -66,13 +66,17 @@ const PEDIDO: Record<string, Estado> = {
   shipped: { rotulo: 'Enviado', tone: 'success' },
   delivered: { rotulo: 'Entregue', tone: 'neutral' },
   completed: { rotulo: 'Concluído', tone: 'neutral' },
-  cancelled: { rotulo: 'Cancelado', tone: 'danger' },
+  // Cancelado é fim, não falha — neutro, igual ao pagamento.
+  cancelled: { rotulo: 'Cancelado', tone: 'neutral' },
   failed: { rotulo: 'Falhou', tone: 'danger' },
   refunded: { rotulo: 'Estornado', tone: 'neutral' },
 };
 
-export function estadoDePedido(status?: string | null): Estado {
-  return PEDIDO[(status || '').toLowerCase()] ?? { rotulo: status || '—', tone: 'neutral' };
+/** O NOSSO rótulo primeiro; o do backend (`status_display`) como reserva para
+ *  status novo sem tradução — nunca "Delivered" para o dono da loja. */
+export function estadoDePedido(status?: string | null, rotuloDoBackend?: string | null): Estado {
+  const chave = (status || '').toLowerCase();
+  return PEDIDO[chave] ?? { rotulo: rotuloDoBackend || status || '—', tone: 'neutral' };
 }
 
 /** Prazo de um pedido em aberto (régua de `orderSla.ts`): no prazo não grita. */
@@ -101,4 +105,39 @@ const ENVIO: Record<string, Estado> = {
 
 export function estadoDeEnvio(status?: string | null): Estado {
   return ENVIO[(status || '').toLowerCase()] ?? { rotulo: status || '—', tone: 'neutral' };
+}
+
+// ─── Cliente ─────────────────────────────────────────────────────────────────
+
+export function estadoDeCliente(ativo?: boolean | null): Estado {
+  return ativo ? { rotulo: 'Ativo', tone: 'success' } : { rotulo: 'Inativo', tone: 'neutral' };
+}
+
+/** Segmento RFM + o que ele significa em uma linha — o rótulo sozinho não age. */
+export interface EstadoDeSegmento extends Estado { dica: string }
+
+const SEGMENTO: Record<string, EstadoDeSegmento> = {
+  campeoes: { rotulo: 'Campeão', tone: 'success', dica: 'compra muito e recente' },
+  leais: { rotulo: 'Leal', tone: 'success', dica: 'volta sempre' },
+  novos: { rotulo: 'Novo', tone: 'neutral', dica: 'primeira compra recente' },
+  em_risco: { rotulo: 'Em risco', tone: 'warning', dica: 'comprava e parou' },
+  perdidos: { rotulo: 'Perdido', tone: 'danger', dica: 'sumiu faz tempo' },
+  sem_pedido: { rotulo: 'Sem pedido', tone: 'neutral', dica: 'cadastrado, nunca comprou' },
+};
+
+/** `null` sem segmento conhecido: sem selo é melhor que selo inventado. */
+export function estadoDeSegmento(segmento?: string | null): EstadoDeSegmento | null {
+  return (segmento && SEGMENTO[segmento]) || null;
+}
+
+// ─── Saúde do sistema (card de staff na home) ────────────────────────────────
+
+const SAUDE: Record<string, Estado> = {
+  ok: { rotulo: 'Estável', tone: 'success' },
+  attention: { rotulo: 'Atenção', tone: 'warning' },
+  critical: { rotulo: 'Crítico', tone: 'danger' },
+};
+
+export function estadoDeSaude(status?: string | null): Estado {
+  return SAUDE[status || ''] ?? { rotulo: 'Indefinido', tone: 'neutral' };
 }

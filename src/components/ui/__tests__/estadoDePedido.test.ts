@@ -29,8 +29,8 @@ describe('estadoDePedido', () => {
     expect(estadoDePedido('completed').tone).toBe('neutral');
   });
 
-  it('cancelado e falho são perigo; estornado é neutro', () => {
-    expect(estadoDePedido('cancelled')).toEqual({ rotulo: 'Cancelado', tone: 'danger' });
+  it('falho é perigo; cancelado e estornado são neutros (fim, não falha)', () => {
+    expect(estadoDePedido('cancelled')).toEqual({ rotulo: 'Cancelado', tone: 'neutral' });
     expect(estadoDePedido('failed').tone).toBe('danger');
     expect(estadoDePedido('refunded').tone).toBe('neutral');
   });

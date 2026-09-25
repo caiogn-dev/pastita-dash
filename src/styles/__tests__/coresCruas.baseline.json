@@ -59,8 +59,6 @@
   "pages/automation/ScheduledMessagesPage.tsx": 6,
   "pages/cash/CashPage.tsx": 4,
   "pages/conversations/ConversationsPage.tsx": 5,
-  "pages/customers/CustomersPage.tsx": 32,
-  "pages/dashboard/DashboardPage.tsx": 44,
   "pages/marketing/AutomationsPage.tsx": 28,
   "pages/marketing/email/NewCampaignPage.tsx": 1,
   "pages/messenger/MessengerAccounts.tsx": 6,
