@@ -10,6 +10,9 @@ jest.mock('../../../services/storesApi', () => ({
 jest.mock('../../../services/loyalty', () => ({
   loyaltyService: { getAccounts: jest.fn() },
 }));
+jest.mock('../../../services/loyaltyImpacto', () => ({
+  loyaltyImpactoService: { get: jest.fn().mockResolvedValue(null) },
+}));
 jest.mock('../../../services/coupons', () => ({
   couponsService: { createCoupon: jest.fn() },
 }));
