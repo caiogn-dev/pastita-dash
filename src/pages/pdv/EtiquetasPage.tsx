@@ -16,6 +16,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { useAdicional } from '../../hooks/useAdicional';
 import { ADICIONAL_ETIQUETA } from '../../services/billing';
 import { AdicionalBloqueado } from '../../components/billing/AdicionalBloqueado';
+import { enviarEtiquetasParaAgente, imprimeZpl, listPrintAgents, PrintAgent } from '../../services/printing';
 
 const fmtDate = (d: Date) => d.toLocaleDateString('pt-BR');
 const MM_PX = 96 / 25.4;
@@ -132,6 +133,12 @@ const EtiquetasPage: React.FC = () => {
   const [cfg, setCfg] = useState<SavedConfig>(loadConfig);
   const [preparing, setPreparing] = useState(false);
   const [profiles, setProfiles] = useState<Map<string, NutritionProfile>>(new Map());
+  // Agents (programa de impressão) por loja. Só interessa quem tem uma Zebra:
+  // etiqueta ZPL na Epson sai como lixo. Sem agent, o bloco nem aparece e a
+  // impressão pelo navegador segue igual.
+  const [agentes, setAgentes] = useState<Map<string, PrintAgent[]>>(new Map());
+  const [agenteEscolhido, setAgenteEscolhido] = useState<string>('');
+  const [enviando, setEnviando] = useState(false);
   // Produto e validade são de todo mundo; só os modelos de nutrição são o
   // adicional Etiqueta ANVISA.
   const etiqueta = useAdicional(ADICIONAL_ETIQUETA);
@@ -177,6 +184,15 @@ const EtiquetasPage: React.FC = () => {
         const rows = normalizePaginatedResponse<NutritionProfile>(nutrition.data);
         setProfiles(new Map(rows.map((profile) => [profile.product, profile])));
       } catch { /* backend antigo: produto/validade continuam funcionando */ }
+      try {
+        const porLoja = await Promise.all(stores.map(async (s) => {
+          const res = await listPrintAgents(s.slug);
+          const lista = normalizePaginatedResponse<PrintAgent>(res.data)
+            .filter((a) => a.is_active && a.status === 'active' && imprimeZpl(a));
+          return [s.slug, lista] as const;
+        }));
+        setAgentes(new Map(porLoja.filter(([, lista]) => lista.length > 0)));
+      } catch { /* sem programa de impressão: o envio remoto só não aparece */ }
     } catch {
       toast.error('Erro ao carregar o catálogo');
     } finally {
@@ -230,6 +246,77 @@ const EtiquetasPage: React.FC = () => {
     (c) => Array.from({ length: qty.get(c.product.id) ?? 0 }, () => make(c)),
   );
 
+  /** Mesmo objeto para o navegador e para o envio remoto (o backend vira ZPL). */
+  const montarEtiquetasNutricionais = () => expandCopies((c) => {
+    const profile = profiles.get(c.product.id);
+    if (!profile) return null;
+    const calc = profile.calculation;
+    // `label_per_100g`/`label_per_serving` já vêm arredondados pela IN
+    // 75/2020 (casa por nutriente + regra de zero). Usar `per_100g`, que é
+    // o valor cru, imprime "0,04 g" de trans onde a norma manda "0 g".
+    const calculated = calc?.label_per_100g ?? calc?.per_100g;
+    const keys = ['energy_kcal','carbohydrates_g','total_sugars_g','added_sugars_g','protein_g','total_fat_g','saturated_fat_g','trans_fat_g','fiber_g','sodium_mg'];
+    const num = (raw: unknown) => (raw == null || raw === '' ? null : Number(raw));
+    const per100g = Object.fromEntries(keys.map((key) => [key, num(calculated?.[key] ?? profile[key])]));
+    const porcao = calc?.label_per_serving;
+    const perServing = porcao
+      ? Object.fromEntries(keys.map((key) => [key, num(porcao[key])]))
+      : undefined;
+    // Só sai declaração de alergênico se TODOS os ingredientes foram
+    // revisados; o backend devolve texto vazio quando não foram.
+    const allergens = calc?.allergens?.texto || undefined;
+    // Sem os três nutrientes não dá para afirmar que não leva selo, então
+    // a lupa só é impressa quando a avaliação foi conclusiva.
+    const frontOfPack = calc?.front_of_pack?.conclusivo ? calc.front_of_pack.texto : undefined;
+    const publicUrl = profile.public_url;
+    return { name: c.product.name, servingG: Number(profile.serving_size_g || 100), householdMeasure: profile.household_measure, per100g, perServing, allergens, frontOfPack, publicUrl };
+  }).filter((row): row is NonNullable<typeof row> => Boolean(row));
+
+
+  const montarEtiquetasDeValidade = () =>
+    expandCopies((c) => ({ name: c.product.name, manip: fmtDate(manip), val: fmtDate(val) }));
+
+  // Loja única da seleção: o job é de UMA loja e de UM agent.
+  const lojaDaSelecao = useMemo(() => {
+    const slugs = new Set(selected.map((c) => c.storeSlug));
+    return slugs.size === 1 ? selected[0].storeSlug : null;
+  }, [selected]);
+  const agentesDaSelecao = lojaDaSelecao ? (agentes.get(lojaDaSelecao) ?? []) : [];
+  const envioRemotoDisponivel = template !== 'produto' && !nutricaoBloqueada
+    && (lojaDaSelecao ? agentesDaSelecao.length > 0 : agentes.size > 0);
+  useEffect(() => {
+    if (!agentesDaSelecao.some((a) => a.id === agenteEscolhido)) {
+      setAgenteEscolhido(agentesDaSelecao[0]?.id ?? '');
+    }
+  }, [agentesDaSelecao, agenteEscolhido]);
+
+  const handleEnviarRemoto = async () => {
+    if (totalLabels === 0 || enviando || template === 'produto') return;
+    if (!lojaDaSelecao) { toast.error('Selecione produtos de uma loja só para enviar à impressora remota.'); return; }
+    const agent = agentesDaSelecao.find((a) => a.id === agenteEscolhido);
+    if (!agent) { toast.error('Escolha o programa de impressão que está com a Zebra.'); return; }
+    setEnviando(true);
+    try {
+      const etiquetas = template === 'validade' ? montarEtiquetasDeValidade() : montarEtiquetasNutricionais();
+      if (template !== 'validade' && etiquetas.length !== totalLabels) {
+        toast.error('Alguns produtos selecionados ainda não têm perfil nutricional.');
+        return;
+      }
+      await enviarEtiquetasParaAgente({
+        store: selected[0].product.store,
+        agent: agent.id,
+        modelo: template,
+        etiquetas,
+        config: template === 'validade' ? { ...cfg.validade } : {},
+      });
+      toast.success(`${etiquetas.length} etiqueta${etiquetas.length === 1 ? '' : 's'} enviada${etiquetas.length === 1 ? '' : 's'} para ${agent.name} (${agent.printer_name})`);
+    } catch {
+      toast.error('Não foi possível enviar para a impressora remota');
+    } finally {
+      setEnviando(false);
+    }
+  };
+
   const handlePrint = async () => {
     if (totalLabels === 0 || preparing) return;
     setPreparing(true);
@@ -257,30 +344,7 @@ const EtiquetasPage: React.FC = () => {
           toast.success(`${newCodes.size} código(s) interno(s) gerado(s) e salvo(s)`);
         }
       }
-      const nutritionCopies = expandCopies((c) => {
-        const profile = profiles.get(c.product.id);
-        if (!profile) return null;
-        const calc = profile.calculation;
-        // `label_per_100g`/`label_per_serving` já vêm arredondados pela IN
-        // 75/2020 (casa por nutriente + regra de zero). Usar `per_100g`, que é
-        // o valor cru, imprime "0,04 g" de trans onde a norma manda "0 g".
-        const calculated = calc?.label_per_100g ?? calc?.per_100g;
-        const keys = ['energy_kcal','carbohydrates_g','total_sugars_g','added_sugars_g','protein_g','total_fat_g','saturated_fat_g','trans_fat_g','fiber_g','sodium_mg'];
-        const num = (raw: unknown) => (raw == null || raw === '' ? null : Number(raw));
-        const per100g = Object.fromEntries(keys.map((key) => [key, num(calculated?.[key] ?? profile[key])]));
-        const porcao = calc?.label_per_serving;
-        const perServing = porcao
-          ? Object.fromEntries(keys.map((key) => [key, num(porcao[key])]))
-          : undefined;
-        // Só sai declaração de alergênico se TODOS os ingredientes foram
-        // revisados; o backend devolve texto vazio quando não foram.
-        const allergens = calc?.allergens?.texto || undefined;
-        // Sem os três nutrientes não dá para afirmar que não leva selo, então
-        // a lupa só é impressa quando a avaliação foi conclusiva.
-        const frontOfPack = calc?.front_of_pack?.conclusivo ? calc.front_of_pack.texto : undefined;
-        const publicUrl = profile.public_url;
-        return { name: c.product.name, servingG: Number(profile.serving_size_g || 100), householdMeasure: profile.household_measure, per100g, perServing, allergens, frontOfPack, publicUrl };
-      }).filter((row): row is NonNullable<typeof row> => Boolean(row));
+      const nutritionCopies = montarEtiquetasNutricionais();
       if ((template === 'nutricao' || template === 'nutricao-qr') && nutritionCopies.length !== totalLabels) {
         toast.error('Alguns produtos selecionados ainda não têm perfil nutricional.');
         return;
@@ -630,6 +694,39 @@ const EtiquetasPage: React.FC = () => {
             Na janela de impressão: selecione a impressora de etiquetas, papel igual ao
             configurado aqui, margens “Nenhuma” e escala 100% (sem “ajustar à página”).
           </p>
+          {envioRemotoDisponivel && (
+            <div className="space-y-2 border-t border-border-token pt-3" data-testid="etq-remoto">
+              <p className="text-xs font-semibold uppercase tracking-wide opacity-60">Impressora remota (Zebra)</p>
+              {lojaDaSelecao ? (
+                <select
+                  className="w-full rounded border border-border-token bg-transparent px-2 py-1.5 text-sm"
+                  value={agenteEscolhido}
+                  onChange={(e) => setAgenteEscolhido(e.target.value)}
+                  aria-label="Programa de impressão com a Zebra"
+                >
+                  {agentesDaSelecao.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} · {a.printer_name}{a.is_online ? '' : ' (offline)'}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-xs opacity-60">Selecione produtos de uma loja só para enviar.</p>
+              )}
+              <Button
+                className="w-full"
+                variant="secondary"
+                disabled={totalLabels === 0 || enviando || !lojaDaSelecao || !agenteEscolhido}
+                onClick={handleEnviarRemoto}
+                data-testid="etq-enviar-remoto"
+              >
+                {enviando ? 'Enviando…' : `Enviar ${totalLabels} etiqueta${totalLabels === 1 ? '' : 's'} para a Zebra`}
+              </Button>
+              <p className="text-xs opacity-60">
+                Sai direto na Zebra do PC escolhido, sem abrir janela de impressão — de qualquer lugar.
+              </p>
+            </div>
+          )}
           </>)}
         </Card>
       </div>

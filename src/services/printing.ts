@@ -89,3 +89,25 @@ export const listPrintJobs = (storeSlug: string, params?: { page?: number }) =>
 
 export const requeuePrintJob = (_storeSlug: string, jobId: string) =>
   api.post(`/stores/print-jobs/${jobId}/requeue/`, {});
+
+/**
+ * Etiqueta remota: o backend converte os dados em ZPL e enfileira para a
+ * Zebra de UM agent (nunca "qualquer agent da loja" — cairia na Epson).
+ * `etiquetas` é o mesmo objeto que alimenta a impressão pelo navegador.
+ */
+export interface EnvioDeEtiquetas {
+  /** UUID da loja (FK). */
+  store: string;
+  /** UUID do agent escolhido. */
+  agent: string;
+  modelo: 'validade' | 'nutricao' | 'nutricao-qr';
+  etiquetas: unknown[];
+  config?: Record<string, unknown>;
+}
+
+export const enviarEtiquetasParaAgente = (dados: EnvioDeEtiquetas) =>
+  api.post<{ job: PrintJob }>('/stores/print-jobs/etiquetas/', dados);
+
+/** Impressora que fala ZPL: é o nome que o driver da Zebra registra no Windows. */
+export const imprimeZpl = (agent: Pick<PrintAgent, 'printer_name'>): boolean =>
+  /zdesigner|zebra|zpl/i.test(agent.printer_name || '');

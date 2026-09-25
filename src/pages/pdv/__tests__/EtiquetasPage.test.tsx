@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import EtiquetasPage from '../EtiquetasPage';
 import { getStores, getProducts, gerarCodigosInternos } from '../../../services/storesApi';
 import { printHtmlDocument } from '../../../utils/labelPrint';
+import { enviarEtiquetasParaAgente, listPrintAgents } from '../../../services/printing';
 
 jest.mock('../../../services/api', () => ({
   __esModule: true,
@@ -16,6 +17,12 @@ jest.mock('../../../services/storesApi', () => ({
   getStores: jest.fn(),
   getProducts: jest.fn(),
   gerarCodigosInternos: jest.fn(),
+}));
+
+jest.mock('../../../services/printing', () => ({
+  ...jest.requireActual('../../../services/printing'),
+  listPrintAgents: jest.fn().mockResolvedValue({ data: { results: [] } }),
+  enviarEtiquetasParaAgente: jest.fn().mockResolvedValue({ data: { job: { id: 'j1' } } }),
 }));
 
 jest.mock('../../../utils/labelPrint', () => ({
@@ -37,6 +44,13 @@ const mockedGetStores = getStores as jest.Mock;
 const mockedGetProducts = getProducts as jest.Mock;
 const mockedGerarCodigos = gerarCodigosInternos as jest.Mock;
 const mockedPrint = printHtmlDocument as jest.Mock;
+const mockedListAgents = listPrintAgents as jest.Mock;
+const mockedEnviar = enviarEtiquetasParaAgente as jest.Mock;
+
+const zebra = { id: 'ag-zebra', name: 'pc desktop', printer_name: 'ZDesigner ZD220-203dpi ZPL',
+  is_active: true, status: 'active', is_online: true };
+const epson = { id: 'ag-epson', name: 'Caixa', printer_name: 'EPSON TM-T20',
+  is_active: true, status: 'active', is_online: true };
 
 const page = (results: unknown[]) => ({ count: results.length, next: null, previous: null, results });
 
@@ -192,5 +206,49 @@ describe('EtiquetasPage', () => {
     const doc = mockedPrint.mock.calls[0][0] as string;
     expect(doc).toContain('@page { size: 80mm 100mm; margin: 0; }');
     expect(doc).toContain('rotate(90deg)');
+  });
+
+  describe('impressora remota (Zebra pelo print agent)', () => {
+    it('sem agent com Zebra, o bloco remoto não aparece e o navegador segue igual', async () => {
+      mockedListAgents.mockResolvedValue({ data: { results: [epson] } });
+      renderPage();
+      await screen.findByText('Marmita P');
+      await userEvent.click(screen.getByRole('button', { name: /validade/i }));
+      expect(screen.queryByTestId('etq-remoto')).toBeNull();
+      expect(screen.getByTestId('etq-imprimir')).toBeInTheDocument();
+    });
+
+    it('validade: manda os mesmos dados do navegador para o agent escolhido, com a loja e a config', async () => {
+      mockedListAgents.mockResolvedValue({ data: { results: [epson, zebra] } });
+      renderPage();
+      await screen.findByText('Marmita P');
+      await userEvent.click(screen.getByRole('button', { name: /validade/i }));
+      await userEvent.clear(screen.getByLabelText('Quantidade de etiquetas de Marmita P'));
+      await userEvent.type(screen.getByLabelText('Quantidade de etiquetas de Marmita P'), '2');
+
+      const bloco = await screen.findByTestId('etq-remoto');
+      // só a Zebra é opção — ZPL na Epson sai como lixo
+      expect(bloco.querySelectorAll('option')).toHaveLength(1);
+      expect(bloco.textContent).toContain('ZDesigner');
+      await userEvent.click(screen.getByTestId('etq-enviar-remoto'));
+
+      await waitFor(() => expect(mockedEnviar).toHaveBeenCalledTimes(1));
+      const body = mockedEnviar.mock.calls[0][0];
+      expect(body.store).toBe('s1');
+      expect(body.agent).toBe('ag-zebra');
+      expect(body.modelo).toBe('validade');
+      expect(body.etiquetas).toHaveLength(2);
+      expect(body.etiquetas[0].name).toBe('Marmita P');
+      expect(body.etiquetas[0].val).toMatch(/\d{2}\/\d{2}\/\d{4}/);
+      expect(body.config.cols).toBeGreaterThan(0);
+      expect(mockedPrint).not.toHaveBeenCalled();
+    });
+
+    it('etiqueta de produto (código de barras) não tem envio remoto', async () => {
+      mockedListAgents.mockResolvedValue({ data: { results: [zebra] } });
+      renderPage();
+      await screen.findByText('Marmita P');
+      expect(screen.queryByTestId('etq-remoto')).toBeNull();
+    });
   });
 });
