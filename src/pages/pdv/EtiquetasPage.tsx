@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ArrowDownTrayIcon, PrinterIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, SearchInput } from '../../components/ui';
+import { Card, Button, SearchInput, Select, ChoiceCards, FormSummary } from '../../components/ui';
+import { MinusIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Loading } from '../../components/common';
 import { getStores, getProducts, gerarCodigosInternos, StoreProduct } from '../../services/storesApi';
 import api, { normalizePaginatedResponse } from '../../services/api';
@@ -53,20 +54,20 @@ const PRODUTO_PRESETS = [
 
 const CFG_KEY = 'cdx-etiquetas-cfg-v2';
 
+const OPCOES_DE_BORDA = [
+  { valor: 'none', rotulo: 'Sem borda' },
+  { valor: 'solid', rotulo: 'Retângulo' },
+  { valor: 'dashed', rotulo: 'Tracejada' },
+];
+
 const BorderSelect: React.FC<{ value: LabelBorder; onChange: (v: LabelBorder) => void }> = ({ value, onChange }) => (
-  <label className="flex items-center justify-between gap-2 text-sm">
-    <span className="opacity-80">Borda</span>
-    <select
-      className="rounded border border-border-token bg-transparent px-2 py-1 text-sm"
-      value={value}
-      onChange={(e) => onChange(e.target.value as LabelBorder)}
-      data-testid="etq-border"
-    >
-      <option value="none">Sem borda</option>
-      <option value="solid">Retângulo</option>
-      <option value="dashed">Tracejada</option>
-    </select>
-  </label>
+  <Select
+    rotulo="Borda"
+    opcoes={OPCOES_DE_BORDA}
+    valor={value}
+    onMudar={(v) => onChange(v as LabelBorder)}
+    data-testid="etq-border"
+  />
 );
 
 interface SavedConfig { produto: ProdutoConfig; validade: ValidadeConfig; shelfDays: number; }
@@ -90,23 +91,37 @@ const loadConfig = (): SavedConfig => {
 const NumField: React.FC<{
   label: string; value: number; onChange: (v: number) => void;
   min?: number; max?: number; step?: number; suffix?: string; testId?: string;
-}> = ({ label, value, onChange, min = 0, max = 300, step = 0.5, suffix = 'mm', testId }) => (
-  <label className="flex items-center justify-between gap-2 text-sm">
-    <span className="opacity-80">{label}</span>
-    <span className="flex items-center gap-1.5">
-      <input
-        type="number" min={min} max={max} step={step}
-        className="w-20 rounded border border-border-token bg-transparent px-2 py-1 text-right tabular-nums"
-        value={value}
-        data-testid={testId}
-        onChange={(e) => {
-          const n = Number(e.target.value);
-          if (Number.isFinite(n)) onChange(Math.min(max, Math.max(min, n)));
-        }}
-      /> {suffix}
-    </span>
-  </label>
-);
+}> = ({ label, value, onChange, min = 0, max = 300, step = 0.5, suffix = 'mm', testId }) => {
+  // Texto local: corrigir a faixa a cada tecla impedia digitar. Com mínimo 15,
+  // o "3" de "33" virava 15 antes do segundo dígito. A faixa vale ao sair.
+  const [texto, setTexto] = useState(String(value));
+  useEffect(() => { setTexto(String(value)); }, [value]);
+  const confirmar = () => {
+    const n = Number(texto.replace(',', '.'));
+    const corrigido = Number.isFinite(n) && texto.trim() !== '' ? Math.min(max, Math.max(min, n)) : value;
+    setTexto(String(corrigido));
+    if (corrigido !== value) onChange(corrigido);
+  };
+  const id = `num-${label.replace(/\W+/g, '-').toLowerCase()}`;
+  return (
+    <div className="flex items-center justify-between gap-3 text-sm">
+      <label htmlFor={id} className="text-fg-muted-token">{label}</label>
+      <span className="flex items-center gap-1.5">
+        <input
+          id={id}
+          type="number" inputMode="decimal" min={min} max={max} step={step}
+          className="controle h-9 w-24 px-2 text-right tabular-nums"
+          value={texto}
+          data-testid={testId}
+          onChange={(e) => setTexto(e.target.value)}
+          onBlur={confirmar}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmar(); } }}
+        />
+        {suffix && <span className="text-fg-muted-token text-xs whitespace-nowrap">{suffix}</span>}
+      </span>
+    </div>
+  );
+};
 
 const EtiquetasPage: React.FC = () => {
   const { storeId } = useParams<{ storeId: string }>();
@@ -442,55 +457,80 @@ const EtiquetasPage: React.FC = () => {
 
   if (loading) return <Loading />;
 
+  const MODELOS = [
+    { valor: 'produto' as Template, titulo: 'Produto (Zebra)', descricao: 'Nome, preço e código de barras. 100 × 80 mm.' },
+    { valor: 'validade' as Template, titulo: 'Validade (Elgin)', descricao: 'Manipulação e validade, em colunas no rolo.' },
+    { valor: 'nutricao' as Template, titulo: 'Nutrição 100×80', descricao: 'Tabela ANVISA completa com QR Code.' },
+    { valor: 'nutricao-qr' as Template, titulo: 'QR Nutrição 30×22', descricao: 'Para pote pequeno: o QR abre a tabela.' },
+  ];
+  const nomeDoModelo = MODELOS.find((m) => m.valor === template)?.titulo ?? template;
+  const produtosSelecionados = selected.length;
+
   return (
     <PageShell
       titulo="Etiquetas"
+      descricao="Escolha o modelo, marque quantas etiquetas de cada produto e imprima."
       acoes={
         <div className="flex flex-col items-stretch gap-2 sm:min-w-80">
-        <div className="flex flex-wrap items-center gap-2">
-        <select className="rounded border border-black/15 bg-transparent px-2 py-1.5 text-sm"
-        value={lojaDaFolha} onChange={(e) => { setLojaDaFolha(e.target.value); setCategoriasDaFolha(new Set()); }}>
-        <option value="">Todas as lojas</option>
-        {lojasDisponiveis.map((l) => <option key={l.slug} value={l.slug}>{l.name}</option>)}
-        </select>
-        <Button variant="secondary" disabled={daFolha.length === 0} onClick={handleExportPdf}>
-        <ArrowDownTrayIcon className="w-5 h-5" />
-        Folha de códigos ({daFolha.length})
-        </Button>
-        </div>
-        {categoriasDisponiveis.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-        {categoriasDisponiveis.map((c) => {
-        const on = categoriasDaFolha.has(c);
-        return (
-        <button key={c} type="button" aria-pressed={on}
-        onClick={() => setCategoriasDaFolha((s) => {
-        const novo = new Set(s);
-        if (novo.has(c)) novo.delete(c); else novo.add(c);
-        return novo;
-        })}
-        className={`rounded-full border px-2 py-0.5 text-xs ${on ? 'border-black bg-black text-white' : 'border-black/15 opacity-70 hover:opacity-100'}`}>
-        {c}
-        </button>
-        );
-        })}
-        {categoriasDaFolha.size > 0 && (
-        <button type="button" className="px-2 py-0.5 text-xs underline"
-        onClick={() => setCategoriasDaFolha(new Set())}>limpar</button>
-        )}
-        </div>
-        )}
-        <label className="flex items-center gap-1.5 text-xs opacity-75">
-        <input type="checkbox" checked={catalogoCompacto}
-        onChange={(e) => setCatalogoCompacto(e.target.checked)} />
-        Compacta — só nome, código e preço, 4 por linha
-        </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select
+              rotuloOculto="Loja da folha de códigos"
+              opcoes={lojasDisponiveis.map((l) => ({ valor: l.slug, rotulo: l.name }))}
+              vazio="Todas as lojas"
+              valor={lojaDaFolha}
+              onMudar={(v) => { setLojaDaFolha(v); setCategoriasDaFolha(new Set()); }}
+            />
+            <Button variant="secondary" disabled={daFolha.length === 0} onClick={handleExportPdf}>
+              <ArrowDownTrayIcon className="w-5 h-5" />
+              Folha de códigos ({daFolha.length})
+            </Button>
+          </div>
+          {categoriasDisponiveis.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {categoriasDisponiveis.map((c) => {
+                const on = categoriasDaFolha.has(c);
+                return (
+                  <button key={c} type="button" aria-pressed={on}
+                    onClick={() => setCategoriasDaFolha((s) => {
+                      const novo = new Set(s);
+                      if (novo.has(c)) novo.delete(c); else novo.add(c);
+                      return novo;
+                    })}
+                    className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${on ? 'border-brand bg-brand text-white' : 'border-border-token text-fg-muted-token hover:text-fg-token'}`}>
+                    {c}
+                  </button>
+                );
+              })}
+              {categoriasDaFolha.size > 0 && (
+                <button type="button" className="px-2 py-0.5 text-xs text-fg-muted-token underline"
+                  onClick={() => setCategoriasDaFolha(new Set())}>limpar</button>
+              )}
+            </div>
+          )}
+          <label className="flex items-center gap-1.5 text-xs text-fg-muted-token">
+            <input type="checkbox" checked={catalogoCompacto}
+              onChange={(e) => setCatalogoCompacto(e.target.checked)} />
+            Folha compacta: nome, código e preço, 4 por linha
+          </label>
         </div>
       }
     >
 
-      <div className="grid lg:grid-cols-[1fr,360px] gap-4 md:gap-5 items-start">
+      <div className="grid lg:grid-cols-[1fr,380px] gap-4 md:gap-5 items-start">
         <Card className="p-4 sm:p-5 space-y-3">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 className="text-base font-semibold text-fg-token">Produtos e quantidades</h2>
+              <p className="text-xs text-fg-muted-token">
+                {totalLabels === 0
+                  ? 'Digite quantas etiquetas quer de cada produto.'
+                  : `${produtosSelecionados} produto${produtosSelecionados === 1 ? '' : 's'} · ${totalLabels} etiqueta${totalLabels === 1 ? '' : 's'}`}
+              </p>
+            </div>
+            {totalLabels > 0 && (
+              <Button variant="ghost" size="sm" onClick={() => setQty(new Map())}>Limpar seleção</Button>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2">
             <div className="flex-1 min-w-48">
               <SearchInput
@@ -500,78 +540,65 @@ const EtiquetasPage: React.FC = () => {
               />
             </div>
             {stores.length > 1 && (
-              <select
-                className="rounded border border-border-token bg-transparent px-2 py-1.5 text-sm"
-                value={storeFilter}
-                onChange={(e) => setStoreFilter(e.target.value)}
-                aria-label="Filtrar por loja"
-              >
-                <option value="all">Todas as lojas</option>
-                {stores.map((s) => <option key={s.slug} value={s.slug}>{s.name}</option>)}
-              </select>
+              <Select
+                rotuloOculto="Filtrar por loja"
+                opcoes={stores.map((s) => ({ valor: s.slug, rotulo: s.name }))}
+                vazio="Todas as lojas"
+                valor={storeFilter === 'all' ? '' : storeFilter}
+                onMudar={(v) => setStoreFilter(v || 'all')}
+              />
             )}
           </div>
-          <ul className="divide-y divide-[color:var(--border)] max-h-[26rem] overflow-y-auto" data-testid="etq-produtos">
-            {visible.map((c) => (
-              <li key={c.product.id} className="flex items-center gap-3 py-2.5">
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{c.product.name}</div>
-                  <div className="text-xs opacity-60">
-                    {stores.length > 1 && `${c.storeName} · `}
-                    {formatCurrency(precoVigenteDoProduto(c.product))}
-                    {c.product.barcode ? ` · ${c.product.barcode}` : ' · sem código (gera na impressão)'}
+          <ul className="divide-y divide-[color:var(--border)] max-h-[30rem] overflow-y-auto -mx-1" data-testid="etq-produtos">
+            {visible.map((c) => {
+              const n = qty.get(c.product.id) ?? 0;
+              return (
+                <li key={c.product.id} className={`flex items-center gap-3 px-1 py-2.5 ${n > 0 ? 'bg-brand/5' : ''}`}>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate text-fg-token">{c.product.name}</div>
+                    <div className="text-xs text-fg-muted-token">
+                      {stores.length > 1 && `${c.storeName} · `}
+                      {formatCurrency(precoVigenteDoProduto(c.product))}
+                      {c.product.barcode ? ` · ${c.product.barcode}` : ' · sem código (gera na impressão)'}
+                    </div>
                   </div>
-                </div>
-                <input
-                  type="number"
-                  min={0}
-                  max={999}
-                  className="w-20 rounded border border-border-token bg-transparent px-2 py-1.5 text-sm text-right tabular-nums"
-                  value={qty.get(c.product.id) ?? 0}
-                  onChange={(e) => setProductQty(c.product.id, Number(e.target.value) || 0)}
-                  aria-label={`Quantidade de etiquetas de ${c.product.name}`}
-                />
-              </li>
-            ))}
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" aria-label={`Menos uma etiqueta de ${c.product.name}`}
+                      disabled={n === 0} onClick={() => setProductQty(c.product.id, n - 1)}>
+                      <MinusIcon className="w-4 h-4" />
+                    </Button>
+                    <input
+                      type="number" inputMode="numeric" min={0} max={999}
+                      className="controle h-9 w-16 px-1 text-center tabular-nums"
+                      value={n}
+                      onChange={(e) => setProductQty(c.product.id, Number(e.target.value) || 0)}
+                      aria-label={`Quantidade de etiquetas de ${c.product.name}`}
+                    />
+                    <Button variant="ghost" size="sm" aria-label={`Mais uma etiqueta de ${c.product.name}`}
+                      onClick={() => setProductQty(c.product.id, n + 1)}>
+                      <PlusIcon className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </li>
+              );
+            })}
             {visible.length === 0 && (
-              <li className="py-6 text-center text-sm opacity-60">Nenhum produto encontrado</li>
+              <li className="py-8 text-center text-sm text-fg-muted-token">Nenhum produto encontrado</li>
             )}
           </ul>
         </Card>
 
-        <Card className="p-4 sm:p-5 space-y-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide opacity-60 mb-2">Modelo</p>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant={template === 'produto' ? 'primary' : 'secondary'}
-                onClick={() => setTemplate('produto')}
-              >
-                Produto (Zebra)
-              </Button>
-              <Button
-                variant={template === 'validade' ? 'primary' : 'secondary'}
-                onClick={() => setTemplate('validade')}
-              >
-                Validade (Elgin)
-              </Button>
-              <Button
-                variant={template === 'nutricao' ? 'primary' : 'secondary'}
-                onClick={() => setTemplate('nutricao')}
-              >
-                Nutrição 100×80
-              </Button>
-              <Button
-                variant={template === 'nutricao-qr' ? 'primary' : 'secondary'}
-                onClick={() => setTemplate('nutricao-qr')}
-              >
-                QR Nutrição 30×22
-              </Button>
-            </div>
-          </div>
+        <Card className="p-4 sm:p-5 space-y-5">
+          <ChoiceCards<Template>
+            rotulo="Qual etiqueta"
+            opcoes={MODELOS}
+            valor={template}
+            onChange={setTemplate}
+          />
 
           {template === 'produto' ? (
-            <div className="space-y-3">
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-fg-token">Papel</h3>
               <div className="flex flex-wrap gap-2">
                 {PRODUTO_PRESETS.map((p) => (
                   <Button
@@ -588,46 +615,45 @@ const EtiquetasPage: React.FC = () => {
               <NumField label="Etiqueta (altura)" value={cfg.produto.height} min={15} max={200} onChange={(v) => setProduto({ height: v })} />
               <NumField label="Largura do papel" value={cfg.produto.paperW} min={20} max={220} onChange={(v) => setProduto({ paperW: v })} />
               {cfg.produto.paperW > cfg.produto.width && (
-                <p className="text-xs opacity-60">
+                <p className="text-xs text-fg-muted-token">
                   Etiqueta centralizada: {((cfg.produto.paperW - cfg.produto.width) / 2).toFixed(1)} mm de margem por lado.
                 </p>
               )}
               <BorderSelect value={cfg.produto.border} onChange={(v) => setProduto({ border: v })} />
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={cfg.produto.rotate}
-                  onChange={(e) => setProduto({ rotate: e.target.checked })}
-                  data-testid="etq-rotate"
-                />
-                Girar 90° (se sair torta/rotacionada no driver)
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={cfg.produto.showPrice} onChange={(e) => setProduto({ showPrice: e.target.checked })} />
-                Mostrar preço
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={cfg.produto.showDesc} onChange={(e) => setProduto({ showDesc: e.target.checked })} />
-                Mostrar descrição/ingredientes
-              </label>
+              <div className="space-y-1.5 text-sm">
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={cfg.produto.rotate}
+                    onChange={(e) => setProduto({ rotate: e.target.checked })} data-testid="etq-rotate" />
+                  Girar 90° (se sair torta ou rotacionada no driver)
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={cfg.produto.showPrice} onChange={(e) => setProduto({ showPrice: e.target.checked })} />
+                  Mostrar preço
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={cfg.produto.showDesc} onChange={(e) => setProduto({ showDesc: e.target.checked })} />
+                  Mostrar descrição e ingredientes
+                </label>
+              </div>
               <details className="text-sm">
-                <summary className="cursor-pointer opacity-70">Calibração (ajuste fino)</summary>
+                <summary className="cursor-pointer text-fg-muted-token">Calibração fina</summary>
                 <div className="space-y-2 mt-2">
                   <NumField label="Deslocar horizontal" value={cfg.produto.offsetX} min={-20} max={20} onChange={(v) => setProduto({ offsetX: v })} />
                   <NumField label="Deslocar vertical" value={cfg.produto.offsetY} min={-20} max={20} onChange={(v) => setProduto({ offsetY: v })} />
                 </div>
               </details>
-            </div>
+            </section>
           ) : nutricaoBloqueada ? (
             <AdicionalBloqueado etiqueta={etiqueta} />
           ) : template === 'nutricao' || template === 'nutricao-qr' ? (
-            <div className="rounded-lg bg-black/5 p-3 text-sm space-y-2">
-              <p className="font-semibold">{template === 'nutricao' ? 'Zebra 100 × 80 mm' : 'QR compacto 30 × 22 mm'}</p>
-              <p className="opacity-70">{template === 'nutricao' ? 'Tabela completa com colunas por 100 g, porção, %VD e QR Code.' : 'Para embalagens pequenas: o QR abre a tabela nutricional pública completa no celular.'}</p>
-              <p className="text-xs opacity-60">Cadastre ingredientes e valores no menu Cardápio → Ingredientes e TACO.</p>
-            </div>
+            <section className="rounded-lg border border-border-token bg-surface p-3 text-sm space-y-1.5">
+              <p className="font-semibold text-fg-token">{template === 'nutricao' ? 'Zebra, 100 × 80 mm' : 'QR compacto, 30 × 22 mm'}</p>
+              <p className="text-fg-muted-token">{template === 'nutricao' ? 'Tabela completa: por 100 g, por porção, %VD, alergênicos e QR Code.' : 'Para embalagens pequenas: o QR abre a tabela nutricional completa no celular.'}</p>
+              <p className="text-xs text-fg-muted-token">Os valores vêm da receita de cada produto, em Cardápio → Ingredientes e TACO.</p>
+            </section>
           ) : (
-            <div className="space-y-2 text-sm">
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-fg-token">Validade e papel</h3>
               <NumField
                 label="Validade em" suffix={`dias → ${fmtDate(val)}`} min={1} max={365} step={1}
                 value={cfg.shelfDays} testId="etq-shelf-days"
@@ -638,31 +664,30 @@ const EtiquetasPage: React.FC = () => {
               <NumField label="Etiqueta (altura)" value={cfg.validade.labelH} min={10} max={60} onChange={(v) => setValidade({ labelH: v })} />
               <NumField label="Vão entre colunas" value={cfg.validade.gap} min={0} max={10} onChange={(v) => setValidade({ gap: v })} />
               <NumField label="Largura do papel" value={cfg.validade.paperW} min={30} max={120} onChange={(v) => setValidade({ paperW: v })} />
-              <p className="text-xs opacity-60">
+              <p className="text-xs text-fg-muted-token">
                 Colunas centralizadas no papel: {validadeMargin(cfg.validade).toFixed(1)} mm de margem por lado
                 ({cfg.validade.cols}×{cfg.validade.labelW} + {cfg.validade.cols - 1}×{cfg.validade.gap} mm
                 em {cfg.validade.paperW} mm).
               </p>
               <BorderSelect value={cfg.validade.border} onChange={(v) => setValidade({ border: v })} />
               <details className="text-sm">
-                <summary className="cursor-pointer opacity-70">Calibração (ajuste fino)</summary>
+                <summary className="cursor-pointer text-fg-muted-token">Calibração fina</summary>
                 <div className="space-y-2 mt-2">
                   <NumField label="Deslocar horizontal" value={cfg.validade.offsetX} min={-20} max={20} onChange={(v) => setValidade({ offsetX: v })} />
                   <NumField label="Deslocar vertical" value={cfg.validade.offsetY} min={-10} max={10} onChange={(v) => setValidade({ offsetY: v })} />
                 </div>
               </details>
-              <p className="opacity-60 text-xs">
-                A largura do papel deve bater com a definida no driver da Elgin
-                (bobina inteira). Manipulação = hoje.
+              <p className="text-xs text-fg-muted-token">
+                A largura do papel deve bater com a do driver da Elgin (bobina inteira). Manipulação = hoje.
               </p>
-            </div>
+            </section>
           )}
 
           {!nutricaoBloqueada && (<>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide opacity-60 mb-1.5">Pré-visualização (tamanho real do papel)</p>
+          <section>
+            <h3 className="text-sm font-semibold text-fg-token mb-1.5">Pré-visualização <span className="font-normal text-fg-muted-token">(tamanho real)</span></h3>
             <div
-              className="rounded border border-border-token overflow-hidden bg-surface"
+              className="rounded border border-border-token overflow-hidden bg-white"
               style={{ width: preview.w * previewScale + 2, height: preview.h * previewScale + 2 }}
             >
               <iframe
@@ -678,40 +703,47 @@ const EtiquetasPage: React.FC = () => {
                 }}
               />
             </div>
-          </div>
+          </section>
 
-          <Button
-            className="w-full"
-            size="lg"
-            disabled={totalLabels === 0 || preparing}
-            onClick={handlePrint}
-            data-testid="etq-imprimir"
-          >
-            <PrinterIcon className="w-5 h-5 mr-1.5" />
-            {preparing ? 'Preparando…' : `Imprimir ${totalLabels} etiqueta${totalLabels === 1 ? '' : 's'}`}
-          </Button>
-          <p className="text-xs opacity-60">
-            Na janela de impressão: selecione a impressora de etiquetas, papel igual ao
-            configurado aqui, margens “Nenhuma” e escala 100% (sem “ajustar à página”).
-          </p>
+          <FormSummary
+            titulo="Vai imprimir"
+            linhas={[
+              { rotulo: 'Modelo', valor: nomeDoModelo },
+              { rotulo: 'Produtos', valor: produtosSelecionados },
+              { rotulo: 'Etiquetas', valor: totalLabels },
+            ]}
+          />
+
+          <div className="space-y-2">
+            <Button
+              className="w-full"
+              size="lg"
+              disabled={totalLabels === 0 || preparing}
+              onClick={handlePrint}
+              data-testid="etq-imprimir"
+            >
+              <PrinterIcon className="w-5 h-5 mr-1.5" />
+              {preparing ? 'Preparando…' : `Imprimir ${totalLabels} etiqueta${totalLabels === 1 ? '' : 's'}`}
+            </Button>
+            <p className="text-xs text-fg-muted-token">
+              Na janela de impressão: impressora de etiquetas, papel igual ao configurado aqui,
+              margens "Nenhuma" e escala 100%.
+            </p>
+          </div>
           {envioRemotoDisponivel && (
             <div className="space-y-2 border-t border-border-token pt-3" data-testid="etq-remoto">
-              <p className="text-xs font-semibold uppercase tracking-wide opacity-60">Impressora remota (Zebra)</p>
+              <h3 className="text-sm font-semibold text-fg-token">Impressora remota (Zebra)</h3>
               {lojaDaSelecao ? (
-                <select
-                  className="w-full rounded border border-border-token bg-transparent px-2 py-1.5 text-sm"
-                  value={agenteEscolhido}
-                  onChange={(e) => setAgenteEscolhido(e.target.value)}
-                  aria-label="Programa de impressão com a Zebra"
-                >
-                  {agentesDaSelecao.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} · {a.printer_name}{a.is_online ? '' : ' (offline)'}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  rotuloOculto="Programa de impressão com a Zebra"
+                  opcoes={agentesDaSelecao.map((a) => ({
+                    valor: a.id, rotulo: `${a.name} · ${a.printer_name}${a.is_online ? '' : ' (offline)'}`,
+                  }))}
+                  valor={agenteEscolhido}
+                  onMudar={setAgenteEscolhido}
+                />
               ) : (
-                <p className="text-xs opacity-60">Selecione produtos de uma loja só para enviar.</p>
+                <p className="text-xs text-fg-muted-token">Selecione produtos de uma loja só para enviar.</p>
               )}
               <Button
                 className="w-full"
@@ -722,8 +754,8 @@ const EtiquetasPage: React.FC = () => {
               >
                 {enviando ? 'Enviando…' : `Enviar ${totalLabels} etiqueta${totalLabels === 1 ? '' : 's'} para a Zebra`}
               </Button>
-              <p className="text-xs opacity-60">
-                Sai direto na Zebra do PC escolhido, sem abrir janela de impressão — de qualquer lugar.
+              <p className="text-xs text-fg-muted-token">
+                Sai direto na Zebra do PC escolhido, de qualquer lugar, sem janela de impressão.
               </p>
             </div>
           )}

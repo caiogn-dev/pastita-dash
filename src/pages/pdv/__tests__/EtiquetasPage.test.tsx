@@ -117,7 +117,7 @@ describe('EtiquetasPage', () => {
     await screen.findByText('Marmita P');
     expect(screen.getByTestId('etq-imprimir')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Nutrição 100×80' }));
+    await userEvent.click(screen.getByText('Nutrição 100×80'));
 
     expect(screen.getByText(/fazem parte do adicional Etiqueta ANVISA/)).toBeInTheDocument();
     expect(screen.queryByTestId('etq-imprimir')).not.toBeInTheDocument();
@@ -215,7 +215,7 @@ describe('EtiquetasPage', () => {
       mockedListAgents.mockResolvedValue({ data: { results: [epson] } });
       renderPage();
       await screen.findByText('Marmita P');
-      await userEvent.click(screen.getByRole('button', { name: /validade/i }));
+      await userEvent.click(screen.getByText('Validade (Elgin)'));
       expect(screen.queryByTestId('etq-remoto')).toBeNull();
       expect(screen.getByTestId('etq-imprimir')).toBeInTheDocument();
     });
@@ -224,7 +224,7 @@ describe('EtiquetasPage', () => {
       mockedListAgents.mockResolvedValue({ data: { results: [epson, zebraSemPapel, zebra] } });
       renderPage();
       await screen.findByText('Marmita P');
-      await userEvent.click(screen.getByRole('button', { name: /validade/i }));
+      await userEvent.click(screen.getByText('Validade (Elgin)'));
       await userEvent.clear(screen.getByLabelText('Quantidade de etiquetas de Marmita P'));
       await userEvent.type(screen.getByLabelText('Quantidade de etiquetas de Marmita P'), '2');
 
@@ -252,6 +252,42 @@ describe('EtiquetasPage', () => {
       renderPage();
       await screen.findByText('Marmita P');
       expect(screen.queryByTestId('etq-remoto')).toBeNull();
+    });
+  });
+
+  describe('campos numéricos e escolhas', () => {
+    it('dá para digitar um número inteiro no teclado: 12 fica 12, não vira 1 e depois 112', async () => {
+      renderPage();
+      await screen.findByText('Marmita P');
+      await userEvent.click(screen.getByText('Validade (Elgin)'));
+      const dias = screen.getByTestId('etq-shelf-days') as HTMLInputElement;
+      await userEvent.clear(dias);
+      await userEvent.type(dias, '12');
+      expect(dias.value).toBe('12');
+      await userEvent.tab();
+      expect(dias.value).toBe('12');
+    });
+
+    it('valor fora da faixa só é corrigido ao sair do campo, não a cada tecla', async () => {
+      renderPage();
+      await screen.findByText('Marmita P');
+      await userEvent.click(screen.getByText('Validade (Elgin)'));
+      const largura = screen.getByLabelText('Etiqueta (largura)') as HTMLInputElement;
+      await userEvent.clear(largura);
+      await userEvent.type(largura, '3');
+      expect(largura.value).toBe('3');
+      await userEvent.tab();
+      expect(Number(largura.value)).toBeGreaterThanOrEqual(15);
+    });
+
+    it('a escolha de borda é o Select do painel (fundo próprio, legível no escuro)', async () => {
+      renderPage();
+      await screen.findByText('Marmita P');
+      await userEvent.click(screen.getByText('Validade (Elgin)'));
+      const borda = screen.getByTestId('etq-border');
+      expect(borda.tagName).toBe('SELECT');
+      expect(borda.className).not.toMatch(/bg-transparent/);
+      expect(screen.getByLabelText('Borda')).toBe(borda);
     });
   });
 });
