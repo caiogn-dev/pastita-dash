@@ -7,6 +7,7 @@
  * dourado, sem cor por cartão), modelos também em AcaoCard e campanhas
  * recentes numa Tabela com o estado no SeloDeEstado.
  */
+import { formatNumber, formatPercent } from '../../utils/formatters';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -47,9 +48,9 @@ interface CampanhaRecente {
   created_at: string;
 }
 
-const numero = (n: number | undefined | null) => (n ?? 0).toLocaleString('pt-BR');
+const numero = (n: number | undefined | null) => formatNumber(n ?? 0);
 const percentual = (n: number | undefined | null) =>
-  `${(n ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+  formatPercent(n ?? 0, 1);
 
 export const MarketingPage: React.FC = () => {
   const navigate = useNavigate();
