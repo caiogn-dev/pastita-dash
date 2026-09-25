@@ -25,6 +25,9 @@ import {
   listPrintAgents,
   createPrintAgent,
   updatePrintAgent,
+  PAPEIS_DO_AGENTE,
+  PapelDoAgente,
+  papeisDoAgente,
   rotatePrintAgentKey,
   deletePrintAgent,
   listPrintJobs,
@@ -148,6 +151,20 @@ const PrintSettingsPage: React.FC = () => {
     }
   };
 
+  // O que o agente imprime. Marcar/desmarcar grava na hora: é uma decisão
+  // de bancada ("o pc da produção fica só com etiquetas"), não um formulário.
+  const handleTogglePapel = async (agent: PrintAgent, papel: PapelDoAgente) => {
+    if (!storeId) return;
+    const atual = papeisDoAgente(agent);
+    const imprime = atual.includes(papel) ? atual.filter((p) => p !== papel) : [...atual, papel];
+    try {
+      await updatePrintAgent(storeId, agent.id, { imprime });
+      loadData();
+    } catch {
+      toast.error('Erro ao mudar o que o agente imprime');
+    }
+  };
+
   const handleRotateKey = async (agent: PrintAgent) => {
     if (!storeId) return;
     try {
@@ -244,6 +261,28 @@ const PrintSettingsPage: React.FC = () => {
                   {STATION_LABELS[a.station] || a.station}
                 </Badge>
               ),
+            },
+            {
+              chave: 'imprime',
+              cabecalho: 'Imprime',
+              render: (a) => {
+                const papeis = papeisDoAgente(a);
+                return (
+                  <div className="flex flex-col gap-0.5 text-sm">
+                    {PAPEIS_DO_AGENTE.map(({ valor, rotulo }) => (
+                      <label key={valor} className="flex items-center gap-1.5">
+                        <input
+                          type="checkbox"
+                          checked={papeis.includes(valor)}
+                          onChange={() => handleTogglePapel(a, valor)}
+                          aria-label={`${a.name} imprime ${rotulo}`}
+                        />
+                        {rotulo}
+                      </label>
+                    ))}
+                  </div>
+                );
+              },
             },
             {
               chave: 'impressora',

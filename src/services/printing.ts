@@ -6,6 +6,14 @@ import api from './api';
 
 export type SituacaoDoAgente = 'ok' | 'offline' | 'impressora_indisponivel';
 
+export type PapelDoAgente = 'comanda' | 'recibo' | 'etiquetas';
+export const PAPEIS_DO_AGENTE: { valor: PapelDoAgente; rotulo: string }[] = [
+  { valor: 'comanda', rotulo: 'comanda' },
+  { valor: 'recibo', rotulo: 'recibo' },
+  { valor: 'etiquetas', rotulo: 'etiquetas' },
+];
+export const PAPEIS_PADRAO: PapelDoAgente[] = ['comanda', 'recibo'];
+
 export interface PrintAgent {
   id: string;
   store: string;
@@ -28,6 +36,8 @@ export interface PrintAgent {
   is_active: boolean;
   /** Impressoras detectadas no PC do agent (via heartbeat) */
   available_printers?: string[];
+  /** O que este agent imprime. Backend antigo não manda: vale comanda + recibo. */
+  imprime?: PapelDoAgente[];
   /**
    * Situação calculada pelo vigia de impressão do backend. Opcional: backend
    * antigo não manda, e aí nenhuma faixa acende.
@@ -108,6 +118,10 @@ export interface EnvioDeEtiquetas {
 export const enviarEtiquetasParaAgente = (dados: EnvioDeEtiquetas) =>
   api.post<{ job: PrintJob }>('/stores/print-jobs/etiquetas/', dados);
 
-/** Impressora que fala ZPL: é o nome que o driver da Zebra registra no Windows. */
-export const imprimeZpl = (agent: Pick<PrintAgent, 'printer_name'>): boolean =>
-  /zdesigner|zebra|zpl/i.test(agent.printer_name || '');
+/** Papéis do agent; backend antigo (sem o campo) = comanda + recibo. */
+export const papeisDoAgente = (agent: Pick<PrintAgent, 'imprime'>): PapelDoAgente[] =>
+  Array.isArray(agent.imprime) ? agent.imprime : PAPEIS_PADRAO;
+
+/** Só quem está marcado com "etiquetas" recebe ZPL — na Epson sairia lixo. */
+export const imprimeEtiquetas = (agent: Pick<PrintAgent, 'imprime'>): boolean =>
+  papeisDoAgente(agent).includes('etiquetas');

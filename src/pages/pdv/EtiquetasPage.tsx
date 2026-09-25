@@ -16,7 +16,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { useAdicional } from '../../hooks/useAdicional';
 import { ADICIONAL_ETIQUETA } from '../../services/billing';
 import { AdicionalBloqueado } from '../../components/billing/AdicionalBloqueado';
-import { enviarEtiquetasParaAgente, imprimeZpl, listPrintAgents, PrintAgent } from '../../services/printing';
+import { enviarEtiquetasParaAgente, imprimeEtiquetas, listPrintAgents, PrintAgent } from '../../services/printing';
 
 const fmtDate = (d: Date) => d.toLocaleDateString('pt-BR');
 const MM_PX = 96 / 25.4;
@@ -133,9 +133,9 @@ const EtiquetasPage: React.FC = () => {
   const [cfg, setCfg] = useState<SavedConfig>(loadConfig);
   const [preparing, setPreparing] = useState(false);
   const [profiles, setProfiles] = useState<Map<string, NutritionProfile>>(new Map());
-  // Agents (programa de impressão) por loja. Só interessa quem tem uma Zebra:
-  // etiqueta ZPL na Epson sai como lixo. Sem agent, o bloco nem aparece e a
-  // impressão pelo navegador segue igual.
+  // Agents (programa de impressão) por loja. Só interessa quem está marcado
+  // com "etiquetas" na tela de Impressão: ZPL na Epson sai como lixo. Sem
+  // agent, o bloco nem aparece e a impressão pelo navegador segue igual.
   const [agentes, setAgentes] = useState<Map<string, PrintAgent[]>>(new Map());
   const [agenteEscolhido, setAgenteEscolhido] = useState<string>('');
   const [enviando, setEnviando] = useState(false);
@@ -188,7 +188,7 @@ const EtiquetasPage: React.FC = () => {
         const porLoja = await Promise.all(stores.map(async (s) => {
           const res = await listPrintAgents(s.slug);
           const lista = normalizePaginatedResponse<PrintAgent>(res.data)
-            .filter((a) => a.is_active && a.status === 'active' && imprimeZpl(a));
+            .filter((a) => a.is_active && a.status === 'active' && imprimeEtiquetas(a));
           return [s.slug, lista] as const;
         }));
         setAgentes(new Map(porLoja.filter(([, lista]) => lista.length > 0)));

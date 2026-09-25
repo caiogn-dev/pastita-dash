@@ -48,9 +48,11 @@ const mockedListAgents = listPrintAgents as jest.Mock;
 const mockedEnviar = enviarEtiquetasParaAgente as jest.Mock;
 
 const zebra = { id: 'ag-zebra', name: 'pc desktop', printer_name: 'ZDesigner ZD220-203dpi ZPL',
-  is_active: true, status: 'active', is_online: true };
+  is_active: true, status: 'active', is_online: true, imprime: ['etiquetas'] };
 const epson = { id: 'ag-epson', name: 'Caixa', printer_name: 'EPSON TM-T20',
-  is_active: true, status: 'active', is_online: true };
+  is_active: true, status: 'active', is_online: true, imprime: ['comanda', 'recibo'] };
+// Zebra que ainda está marcada só como comanda: o dono precisa marcar "etiquetas" nela
+const zebraSemPapel = { ...zebra, id: 'ag-zebra-2', name: 'zebra sem papel', imprime: ['comanda'] };
 
 const page = (results: unknown[]) => ({ count: results.length, next: null, previous: null, results });
 
@@ -219,7 +221,7 @@ describe('EtiquetasPage', () => {
     });
 
     it('validade: manda os mesmos dados do navegador para o agent escolhido, com a loja e a config', async () => {
-      mockedListAgents.mockResolvedValue({ data: { results: [epson, zebra] } });
+      mockedListAgents.mockResolvedValue({ data: { results: [epson, zebraSemPapel, zebra] } });
       renderPage();
       await screen.findByText('Marmita P');
       await userEvent.click(screen.getByRole('button', { name: /validade/i }));
@@ -227,7 +229,8 @@ describe('EtiquetasPage', () => {
       await userEvent.type(screen.getByLabelText('Quantidade de etiquetas de Marmita P'), '2');
 
       const bloco = await screen.findByTestId('etq-remoto');
-      // só a Zebra é opção — ZPL na Epson sai como lixo
+      // só quem imprime etiquetas é opção — ZPL na Epson sai como lixo, e a
+      // Zebra sem o papel marcado ainda receberia comanda
       expect(bloco.querySelectorAll('option')).toHaveLength(1);
       expect(bloco.textContent).toContain('ZDesigner');
       await userEvent.click(screen.getByTestId('etq-enviar-remoto'));
