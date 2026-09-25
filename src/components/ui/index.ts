@@ -69,5 +69,5 @@ export { Verificacao } from './Verificacao';
 export type { VerificacaoProps } from './Verificacao';
 export { AcaoCard } from './AcaoCard';
 export type { AcaoCardProps } from './AcaoCard';
-export { estadoDePagamento, estadoDeCampanha } from './estados';
-export type { Estado } from './estados';
+export { estadoDePagamento, estadoDeCampanha, estadoDePedido, tomDoPrazo } from './estados';
+export type { Estado, Prazo } from './estados';

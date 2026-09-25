@@ -39,7 +39,14 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { PageLoading } from '../../components/common';
-import { Button, PageShell } from '../../components/ui';
+import {
+  Button,
+  PageShell,
+  SeloDeEstado,
+  estadoDePagamento,
+  estadoDePedido,
+  tomDoPrazo,
+} from '../../components/ui';
 import {
   getOrders,
   updateOrderStatus,
@@ -74,9 +81,11 @@ import { AlertaDeImpressora } from '../../components/printing/AlertaDeImpressora
  * A regra morava aqui e uma SEGUNDA cópia morava no detalhe do pedido — e foi
  * a cópia de lá que mandou "pronto para retirada" numa entrega. Uma fonte só.
  */
-const getNextAction = (order: StoreOrder): { status: string; label: string; color: string } | null => {
+const getNextAction = (order: StoreOrder): { status: string; label: string } | null => {
   const acao = proximaAcaoDoPedido(order as unknown as Order);
-  return acao ? { status: acao.status, label: acao.rotulo, color: acao.cor } : null;
+  // A cor do botão sai do kit (Button primário), não da máquina de estados:
+  // cor no painel é só para estado, e o botão é ação.
+  return acao ? { status: acao.status, label: acao.rotulo } : null;
 };
 
 const needsPayment = (order: StoreOrder) =>
@@ -120,27 +129,14 @@ const formatScheduledShort = (order: { scheduled_date?: string | null; scheduled
   return [datePart, time].filter(Boolean).join('');
 };
 
-// ─── PaymentBadge ─────────────────────────────────────────────────────────────
-
-const PAYMENT_CONFIGS: Record<string, { label: string; cls: string }> = {
-  paid:    { label: 'Pago',        cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
-  pending: { label: 'Ag. pgto',   cls: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
-  failed:  { label: 'Pgto falhou', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-  refunded:{ label: 'Reembolsado', cls: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
-};
-const PaymentBadge: React.FC<{ status?: string; method?: string }> = ({ status, method }) => {
-  const key = (status || 'pending').toLowerCase();
-  const isCash = ['cash', 'dinheiro'].includes((method || '').toLowerCase());
-  const cfg = PAYMENT_CONFIGS[key] || PAYMENT_CONFIGS.pending;
-  const label = isCash && key === 'pending' ? 'Dinheiro' : cfg.label;
-  return (
-    <span className={`text-badge font-semibold px-1.5 py-0.5 rounded-full ${cfg.cls}`}>
-      {label}
-    </span>
-  );
-};
-
 // ─── OrderCard ────────────────────────────────────────────────────────────────
+
+// Botão de ícone do cartão (Uber, lançar pagamento, cancelar): neutro. A cor
+// do cartão é do estado do pedido, não das ações.
+const BOTAO_ICONE =
+  'flex h-7 w-7 shrink-0 items-center justify-center rounded border border-border-token ' +
+  'bg-surface text-fg-muted-token transition-colors hover:bg-surface-2 hover:text-fg-token ' +
+  'disabled:opacity-60';
 
 interface CardProps {
   order: StoreOrder;
@@ -185,21 +181,23 @@ const OrderCardBase: React.FC<CardProps> = ({
     ['confirmed', 'preparing'].includes(order.status) &&
     (!order.delivery_provider || order.delivery_provider === 'none');
 
+  // A borda é o único lugar em que o prazo pinta o cartão inteiro: atrasado
+  // precisa ser visto de longe, no quadro cheio.
   const urgencyBorder =
-    isSuccess   ? 'border-emerald-400 dark:border-emerald-600' :
+    isSuccess   ? 'border-success-token' :
     isUpdating  ? 'border-brand' :
-    urgency === 'critical' ? 'border-red-400 dark:border-red-700' :
-    urgency === 'warning'  ? 'border-yellow-400 dark:border-yellow-600' :
+    urgency === 'critical' ? 'border-danger-token' :
+    urgency === 'warning'  ? 'border-warning-token' :
     'border-border-token';
+  const pagamento = estadoDePagamento(order.payment_status, order.payment_method);
+  const saldo = saldoDoPedido(order);
 
   return (
     <div
       onClick={() => !isUpdating && onDetail(order)}
       className={`
-        cursor-pointer rounded border-2 bg-surface text-fg-token p-2.5
-        transition-all duration-200
-        hover:-translate-y-0.5 hover:shadow-md
-        ${isDragging ? 'shadow-2xl ring-2 ring-brand scale-105 rotate-1' : ''}
+        superficie-alta cursor-pointer border-2 text-fg-token p-2.5
+        ${isDragging ? 'shadow-flutuante ring-2 ring-brand' : ''}
         ${isUpdating ? 'opacity-70' : ''}
         ${urgency === 'critical' && !isSuccess && !isUpdating ? 'animate-pulse' : ''}
         ${urgencyBorder}
@@ -212,50 +210,43 @@ const OrderCardBase: React.FC<CardProps> = ({
         </span>
         <div className="flex items-center gap-1">
           {isUpdating && <ArrowPathIcon className="h-3 w-3 text-brand-ink animate-spin" />}
-          {isSuccess && <span className="text-badge font-bold text-emerald-600">✓ Movido</span>}
+          {isSuccess && <SeloDeEstado tone="success" className="px-1.5 text-badge">Movido</SeloDeEstado>}
           {!isUpdating && !isSuccess && elapsed > 0 && (
-            <span className={`flex items-center gap-0.5 text-badge font-semibold px-1.5 py-0.5 rounded-full ${
-              urgency === 'critical' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
-              urgency === 'warning'  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-              'bg-surface-2 text-fg-muted-token'
-            }`}>
-              <ClockIcon className="h-2.5 w-2.5" />
+            <SeloDeEstado tone={tomDoPrazo(urgency)} className="gap-0.5 px-1.5 text-badge">
+              <ClockIcon className="h-2.5 w-2.5" aria-hidden />
               {formatElapsed(elapsed)}
-            </span>
+            </SeloDeEstado>
           )}
-          <span className={`flex items-center gap-0.5 text-badge font-semibold px-1.5 py-0.5 rounded-full ${
-            isPickup
-              ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-              : 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
-          }`}>
-            {isPickup ? <HomeIcon className="h-2.5 w-2.5" /> : <TruckIcon className="h-2.5 w-2.5" />}
+          {/* Entrega × retirada é tipo, não estado: sem cor. */}
+          <SeloDeEstado tone="neutral" className="gap-0.5 px-1.5 text-badge">
+            {isPickup ? <HomeIcon className="h-2.5 w-2.5" aria-hidden /> : <TruckIcon className="h-2.5 w-2.5" aria-hidden />}
             {isPickup ? 'Retirada' : 'Delivery'}
-          </span>
+          </SeloDeEstado>
         </div>
       </div>
 
       {/* Previsão de preparo: atrasado grita, no prazo só informa a hora */}
       {preparo && !isUpdating && !isSuccess && (
-        <div
-          data-testid="previsao-preparo"
-          className={`mb-1.5 flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-badge font-semibold ${
-            preparo.atrasadoMin > 0
-              ? 'bg-red-600 text-white dark:bg-red-700'
-              : 'bg-surface-2 text-fg-muted-token'
-          }`}
-        >
-          <ClockIcon className="h-2.5 w-2.5" />
-          {preparo.atrasadoMin > 0
-            ? `ATRASADO ${formatElapsed(preparo.atrasadoMin)}`
-            : `Pronto às ${format(new Date(preparo.previstoPara), 'HH:mm', { locale: ptBR })}`}
+        <div data-testid="previsao-preparo" className="mb-1.5 w-fit">
+          <SeloDeEstado
+            tone={preparo.atrasadoMin > 0 ? 'danger' : 'neutral'}
+            className="gap-1 px-1.5 text-badge"
+          >
+            <ClockIcon className="h-2.5 w-2.5" aria-hidden />
+            {preparo.atrasadoMin > 0
+              ? `Atrasado ${formatElapsed(preparo.atrasadoMin)}`
+              : `Pronto às ${format(new Date(preparo.previstoPara), 'HH:mm', { locale: ptBR })}`}
+          </SeloDeEstado>
         </div>
       )}
 
       {/* Agendamento — destaque quando o cliente agendou data/hora */}
       {formatScheduledShort(order) && (
-        <div className="mb-1.5 flex items-center gap-1 rounded-md bg-brand-soft px-1.5 py-0.5 text-badge font-semibold text-brand-ink w-fit">
-          <CalendarDaysIcon className="h-2.5 w-2.5" />
-          Agendado {formatScheduledShort(order)}
+        <div className="mb-1.5 w-fit">
+          <SeloDeEstado tone="info" className="gap-1 px-1.5 text-badge">
+            <CalendarDaysIcon className="h-2.5 w-2.5" aria-hidden />
+            Agendado {formatScheduledShort(order)}
+          </SeloDeEstado>
         </div>
       )}
 
@@ -277,14 +268,15 @@ const OrderCardBase: React.FC<CardProps> = ({
             {order.customer_phone}
           </span>
         )}
-        <PaymentBadge status={order.payment_status} method={order.payment_method} />
+        <SeloDeEstado tone={pagamento.tone} className="px-1.5 text-badge">
+          {pagamento.rotulo}
+        </SeloDeEstado>
         {/* Pago a menor: a trava deixa o pedido parado — o card precisa dizer por quê. */}
-        {saldoDoPedido(order).aMenor && (
-          <span
-            title={saldoDoPedido(order).texto}
-            className="text-badge font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-          >
-            Falta {formatCurrency(saldoDoPedido(order).falta)}
+        {saldo.aMenor && (
+          <span title={saldo.texto}>
+            <SeloDeEstado tone="danger" className="px-1.5 text-badge">
+              Falta {formatCurrency(saldo.falta)}
+            </SeloDeEstado>
           </span>
         )}
         {order.items?.length > 0 && (
@@ -303,9 +295,10 @@ const OrderCardBase: React.FC<CardProps> = ({
             onClick={() => onUberClick?.(order)}
             disabled={isUpdating}
             title="Solicitar motorista Uber"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-60 dark:bg-blue-900/20 dark:text-blue-400 transition-colors"
+            aria-label="Solicitar motorista Uber"
+            className={BOTAO_ICONE}
           >
-            <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
               <circle cx="12" cy="8.5" r="1.5" />
               <circle cx="8.5" cy="12" r="1.5" />
               <circle cx="15.5" cy="12" r="1.5" />
@@ -319,30 +312,33 @@ const OrderCardBase: React.FC<CardProps> = ({
             onClick={() => onPay(order)}
             disabled={paying || isUpdating}
             title="Lançar pagamento"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-emerald-50 text-emerald-600 hover:bg-emerald-100 disabled:opacity-60 dark:bg-emerald-900/20 dark:text-emerald-400 transition-colors"
+            aria-label="Lançar pagamento"
+            className={BOTAO_ICONE}
           >
-            {paying ? <ArrowPathIcon className="h-3 w-3 animate-spin" /> : <CurrencyDollarIcon className="h-3.5 w-3.5" />}
+            {paying ? <ArrowPathIcon className="h-3 w-3 animate-spin" aria-hidden /> : <CurrencyDollarIcon className="h-3.5 w-3.5" aria-hidden />}
           </button>
         )}
 
         {action && (
-          <button
+          <Button
+            size="xs"
             onClick={() => onAdvance(order)}
             disabled={advancing || isUpdating}
-            className={`flex h-7 flex-1 items-center justify-center gap-1 rounded px-1.5 text-badge font-semibold uppercase tracking-wide text-white transition-colors disabled:opacity-60 ${action.color}`}
+            className="min-w-0 flex-1 gap-1 px-1.5 text-badge"
           >
-            {advancing ? <ArrowPathIcon className="h-3 w-3 animate-spin" /> : <CheckIcon className="h-3 w-3" />}
+            {advancing ? <ArrowPathIcon className="h-3 w-3 shrink-0 animate-spin" aria-hidden /> : <CheckIcon className="h-3 w-3 shrink-0" aria-hidden />}
             <span className="truncate">{action.label}</span>
-          </button>
+          </Button>
         )}
 
         <button
           onClick={() => onCancel(order)}
           disabled={cancelling || isUpdating}
           title="Cancelar pedido"
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-red-100 text-red-400 hover:bg-danger-soft disabled:opacity-60 dark:border-red-900/30 dark:text-red-500 transition-colors"
+          aria-label="Cancelar pedido"
+          className={`${BOTAO_ICONE} hover:border-danger-token hover:bg-danger-soft hover:text-danger-token`}
         >
-          <XMarkIcon className="h-3.5 w-3.5" />
+          <XMarkIcon className="h-3.5 w-3.5" aria-hidden />
         </button>
       </div>
     </div>
@@ -799,16 +795,10 @@ export const OrdersPage: React.FC = () => {
             // sobre os dados: a conexão ao vivo, o último sinal, o preparo
             // médio e o filtro de coluna ativo.
             <div className="flex flex-wrap items-center gap-2">
-              <span
-                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
-                  wsConnected
-                    ? 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
-                    : 'bg-surface-2 text-fg-muted-token'
-                }`}
-              >
-                {wsConnected ? <SignalIcon className="h-3 w-3" /> : <SignalSlashIcon className="h-3 w-3" />}
+              <SeloDeEstado tone={wsConnected ? 'success' : 'neutral'}>
+                {wsConnected ? <SignalIcon className="h-3 w-3" aria-hidden /> : <SignalSlashIcon className="h-3 w-3" aria-hidden />}
                 {wsConnected ? 'Ao vivo' : 'Offline'}
-              </span>
+              </SeloDeEstado>
               {lastSync && (
                 <span className="text-xs text-fg-muted-token hidden sm:block">
                   {format(lastSync, 'HH:mm:ss', { locale: ptBR })}
@@ -816,18 +806,19 @@ export const OrdersPage: React.FC = () => {
               )}
               {avgPrepMinutes !== null && (
                 <span
-                  className="hidden md:inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
+                  className="max-md:hidden"
                   title="Tempo médio entre confirmação e pronto (pedidos carregados)"
                 >
-                  Preparo médio: {avgPrepMinutes}min
+                  <SeloDeEstado tone="neutral">Preparo médio: {avgPrepMinutes}min</SeloDeEstado>
                 </span>
               )}
               {focusColumn && (
                 <button
                   type="button"
                   onClick={clearFocus}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-300"
+                  className="inline-flex items-center gap-1.5 rounded-pill border border-border-token bg-surface px-2.5 py-0.5 text-xs font-semibold text-fg-token transition-colors hover:bg-surface-2"
                   title="Limpar filtro"
+                  aria-label={`Limpar filtro: ${COLUMNS.find((c) => c.id === focusColumn)?.label}`}
                 >
                   Filtrando: {COLUMNS.find((c) => c.id === focusColumn)?.label}
                   <span aria-hidden="true">×</span>
@@ -845,25 +836,27 @@ export const OrdersPage: React.FC = () => {
             Altura das colunas vem do flex-1 do container (não há Navbar nesta rota dedicada). */}
         <div className="min-h-0 flex-1 gap-2 max-xl:flex max-xl:snap-x max-xl:overflow-x-auto max-xl:pb-1 xl:grid xl:grid-cols-5">
           {columnData.map((col) => {
-            const Icon = col.Icon;
+            // O tom da etapa vem do mapa único de status do pedido — o mesmo
+            // que pinta o status em qualquer outra tela do painel.
+            const { tone } = estadoDePedido(col.statuses[0]);
             return (
-              <div
+              <section
                 key={col.id}
-                className={`flex min-h-[220px] flex-col overflow-hidden rounded border border-border-token max-xl:w-[300px] max-xl:min-w-[280px] max-xl:shrink-0 max-xl:snap-start ${col.colBg}`}
+                aria-label={`${col.label}: ${col.orders.length} ${col.orders.length === 1 ? 'pedido' : 'pedidos'}`}
+                className="superficie flex min-h-[220px] flex-col overflow-hidden max-xl:w-[300px] max-xl:min-w-[280px] max-xl:shrink-0 max-xl:snap-start"
               >
-                {/* Column header */}
-                <div className={`${col.headerBg} text-white px-3 py-2.5 border-t-0 rounded-t`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Icon className="h-4 w-4 opacity-90" />
-                      <span className="text-xs font-bold uppercase tracking-wide">{col.label}</span>
-                    </div>
-                    <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold min-w-[22px] text-center">
+                {/* Cabeçalho da coluna: a cor fica no selo da etapa, o resto é neutro. */}
+                <header className="border-b border-border-token px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <SeloDeEstado tone={tone} ponto>
+                      {col.label}
+                    </SeloDeEstado>
+                    <span className="min-w-[22px] text-center text-sm font-semibold tabular-nums text-fg-token">
                       {col.orders.length}
                     </span>
                   </div>
-                  <p className="text-badge text-white/70 mt-0.5">{col.description}</p>
-                </div>
+                  <p className="mt-1 text-badge text-fg-muted-token">{col.description}</p>
+                </header>
 
                 {/* Droppable area */}
                 <SortableContext items={col.orders.map(o => o.id)} strategy={verticalListSortingStrategy}>
@@ -908,7 +901,7 @@ export const OrdersPage: React.FC = () => {
                     )}
                   </DroppableColumn>
                 </SortableContext>
-              </div>
+              </section>
             );
           })}
         </div>

@@ -12,8 +12,6 @@ import toast from 'react-hot-toast';
 import {
   CurrencyDollarIcon,
   CheckCircleIcon,
-  ClockIcon,
-  XCircleIcon,
   ArrowPathIcon,
   BanknotesIcon,
   CreditCardIcon,
@@ -22,15 +20,17 @@ import {
   ClipboardIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
+import { Table, Pagination, PageLoading } from '../../components/common';
 import {
-  Card,
   Button,
-  Table,
-  Pagination,
-  PageLoading,
+  Card,
   EmptyState,
-} from '../../components/common';
-import { PageShell, PeriodChips } from '../../components/ui';
+  KpiGrid,
+  PageShell,
+  PeriodChips,
+  SeloDeEstado,
+  estadoDePagamento,
+} from '../../components/ui';
 import { ordersService } from '../../services';
 import { Order } from '../../types';
 import logger from '../../services/logger';
@@ -43,15 +43,9 @@ import { formatCurrency } from '../../utils/formatters';
 // DRF default page size (apps/stores/api/views/order_views.py / settings PAGE_SIZE)
 const PAGE_SIZE = 20;
 
-// Payment status options based on StoreOrder.PaymentStatus
-const PAYMENT_STATUS_OPTIONS = [
-  { value: 'pending', label: 'Aguardando', color: 'warning' },
-  { value: 'processing', label: 'Processando', color: 'purple' },
-  { value: 'paid', label: 'Pago', color: 'success' },
-  { value: 'failed', label: 'Falhou', color: 'danger' },
-  { value: 'refunded', label: 'Reembolsado', color: 'gray' },
-  { value: 'partially_refunded', label: 'Reembolso Parcial', color: 'orange' },
-];
+// Situações de pagamento do StoreOrder.PaymentStatus. O rótulo vem do mapa
+// único (`estadoDePagamento`): o mesmo "Pago" do quadro de pedidos, na mesma cor.
+const PAYMENT_STATUSES = ['pending', 'processing', 'paid', 'failed', 'refunded', 'partially_refunded'];
 
 // Payment method display names
 const PAYMENT_METHOD_LABELS: Record<string, { label: string; icon: React.ReactNode }> = {
@@ -61,28 +55,6 @@ const PAYMENT_METHOD_LABELS: Record<string, { label: string; icon: React.ReactNo
   cash: { label: 'Dinheiro', icon: <BanknotesIcon className="w-4 h-4" /> },
   card: { label: 'Cartão', icon: <CreditCardIcon className="w-4 h-4" /> },
   mercadopago: { label: 'Mercado Pago', icon: <CurrencyDollarIcon className="w-4 h-4" /> },
-};
-
-// Payment status badge component
-const PaymentStatusBadge: React.FC<{ status: string }> = ({ status }) => {
-  const config: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
-    pending: { bg: 'bg-amber-100 dark:bg-amber-900/40 dark:bg-amber-900/40', text: 'text-amber-800 dark:text-amber-300', icon: <ClockIcon className="w-4 h-4" /> },
-    processing: { bg: 'bg-purple-100 dark:bg-purple-900/40 dark:bg-purple-900/40', text: 'text-purple-800 dark:text-purple-300', icon: <ArrowPathIcon className="w-4 h-4 animate-spin" /> },
-    paid: { bg: 'bg-green-100 dark:bg-green-900/40 dark:bg-green-900/40', text: 'text-green-800 dark:text-green-300', icon: <CheckCircleIcon className="w-4 h-4" /> },
-    failed: { bg: 'bg-red-100 dark:bg-red-900/40 dark:bg-red-900/40', text: 'text-red-800 dark:text-red-300', icon: <XCircleIcon className="w-4 h-4" /> },
-    refunded: { bg: 'bg-surface-2 dark:bg-[var(--dark-bg-hover,#161616)]', text: 'text-fg-token dark:text-gray-200 dark:text-[var(--dark-text-primary,#FAF9F7)]', icon: <ArrowPathIcon className="w-4 h-4" /> },
-    partially_refunded: { bg: 'bg-orange-100 dark:bg-orange-900/40 dark:bg-orange-900/40', text: 'text-orange-800 dark:text-orange-300', icon: <ArrowPathIcon className="w-4 h-4" /> },
-  };
-  
-  const { bg, text, icon } = config[status] || config.pending;
-  const label = PAYMENT_STATUS_OPTIONS.find(o => o.value === status)?.label || status;
-  
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${bg} ${text}`}>
-      {icon}
-      {label}
-    </span>
-  );
 };
 
 export const PaymentsPage: React.FC = () => {
@@ -180,7 +152,10 @@ export const PaymentsPage: React.FC = () => {
   // desenhava o "Todos" por fora com `value === null`, e era a única razão
   // para aquele componente existir ao lado do chip canônico do painel.
   const filterOptions = useMemo(
-    () => [{ value: 'todos', label: 'Todos' }, ...PAYMENT_STATUS_OPTIONS.map((o) => ({ ...o }))],
+    () => [
+      { value: 'todos', label: 'Todos' },
+      ...PAYMENT_STATUSES.map((value) => ({ value, label: estadoDePagamento(value).rotulo })),
+    ],
     [],
   );
 
@@ -191,7 +166,7 @@ export const PaymentsPage: React.FC = () => {
       header: 'Pedido',
       render: (order: Order) => (
         <div>
-          <span className="font-semibold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">#{order.order_number}</span>
+          <span className="font-semibold text-fg-token">#{order.order_number}</span>
           <p className="text-xs text-fg-muted-token">{order.customer_name}</p>
         </div>
       ),
@@ -200,7 +175,7 @@ export const PaymentsPage: React.FC = () => {
       key: 'total',
       header: 'Valor',
       render: (order: Order) => (
-        <span className="font-semibold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">{formatCurrency(order.total)}</span>
+        <span className="font-semibold tabular-nums text-fg-token">{formatCurrency(order.total)}</span>
       ),
     },
     {
@@ -210,8 +185,8 @@ export const PaymentsPage: React.FC = () => {
         const method = order.payment_method || 'pix';
         const methodInfo = PAYMENT_METHOD_LABELS[method] || { label: method, icon: <CurrencyDollarIcon className="w-4 h-4" /> };
         return (
-          <span className="inline-flex items-center gap-1.5 text-sm text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">
-            {methodInfo.icon}
+          <span className="inline-flex items-center gap-1.5 text-sm text-fg-token">
+            <span className="text-fg-muted-token" aria-hidden>{methodInfo.icon}</span>
             {methodInfo.label}
           </span>
         );
@@ -219,14 +194,15 @@ export const PaymentsPage: React.FC = () => {
     },
     {
       key: 'payment_status',
-      header: 'Status',
-      render: (order: Order) => (
-        <PaymentStatusBadge status={order.payment_status || 'pending'} />
-      ),
+      header: 'Situação',
+      render: (order: Order) => {
+        const estado = estadoDePagamento(order.payment_status);
+        return <SeloDeEstado tone={estado.tone} ponto>{estado.rotulo}</SeloDeEstado>;
+      },
     },
     {
       key: 'payment_link',
-      header: 'Link Pagamento',
+      header: 'Link de pagamento',
       render: (order: Order) => {
         const { payment_method, pix_code, access_token, pix_ticket_url, payment_preference_id } = order;
 
@@ -252,10 +228,10 @@ export const PaymentsPage: React.FC = () => {
                 href={finalPaymentLink}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-blue-700 dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/40 rounded-lg font-medium transition-colors"
+                className="inline-flex h-8 items-center gap-1.5 rounded border border-border-token bg-surface px-2.5 text-sm font-medium text-fg-token transition-colors hover:bg-surface-2"
                 onClick={(e) => e.stopPropagation()}
               >
-                <LinkIcon className="w-4 h-4" />
+                <LinkIcon className="w-4 h-4 text-fg-muted-token" aria-hidden />
                 Abrir
               </a>
               <button
@@ -265,10 +241,11 @@ export const PaymentsPage: React.FC = () => {
                   if (ok) toast.success('Link copiado! Envie para o cliente.');
                   else toast.error('Não foi possível copiar. Copie manualmente.');
                 }}
-                className="p-1.5 text-fg-muted-token hover:text-fg-token dark:hover:text-zinc-300 dark:hover:text-zinc-300 hover:bg-surface-2 dark:hover:bg-[var(--dark-bg-hover,#161616)] dark:bg-[var(--dark-bg-hover,#161616)] rounded"
+                className="rounded p-1.5 text-fg-muted-token transition-colors hover:bg-surface-2 hover:text-fg-token"
                 title="Copiar link"
+                aria-label="Copiar link de pagamento"
               >
-                <ClipboardIcon className="w-4 h-4" />
+                <ClipboardIcon className="w-4 h-4" aria-hidden />
               </button>
             </div>
           );
@@ -276,7 +253,7 @@ export const PaymentsPage: React.FC = () => {
         
         // If payment method is cash, no link needed
         if (payment_method === 'cash') {
-          return <span className="text-sm text-fg-muted-token">💵 Dinheiro</span>;
+          return <span className="text-sm text-fg-muted-token">Dinheiro</span>;
         }
         
         // No payment info yet
@@ -288,7 +265,7 @@ export const PaymentsPage: React.FC = () => {
       header: 'Data',
       render: (order: Order) => (
         <div className="text-sm">
-          <p className="text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)]">{format(new Date(order.created_at), "dd/MM/yyyy", { locale: ptBR })}</p>
+          <p className="text-fg-token">{format(new Date(order.created_at), "dd/MM/yyyy", { locale: ptBR })}</p>
           <p className="text-fg-muted-token">{format(new Date(order.created_at), "HH:mm", { locale: ptBR })}</p>
         </div>
       ),
@@ -297,21 +274,19 @@ export const PaymentsPage: React.FC = () => {
       key: 'actions',
       header: 'Ações',
       render: (order: Order) => (
+        // Pago não repete "Pago" aqui: a coluna Situação já diz, com a cor.
         <div className="flex items-center gap-2">
           {order.payment_status === 'pending' && (
             <Button
               size="sm"
+              leftIcon={<CheckCircleIcon className="w-4 h-4" aria-hidden />}
               onClick={(e) => {
                 e?.stopPropagation();
                 handleConfirmPayment(order);
               }}
             >
-              <CheckCircleIcon className="w-4 h-4 mr-1" />
-              Confirmar
+              Confirmar pagamento
             </Button>
-          )}
-          {order.payment_status === 'paid' && (
-            <span className="text-sm text-green-600 dark:text-green-400 font-medium">✓ Pago</span>
           )}
         </div>
       ),
@@ -329,10 +304,10 @@ export const PaymentsPage: React.FC = () => {
       <PageShell trilha={[{ rotulo: 'PDV' }, { rotulo: 'Pagamentos' }]} titulo="Pagamentos">
         <Card>
           <EmptyState
-            icon={<ExclamationTriangleIcon className="w-8 h-8 text-red-500" />}
-            title="Erro ao carregar pagamentos"
-            description="Não foi possível carregar os dados de pagamento. Verifique sua conexão e tente novamente."
-            action={{ label: 'Tentar novamente', onClick: retry }}
+            icone={<ExclamationTriangleIcon className="w-8 h-8" aria-hidden />}
+            titulo="Erro ao carregar pagamentos"
+            descricao="Não foi possível carregar os dados de pagamento. Verifique sua conexão e tente novamente."
+            acao={<Button onClick={retry}>Tentar novamente</Button>}
           />
         </Card>
       </PageShell>
@@ -356,13 +331,20 @@ export const PaymentsPage: React.FC = () => {
       {/* Falha de atualização com dados em cache: aviso não-bloqueante para o
           lojista saber que os números podem não refletir o estado mais recente. */}
       {staleWarning && (
-        <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-          <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
-          <span className="text-sm text-red-700 dark:text-red-300 flex-1">
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-3 rounded-xl border border-warning-token/30 bg-warning-soft p-4"
+        >
+          <ExclamationTriangleIcon className="h-5 w-5 flex-shrink-0 text-warning-token" aria-hidden />
+          <span className="flex-1 text-sm text-fg-token">
             Alguns dados podem estar desatualizados — houve uma falha ao atualizar.
           </span>
-          <Button variant="secondary" size="sm" onClick={retry}>
-            <ArrowPathIcon className="w-4 h-4 mr-1" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={retry}
+            leftIcon={<ArrowPathIcon className="w-4 h-4" aria-hidden />}
+          >
             Tentar novamente
           </Button>
         </div>
@@ -372,66 +354,37 @@ export const PaymentsPage: React.FC = () => {
         {statsFailed ? (
           <Card>
             <EmptyState
-              icon={<ExclamationTriangleIcon className="w-8 h-8 text-red-500" />}
-              title="Não foi possível carregar os indicadores"
-              description="Os valores de faturamento não puderam ser carregados. Tente novamente."
-              action={{ label: 'Tentar novamente', onClick: retry }}
+              icone={<ExclamationTriangleIcon className="w-8 h-8" aria-hidden />}
+              titulo="Não foi possível carregar os indicadores"
+              descricao="Os valores de faturamento não puderam ser carregados. Tente novamente."
+              acao={<Button onClick={retry}>Tentar novamente</Button>}
             />
           </Card>
         ) : (
-        <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 dark:bg-green-900/40 dark:bg-green-900/40 rounded-lg">
-                <CurrencyDollarIcon className="w-6 h-6 text-green-600 dark:text-green-400 dark:text-green-400" />
-              </div>
-              <div>
-                <p className="text-sm text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">Receita Hoje</p>
-                <p className="text-xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{formatCurrency(stats.todayRevenue)}</p>
-                <p className="text-xs text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">{stats.todayCount} pedido(s)</p>
-              </div>
-            </div>
-          </Card>
-          
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/40 dark:bg-blue-900/40 rounded-lg">
-                <CheckCircleIcon className="w-6 h-6 text-blue-600 dark:text-blue-400 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total Recebido</p>
-                <p className="text-xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{formatCurrency(stats.totalRevenue)}</p>
-                <p className="text-xs text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">{stats.paidCount} pago(s)</p>
-              </div>
-            </div>
-          </Card>
-          
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-100 dark:bg-amber-900/40 dark:bg-amber-900/40 rounded-lg">
-                <ClockIcon className="w-6 h-6 text-amber-600 dark:text-amber-400 dark:text-amber-400" />
-              </div>
-              <div>
-                <p className="text-sm text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">Aguardando</p>
-                <p className="text-xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{stats.pendingCount}</p>
-                <p className="text-xs text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">{formatCurrency(stats.pendingRevenue)} a receber</p>
-              </div>
-            </div>
-          </Card>
-          
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/40 dark:bg-purple-900/40 rounded-lg">
-                <BanknotesIcon className="w-6 h-6 text-purple-600 dark:text-purple-400 dark:text-purple-400" />
-              </div>
-              <div>
-                <p className="text-sm text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">Total Pedidos</p>
-                <p className="text-xl font-bold text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] dark:text-[var(--dark-text-primary,#FAF9F7)]">{stats.total}</p>
-                <p className="text-xs text-fg-muted-token dark:text-[var(--dark-text-secondary,#a1a1aa)]">todos os tempos</p>
-              </div>
-            </div>
-          </Card>
-        </div>
+        <KpiGrid
+          itens={[
+            {
+              label: 'Receita de hoje',
+              value: formatCurrency(stats.todayRevenue),
+              definicao: `Soma dos pedidos pagos hoje · ${stats.todayCount} pedido(s) no dia`,
+            },
+            {
+              label: 'Total recebido',
+              value: formatCurrency(stats.totalRevenue),
+              definicao: `${stats.paidCount} pedido(s) pago(s), desde o início`,
+            },
+            {
+              label: 'Pendentes',
+              value: stats.pendingCount,
+              definicao: `${formatCurrency(stats.pendingRevenue)} a receber`,
+            },
+            {
+              label: 'Pedidos',
+              value: stats.total,
+              definicao: 'Todos os pedidos da loja, desde o início',
+            },
+          ]}
+        />
         )}
 
         {/* Filters */}
@@ -443,11 +396,11 @@ export const PaymentsPage: React.FC = () => {
             onChange={(v) => changeStatusFilter(v === 'todos' ? null : v)}
           />
           <Button
-            variant="secondary"
+            variant="outline"
             size="sm"
             onClick={refresh}
+            leftIcon={<ArrowPathIcon className="w-4 h-4" aria-hidden />}
           >
-            <ArrowPathIcon className="w-4 h-4 mr-1" />
             Atualizar
           </Button>
         </div>
@@ -457,10 +410,10 @@ export const PaymentsPage: React.FC = () => {
         {ordersFailed ? (
           <Card>
             <EmptyState
-              icon={<ExclamationTriangleIcon className="w-8 h-8 text-red-500" />}
-              title="Não foi possível carregar os pedidos"
-              description="A lista de pagamentos não pôde ser carregada. Tente novamente."
-              action={{ label: 'Tentar novamente', onClick: retry }}
+              icone={<ExclamationTriangleIcon className="w-8 h-8" aria-hidden />}
+              titulo="Não foi possível carregar os pedidos"
+              descricao="A lista de pagamentos não pôde ser carregada. Tente novamente."
+              acao={<Button onClick={retry}>Tentar novamente</Button>}
             />
           </Card>
         ) : (
