@@ -13,7 +13,7 @@ describe('buildNutritionDoc', () => {
 
   it('gera etiqueta compacta 30x22 com QR local', () => {
     const html = buildNutritionQrDoc([{ name: 'Prato', servingG: 330, per100g: {}, publicUrl: 'https://example.com/nutrition/p1' }]);
-    expect(html).toContain('@page { size:30mm 22mm');
+    expect(html).toMatch(/@page \{ size: ?30mm 22mm/);
     expect(html).toContain('<svg');
     expect(html).toContain('Escaneie');
   });

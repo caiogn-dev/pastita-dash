@@ -103,6 +103,11 @@ export const PRODUTO_DEFAULTS: ProdutoConfig = {
 };
 
 // Bobina 3 colunas padrão de mercado: etiquetas 33×22, gap 3, rolo ~107 mm
+/** Rolo de QR 30×22: 3 por linha em papel de 100 mm (Elgin). */
+export const QR_DEFAULTS: ValidadeConfig = {
+  labelW: 30, labelH: 22, cols: 3, gap: 3, paperW: 100, offsetX: 0, offsetY: 0, border: 'none',
+};
+
 export const VALIDADE_DEFAULTS: ValidadeConfig = {
   labelW: 33, labelH: 22, cols: 3, gap: 3, paperW: 107,
   offsetX: 0, offsetY: 0, border: 'none',
@@ -333,11 +338,29 @@ thead th { font-size:5.8pt; vertical-align:bottom; }
   return wrapDoc('Etiquetas nutricionais 100×80',css,body);
 };
 
-/** Etiqueta compacta: a tabela completa permanece no link público. */
-export const buildNutritionQrDoc = (labels: NutritionLabelData[]): string => {
-  const css = `@page { size:30mm 22mm; margin:0 }.label{width:30mm;height:22mm;padding:1.2mm;display:grid;grid-template-columns:1fr 15mm;gap:1mm;break-after:page;overflow:hidden}.name{font-size:6pt;font-weight:800;line-height:1.1}.hint{font-size:4.5pt;line-height:1.1;margin-top:1mm}.qr,.qr svg{width:15mm;height:15mm}.qr{align-self:center}`;
-  const body = labels.map((label) => `<section class="label"><div><div class="name">${esc(label.name)}</div><div class="hint">Escaneie para consultar a informação nutricional</div></div><div class="qr">${label.publicUrl ? qrSvg(label.publicUrl) : ''}</div></section>`).join('');
-  return wrapDoc('QR nutricional 30×22', css, body);
+/** Etiqueta compacta: a tabela completa permanece no link público.
+ *  Com `cfg` (o mesmo layout de rolo da validade) sai em linhas de N colunas —
+ *  o rolo da Elgin tem 3 etiquetas de 30×22 lado a lado. Sem `cfg`, uma por página. */
+export const buildNutritionQrDoc = (labels: NutritionLabelData[], cfg?: ValidadeConfig): string => {
+  const layout = cfg ?? { cols: 1, labelW: 30, labelH: 22, gap: 0, paperW: 30, offsetX: 0, offsetY: 0, border: 'none' as LabelBorder };
+  const rows: NutritionLabelData[][] = [];
+  for (let i = 0; i < labels.length; i += layout.cols) rows.push(labels.slice(i, i + layout.cols));
+  const margin = validadeMargin(layout);
+  const qr = Math.min(layout.labelH - 4, 16);
+  const css = `
+@page { size: ${layout.paperW}mm ${layout.labelH}mm; margin: 0; }
+.page { width: ${layout.paperW}mm; height: ${layout.labelH}mm; position: relative; }
+.cell { position: absolute; top: ${layout.offsetY}mm; width: ${layout.labelW}mm; height: ${layout.labelH}mm; padding: 1.2mm;
+  display: grid; grid-template-columns: 1fr ${qr}mm; gap: 1mm; overflow: hidden; ${borderCss(layout.border, 1)} }
+.name { font-size: 6pt; font-weight: 800; line-height: 1.1; }
+.hint { font-size: 4.5pt; line-height: 1.1; margin-top: 1mm; }
+.qr, .qr svg { width: ${qr}mm; height: ${qr}mm; } .qr { align-self: center; }`;
+  const body = rows.map((row) => `<div class="page">${row.map((label, i) => `
+<div class="cell" style="left:${round(margin + layout.offsetX + i * (layout.labelW + layout.gap))}mm">
+<div><div class="name">${esc(label.name)}</div><div class="hint">Escaneie para consultar a informação nutricional</div></div>
+<div class="qr">${label.publicUrl ? qrSvg(label.publicUrl) : ''}</div>
+</div>`).join('')}</div>`).join('\n');
+  return wrapDoc('QR nutricional', css, body);
 };
 
 /** Imprime um documento HTML completo num iframe isolado e descartável. */

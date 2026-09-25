@@ -9,7 +9,7 @@ import { getStores, getProducts, gerarCodigosInternos, StoreProduct } from '../.
 import api, { normalizePaginatedResponse } from '../../services/api';
 import {
   buildBarcodeCatalogDoc, buildNutritionDoc, buildNutritionQrDoc, buildProdutoDoc, buildValidadeDoc, printHtmlDocument, validadeMargin,
-  PRODUTO_DEFAULTS, VALIDADE_DEFAULTS, ProdutoConfig, ValidadeConfig, LabelBorder,
+  PRODUTO_DEFAULTS, VALIDADE_DEFAULTS, QR_DEFAULTS, ProdutoConfig, ValidadeConfig, LabelBorder,
 } from '../../utils/labelPrint';
 import { precoVigenteDoProduto } from '../../utils/precoVigente';
 import { PageShell } from '../../components/ui';
@@ -109,10 +109,10 @@ const BorderSelect: React.FC<{ value: LabelBorder; onChange: (v: LabelBorder) =>
   />
 );
 
-interface SavedConfig { produto: ProdutoConfig; validade: ValidadeConfig; shelfDays: number; }
+interface SavedConfig { produto: ProdutoConfig; validade: ValidadeConfig; qr: ValidadeConfig; shelfDays: number; }
 
 const loadConfig = (): SavedConfig => {
-  const base: SavedConfig = { produto: { ...PRODUTO_DEFAULTS }, validade: { ...VALIDADE_DEFAULTS }, shelfDays: 5 };
+  const base: SavedConfig = { produto: { ...PRODUTO_DEFAULTS }, validade: { ...VALIDADE_DEFAULTS }, qr: { ...QR_DEFAULTS }, shelfDays: 5 };
   try {
     const raw = localStorage.getItem(CFG_KEY);
     if (!raw) return base;
@@ -120,6 +120,7 @@ const loadConfig = (): SavedConfig => {
     return {
       produto: { ...base.produto, ...(saved.produto ?? {}) },
       validade: { ...base.validade, ...(saved.validade ?? {}) },
+      qr: { ...base.qr, ...(saved.qr ?? {}) },
       shelfDays: saved.shelfDays ?? base.shelfDays,
     };
   } catch {
@@ -232,6 +233,8 @@ const EtiquetasPage: React.FC = () => {
     setCfg((p) => ({ ...p, produto: { ...p.produto, ...patch } }));
   const setValidade = (patch: Partial<ValidadeConfig>) =>
     setCfg((p) => ({ ...p, validade: { ...p.validade, ...patch } }));
+  const setQr = (patch: Partial<ValidadeConfig>) =>
+    setCfg((p) => ({ ...p, qr: { ...p.qr, ...patch } }));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -408,7 +411,7 @@ const EtiquetasPage: React.FC = () => {
         agent: agent.id,
         modelo: template,
         etiquetas,
-        config: template === 'validade' ? { ...cfg.validade } : template === 'produto' ? { ...cfg.produto } : {},
+        config: template === 'validade' ? { ...cfg.validade } : template === 'produto' ? { ...cfg.produto } : template === 'nutricao-qr' ? { ...cfg.qr } : {},
       });
       guardarLote(template, itensDaSelecao());
       toast.success(`${etiquetas.length} etiqueta${etiquetas.length === 1 ? '' : 's'} enviada${etiquetas.length === 1 ? '' : 's'} para ${agent.name} (${agent.printer_name})`);
@@ -459,7 +462,7 @@ const EtiquetasPage: React.FC = () => {
       const doc = template === 'produto'
         ? buildProdutoDoc(expandCopies((c) => produtoLabel(c, newCodes.get(c.product.id))), cfg.produto)
         : template === 'nutricao' ? buildNutritionDoc(nutritionCopies)
-          : template === 'nutricao-qr' ? buildNutritionQrDoc(nutritionCopies) : buildValidadeDoc(
+          : template === 'nutricao-qr' ? buildNutritionQrDoc(nutritionCopies, cfg.qr) : buildValidadeDoc(
           expandCopies((c) => ({ name: c.product.name, manip: fmtDate(manip), val: fmtDate(val) })),
           cfg.validade,
         );
@@ -536,7 +539,9 @@ const EtiquetasPage: React.FC = () => {
     }
     if (template === 'nutricao-qr') {
       const sample = { name: selected[0]?.product.name || 'Prato de exemplo', servingG: 100, publicUrl:'https://backend.pastita.com.br/api/v1/nutrition/public/00000000-0000-0000-0000-000000000000/', per100g:{} };
-      return { doc: buildNutritionQrDoc([sample]), w: 30 * MM_PX, h: 22 * MM_PX };
+      const q = cfg.qr;
+      const row = Array.from({ length: q.cols }, (_, i) => ({ ...sample, name: selected[i]?.product.name || sample.name }));
+      return { doc: buildNutritionQrDoc(row, q), w: q.paperW * MM_PX, h: q.labelH * MM_PX };
     }
     const v = cfg.validade;
     const dates = { manip: fmtDate(manip), val: fmtDate(val) };
@@ -611,13 +616,124 @@ const EtiquetasPage: React.FC = () => {
 
       <div className="grid lg:grid-cols-[1fr,400px] gap-4 md:gap-5 items-start">
         <div className="space-y-4 md:space-y-5">
-        <Card className="p-4 sm:p-5">
+        <Card className="p-4 sm:p-5 space-y-4">
           <ChoiceCards<Template>
             rotulo="Qual etiqueta"
             opcoes={MODELOS}
             valor={template}
             onChange={setTemplate}
           />
+          {template === 'produto' ? (
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-fg-token">Papel</h3>
+              <div className="flex flex-wrap gap-2">
+                {PRODUTO_PRESETS.map((p) => (
+                  <Button
+                    key={p.label}
+                    size="sm"
+                    variant={cfg.produto.width === p.width && cfg.produto.height === p.height ? 'primary' : 'secondary'}
+                    onClick={() => setProduto({ width: p.width, height: p.height, paperW: p.width })}
+                  >
+                    {p.label}
+                  </Button>
+                ))}
+              </div>
+              <NumField label="Etiqueta (largura)" value={cfg.produto.width} min={20} max={200} onChange={(v) => setProduto({ width: v })} />
+              <NumField label="Etiqueta (altura)" value={cfg.produto.height} min={15} max={200} onChange={(v) => setProduto({ height: v })} />
+              <NumField label="Largura do papel" value={cfg.produto.paperW} min={20} max={220} onChange={(v) => setProduto({ paperW: v })} />
+              {cfg.produto.paperW > cfg.produto.width && (
+                <p className="text-xs text-fg-muted-token">
+                  Etiqueta centralizada: {((cfg.produto.paperW - cfg.produto.width) / 2).toFixed(1)} mm de margem por lado.
+                </p>
+              )}
+              <BorderSelect value={cfg.produto.border} onChange={(v) => setProduto({ border: v })} />
+              <div className="space-y-1.5 text-sm">
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={cfg.produto.rotate}
+                    onChange={(e) => setProduto({ rotate: e.target.checked })} data-testid="etq-rotate" />
+                  Girar 90° (se sair torta ou rotacionada no driver)
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={cfg.produto.showPrice} onChange={(e) => setProduto({ showPrice: e.target.checked })} />
+                  Mostrar preço
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={cfg.produto.showDesc} onChange={(e) => setProduto({ showDesc: e.target.checked })} />
+                  Mostrar descrição e ingredientes
+                </label>
+              </div>
+              <details className="text-sm">
+                <summary className="cursor-pointer text-fg-muted-token">Calibração fina</summary>
+                <div className="space-y-2 mt-2">
+                  <NumField label="Deslocar horizontal" value={cfg.produto.offsetX} min={-20} max={20} onChange={(v) => setProduto({ offsetX: v })} />
+                  <NumField label="Deslocar vertical" value={cfg.produto.offsetY} min={-20} max={20} onChange={(v) => setProduto({ offsetY: v })} />
+                </div>
+              </details>
+            </section>
+          ) : nutricaoBloqueada ? (
+            <AdicionalBloqueado etiqueta={etiqueta} />
+          ) : template === 'nutricao' ? (
+            <section className="superficie p-3 text-sm space-y-1.5">
+              <p className="font-semibold text-fg-token">Zebra, 100 × 80 mm</p>
+              <p className="text-fg-muted-token">Tabela completa: por 100 g, por porção, %VD, alergênicos e QR Code.</p>
+              <p className="text-xs text-fg-muted-token">Os valores vêm da receita de cada produto, em Cardápio → Ingredientes e TACO.</p>
+            </section>
+          ) : template === 'nutricao-qr' ? (
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-fg-token">Rolo do QR</h3>
+              <p className="text-xs text-fg-muted-token">Para embalagem pequena: o QR abre a tabela completa no celular. Mesmo rolo de colunas da validade.</p>
+              <NumField label="Colunas" suffix="" min={1} max={6} step={1} value={cfg.qr.cols} onChange={(v) => setQr({ cols: v })} />
+              <NumField label="Etiqueta (largura)" value={cfg.qr.labelW} min={20} max={80} onChange={(v) => setQr({ labelW: v })} />
+              <NumField label="Etiqueta (altura)" value={cfg.qr.labelH} min={12} max={60} onChange={(v) => setQr({ labelH: v })} />
+              <NumField label="Vão entre colunas" value={cfg.qr.gap} min={0} max={10} onChange={(v) => setQr({ gap: v })} />
+              <NumField label="Largura do papel" value={cfg.qr.paperW} min={30} max={120} onChange={(v) => setQr({ paperW: v })} />
+              <p className="text-xs text-fg-muted-token">
+                Colunas centralizadas no papel: {validadeMargin(cfg.qr).toFixed(1)} mm de margem por lado.
+              </p>
+              <BorderSelect value={cfg.qr.border} onChange={(v) => setQr({ border: v })} />
+              <details className="text-sm">
+                <summary className="cursor-pointer text-fg-muted-token">Calibração fina</summary>
+                <div className="space-y-2 mt-2">
+                  <NumField label="Deslocar horizontal" value={cfg.qr.offsetX} min={-20} max={20} onChange={(v) => setQr({ offsetX: v })} />
+                  <NumField label="Deslocar vertical" value={cfg.qr.offsetY} min={-10} max={10} onChange={(v) => setQr({ offsetY: v })} />
+                </div>
+              </details>
+            </section>
+          ) : (
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-fg-token">Validade e papel</h3>
+              <p className="superficie px-3 py-2 text-sm text-fg-token" data-testid="etq-validade-frase">
+                Produzido hoje ({fmtDate(manip)}), vence {DIAS_DA_SEMANA[val.getDay()]} {fmtDate(val)}.
+              </p>
+              <NumField
+                label="Validade em" suffix="dias" min={1} max={365} step={1}
+                value={cfg.shelfDays} testId="etq-shelf-days"
+                onChange={(v) => setCfg((p) => ({ ...p, shelfDays: v }))}
+              />
+              <NumField label="Colunas" suffix="" min={1} max={6} step={1} value={cfg.validade.cols} onChange={(v) => setValidade({ cols: v })} />
+              <NumField label="Etiqueta (largura)" value={cfg.validade.labelW} min={15} max={80} onChange={(v) => setValidade({ labelW: v })} />
+              <NumField label="Etiqueta (altura)" value={cfg.validade.labelH} min={10} max={60} onChange={(v) => setValidade({ labelH: v })} />
+              <NumField label="Vão entre colunas" value={cfg.validade.gap} min={0} max={10} onChange={(v) => setValidade({ gap: v })} />
+              <NumField label="Largura do papel" value={cfg.validade.paperW} min={30} max={120} onChange={(v) => setValidade({ paperW: v })} />
+              <p className="text-xs text-fg-muted-token">
+                Colunas centralizadas no papel: {validadeMargin(cfg.validade).toFixed(1)} mm de margem por lado
+                ({cfg.validade.cols}×{cfg.validade.labelW} + {cfg.validade.cols - 1}×{cfg.validade.gap} mm
+                em {cfg.validade.paperW} mm).
+              </p>
+              <BorderSelect value={cfg.validade.border} onChange={(v) => setValidade({ border: v })} />
+              <details className="text-sm">
+                <summary className="cursor-pointer text-fg-muted-token">Calibração fina</summary>
+                <div className="space-y-2 mt-2">
+                  <NumField label="Deslocar horizontal" value={cfg.validade.offsetX} min={-20} max={20} onChange={(v) => setValidade({ offsetX: v })} />
+                  <NumField label="Deslocar vertical" value={cfg.validade.offsetY} min={-10} max={10} onChange={(v) => setValidade({ offsetY: v })} />
+                </div>
+              </details>
+              <p className="text-xs text-fg-muted-token">
+                A largura do papel deve bater com a do driver da Elgin (bobina inteira). Manipulação = hoje.
+              </p>
+            </section>
+          )}
+
         </Card>
 
         {lotes.length > 0 && (
@@ -710,98 +826,6 @@ const EtiquetasPage: React.FC = () => {
           </ul>
         </Card>
 
-        <Card className="p-4 sm:p-5 space-y-4">
-          {template === 'produto' ? (
-            <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-fg-token">Papel</h3>
-              <div className="flex flex-wrap gap-2">
-                {PRODUTO_PRESETS.map((p) => (
-                  <Button
-                    key={p.label}
-                    size="sm"
-                    variant={cfg.produto.width === p.width && cfg.produto.height === p.height ? 'primary' : 'secondary'}
-                    onClick={() => setProduto({ width: p.width, height: p.height, paperW: p.width })}
-                  >
-                    {p.label}
-                  </Button>
-                ))}
-              </div>
-              <NumField label="Etiqueta (largura)" value={cfg.produto.width} min={20} max={200} onChange={(v) => setProduto({ width: v })} />
-              <NumField label="Etiqueta (altura)" value={cfg.produto.height} min={15} max={200} onChange={(v) => setProduto({ height: v })} />
-              <NumField label="Largura do papel" value={cfg.produto.paperW} min={20} max={220} onChange={(v) => setProduto({ paperW: v })} />
-              {cfg.produto.paperW > cfg.produto.width && (
-                <p className="text-xs text-fg-muted-token">
-                  Etiqueta centralizada: {((cfg.produto.paperW - cfg.produto.width) / 2).toFixed(1)} mm de margem por lado.
-                </p>
-              )}
-              <BorderSelect value={cfg.produto.border} onChange={(v) => setProduto({ border: v })} />
-              <div className="space-y-1.5 text-sm">
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={cfg.produto.rotate}
-                    onChange={(e) => setProduto({ rotate: e.target.checked })} data-testid="etq-rotate" />
-                  Girar 90° (se sair torta ou rotacionada no driver)
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={cfg.produto.showPrice} onChange={(e) => setProduto({ showPrice: e.target.checked })} />
-                  Mostrar preço
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={cfg.produto.showDesc} onChange={(e) => setProduto({ showDesc: e.target.checked })} />
-                  Mostrar descrição e ingredientes
-                </label>
-              </div>
-              <details className="text-sm">
-                <summary className="cursor-pointer text-fg-muted-token">Calibração fina</summary>
-                <div className="space-y-2 mt-2">
-                  <NumField label="Deslocar horizontal" value={cfg.produto.offsetX} min={-20} max={20} onChange={(v) => setProduto({ offsetX: v })} />
-                  <NumField label="Deslocar vertical" value={cfg.produto.offsetY} min={-20} max={20} onChange={(v) => setProduto({ offsetY: v })} />
-                </div>
-              </details>
-            </section>
-          ) : nutricaoBloqueada ? (
-            <AdicionalBloqueado etiqueta={etiqueta} />
-          ) : template === 'nutricao' || template === 'nutricao-qr' ? (
-            <section className="superficie p-3 text-sm space-y-1.5">
-              <p className="font-semibold text-fg-token">{template === 'nutricao' ? 'Zebra, 100 × 80 mm' : 'QR compacto, 30 × 22 mm'}</p>
-              <p className="text-fg-muted-token">{template === 'nutricao' ? 'Tabela completa: por 100 g, por porção, %VD, alergênicos e QR Code.' : 'Para embalagens pequenas: o QR abre a tabela nutricional completa no celular.'}</p>
-              <p className="text-xs text-fg-muted-token">Os valores vêm da receita de cada produto, em Cardápio → Ingredientes e TACO.</p>
-            </section>
-          ) : (
-            <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-fg-token">Validade e papel</h3>
-              <p className="superficie px-3 py-2 text-sm text-fg-token" data-testid="etq-validade-frase">
-                Produzido hoje ({fmtDate(manip)}), vence {DIAS_DA_SEMANA[val.getDay()]} {fmtDate(val)}.
-              </p>
-              <NumField
-                label="Validade em" suffix="dias" min={1} max={365} step={1}
-                value={cfg.shelfDays} testId="etq-shelf-days"
-                onChange={(v) => setCfg((p) => ({ ...p, shelfDays: v }))}
-              />
-              <NumField label="Colunas" suffix="" min={1} max={6} step={1} value={cfg.validade.cols} onChange={(v) => setValidade({ cols: v })} />
-              <NumField label="Etiqueta (largura)" value={cfg.validade.labelW} min={15} max={80} onChange={(v) => setValidade({ labelW: v })} />
-              <NumField label="Etiqueta (altura)" value={cfg.validade.labelH} min={10} max={60} onChange={(v) => setValidade({ labelH: v })} />
-              <NumField label="Vão entre colunas" value={cfg.validade.gap} min={0} max={10} onChange={(v) => setValidade({ gap: v })} />
-              <NumField label="Largura do papel" value={cfg.validade.paperW} min={30} max={120} onChange={(v) => setValidade({ paperW: v })} />
-              <p className="text-xs text-fg-muted-token">
-                Colunas centralizadas no papel: {validadeMargin(cfg.validade).toFixed(1)} mm de margem por lado
-                ({cfg.validade.cols}×{cfg.validade.labelW} + {cfg.validade.cols - 1}×{cfg.validade.gap} mm
-                em {cfg.validade.paperW} mm).
-              </p>
-              <BorderSelect value={cfg.validade.border} onChange={(v) => setValidade({ border: v })} />
-              <details className="text-sm">
-                <summary className="cursor-pointer text-fg-muted-token">Calibração fina</summary>
-                <div className="space-y-2 mt-2">
-                  <NumField label="Deslocar horizontal" value={cfg.validade.offsetX} min={-20} max={20} onChange={(v) => setValidade({ offsetX: v })} />
-                  <NumField label="Deslocar vertical" value={cfg.validade.offsetY} min={-10} max={10} onChange={(v) => setValidade({ offsetY: v })} />
-                </div>
-              </details>
-              <p className="text-xs text-fg-muted-token">
-                A largura do papel deve bater com a do driver da Elgin (bobina inteira). Manipulação = hoje.
-              </p>
-            </section>
-          )}
-
-        </Card>
         </div>
 
         {!nutricaoBloqueada && (

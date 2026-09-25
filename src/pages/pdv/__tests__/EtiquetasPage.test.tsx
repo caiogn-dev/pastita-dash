@@ -376,4 +376,40 @@ describe('EtiquetasPage', () => {
       expect(screen.getByTestId('etq-validade-frase').textContent).toMatch(/Produzido hoje.*vence/i);
     });
   });
+
+  describe('rolo de 3 colunas para o QR 30×22 (Elgin)', () => {
+    it('o QR nutricional sai em linhas de N colunas com a página do tamanho do rolo, como a validade', async () => {
+      const api = jest.requireMock('../../../services/api').default as { get: jest.Mock };
+      api.get.mockResolvedValue({ data: { results: [
+        { id: 'n1', product: 'p1', product_id: 'p1', serving_size_g: 100, public_url: 'https://x/p1/', calculation: null },
+        { id: 'n2', product: 'p2', product_id: 'p2', serving_size_g: 100, public_url: 'https://x/p2/', calculation: null },
+      ] } });
+      renderPage();
+      await screen.findByText('Marmita P');
+      await userEvent.click(screen.getByText('QR Nutrição 30×22'));
+      // os mesmos ajustes de rolo da validade aparecem para o QR
+      expect(screen.getByLabelText('Colunas')).toBeInTheDocument();
+      expect(screen.getByLabelText('Largura do papel')).toBeInTheDocument();
+      await userEvent.clear(screen.getByLabelText('Quantidade de etiquetas de Marmita P'));
+      await userEvent.type(screen.getByLabelText('Quantidade de etiquetas de Marmita P'), '3');
+      await userEvent.click(screen.getByTestId('etq-imprimir'));
+      await waitFor(() => expect(mockedPrint).toHaveBeenCalled());
+      const doc: string = mockedPrint.mock.calls[0][0];
+      expect(doc).toMatch(/@page \{ size: 100mm 22mm/);
+      expect((doc.match(/class="page"/g) || []).length).toBe(1);   // 3 etiquetas = 1 linha
+      expect((doc.match(/class="cell"/g) || []).length).toBe(3);
+    });
+
+    it('os ajustes de papel ficam junto do modelo, antes da lista de produtos', async () => {
+      renderPage();
+      await screen.findByText('Marmita P');
+      await userEvent.click(screen.getByText('Validade (Elgin)'));
+      const modelo = screen.getAllByText('Validade (Elgin)')[0];
+      const ajustes = screen.getByLabelText('Largura do papel');
+      const lista = screen.getByTestId('etq-produtos');
+      // ordem no DOM: modelo → ajustes → produtos
+      expect(modelo.compareDocumentPosition(ajustes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(ajustes.compareDocumentPosition(lista) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+  });
 });
