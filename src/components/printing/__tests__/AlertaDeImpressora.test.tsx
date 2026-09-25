@@ -30,14 +30,26 @@ beforeEach(() => jest.clearAllMocks());
 
 describe('<AlertaDeImpressora />', () => {
   it('impressora parada: faixa vermelha com link para a tela de Impressão', async () => {
-    listar.mockResolvedValue({ data: { results: [PARADA] } });
-    abrir();
+    // Relógio fixo no MESMO dia da parada (24/09, no fuso da loja): a faixa
+    // mostra só "19:00". Sem fixar o relógio, o teste passava no dia em que foi
+    // escrito e virava vermelho no dia seguinte — quando `desdeQuando` passa a
+    // prefixar a data ("24/09 19:00") por ser um dia anterior. É o mesmo cuidado
+    // de baseline determinístico já aplicado à suíte de fuso.
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-09-24T23:00:00Z'));
+    try {
+      listar.mockResolvedValue({ data: { results: [PARADA] } });
+      abrir();
+      await act(async () => { await Promise.resolve(); });
 
-    const faixa = await screen.findByRole('alert');
-    expect(faixa).toHaveTextContent('Impressora da cozinha parada desde 19:00 — EPSON TM-T20 não responde');
-    expect(faixa.className).toMatch(/--danger/);
-    expect(screen.getByRole('link', { name: /ver impressão/i })).toHaveAttribute('href', '/stores/loja-x/printing');
-    expect(listar).toHaveBeenCalledWith('loja-x');
+      const faixa = screen.getByRole('alert');
+      expect(faixa).toHaveTextContent('Impressora da cozinha parada desde 19:00 — EPSON TM-T20 não responde');
+      expect(faixa.className).toMatch(/--danger/);
+      expect(screen.getByRole('link', { name: /ver impressão/i })).toHaveAttribute('href', '/stores/loja-x/printing');
+      expect(listar).toHaveBeenCalledWith('loja-x');
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('offline: faixa amarela', async () => {
