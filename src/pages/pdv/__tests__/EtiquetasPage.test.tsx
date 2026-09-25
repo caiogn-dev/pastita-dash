@@ -69,6 +69,7 @@ describe('EtiquetasPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
+    mockedListAgents.mockResolvedValue({ data: { results: [] } });
     mockedGetStores.mockResolvedValue(page([
       { id: 's1', slug: 'loja-1', name: 'Loja Um', status: 'active' },
     ]));
@@ -231,8 +232,11 @@ describe('EtiquetasPage', () => {
       const bloco = await screen.findByTestId('etq-remoto');
       // só quem imprime etiquetas é opção — ZPL na Epson sai como lixo, e a
       // Zebra sem o papel marcado ainda receberia comanda
-      expect(bloco.querySelectorAll('option')).toHaveLength(1);
-      expect(bloco.textContent).toContain('ZDesigner');
+      // um agent só: sem dropdown, o botão já diz o nome dele
+      expect(bloco.querySelectorAll('option')).toHaveLength(0);
+      expect(bloco.textContent).toContain('pc desktop');
+      expect(bloco.textContent).not.toContain('Caixa');
+      expect(bloco.textContent).not.toContain('zebra sem papel');
       await userEvent.click(screen.getByTestId('etq-enviar-remoto'));
 
       await waitFor(() => expect(mockedEnviar).toHaveBeenCalledTimes(1));
@@ -288,6 +292,60 @@ describe('EtiquetasPage', () => {
       expect(borda.tagName).toBe('SELECT');
       expect(borda.className).not.toMatch(/bg-transparent/);
       expect(screen.getByLabelText('Borda')).toBe(borda);
+    });
+  });
+
+  describe('trabalho de todo dia: lotes recentes, produtos recentes, impressora da loja', () => {
+    it('depois de imprimir, o lote fica em "Lotes recentes" e "Imprimir de novo" restaura as quantidades', async () => {
+      const { unmount } = renderPage();
+      await screen.findByText('Marmita P');
+      await userEvent.click(screen.getByText('Validade (Elgin)'));
+      await userEvent.clear(screen.getByLabelText('Quantidade de etiquetas de Marmita P'));
+      await userEvent.type(screen.getByLabelText('Quantidade de etiquetas de Marmita P'), '3');
+      await userEvent.click(screen.getByTestId('etq-imprimir'));
+      await waitFor(() => expect(mockedPrint).toHaveBeenCalled());
+      unmount();
+
+      renderPage();
+      await screen.findByText('Marmita P');
+      const lotes = await screen.findByTestId('etq-lotes');
+      expect(lotes.textContent).toContain('Marmita P');
+      expect(lotes.textContent).toContain('3 etiquetas');
+      // quantidade zera entre sessões; o lote devolve
+      expect((screen.getByLabelText('Quantidade de etiquetas de Marmita P') as HTMLInputElement).value).toBe('0');
+      await userEvent.click(screen.getByRole('button', { name: /imprimir de novo/i }));
+      expect((screen.getByLabelText('Quantidade de etiquetas de Marmita P') as HTMLInputElement).value).toBe('3');
+      expect(screen.getByTestId('etq-imprimir').textContent).toContain('3 etiquetas');
+    });
+
+    it('produto impresso recentemente sobe para o topo da lista', async () => {
+      localStorage.setItem('cdx-etiquetas-lotes-v1:loja-1', JSON.stringify([
+        { quando: '2026-09-25T10:00:00Z', template: 'validade', itens: [{ id: 'p2', nome: 'Suco', qtd: 2 }] },
+      ]));
+      renderPage();
+      await screen.findByText('Marmita P');
+      const nomes = Array.from(screen.getByTestId('etq-produtos').querySelectorAll('li .font-medium')).map((e) => e.textContent);
+      expect(nomes[0]).toBe('Suco');
+    });
+
+    it('com Zebra na loja, imprimir na Zebra é o botão principal e o navegador vira secundário', async () => {
+      mockedListAgents.mockResolvedValue({ data: { results: [zebra] } });
+      renderPage();
+      await screen.findByText('Marmita P');
+      await userEvent.click(screen.getByText('Validade (Elgin)'));
+      await userEvent.clear(screen.getByLabelText('Quantidade de etiquetas de Marmita P'));
+      await userEvent.type(screen.getByLabelText('Quantidade de etiquetas de Marmita P'), '1');
+      const remoto = await screen.findByTestId('etq-enviar-remoto');
+      expect(remoto.textContent).toMatch(/Imprimir 1 etiqueta na pc desktop/);
+      expect(remoto.className).toMatch(/primary|bg-brand/);
+      expect(screen.getByTestId('etq-imprimir').textContent).toMatch(/navegador/i);
+    });
+
+    it('a validade aparece por extenso no lote, não só como número de dias', async () => {
+      renderPage();
+      await screen.findByText('Marmita P');
+      await userEvent.click(screen.getByText('Validade (Elgin)'));
+      expect(screen.getByTestId('etq-validade-frase').textContent).toMatch(/Produzido hoje.*vence/i);
     });
   });
 });

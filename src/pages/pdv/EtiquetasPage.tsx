@@ -53,6 +53,37 @@ const PRODUTO_PRESETS = [
 ];
 
 const CFG_KEY = 'cdx-etiquetas-cfg-v2';
+const LOTES_KEY = 'cdx-etiquetas-lotes-v1';
+const MAX_LOTES = 8;
+
+/** Um lote impresso: o que a pessoa repete todo dia. Fica no navegador, por loja. */
+interface Lote {
+  quando: string;
+  template: Template;
+  itens: { id: string; nome: string; qtd: number }[];
+}
+
+const lerLotes = (chave: string): Lote[] => {
+  try {
+    const raw = localStorage.getItem(chave);
+    const lista = raw ? (JSON.parse(raw) as Lote[]) : [];
+    return Array.isArray(lista) ? lista.filter((l) => Array.isArray(l?.itens)) : [];
+  } catch { return []; }
+};
+
+const descreverLote = (l: Lote): string =>
+  l.itens.map((i) => `${i.nome} ×${i.qtd}`).join(', ');
+
+const totalDoLote = (l: Lote): number => l.itens.reduce((t, i) => t + i.qtd, 0);
+
+const quandoFoi = (iso: string): string => {
+  const dias = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (dias <= 0) return 'hoje';
+  if (dias === 1) return 'ontem';
+  return `há ${dias} dias`;
+};
+
+const DIAS_DA_SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 
 const OPCOES_DE_BORDA = [
   { valor: 'none', rotulo: 'Sem borda' },
@@ -152,6 +183,24 @@ const EtiquetasPage: React.FC = () => {
   // com "etiquetas" na tela de Impressão: ZPL na Epson sai como lixo. Sem
   // agent, o bloco nem aparece e a impressão pelo navegador segue igual.
   const [agentes, setAgentes] = useState<Map<string, PrintAgent[]>>(new Map());
+  const chaveDosLotes = `${LOTES_KEY}:${storeId ?? 'all'}`;
+  const [lotes, setLotes] = useState<Lote[]>(() => lerLotes(chaveDosLotes));
+  const guardarLote = useCallback((tpl: Template, itens: Lote['itens']) => {
+    if (itens.length === 0) return;
+    setLotes((prev) => {
+      const novo: Lote = { quando: new Date().toISOString(), template: tpl, itens };
+      const semIgual = prev.filter((l) => descreverLote(l) !== descreverLote(novo) || l.template !== tpl);
+      const lista = [novo, ...semIgual].slice(0, MAX_LOTES);
+      try { localStorage.setItem(chaveDosLotes, JSON.stringify(lista)); } catch { /* sem storage, sem histórico */ }
+      return lista;
+    });
+  }, [chaveDosLotes]);
+  const repetirLote = (l: Lote) => {
+    setTemplate(l.template);
+    setQty(new Map(l.itens.map((i) => [i.id, i.qtd])));
+  };
+  const itensDaSelecao = (): Lote['itens'] =>
+    selected.map((c) => ({ id: c.product.id, nome: c.product.name, qtd: qty.get(c.product.id) ?? 0 }));
   const [agenteEscolhido, setAgenteEscolhido] = useState<string>('');
   const [enviando, setEnviando] = useState(false);
   // Produto e validade são de todo mundo; só os modelos de nutrição são o
@@ -223,13 +272,23 @@ const EtiquetasPage: React.FC = () => {
     return [...seen.entries()].map(([slug, name]) => ({ slug, name }));
   }, [catalog]);
 
+  const recentes = useMemo(() => {
+    const ordem = new Map<string, number>();
+    lotes.forEach((l, i) => l.itens.forEach((it) => { if (!ordem.has(it.id)) ordem.set(it.id, i); }));
+    return ordem;
+  }, [lotes]);
+
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return catalog.filter((c) => (
+    const lista = catalog.filter((c) => (
       (storeFilter === 'all' || c.storeSlug === storeFilter)
       && (!term || c.product.name.toLowerCase().includes(term))
     ));
-  }, [catalog, search, storeFilter]);
+    return [...lista].sort((a, b) => {
+      const ra = recentes.get(a.product.id) ?? Infinity; const rb = recentes.get(b.product.id) ?? Infinity;
+      return ra !== rb ? ra - rb : a.product.name.localeCompare(b.product.name, 'pt-BR');
+    });
+  }, [catalog, search, storeFilter, recentes]);
 
   const selected = useMemo(
     () => catalog.filter((c) => (qty.get(c.product.id) ?? 0) > 0),
@@ -297,6 +356,7 @@ const EtiquetasPage: React.FC = () => {
     return slugs.size === 1 ? selected[0].storeSlug : null;
   }, [selected]);
   const agentesDaSelecao = lojaDaSelecao ? (agentes.get(lojaDaSelecao) ?? []) : [];
+  const agenteDaVez = agentesDaSelecao.find((a) => a.id === agenteEscolhido);
   const envioRemotoDisponivel = template !== 'produto' && !nutricaoBloqueada
     && (lojaDaSelecao ? agentesDaSelecao.length > 0 : agentes.size > 0);
   useEffect(() => {
@@ -324,6 +384,7 @@ const EtiquetasPage: React.FC = () => {
         etiquetas,
         config: template === 'validade' ? { ...cfg.validade } : {},
       });
+      guardarLote(template, itensDaSelecao());
       toast.success(`${etiquetas.length} etiqueta${etiquetas.length === 1 ? '' : 's'} enviada${etiquetas.length === 1 ? '' : 's'} para ${agent.name} (${agent.printer_name})`);
     } catch {
       toast.error('Não foi possível enviar para a impressora remota');
@@ -372,6 +433,7 @@ const EtiquetasPage: React.FC = () => {
           cfg.validade,
         );
       await printHtmlDocument(doc);
+      guardarLote(template, itensDaSelecao());
     } catch {
       toast.error('Erro ao preparar as etiquetas');
     } finally {
@@ -527,6 +589,25 @@ const EtiquetasPage: React.FC = () => {
           />
         </Card>
 
+        {lotes.length > 0 && (
+          <Card className="p-4 sm:p-5 space-y-2" data-testid="etq-lotes">
+            <h2 className="text-base font-semibold text-fg-token">Lotes recentes</h2>
+            <ul className="divide-y divide-[color:var(--border)]">
+              {lotes.slice(0, 4).map((l) => (
+                <li key={l.quando} className="flex items-center gap-3 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm text-fg-token">{descreverLote(l)}</p>
+                    <p className="text-xs text-fg-muted-token">
+                      {totalDoLote(l)} etiqueta{totalDoLote(l) === 1 ? '' : 's'} · {MODELOS.find((m) => m.valor === l.template)?.titulo ?? l.template} · {quandoFoi(l.quando)}
+                    </p>
+                  </div>
+                  <Button size="sm" variant="secondary" onClick={() => repetirLote(l)}>Imprimir de novo</Button>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
+
         <Card className="p-4 sm:p-5 space-y-3">
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
@@ -657,8 +738,11 @@ const EtiquetasPage: React.FC = () => {
           ) : (
             <section className="space-y-3">
               <h3 className="text-sm font-semibold text-fg-token">Validade e papel</h3>
+              <p className="superficie px-3 py-2 text-sm text-fg-token" data-testid="etq-validade-frase">
+                Produzido hoje ({fmtDate(manip)}), vence {DIAS_DA_SEMANA[val.getDay()]} {fmtDate(val)}.
+              </p>
               <NumField
-                label="Validade em" suffix={`dias → ${fmtDate(val)}`} min={1} max={365} step={1}
+                label="Validade em" suffix="dias" min={1} max={365} step={1}
                 value={cfg.shelfDays} testId="etq-shelf-days"
                 onChange={(v) => setCfg((p) => ({ ...p, shelfDays: v }))}
               />
@@ -723,51 +807,59 @@ const EtiquetasPage: React.FC = () => {
             ]}
           />
 
-          <div className="space-y-2">
-            <Button
-              className="w-full"
-              size="lg"
-              disabled={totalLabels === 0 || preparing}
-              onClick={handlePrint}
-              data-testid="etq-imprimir"
-            >
-              <PrinterIcon className="w-5 h-5 mr-1.5" />
-              {preparing ? 'Preparando…' : `Imprimir ${totalLabels} etiqueta${totalLabels === 1 ? '' : 's'}`}
-            </Button>
-            <p className="text-xs text-fg-muted-token">
-              Na janela de impressão: impressora de etiquetas, papel igual ao configurado aqui,
-              margens "Nenhuma" e escala 100%.
-            </p>
-          </div>
           {envioRemotoDisponivel && (
-            <div className="space-y-2 border-t border-border-token pt-3" data-testid="etq-remoto">
-              <h3 className="text-sm font-semibold text-fg-token">Impressora remota (Zebra)</h3>
+            <div className="space-y-2" data-testid="etq-remoto">
               {lojaDaSelecao ? (
-                <Select
-                  rotuloOculto="Programa de impressão com a Zebra"
-                  opcoes={agentesDaSelecao.map((a) => ({
-                    valor: a.id, rotulo: `${a.name} · ${a.printer_name}${a.is_online ? '' : ' (offline)'}`,
-                  }))}
-                  valor={agenteEscolhido}
-                  onMudar={setAgenteEscolhido}
-                />
+                agentesDaSelecao.length > 1 ? (
+                  <Select
+                    rotuloOculto="Programa de impressão com a Zebra"
+                    opcoes={agentesDaSelecao.map((a) => ({
+                      valor: a.id, rotulo: `${a.name} · ${a.printer_name}${a.is_online ? '' : ' (offline)'}`,
+                    }))}
+                    valor={agenteEscolhido}
+                    onMudar={setAgenteEscolhido}
+                  />
+                ) : null
               ) : (
-                <p className="text-xs text-fg-muted-token">Selecione produtos de uma loja só para enviar.</p>
+                <p className="text-xs text-fg-muted-token">Selecione produtos de uma loja só para imprimir na Zebra.</p>
               )}
               <Button
                 className="w-full"
-                variant="secondary"
+                size="lg"
+                variant="primary"
                 disabled={totalLabels === 0 || enviando || !lojaDaSelecao || !agenteEscolhido}
                 onClick={handleEnviarRemoto}
                 data-testid="etq-enviar-remoto"
               >
-                {enviando ? 'Enviando…' : `Enviar ${totalLabels} etiqueta${totalLabels === 1 ? '' : 's'} para a Zebra`}
+                <PrinterIcon className="w-5 h-5 mr-1.5" />
+                {enviando ? 'Enviando…' : `Imprimir ${totalLabels} etiqueta${totalLabels === 1 ? '' : 's'} na ${agenteDaVez?.name ?? 'Zebra'}`}
               </Button>
               <p className="text-xs text-fg-muted-token">
-                Sai direto na Zebra do PC escolhido, de qualquer lugar, sem janela de impressão.
+                Sai direto na {agenteDaVez?.printer_name ?? 'Zebra'}{agenteDaVez && !agenteDaVez.is_online ? ' (offline agora: fica na fila)' : ''}.
               </p>
             </div>
           )}
+          <div className="space-y-2">
+            <Button
+              className="w-full"
+              size={envioRemotoDisponivel ? 'md' : 'lg'}
+              variant={envioRemotoDisponivel ? 'secondary' : 'primary'}
+              disabled={totalLabels === 0 || preparing}
+              onClick={handlePrint}
+              data-testid="etq-imprimir"
+            >
+              {!envioRemotoDisponivel && <PrinterIcon className="w-5 h-5 mr-1.5" />}
+              {preparing ? 'Preparando…' : envioRemotoDisponivel
+                ? `Imprimir ${totalLabels} pelo navegador`
+                : `Imprimir ${totalLabels} etiqueta${totalLabels === 1 ? '' : 's'}`}
+            </Button>
+            {!envioRemotoDisponivel && (
+              <p className="text-xs text-fg-muted-token">
+                Na janela de impressão: impressora de etiquetas, papel igual ao configurado aqui,
+                margens "Nenhuma" e escala 100%.
+              </p>
+            )}
+          </div>
           </>
         </Card>
         </div>
