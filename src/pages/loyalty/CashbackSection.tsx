@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { Badge, Button, Card, Input, KpiGrid, EmptyState, RankedList } from '../../components/ui';
-import {
-  BanknotesIcon, ClockIcon, UserGroupIcon, ShareIcon, ReceiptPercentIcon,
-} from '@heroicons/react/24/outline';
+import { Badge, Button, Card, Input, EmptyState, RankedList } from '../../components/ui';
+import { SecaoDoPrograma } from '../../components/loyalty';
 import { formatCurrency } from '../../utils/formatters';
 import type { CashbackResponse } from '../../services/cashback';
 import { cashbackService } from '../../services/cashback';
@@ -12,18 +10,14 @@ import { urlDeClienteBuscado } from '../customers/buscaPelaUrl';
 /**
  * Cashback no painel.
  *
- * TRÊS DECISÕES QUE MOLDAM ESTA TELA:
+ * Aqui moram a configuração (em seções: como o cliente ganha, o que ele
+ * recebe, onde vale) e a fila de quem perde saldo. Os NÚMEROS — saldo em
+ * circulação, já resgatado, vence em 7 dias — ficam no resumo ao lado da
+ * prévia, na FidelidadePage, lado a lado de propósito: "em circulação" é
+ * promessa, "já resgatado" é a conta paga, e mostrar só um dos dois deixa o
+ * dono achando que o programa custa metade ou o dobro do que custa.
  *
- * 1. "Saldo em circulação" e "já resgatado" são números DIFERENTES e ficam
- *    lado a lado de propósito. O primeiro é promessa — dinheiro que a loja
- *    ainda vai pagar; o segundo é a conta paga. Mostrar só um dos dois deixa
- *    o dono achando que o programa custa metade ou o dobro do que custa.
- *
- * 2. "Vence em 7 dias" é o único número com prazo, e por isso o único que
- *    manda agir hoje. Ganha destaque e vem com a ação escrita ao lado —
- *    número sem verbo é decoração.
- *
- * 3. A lista é ordenada por VENCIMENTO, não por saldo. A pergunta desta tela
+ * A lista é ordenada por VENCIMENTO, não por saldo. A pergunta desta tela
  *    é "a quem eu mando mensagem agora", e quem está prestes a perder o saldo
  *    é quem responde. Ordenar por saldo responderia outra pergunta.
  */
@@ -47,11 +41,12 @@ interface Props {
   onLigado: (v: boolean) => void;
   storeSlug: string;
   /**
-   * Qual pedaço mostrar. A página virou abas (`PageTabs`): os números ficam
-   * fora das abas, a configuração numa aba e a fila de quem perde saldo
-   * noutra. Antes tudo saía junto, numa coluna só.
+   * Qual pedaço mostrar. A página virou abas (`PageTabs`): a configuração
+   * numa aba e a fila de quem perde saldo noutra. Os números do cashback
+   * moram no resumo ao lado da prévia (FidelidadePage), junto com os do
+   * cartão de carimbo — antes cada programa desenhava a própria faixa.
    */
-  parte?: 'numeros' | 'config' | 'clientes';
+  parte?: 'config' | 'clientes';
   onAjustou?: () => void;
 }
 
@@ -92,66 +87,13 @@ export const CashbackSection: React.FC<Props> = ({
       setAjustando(false);
     }
   };
-  const resumo = dados?.resumo;
-  const venceEm7 = num(resumo?.vence_em_7_dias);
   const fila = dados?.results ?? [];
 
   return (
     <div className="space-y-4">
-      {parte === 'numeros' && ligado && (
-        <KpiGrid
-          titulo="Como está o cashback"
-          itens={[
-            {
-              label: 'Saldo em circulação',
-              value: formatCurrency(num(resumo?.saldo_em_circulacao)),
-              definicao: 'Crédito vivo dos clientes. É promessa: a loja ainda vai pagar isto.',
-              icone: <BanknotesIcon />,
-            },
-            {
-              label: 'Já resgatado',
-              value: formatCurrency(num(resumo?.ja_resgatado)),
-              definicao: 'O que o programa custou de verdade — crédito que virou desconto.',
-              icone: <ReceiptPercentIcon />,
-            },
-            {
-              label: 'Clientes com saldo',
-              value: resumo?.clientes_com_saldo ?? '—',
-              definicao: 'Quantas pessoas têm crédito para gastar agora.',
-              icone: <UserGroupIcon />,
-            },
-            {
-              // O número que vira campanha hoje: tem prazo, e prazo move.
-              label: 'Vence em 7 dias',
-              value: formatCurrency(venceEm7),
-              definicao: venceEm7 > 0
-                ? 'Mande mensagem para esta gente — depois disso o saldo some.'
-                : 'Nenhum saldo vencendo nesta semana.',
-              icone: <ClockIcon />,
-              tone: venceEm7 > 0 ? 'warning' : 'default',
-            },
-            {
-              // A separação que evita o dono achar que "deve" o que já
-              // recebeu: pacote de carteira é dinheiro no caixa, cashback é
-              // custo de marketing. Somados viram um passivo inventado.
-              label: 'Comprado (carteira)',
-              value: formatCurrency(num(resumo?.saldo_pago_pelo_cliente)),
-              definicao: 'Saldo que o cliente JÁ pagou. Não é custo — esse dinheiro entrou.',
-              icone: <BanknotesIcon />,
-            },
-            {
-              label: 'Concedido pela loja',
-              value: formatCurrency(num(resumo?.saldo_concedido_pela_loja)),
-              definicao: 'Cashback, indicação e brindes: isto sim a loja ainda vai pagar.',
-              icone: <ShareIcon />,
-            },
-          ]}
-        />
-      )}
-
       {parte === 'config' && (
-      <Card title="Cashback">
-        <form className="space-y-4" onSubmit={onSalvar}>
+      <Card size="lg">
+        <form className="space-y-5" onSubmit={onSalvar}>
           <label className="flex cursor-pointer items-start justify-between gap-4 rounded border border-border-token bg-surface-2 p-3">
             <span className="min-w-0">
               <span className="block text-body font-semibold text-fg-token">
@@ -170,49 +112,70 @@ export const CashbackSection: React.FC<Props> = ({
             />
           </label>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Input
-              id="cashback-percent"
-              label="Volta em cada compra (%)"
-              type="number"
-              min={0}
-              max={100}
-              value={percent}
-              onChange={(e) => onPercent(e.target.value)}
-            />
-            <Input
-              id="cashback-indicacao"
-              label="Volta por indicação (%)"
-              type="number"
-              min={0}
-              max={100}
-              value={referralPercent}
-              onChange={(e) => onReferralPercent(e.target.value)}
-            />
-            <Input
-              id="cashback-validade"
-              label="Saldo vence em (dias)"
-              type="number"
-              min={1}
-              value={expiryDays}
-              onChange={(e) => onExpiryDays(e.target.value)}
-            />
+          <SecaoDoPrograma
+            titulo="Como o cliente ganha"
+            descricao="Uma parte de cada pedido pago volta em saldo. Quem indica um amigo também ganha."
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input
+                id="cashback-percent"
+                label="Volta em cada compra (%)"
+                type="number"
+                min={0}
+                max={100}
+                value={percent}
+                onChange={(e) => onPercent(e.target.value)}
+              />
+              <Input
+                id="cashback-indicacao"
+                label="Volta por indicação (%)"
+                type="number"
+                min={0}
+                max={100}
+                value={referralPercent}
+                onChange={(e) => onReferralPercent(e.target.value)}
+              />
+            </div>
+            {/* O exemplo em dinheiro é o ponto: "3%" é abstrato, "R$ 2,16 no
+                pedido médio de R$ 72" é a decisão que o dono está tomando. */}
+            <p className="text-caption text-fg-muted-token">
+              Num pedido de {formatCurrency(72)} o cliente ganha{' '}
+              <strong className="text-fg-token">
+                {formatCurrency(72 * (Number(percent) || 0) / 100)}
+              </strong>{' '}
+              de volta, e quem indicou ganha{' '}
+              <strong className="text-fg-token">
+                {formatCurrency(72 * (Number(referralPercent) || 0) / 100)}
+              </strong>.
+            </p>
+          </SecaoDoPrograma>
+
+          <SecaoDoPrograma
+            titulo="O que ele recebe"
+            descricao="Saldo em reais para gastar na loja. Depois do prazo, o saldo some."
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input
+                id="cashback-validade"
+                label="Saldo vence em (dias)"
+                type="number"
+                min={1}
+                value={expiryDays}
+                onChange={(e) => onExpiryDays(e.target.value)}
+              />
+            </div>
+          </SecaoDoPrograma>
+
+          <SecaoDoPrograma titulo="Onde vale">
+            <p className="text-caption text-fg-muted-token">
+              Em qualquer pedido do cardápio. O saldo entra sozinho no carrinho e
+              desconta do que sobra depois dos outros descontos.
+            </p>
+          </SecaoDoPrograma>
+
+          <div className="border-t border-border-token pt-5">
+            <Button type="submit" isLoading={salvando}>Salvar cashback</Button>
           </div>
-
-          {/* O exemplo em dinheiro é o ponto: "3%" é abstrato, "R$ 2,16 no
-              pedido médio de R$ 72" é a decisão que o dono está tomando. */}
-          <p className="text-caption text-fg-muted-token">
-            Num pedido de {formatCurrency(72)} o cliente ganha{' '}
-            <strong className="text-fg-token">
-              {formatCurrency(72 * (Number(percent) || 0) / 100)}
-            </strong>{' '}
-            de volta, e quem indicou ganha{' '}
-            <strong className="text-fg-token">
-              {formatCurrency(72 * (Number(referralPercent) || 0) / 100)}
-            </strong>.
-          </p>
-
-          <Button type="submit" isLoading={salvando}>Salvar cashback</Button>
         </form>
       </Card>
       )}

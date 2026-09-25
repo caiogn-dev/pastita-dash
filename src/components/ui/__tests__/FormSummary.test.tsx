@@ -36,4 +36,18 @@ describe('FormSummary', () => {
     const { container } = render(<FormSummary linhas={[]} />);
     expect(container).toBeEmptyDOMElement();
   });
+
+  it('título em frase não vira rótulo em caixa alta', () => {
+    render(
+      <FormSummary titulo="Como está o programa" estiloDoTitulo="frase" linhas={[{ rotulo: 'Participantes', valor: '84' }]} />
+    );
+    const titulo = screen.getByRole('heading', { name: 'Como está o programa' });
+    expect(titulo).not.toHaveClass('overline');
+    expect(titulo).toHaveClass('text-fg-token');
+  });
+
+  it('mostra a nota de rodapé quando existe', () => {
+    render(<FormSummary linhas={[{ rotulo: 'Custo', valor: 'R$ 10,00' }]} nota="Carteira não é custo." />);
+    expect(screen.getByText('Carteira não é custo.')).toBeInTheDocument();
+  });
 });
