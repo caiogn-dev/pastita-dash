@@ -11,6 +11,7 @@ import {
   ChartBarIcon,
   StarIcon,
   ArrowPathIcon,
+  ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline';
 import {
   getStore,
@@ -32,6 +33,7 @@ import AcrescimoDoValeSection from './AcrescimoDoValeSection';
 import TempoDePreparoSection from './TempoDePreparoSection';
 import NotaFiscalSection from './NotaFiscalSection';
 import CaixaDinheiroSection from './CaixaDinheiroSection';
+import AvisoFilaHumanaSection from './AvisoFilaHumanaSection';
 
 const DAYS = [
   { key: 'monday',    label: 'Segunda' },
@@ -361,6 +363,7 @@ export const StoreSettingsPage: React.FC = () => {
           { id: 'avaliacoes', rotulo: 'Avaliações', icone: StarIcon },
           { id: 'recebimento', rotulo: 'Recebimento', icone: BanknotesIcon },
           { id: 'fiscal', rotulo: 'Nota fiscal', icone: DocumentTextIcon },
+          { id: 'atendimento', rotulo: 'Atendimento', icone: ChatBubbleLeftRightIcon },
         ]}
       >
         {(aba) => (
@@ -783,6 +786,10 @@ export const StoreSettingsPage: React.FC = () => {
 
             {aba === 'fiscal' && store?.id && (
               <NotaFiscalSection storeId={store.id} />
+            )}
+
+            {aba === 'atendimento' && store?.id && (
+              <AvisoFilaHumanaSection loja={store} onSalvo={setStore} />
             )}
 
             {aba === 'avaliacoes' && (
