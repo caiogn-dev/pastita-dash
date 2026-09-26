@@ -16,6 +16,8 @@ import { getErrorMessage } from '../../services';
 import { conversationsService } from '../../services/conversations';
 import * as whatsappService from '../../services/whatsapp';
 import { interpretar, sugestoes } from './comandos';
+import { aplicarVariaveis, atalhoDoEnter, filtrarRespostas, lerRespostasRapidas, type RespostaRapida } from './respostasRapidas';
+import { buildStorefrontUrl } from '../../utils/storefrontUrl';
 import { handoverService } from '../../services/handover';
 import { useWhatsAppWsContext } from '../../context/WhatsAppWsContext';
 import { useChatStore } from '../../stores/chatStore';
@@ -166,6 +168,23 @@ const WhatsAppInboxPage: React.FC = () => {
     conversations.find((c) => c.id === selectedConversationId) ?? null;
 
   // Mensagens da conversa selecionada — lidas do store (WebSocket as atualiza)
+  // Respostas rápidas: vivem no metadata da loja; sem nada gravado, as
+  // sugestões padrão já funcionam no "/" antes de o lojista abrir a tela.
+  const respostasRapidas = lerRespostasRapidas(store?.metadata).respostas;
+  const respostasDoMenu = filtrarRespostas(respostasRapidas, messageText);
+  const inserirResposta = (r: RespostaRapida) => {
+    setMessageText(aplicarVariaveis(r.texto, {
+      nome: selectedConversation?.contact_name,
+      cardapio: buildStorefrontUrl(store),
+    }));
+  };
+  const handleComposerKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter') return;
+    const escolhida = atalhoDoEnter(respostasRapidas, messageText);
+    if (!escolhida) return;
+    e.preventDefault();
+    inserirResposta(escolhida);
+  };
   const messages = selectedConversation
     ? ensureArray<Message>(getConversationMessages(selectedConversation.id))
     : [];
@@ -853,8 +872,27 @@ const WhatsAppInboxPage: React.FC = () => {
             {/* Paleta de atalhos — aparece ao digitar "/" no começo.
                 Mostrar a descrição junto do nome é o que separa atalho de
                 adivinhação: quem usa uma vez por semana não decora. */}
-            {sugestoes(messageText).length > 0 && (
+            {(sugestoes(messageText).length > 0 || respostasDoMenu.length > 0) && (
               <div className="paleta-comandos" role="listbox" aria-label="Atalhos">
+                {respostasDoMenu.length > 0 && (
+                  <div className="paleta-grupo" role="presentation">Respostas rápidas</div>
+                )}
+                {respostasDoMenu.map((r, i) => (
+                  <button
+                    key={`resposta-${r.atalho}`}
+                    type="button"
+                    role="option"
+                    aria-selected={i === 0 && atalhoDoEnter(respostasRapidas, messageText) === r}
+                    className="paleta-item"
+                    onClick={() => inserirResposta(r)}
+                  >
+                    <code>/{r.atalho}</code>
+                    <span>{r.texto}</span>
+                  </button>
+                ))}
+                {respostasDoMenu.length > 0 && sugestoes(messageText).length > 0 && (
+                  <div className="paleta-grupo" role="presentation">Comandos</div>
+                )}
                 {sugestoes(messageText).map(c => (
                   <button
                     key={c.nome}
@@ -879,6 +917,7 @@ const WhatsAppInboxPage: React.FC = () => {
                 placeholder="Digite uma mensagem ou / para atalhos..."
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
+                onKeyDown={handleComposerKeyDown}
                 disabled={sending}
                 maxLength={1024}
               />

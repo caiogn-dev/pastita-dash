@@ -2,7 +2,7 @@ import React from 'react';
 import {
   HomeIcon, DevicePhoneMobileIcon, ChatBubbleLeftRightIcon,
   ShoppingCartIcon, CreditCardIcon, CpuChipIcon, Cog6ToothIcon,
-  BoltIcon, UserGroupIcon, TagIcon, Squares2X2Icon, BuildingStorefrontIcon,
+  BoltIcon, ChatBubbleBottomCenterTextIcon, UserGroupIcon, TagIcon, Squares2X2Icon, BuildingStorefrontIcon,
   MegaphoneIcon, DocumentTextIcon, EnvelopeIcon,
   ClockIcon, PresentationChartLineIcon, SparklesIcon,
   StarIcon, RectangleGroupIcon,
@@ -193,6 +193,8 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
         { name: 'Fila humana',  href: '/whatsapp/handover',                  icon: HandRaisedIcon },
         // O que a loja mandou sozinha (status, lembretes, avaliação) e se chegou.
         { name: 'Avisos automáticos', href: '/whatsapp/avisos',              icon: BellAlertIcon },
+        // Texto que o atendente repete o dia todo, a um "/" de distância no chat.
+        { name: 'Respostas rápidas', href: '/atendimento/respostas-rapidas', icon: ChatBubbleBottomCenterTextIcon },
         { name: 'Sessões',      href: '/automation/sessions',                icon: RectangleStackIcon },
         { name: 'Insights',     href: '/automation/conversation-insights',   icon: LightBulbIcon },
       ],
