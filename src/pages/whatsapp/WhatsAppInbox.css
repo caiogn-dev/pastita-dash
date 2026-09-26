@@ -1539,6 +1539,17 @@ select.item-name {
 .paleta-item span {
   color: var(--fg-muted-token, #6b7280);
 }
+.paleta-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.paleta-grupo {
+  padding: 8px 12px 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-muted-token, #6b7280);
+}
 
 /* ─── Tela estreita: uma coluna por vez ──────────────────────────────────────
    `.conversations-panel` é `width: 320px; flex-shrink: 0` e o arquivo não tinha

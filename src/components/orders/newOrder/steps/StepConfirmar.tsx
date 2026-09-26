@@ -3,6 +3,7 @@ import { PAYMENT_LABELS, fmt } from '../types';
 import type { CartItem, PaymentMethod } from '../types';
 import type { DiscountType, RouteQuote } from '../../../../types/crm';
 import { precoVigenteDoProduto } from '../../../../utils/precoVigente';
+import { Textarea } from '../../../ui';
 
 /** Step 5 — resumo + forma de pagamento (o submit vive no rodapé do container) */
 export function StepConfirmar({
@@ -18,6 +19,8 @@ export function StepConfirmar({
   onEditItems,
   suppressNotifications,
   setSuppressNotifications,
+  observacoes,
+  setObservacoes,
 }: {
   cart: CartItem[];
   deliveryMethod: 'delivery' | 'pickup';
@@ -31,6 +34,9 @@ export function StepConfirmar({
   onEditItems?: () => void;
   suppressNotifications: boolean;
   setSuppressNotifications: (v: boolean) => void;
+  /** Sai impresso na comanda. Vem preenchido quando o pedido nasce da conversa. */
+  observacoes?: string;
+  setObservacoes?: (v: string) => void;
 }) {
   const subtotal = cart.reduce((s, c) => s + precoVigenteDoProduto(c.product) * c.quantity, 0);
   const deliveryFee = deliveryMethod === 'delivery' ? (routeQuote?.fee ?? 0) : 0;
@@ -123,6 +129,17 @@ export function StepConfirmar({
           ))}
         </div>
       </div>
+
+      {setObservacoes && (
+        <Textarea
+          label="Observações do pedido"
+          rows={2}
+          value={observacoes ?? ''}
+          onChange={(e) => setObservacoes(e.target.value)}
+          hint="Sai na comanda da cozinha."
+          maxLength={500}
+        />
+      )}
 
       {/* Pedido de balcão: silenciar mensagens automáticas de status */}
       <label className="flex items-start gap-3 rounded-xl border border-border-token px-3 py-2.5 cursor-pointer select-none">

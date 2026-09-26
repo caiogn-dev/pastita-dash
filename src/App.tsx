@@ -112,6 +112,8 @@ const RecuperacaoPage = lazy(() => import('./pages/marketing/recuperacao/Recuper
 const PromocaoNoInstagramPage = lazy(() => import('./pages/marketing/instagram/PromocaoNoInstagramPage'));
 const InstagramCallbackPage = lazy(() => import('./pages/instagram/InstagramCallbackPage'));
 const AvisosAutomaticosPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.AvisosAutomaticosPage })));
+const RespostasRapidasPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.RespostasRapidasPage })));
+const NaoEntendiPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.NaoEntendiPage })));
 
 // Protected Route wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -312,6 +314,8 @@ const AppContent: React.FC = () => {
         <Route path="whatsapp/debug" element={<PageBoundary><DebugDashboardPage /></PageBoundary>} />
         <Route path="whatsapp/handover" element={<PageBoundary><HandoverRequestsPage /></PageBoundary>} />
         <Route path="whatsapp/avisos" element={<PageBoundary><AvisosAutomaticosPage /></PageBoundary>} />
+        <Route path="atendimento/respostas-rapidas" element={<PageBoundary><RespostasRapidasPage /></PageBoundary>} />
+        <Route path="atendimento/nao-entendi" element={<PageBoundary><NaoEntendiPage /></PageBoundary>} />
       </Route>
 
       {/* Catch all — 404 real (não redireciona mais silenciosamente para "/") */}

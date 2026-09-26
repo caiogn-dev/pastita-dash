@@ -3,19 +3,25 @@
  * Similar ao WhatsApp Web, mas integrado ao painel Cardapidex
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   MagnifyingGlassIcon,
   PaperAirplaneIcon,
   DocumentTextIcon,
   BoltIcon,
   ArrowLeftIcon,
+  ShoppingBagIcon,
 } from '@heroicons/react/24/outline';
 import { ChatToolsPanel } from '../../components/chat/ChatToolsPanel';
 import { getErrorMessage } from '../../services';
 import { conversationsService } from '../../services/conversations';
 import * as whatsappService from '../../services/whatsapp';
 import { interpretar, sugestoes } from './comandos';
+import { aplicarVariaveis, atalhoDoEnter, filtrarRespostas, lerRespostasRapidas, type RespostaRapida } from './respostasRapidas';
+import { buildStorefrontUrl } from '../../utils/storefrontUrl';
+import type { ContextoDoBot } from '../../services/atendimentoBot';
+import type { Product } from '../../services/products';
+import { montarRascunho } from '../../components/orders/newOrder/rascunhoDaConversa';
 import { handoverService } from '../../services/handover';
 import { useWhatsAppWsContext } from '../../context/WhatsAppWsContext';
 import { useChatStore } from '../../stores/chatStore';
@@ -167,6 +173,58 @@ const WhatsAppInboxPage: React.FC = () => {
     conversations.find((c) => c.id === selectedConversationId) ?? null;
 
   // Mensagens da conversa selecionada — lidas do store (WebSocket as atualiza)
+  // Respostas rápidas: vivem no metadata da loja; sem nada gravado, as
+  // sugestões padrão já funcionam no "/" antes de o lojista abrir a tela.
+  const respostasRapidas = lerRespostasRapidas(store?.metadata).respostas;
+  const respostasDoMenu = filtrarRespostas(respostasRapidas, messageText);
+  const inserirResposta = (r: RespostaRapida) => {
+    setMessageText(aplicarVariaveis(r.texto, {
+      nome: selectedConversation?.contact_name,
+      cardapio: buildStorefrontUrl(store),
+    }));
+  };
+  // "Criar pedido desta conversa": lê o carrinho que o bot montou e abre o
+  // Novo Pedido já preenchido. Falha em uma das leituras não trava o botão:
+  // sem carrinho, abre só com o cliente; sem cardápio, os itens vão para as
+  // observações — o atendente ainda ganha o que der.
+  const navigate = useNavigate();
+  const [abrindoPedido, setAbrindoPedido] = useState(false);
+  const criarPedidoDaConversa = async () => {
+    if (!selectedConversation || abrindoPedido) return;
+    setAbrindoPedido(true);
+    try {
+      // Import sob demanda: o botão é ocasional e o inbox não precisa carregar
+      // o cliente de produtos para abrir.
+      const [{ atendimentoBotService }, { productsService }] = await Promise.all([
+        import('../../services/atendimentoBot'),
+        import('../../services/products'),
+      ]);
+      const [contexto, produtos] = await Promise.all([
+        atendimentoBotService.getContextoDoBot(selectedConversation.id).catch((): ContextoDoBot | null => null),
+        productsService.getProducts({ store: storeId || undefined, is_active: true, page_size: 500 })
+          .then((r) => ensureArray<Product>(r?.results))
+          .catch((): Product[] => []),
+      ]);
+      if (!contexto) toast.error('Não consegui ler o carrinho do bot. Abri o pedido só com o cliente.');
+      const rascunho = montarRascunho(contexto ?? {}, produtos, {
+        nome: selectedConversation.contact_name,
+        telefone: selectedConversation.phone_number,
+      });
+      if (rascunho.naoAchados.length) {
+        toast(`${rascunho.naoAchados.length === 1 ? '1 item não foi achado' : `${rascunho.naoAchados.length} itens não foram achados`} no cardápio — ficou nas observações.`);
+      }
+      navigate(`/stores/${storeSlug || storeId}/orders?novo=1`, { state: { rascunhoDoPedido: rascunho } });
+    } finally {
+      setAbrindoPedido(false);
+    }
+  };
+  const handleComposerKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter') return;
+    const escolhida = atalhoDoEnter(respostasRapidas, messageText);
+    if (!escolhida) return;
+    e.preventDefault();
+    inserirResposta(escolhida);
+  };
   const messages = selectedConversation
     ? ensureArray<Message>(getConversationMessages(selectedConversation.id))
     : [];
@@ -780,6 +838,16 @@ const WhatsAppInboxPage: React.FC = () => {
                   </button>
                 </div>
                 <button
+                  type="button"
+                  className="tools-toggle-btn"
+                  onClick={() => void criarPedidoDaConversa()}
+                  disabled={abrindoPedido}
+                  title="Abre o Novo Pedido com o cliente, o endereço e os itens desta conversa"
+                >
+                  <ShoppingBagIcon className="w-4 h-4" aria-hidden="true" />
+                  <span>{abrindoPedido ? 'Abrindo…' : 'Criar pedido'}</span>
+                </button>
+                <button
                   className={`tools-toggle-btn ${activePanel === 'templates' ? 'active' : ''}`}
                   onClick={() => togglePanel('templates')}
                   title="Templates"
@@ -863,8 +931,27 @@ const WhatsAppInboxPage: React.FC = () => {
             {/* Paleta de atalhos — aparece ao digitar "/" no começo.
                 Mostrar a descrição junto do nome é o que separa atalho de
                 adivinhação: quem usa uma vez por semana não decora. */}
-            {sugestoes(messageText).length > 0 && (
+            {(sugestoes(messageText).length > 0 || respostasDoMenu.length > 0) && (
               <div className="paleta-comandos" role="listbox" aria-label="Atalhos">
+                {respostasDoMenu.length > 0 && (
+                  <div className="paleta-grupo" role="presentation">Respostas rápidas</div>
+                )}
+                {respostasDoMenu.map((r, i) => (
+                  <button
+                    key={`resposta-${r.atalho}`}
+                    type="button"
+                    role="option"
+                    aria-selected={i === 0 && atalhoDoEnter(respostasRapidas, messageText) === r}
+                    className="paleta-item"
+                    onClick={() => inserirResposta(r)}
+                  >
+                    <code>/{r.atalho}</code>
+                    <span>{r.texto}</span>
+                  </button>
+                ))}
+                {respostasDoMenu.length > 0 && sugestoes(messageText).length > 0 && (
+                  <div className="paleta-grupo" role="presentation">Comandos</div>
+                )}
                 {sugestoes(messageText).map(c => (
                   <button
                     key={c.nome}
@@ -889,6 +976,7 @@ const WhatsAppInboxPage: React.FC = () => {
                 placeholder="Digite uma mensagem ou / para atalhos..."
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
+                onKeyDown={handleComposerKeyDown}
                 disabled={sending}
                 maxLength={1024}
               />
