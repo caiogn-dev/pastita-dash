@@ -88,8 +88,12 @@ class CashbackService {
     return data;
   }
 
-  async get(storeSlug: string, page = 1): Promise<CashbackResponse> {
-    const { data } = await api.get(`/stores/${storeSlug}/cashback/`, { params: { page } });
+  async get(
+    storeSlug: string,
+    page = 1,
+    recorte?: { origem?: 'prepaid' | 'purchase' | 'referral' | 'adjust'; ordem?: 'recente' },
+  ): Promise<CashbackResponse> {
+    const { data } = await api.get(`/stores/${storeSlug}/cashback/`, { params: { page, ...(recorte || {}) } });
     return data;
   }
 

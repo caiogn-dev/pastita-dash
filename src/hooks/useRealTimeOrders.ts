@@ -13,7 +13,7 @@ import { useRootStore } from '../stores/rootStore';
 import { useAuthStore } from '../stores/authStore';
 import { createWebSocket, clearWebSocketInstance } from '../services/websocket';
 import { useNotificationSound } from './useNotificationSound';
-import { applyOrderEventToOrders, type OrderRealtimeEvent } from './orderRealtimeEvents';
+import { applyOrderEventToOrders, type OrderRealtimeEvent, ehCompraDeCarteira, textoDaCompraDeCarteira, EVENTO_COMPRA_DE_CARTEIRA } from './orderRealtimeEvents';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/formatters';
 
@@ -110,7 +110,18 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
       }
 
       // Subscribe to order events (sem console.log — payload contém dados de pedido)
-      ws.subscribe('order.created', () => {
+      ws.subscribe('order.created', (event) => {
+        // Venda de saldo (carteira) não é pedido: aviso do que é, sem bipe e
+        // sem refetch do quadro — ela nem entra nele. 26/09: "Novo pedido"
+        // para uma compra de saldo fez o dono procurar um pedido que não existia.
+        const e = event as OrderRealtimeEvent;
+        if (ehCompraDeCarteira(e)) {
+          toast.success(textoDaCompraDeCarteira(e, formatCurrency), {
+            duration: 12000, id: `carteira-${e.order_id}`,
+          });
+          window.dispatchEvent(new CustomEvent(EVENTO_COMPRA_DE_CARTEIRA));
+          return;
+        }
         // Pedido novo: o payload do evento não traz items — precisa refetch
         refreshOrdersFromAPI();
         // Bipe do balcão. O alerta inteiro (2 ondas de 4 tons, repetição a cada

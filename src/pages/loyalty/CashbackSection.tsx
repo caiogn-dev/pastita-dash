@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Badge, Button, Card, Input, EmptyState, RankedList } from '../../components/ui';
 import { SecaoDoPrograma } from '../../components/loyalty';
 import { formatCurrency } from '../../utils/formatters';
-import type { CashbackResponse } from '../../services/cashback';
+import type { CashbackClienteRow, CashbackResponse } from '../../services/cashback';
 import { cashbackService } from '../../services/cashback';
 import { telefoneLegivel } from './indicacoes';
 import { urlDeClienteBuscado } from '../customers/buscaPelaUrl';
@@ -88,6 +88,20 @@ export const CashbackSection: React.FC<Props> = ({
     }
   };
   const fila = dados?.results ?? [];
+
+  // SALDO COMPRADO, mais novo primeiro. A fila abaixo é ordenada por
+  // vencimento — certa para "a quem eu falo hoje", errada para "quem acabou
+  // de comprar": em 26/09 a compra da Flaviane caiu na página 2 de 69 e o
+  // dono achou que a venda tinha sumido.
+  const [comprados, setComprados] = useState<CashbackClienteRow[]>([]);
+  useEffect(() => {
+    if (parte !== 'clientes' || !ligado || !storeSlug) return;
+    let vivo = true;
+    cashbackService.get(storeSlug, 1, { origem: 'prepaid', ordem: 'recente' })
+      .then((r) => { if (vivo) setComprados((r.results ?? []).filter((c) => num(c.saldo_carteira) > 0)); })
+      .catch(() => { if (vivo) setComprados([]); });
+    return () => { vivo = false; };
+  }, [parte, ligado, storeSlug, dados]);
 
   return (
     <div className="space-y-4">
@@ -178,6 +192,28 @@ export const CashbackSection: React.FC<Props> = ({
           </div>
         </form>
       </Card>
+      )}
+
+      {parte === 'clientes' && ligado && comprados.length > 0 && (
+        <Card
+          title="Saldo comprado (carteira)"
+          subtitle="Quem pagou adiantado, do mais recente para o mais antigo. É dinheiro que já entrou."
+        >
+          <RankedList
+            medals={false}
+            items={comprados.map((c) => ({
+              label: c.nome || telefoneLegivel(c.phone),
+              sub: [
+                c.nome ? telefoneLegivel(c.phone) : null,
+                c.dias_para_vencer === 0 ? 'vence hoje' : `vence em ${c.dias_para_vencer} dia${c.dias_para_vencer > 1 ? 's' : ''}`,
+              ].filter(Boolean).join(' · '),
+              value: Math.max(1, Number(c.saldo_carteira) || 1),
+              valueLabel: formatCurrency(num(c.saldo_carteira)),
+              href: urlDeClienteBuscado({ phone: c.phone, name: c.nome }, storeSlug) ?? undefined,
+              badge: <Badge tone="success">carteira</Badge>,
+            }))}
+          />
+        </Card>
       )}
 
       {parte === 'clientes' && ligado && (

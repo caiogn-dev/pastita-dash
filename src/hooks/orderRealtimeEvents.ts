@@ -11,8 +11,30 @@ export interface OrderRealtimeEvent {
   paid_at?: string;
   cancelled_at?: string;
   customer_name?: string;
+  /** 'carteira' = venda de saldo pré-pago, não pedido de comida. */
+  source?: string;
+  credito_concedido?: string | number;
   [key: string]: unknown;
 }
+
+/** Venda de saldo: não entra no quadro, não toca bipe de pedido. */
+export function ehCompraDeCarteira(event: OrderRealtimeEvent): boolean {
+  return event.source === 'carteira';
+}
+
+/** "Flaviane pagou R$ 139,00 e ganhou R$ 152,00 de saldo" — para o toast. */
+export function textoDaCompraDeCarteira(
+  event: OrderRealtimeEvent,
+  dinheiro: (v: number) => string,
+): string {
+  const nome = (event.customer_name || 'Cliente').trim();
+  const pagou = Number(event.total ?? 0);
+  const saldo = Number(event.credito_concedido ?? event.total ?? 0);
+  return `💳 ${nome} comprou ${dinheiro(saldo)} de saldo (pagou ${dinheiro(pagou)}). Não é pedido.`;
+}
+
+/** Nome do evento de janela que avisa o quadro que houve compra de saldo. */
+export const EVENTO_COMPRA_DE_CARTEIRA = 'cardapidex:compra-de-carteira';
 
 /**
  * Aplica um evento realtime de pedido na lista atual, sem refetch.
