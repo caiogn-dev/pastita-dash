@@ -1,27 +1,86 @@
 import api, { normalizePaginatedEnvelope } from './api';
 import { Conversation, ConversationNote, PaginatedResponse, Message, UniversalConversation } from '../types';
 
+/** Por que a conversa saiu do bot — o backend manda o código, a tela traduz. */
+export type CodigoDoMotivo =
+  | 'pediu_atendente'
+  | 'bot_nao_entendeu'
+  | 'eco_do_celular'
+  | 'atendente_assumiu'
+  | 'outro';
+
+export interface MotivoDoModoHumano {
+  codigo: CodigoDoMotivo;
+  /** Texto livre do backend — usado quando o código é `outro`. */
+  texto: string;
+  /** ISO de quando a conversa entrou em modo humano por este motivo. */
+  desde: string | null;
+}
+
 /** Um cliente na fila humana — montado no backend a partir da conversa. */
 export interface ItemDaFilaHumana {
   id: string;
   telefone: string;
   nome: string;
-  /** "Respondido pelo WhatsApp do celular", "A IA não conseguiu responder"… */
-  motivo: string;
+  /** Objeto desde 26/09; antes era o texto pronto ("Respondido pelo celular"). */
+  motivo: MotivoDoModoHumano | string;
   humano_desde: string | null;
   cliente_escreveu_em: string | null;
   /** 0 quando ninguém está esperando (atendimento em andamento). */
   minutos_esperando: number;
+  /** ISO de quando o cliente começou a esperar (contrato de 26/09). */
+  esperando_desde?: string | null;
+  /** Segundos de espera no momento da resposta (contrato de 26/09). */
+  esperando_ha_segundos?: number | null;
   ultima_mensagem: string;
 }
 
+export interface ResumoDaFilaHumana {
+  esperando: number;
+  em_atendimento: number;
+  /** Espera mais longa agora, em segundos; 0/null sem ninguém esperando. */
+  mais_antiga_segundos: number | null;
+}
+
 export interface FilaHumana {
-  /** Cliente escreveu depois da nossa última resposta — mais antigo primeiro. */
+  /** Cliente escreveu depois da nossa última resposta — maior espera primeiro. */
   esperando: ItemDaFilaHumana[];
   /** Alguém atendeu hoje e não há mensagem pendente do cliente. */
   em_atendimento: ItemDaFilaHumana[];
   total_esperando: number;
   total_em_atendimento: number;
+  resumo?: ResumoDaFilaHumana;
+}
+
+export type PassoDoCarrinho = 'endereco' | 'observacao' | 'pagamento' | 'nenhum';
+
+export interface ItemDoCarrinhoDoBot {
+  nome: string;
+  quantidade: number;
+  preco: number | string | null;
+}
+
+/** O que o bot já sabe da conversa quando parou — `/contexto-do-bot/`. */
+export interface ContextoDoBot {
+  modo: string;
+  motivo: MotivoDoModoHumano | null;
+  esperando_ha_segundos: number | null;
+  ultima_msg_cliente: string | null;
+  ultima_msg_atendente: string | null;
+  carrinho: {
+    passo: PassoDoCarrinho;
+    itens: ItemDoCarrinhoDoBot[];
+    endereco: string | null;
+    taxa: number | string | null;
+    notas: string | null;
+    entrega: string | boolean | null;
+  } | null;
+  cliente: {
+    nome: string | null;
+    telefone: string | null;
+    pedidos: number | null;
+    ultimo_pedido: string | null;
+  } | null;
 }
 
 /** Um aviso que a loja mandou sozinha (status, lembrete, avaliação…). */
@@ -70,6 +129,24 @@ export const conversationsService = {
     const response = await api.get<FilaHumana>('/conversations/fila-humana/', {
       params: store ? { store } : undefined,
     });
+    return response.data;
+  },
+
+  /** O que o bot já anotou e por que parou — para a faixa do inbox. */
+  getContextoDoBot: async (id: string): Promise<ContextoDoBot> => {
+    const response = await api.get<ContextoDoBot>(`/conversations/${id}/contexto-do-bot/`);
+    return response.data;
+  },
+
+  /** Um atendente assume a conversa (o bot fica calado). */
+  assumir: async (id: string): Promise<Conversation> => {
+    const response = await api.post<Conversation>(`/conversations/${id}/assumir/`);
+    return response.data;
+  },
+
+  /** O atendimento acabou: o bot volta a responder. */
+  devolverAoBot: async (id: string): Promise<Conversation> => {
+    const response = await api.post<Conversation>(`/conversations/${id}/devolver-ao-bot/`);
     return response.data;
   },
 
