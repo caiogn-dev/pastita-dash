@@ -21,6 +21,7 @@ import type { CustomerSearchResult } from '../../types/crm';
 import { STEP_LABELS } from './newOrder/types';
 import { useNewOrderWizard } from './newOrder/useNewOrderWizard';
 import { NewOrderSteps } from './newOrder/NewOrderSteps';
+import type { RascunhoDePedido } from './newOrder/rascunhoDaConversa';
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,8 @@ interface NewOrderDrawerProps {
   storeId?: string;
   /** If provided, the drawer opens with this customer pre-filled */
   initialCustomer?: CustomerSearchResult | null;
+  /** Pedido montado a partir da conversa ("Criar pedido desta conversa"). */
+  rascunho?: RascunhoDePedido | null;
   /** Called after a successful order creation */
   onOrderCreated?: () => void;
 }
@@ -47,6 +50,7 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
   storeSlug,
   storeId,
   initialCustomer = null,
+  rascunho = null,
   onOrderCreated,
 }) => {
   const wiz = useNewOrderWizard({
@@ -69,8 +73,9 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
     if (isOpen) {
       wiz.reset();
       wiz.setCustomer((initialCustomer ?? null) as never);
+      if (rascunho) wiz.aplicarRascunho(rascunho);
     }
-  }, [isOpen, initialCustomer]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen, initialCustomer, rascunho]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // A11y: Escape fecha o drawer (mesmo comportamento do Modal canônico).
   useEffect(() => {

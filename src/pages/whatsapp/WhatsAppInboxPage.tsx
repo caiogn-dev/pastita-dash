@@ -3,13 +3,14 @@
  * Similar ao WhatsApp Web, mas integrado ao painel Cardapidex
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   MagnifyingGlassIcon,
   PaperAirplaneIcon,
   DocumentTextIcon,
   BoltIcon,
   ArrowLeftIcon,
+  ShoppingBagIcon,
 } from '@heroicons/react/24/outline';
 import { ChatToolsPanel } from '../../components/chat/ChatToolsPanel';
 import { getErrorMessage } from '../../services';
@@ -18,6 +19,9 @@ import * as whatsappService from '../../services/whatsapp';
 import { interpretar, sugestoes } from './comandos';
 import { aplicarVariaveis, atalhoDoEnter, filtrarRespostas, lerRespostasRapidas, type RespostaRapida } from './respostasRapidas';
 import { buildStorefrontUrl } from '../../utils/storefrontUrl';
+import type { ContextoDoBot } from '../../services/atendimentoBot';
+import type { Product } from '../../services/products';
+import { montarRascunho } from '../../components/orders/newOrder/rascunhoDaConversa';
 import { handoverService } from '../../services/handover';
 import { useWhatsAppWsContext } from '../../context/WhatsAppWsContext';
 import { useChatStore } from '../../stores/chatStore';
@@ -177,6 +181,41 @@ const WhatsAppInboxPage: React.FC = () => {
       nome: selectedConversation?.contact_name,
       cardapio: buildStorefrontUrl(store),
     }));
+  };
+  // "Criar pedido desta conversa": lê o carrinho que o bot montou e abre o
+  // Novo Pedido já preenchido. Falha em uma das leituras não trava o botão:
+  // sem carrinho, abre só com o cliente; sem cardápio, os itens vão para as
+  // observações — o atendente ainda ganha o que der.
+  const navigate = useNavigate();
+  const [abrindoPedido, setAbrindoPedido] = useState(false);
+  const criarPedidoDaConversa = async () => {
+    if (!selectedConversation || abrindoPedido) return;
+    setAbrindoPedido(true);
+    try {
+      // Import sob demanda: o botão é ocasional e o inbox não precisa carregar
+      // o cliente de produtos para abrir.
+      const [{ atendimentoBotService }, { productsService }] = await Promise.all([
+        import('../../services/atendimentoBot'),
+        import('../../services/products'),
+      ]);
+      const [contexto, produtos] = await Promise.all([
+        atendimentoBotService.getContextoDoBot(selectedConversation.id).catch((): ContextoDoBot | null => null),
+        productsService.getProducts({ store: storeId || undefined, is_active: true, page_size: 500 })
+          .then((r) => ensureArray<Product>(r?.results))
+          .catch((): Product[] => []),
+      ]);
+      if (!contexto) toast.error('Não consegui ler o carrinho do bot. Abri o pedido só com o cliente.');
+      const rascunho = montarRascunho(contexto ?? {}, produtos, {
+        nome: selectedConversation.contact_name,
+        telefone: selectedConversation.phone_number,
+      });
+      if (rascunho.naoAchados.length) {
+        toast(`${rascunho.naoAchados.length === 1 ? '1 item não foi achado' : `${rascunho.naoAchados.length} itens não foram achados`} no cardápio — ficou nas observações.`);
+      }
+      navigate(`/stores/${storeSlug || storeId}/orders?novo=1`, { state: { rascunhoDoPedido: rascunho } });
+    } finally {
+      setAbrindoPedido(false);
+    }
   };
   const handleComposerKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== 'Enter') return;
@@ -797,6 +836,16 @@ const WhatsAppInboxPage: React.FC = () => {
                     👤 Humano
                   </button>
                 </div>
+                <button
+                  type="button"
+                  className="tools-toggle-btn"
+                  onClick={() => void criarPedidoDaConversa()}
+                  disabled={abrindoPedido}
+                  title="Abre o Novo Pedido com o cliente, o endereço e os itens desta conversa"
+                >
+                  <ShoppingBagIcon className="w-4 h-4" aria-hidden="true" />
+                  <span>{abrindoPedido ? 'Abrindo…' : 'Criar pedido'}</span>
+                </button>
                 <button
                   className={`tools-toggle-btn ${activePanel === 'templates' ? 'active' : ''}`}
                   onClick={() => togglePanel('templates')}

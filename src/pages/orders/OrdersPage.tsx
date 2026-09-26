@@ -1,6 +1,7 @@
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { NewOrderDrawer } from '../../components/orders/NewOrderDrawer';
+import { rascunhoDoEstado } from '../../components/orders/newOrder/rascunhoDaConversa';
 import { OrderDeliveryModal } from '../../components/OrderDeliveryModal';
 import {
   DndContext,
@@ -406,6 +407,10 @@ export const OrdersPage: React.FC = () => {
   // Deep-link ?novo=1 abre o wizard direto (ex.: botão "Novo pedido" do
   // dashboard). Substituiu a antiga página /orders/new (builder duplicado).
   const [pageParams, setPageParams] = useSearchParams();
+  // "Criar pedido desta conversa" (inbox) chega com o rascunho no state da
+  // navegação. Lido uma vez, na montagem: o setPageParams abaixo apaga o state.
+  const location = useLocation();
+  const [rascunho, setRascunho] = useState(() => rascunhoDoEstado(location.state));
   useEffect(() => {
     if (pageParams.get('novo')) {
       setIsNewOrderOpen(true);
@@ -930,11 +935,13 @@ export const OrdersPage: React.FC = () => {
       {storeSlug && (
         <NewOrderDrawer
           isOpen={isNewOrderOpen}
-          onClose={() => setIsNewOrderOpen(false)}
+          onClose={() => { setIsNewOrderOpen(false); setRascunho(null); }}
+          rascunho={rascunho}
           storeSlug={storeSlug}
           storeId={storeId || undefined}
           onOrderCreated={() => {
             setIsNewOrderOpen(false);
+            setRascunho(null);
             loadOrders(true);
           }}
         />

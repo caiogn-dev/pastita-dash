@@ -9,6 +9,7 @@ import type { CartItem, PaymentMethod, Customer } from './types';
 import { parseCoords, type Coords } from './parseCoords';
 import { enderecoParaOPedido, rotuloDoEndereco, eSoUmPontoNoMapa } from './enderecoDoPedido';
 import { precoVigenteDoProduto } from '../../../utils/precoVigente';
+import type { RascunhoDePedido } from './rascunhoDaConversa';
 
 export interface UseNewOrderWizardOpts {
   storeSlug: string;
@@ -35,6 +36,8 @@ export interface NewOrderWizard {
   scheduledDate: string; setScheduledDate: (v: string) => void;
   scheduledTime: string; setScheduledTime: (v: string) => void;
   suppressNotifications: boolean; setSuppressNotifications: (v: boolean) => void;
+  observacoes: string; setObservacoes: (v: string) => void;
+  aplicarRascunho: (r: RascunhoDePedido) => void;
   reset: () => void; productStoreKey: string; storeSlug: string;
 }
 
@@ -62,6 +65,7 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [suppressNotifications, setSuppressNotifications] = useState(false);
+  const [observacoes, setObservacoes] = useState('');
 
   const reset = () => {
     setStep(0); setCustomer(null); setDeliveryMethod('delivery'); setSelectedAddress(null);
@@ -70,6 +74,24 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     setPaymentMethod('pix'); setSubmitting(false);
     setEnableScheduling(false); setScheduledDate(''); setScheduledTime('');
     setSuppressNotifications(false);
+    setObservacoes('');
+  };
+
+  // "Criar pedido desta conversa": o que o bot já juntou vira o estado
+  // inicial. O frete NÃO vem pronto — o atendente calcula, como sempre.
+  const aplicarRascunho = (r: RascunhoDePedido) => {
+    setStep(0);
+    setCustomer({
+      id: '', name: r.cliente.nome, phone_number: r.cliente.telefone, phone_number_edited: r.cliente.telefone,
+      total_orders: 0, total_spent: 0, addresses: [],
+    });
+    setDeliveryMethod(r.entrega);
+    setSelectedAddress(null);
+    setFreeAddressText(r.endereco);
+    setRouteQuote(null);
+    setRouteCoords(null);
+    setCart(r.itens);
+    setObservacoes(r.observacoes);
   };
 
   const next = () => setStep((s) => Math.min(4, s + 1));
@@ -194,7 +216,7 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
         // Pedido lançado por dentro da loja — mesmo canal do PDV no relatório.
         source: 'dashboard',
         payment_method: apiPaymentMethod,
-        notes: paymentMethod === 'fiado' ? 'Fiado' : undefined,
+        notes: [paymentMethod === 'fiado' ? 'Fiado' : '', observacoes.trim()].filter(Boolean).join('\n') || undefined,
         ...(discountAmount > 0 ? { discount: Number(discountAmount.toFixed(2)) } : {}),
         ...(surchargeAmount > 0 ? { surcharge: Number(surchargeAmount.toFixed(2)) } : {}),
         ...(adjustmentReason ? { adjustment_reason: adjustmentReason } : {}),
@@ -262,6 +284,7 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     paymentMethod, setPaymentMethod, submitting, handleSubmit,
     enableScheduling, setEnableScheduling, scheduledDate, setScheduledDate, scheduledTime, setScheduledTime,
     suppressNotifications, setSuppressNotifications,
+    observacoes, setObservacoes, aplicarRascunho,
     reset, productStoreKey, storeSlug,
   };
 }
