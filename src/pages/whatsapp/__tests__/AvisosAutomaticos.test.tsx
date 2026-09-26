@@ -10,9 +10,10 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { MemoryRouter } from 'react-router-dom';
 import { AvisosAutomaticosPage } from '../AvisosAutomaticosPage';
 
+let mockLoja: { storeId: string | null; storeSlug: string | null; storeName: string | null; store: null };
 jest.mock('../../../hooks/useStore', () => ({
   __esModule: true,
-  useStore: () => ({ storeId: 'loja-1', storeSlug: 'ce-saladas', storeName: 'Cê Saladas', store: null }),
+  useStore: () => mockLoja,
 }));
 
 const getMensagensAutomaticas = jest.fn();
@@ -40,7 +41,17 @@ const resposta = (itens = [item({})]) => ({
 
 const renderizar = () => render(<MemoryRouter><AvisosAutomaticosPage /></MemoryRouter>);
 
-beforeEach(() => getMensagensAutomaticas.mockReset());
+beforeEach(() => {
+  getMensagensAutomaticas.mockReset();
+  mockLoja = { storeId: 'loja-1', storeSlug: 'ce-saladas', storeName: 'Cê Saladas', store: null };
+});
+
+/** Uma busca que só resolve quando o teste mandar — para observar o "carregando". */
+const buscaPendente = () => {
+  let resolver!: (v: unknown) => void;
+  getMensagensAutomaticas.mockReturnValueOnce(new Promise((res) => { resolver = res; }));
+  return (v: unknown) => resolver(v);
+};
 
 it('mostra cada aviso com tipo, cliente, texto e link para a conversa', async () => {
   getMensagensAutomaticas.mockResolvedValue(resposta());
@@ -106,4 +117,52 @@ it('vazio explica o que aparece aqui', async () => {
   renderizar();
 
   expect(await screen.findByText(/nenhum aviso/i)).toBeInTheDocument();
+});
+
+it('enquanto busca mostra carregando, sem fingir "nenhum aviso"', async () => {
+  const responder = buscaPendente();
+
+  renderizar();
+
+  // Carregando é anunciado (role=status), e o vazio confiante NÃO aparece
+  // antes de a busca voltar.
+  expect(screen.getByRole('status')).toBeInTheDocument();
+  expect(screen.queryByText(/nenhum aviso/i)).not.toBeInTheDocument();
+
+  responder(resposta());
+  expect(await screen.findByText('Seu pedido saiu para entrega')).toBeInTheDocument();
+});
+
+it('trocar de loja não mostra os avisos da loja anterior', async () => {
+  getMensagensAutomaticas.mockResolvedValueOnce(resposta());
+  const { rerender } = renderizar();
+  await screen.findByText('Seu pedido saiu para entrega');
+
+  // Nova loja selecionada; a busca da nova loja ainda não voltou.
+  const responder = buscaPendente();
+  mockLoja = { storeId: 'loja-2', storeSlug: 'outra-loja', storeName: 'Outra', store: null };
+  rerender(<MemoryRouter><AvisosAutomaticosPage /></MemoryRouter>);
+
+  // O aviso da loja anterior some na hora (não pode vazar entre lojas) e a tela
+  // volta a carregar.
+  await waitFor(() =>
+    expect(screen.queryByText('Seu pedido saiu para entrega')).not.toBeInTheDocument(),
+  );
+  expect(screen.getByRole('status')).toBeInTheDocument();
+
+  responder(resposta([item({ texto: 'Aviso da outra loja' })]));
+  expect(await screen.findByText('Aviso da outra loja')).toBeInTheDocument();
+});
+
+it('falha ao atualizar mantém a lista já carregada e avisa que não atualizou', async () => {
+  getMensagensAutomaticas.mockResolvedValueOnce(resposta());
+  renderizar();
+  await screen.findByText('Seu pedido saiu para entrega');
+
+  // Refetch (troca de período) falha: o que já estava na tela não pode sumir.
+  getMensagensAutomaticas.mockRejectedValueOnce(new Error('rede'));
+  fireEvent.change(screen.getByLabelText('Período'), { target: { value: '30' } });
+
+  expect(await screen.findByRole('alert')).toHaveTextContent(/não foi possível atualizar/i);
+  expect(screen.getByText('Seu pedido saiu para entrega')).toBeInTheDocument();
 });
