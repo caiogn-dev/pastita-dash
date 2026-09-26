@@ -39,7 +39,6 @@ import {
   TOM_DA_SITUACAO,
   desdeQuando,
 } from '../../components/printing/situacaoDaImpressora';
-import { TelefoneDeAlertaSection } from '../../components/printing/TelefoneDeAlertaSection';
 
 const JOB_STATUS_TONE: Record<string, 'success' | 'warning' | 'danger' | 'neutral'> = {
   completed: 'success',
@@ -405,7 +404,6 @@ const PrintSettingsPage: React.FC = () => {
       </Card>
 
       {/* Para quem avisar quando a impressora parar */}
-      {(store?.id || storeId) && <TelefoneDeAlertaSection storeId={store?.id || storeId!} />}
 
       {/* Fila de jobs */}
       <Card className="p-6">

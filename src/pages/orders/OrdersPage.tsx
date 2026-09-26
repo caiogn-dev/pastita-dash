@@ -72,7 +72,6 @@ import { getStageStart, getAvgPrepMinutes, situacaoDoPreparo } from './orderSla'
 import { proximaAcaoDoPedido } from './proximaAcao';
 import { saldoDoPedido } from './saldoDoPedido';
 import { formatCurrency } from '../../utils/formatters';
-import { AlertaDeImpressora } from '../../components/printing/AlertaDeImpressora';
 
 // Next status for advance button
 /**
@@ -830,7 +829,6 @@ export const OrdersPage: React.FC = () => {
 
         {/* Impressão parada é pedido que a cozinha não viu: a faixa fica acima
             das colunas, onde o olho do operador já está. */}
-        <AlertaDeImpressora storeSlug={storeQuery} />
 
         {/* Kanban columns — <xl: scroll horizontal (kanban-standard); xl+: 5 colunas na grade.
             Altura das colunas vem do flex-1 do container (não há Navbar nesta rota dedicada). */}

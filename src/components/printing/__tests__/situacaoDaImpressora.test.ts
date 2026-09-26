@@ -1,86 +1,34 @@
 /**
- * A faixa do quadro de pedidos quando a impressão para.
+ * Situação do agente de impressão, como a tela de Impressão mostra.
  *
- * O dono só descobria que a cozinha não imprimia quando o cliente ligava
- * perguntando do pedido. O backend agora diz a situação de cada agente; a
- * faixa traduz para uma frase e escolhe a cor.
+ * A faixa no quadro de pedidos e o aviso por WhatsApp foram retirados em
+ * 26/09 a pedido do dono; ficou só o rótulo e o "desde quando" na tela.
  */
-import { alertasDeImpressora, type AgenteComSituacao } from '../situacaoDaImpressora';
+import { ROTULO_DA_SITUACAO, TOM_DA_SITUACAO, desdeQuando } from '../situacaoDaImpressora';
 
 const AGORA = new Date('2026-09-24T23:30:00Z'); // 20:30 em Brasília
 
-const agente = (p: Partial<AgenteComSituacao>): AgenteComSituacao => ({
-  id: 'a1',
-  name: 'Caixa',
-  station: 'kitchen',
-  is_active: true,
-  situacao: 'ok',
-  situacao_desde: null,
-  situacao_detalhe: '',
-  ...p,
+describe('desdeQuando', () => {
+  it('no mesmo dia mostra só a hora', () => {
+    expect(desdeQuando('2026-09-24T22:00:00Z', AGORA)).toBe('19:00');
+  });
+
+  it('em outro dia mostra dia e hora', () => {
+    expect(desdeQuando('2026-09-22T22:00:00Z', AGORA)).toBe('22/09 19:00');
+  });
+
+  it('sem data ou com data inválida não mostra nada', () => {
+    expect(desdeQuando(null, AGORA)).toBeNull();
+    expect(desdeQuando('lixo', AGORA)).toBeNull();
+  });
 });
 
-describe('alertasDeImpressora', () => {
-  it('tudo ok: nenhuma faixa', () => {
-    expect(alertasDeImpressora([agente({})], AGORA)).toEqual([]);
-  });
-
-  it('impressora indisponível é vermelha, com a hora e o detalhe', () => {
-    const [alerta] = alertasDeImpressora(
-      [
-        agente({
-          situacao: 'impressora_indisponivel',
-          situacao_desde: '2026-09-24T22:00:00Z',
-          situacao_detalhe: 'EPSON TM-T20 não responde — 10 impressões presas no Windows',
-        }),
-      ],
-      AGORA,
-    );
-    expect(alerta.tom).toBe('perigo');
-    expect(alerta.texto).toBe(
-      'Impressora da cozinha parada desde 19:00 — EPSON TM-T20 não responde — 10 impressões presas no Windows',
-    );
-  });
-
-  it('agente offline é amarelo', () => {
-    const [alerta] = alertasDeImpressora(
-      [agente({ situacao: 'offline', situacao_desde: '2026-09-24T22:00:00Z', situacao_detalhe: 'Computador sem sinal' })],
-      AGORA,
-    );
-    expect(alerta.tom).toBe('aviso');
-    expect(alerta.texto).toBe('Impressora da cozinha parada desde 19:00 — Computador sem sinal');
-  });
-
-  it('balcão fala "do balcão"; sem hora nem detalhe, a frase não fica pendurada', () => {
-    const [alerta] = alertasDeImpressora([agente({ station: 'balcao', situacao: 'offline' })], AGORA);
-    expect(alerta.texto).toBe('Impressora do balcão parada');
-  });
-
-  it('parada desde outro dia mostra a data junto', () => {
-    const [alerta] = alertasDeImpressora(
-      [agente({ situacao: 'offline', situacao_desde: '2026-09-22T22:00:00Z' })],
-      AGORA,
-    );
-    expect(alerta.texto).toBe('Impressora da cozinha parada desde 22/09 19:00');
-  });
-
-  it('o vermelho vem antes do amarelo', () => {
-    const alertas = alertasDeImpressora(
-      [
-        agente({ id: 'a1', situacao: 'offline' }),
-        agente({ id: 'a2', station: 'balcao', situacao: 'impressora_indisponivel' }),
-      ],
-      AGORA,
-    );
-    expect(alertas.map((a) => a.tom)).toEqual(['perigo', 'aviso']);
-  });
-
-  it('agente desativado ou sem a situação (backend antigo) não acende faixa', () => {
-    expect(
-      alertasDeImpressora(
-        [agente({ is_active: false, situacao: 'offline' }), agente({ id: 'a2', situacao: undefined })],
-        AGORA,
-      ),
-    ).toEqual([]);
+describe('rótulo e tom da situação', () => {
+  it('cada situação tem rótulo para o lojista e um tom', () => {
+    for (const situacao of ['ok', 'offline', 'impressora_indisponivel'] as const) {
+      expect(ROTULO_DA_SITUACAO[situacao]).toBeTruthy();
+      expect(TOM_DA_SITUACAO[situacao]).toBeTruthy();
+    }
+    expect(TOM_DA_SITUACAO.impressora_indisponivel).toBe('danger');
   });
 });

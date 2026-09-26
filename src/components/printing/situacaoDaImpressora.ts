@@ -24,16 +24,7 @@ export interface AgenteComSituacao {
   situacao_detalhe?: string;
 }
 
-export interface AlertaDeImpressora {
-  agenteId: string;
-  tom: 'perigo' | 'aviso';
-  texto: string;
-}
 
-const LUGAR: Record<string, string> = {
-  kitchen: 'da cozinha',
-  balcao: 'do balcão',
-};
 
 /** Rótulo curto para a tela de Impressão. */
 export const ROTULO_DA_SITUACAO: Record<SituacaoDoAgente, string> = {
@@ -57,28 +48,4 @@ export function desdeQuando(iso: string | null | undefined, agora = new Date()):
   if (mesmoDiaNoFuso(quando, agora)) return hora;
   const dia = quando.toLocaleDateString('pt-BR', { timeZone: FUSO_DE_NEGOCIO, day: '2-digit', month: '2-digit' });
   return `${dia} ${hora}`;
-}
-
-export function alertasDeImpressora(agentes: AgenteComSituacao[], agora = new Date()): AlertaDeImpressora[] {
-  return agentes
-    .filter((a) => a.is_active !== false)
-    .filter((a) => a.situacao === 'offline' || a.situacao === 'impressora_indisponivel')
-    .map((a) => {
-      const lugar = LUGAR[a.station] ?? `(${a.name})`;
-      const desde = desdeQuando(a.situacao_desde, agora);
-      const detalhe = (a.situacao_detalhe || '').trim();
-      const texto = [
-        `Impressora ${lugar} parada${desde ? ` desde ${desde}` : ''}`,
-        detalhe,
-      ]
-        .filter(Boolean)
-        .join(' — ');
-      return {
-        agenteId: a.id,
-        tom: a.situacao === 'impressora_indisponivel' ? ('perigo' as const) : ('aviso' as const),
-        texto,
-      };
-    })
-    // Vermelho primeiro: é o que está engolindo comanda agora.
-    .sort((x, y) => (x.tom === y.tom ? 0 : x.tom === 'perigo' ? -1 : 1));
 }

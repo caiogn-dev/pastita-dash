@@ -82,10 +82,4 @@ describe('PrintSettingsPage — situação do agente', () => {
     expect((await screen.findAllByText('Imprimindo'))[0]).toBeInTheDocument();
     expect(screen.queryByText(/atualize o programa/i)).not.toBeInTheDocument();
   });
-
-  it('tem o campo do telefone para avisos', async () => {
-    listarAgentes.mockResolvedValue({ data: [] });
-    abrir();
-    expect(await screen.findByLabelText(/telefone para avisos de impressora/i)).toBeInTheDocument();
-  });
 });
