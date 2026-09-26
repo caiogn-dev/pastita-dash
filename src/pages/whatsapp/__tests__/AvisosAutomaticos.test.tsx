@@ -6,7 +6,7 @@
  * sem ninguém saber.
  */
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AvisosAutomaticosPage } from '../AvisosAutomaticosPage';
 
@@ -165,4 +165,40 @@ it('falha ao atualizar mantém a lista já carregada e avisa que não atualizou'
 
   expect(await screen.findByRole('alert')).toHaveTextContent(/não foi possível atualizar/i);
   expect(screen.getByText('Seu pedido saiu para entrega')).toBeInTheDocument();
+});
+
+it('resultado vazio anterior + refetch que falha não vira "nenhum aviso"', async () => {
+  // Uma busca deu certo e veio vazia; depois o período muda e o refetch falha.
+  getMensagensAutomaticas.mockResolvedValueOnce({ dias: 7, resumo: [], itens: [] });
+  renderizar();
+  await screen.findByText(/nenhum aviso/i);
+
+  getMensagensAutomaticas.mockRejectedValueOnce(new Error('rede'));
+  fireEvent.change(screen.getByLabelText('Período'), { target: { value: '30' } });
+
+  // O vazio em cache é de OUTRO período: a falha precisa aparecer, não o
+  // "nenhum aviso" confiante.
+  expect(await screen.findByRole('alert')).toHaveTextContent(/não foi possível atualizar/i);
+  expect(screen.queryByText(/nenhum aviso/i)).not.toBeInTheDocument();
+});
+
+it('resposta atrasada da loja anterior é descartada (não vaza entre lojas)', async () => {
+  // Loja 1: a busca fica pendente e não volta antes da troca.
+  let resolverLoja1!: (v: unknown) => void;
+  getMensagensAutomaticas.mockReturnValueOnce(new Promise((res) => { resolverLoja1 = res; }));
+  const { rerender } = renderizar();
+  expect(screen.getByRole('status')).toBeInTheDocument();
+
+  // Troca para a loja 2; a loja 2 responde.
+  getMensagensAutomaticas.mockResolvedValueOnce(resposta([item({ texto: 'Aviso da loja 2' })]));
+  mockLoja = { storeId: 'loja-2', storeSlug: 'outra-loja', storeName: 'Outra', store: null };
+  rerender(<MemoryRouter><AvisosAutomaticosPage /></MemoryRouter>);
+  expect(await screen.findByText('Aviso da loja 2')).toBeInTheDocument();
+
+  // A resposta ATRASADA da loja 1 chega depois: não pode substituir a loja 2.
+  await act(async () => {
+    resolverLoja1(resposta([item({ texto: 'Aviso da loja 1' })]));
+  });
+  expect(screen.queryByText('Aviso da loja 1')).not.toBeInTheDocument();
+  expect(screen.getByText('Aviso da loja 2')).toBeInTheDocument();
 });

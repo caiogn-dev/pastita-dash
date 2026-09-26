@@ -12,7 +12,7 @@
  * voltar, para que os avisos (nomes de clientes, texto das mensagens) de uma
  * loja nunca pisquem na tela de outra.
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   conversationsService,
@@ -106,21 +106,7 @@ export const AvisosAutomaticosPage: React.FC = () => {
   const [dados, setDados] = useState<AvisosAutomaticos | null>(null);
   const [buscando, setBuscando] = useState(true);
   const [erro, setErro] = useState(false);
-
-  const carregar = useCallback(async () => {
-    setBuscando(true);
-    setErro(false);
-    try {
-      setDados(await conversationsService.getMensagensAutomaticas({
-        store: storeSlug || undefined, dias, tipo,
-      }));
-    } catch {
-      // Falha não pode virar "nenhum aviso enviado".
-      setErro(true);
-    } finally {
-      setBuscando(false);
-    }
-  }, [storeSlug, dias, tipo]);
+  const [tentativa, setTentativa] = useState(0);
 
   // Trocar de loja derruba o cache ANTES da nova busca voltar: os avisos da loja
   // anterior (nomes de clientes, texto das mensagens) não podem piscar na tela
@@ -132,7 +118,24 @@ export const AvisosAutomaticosPage: React.FC = () => {
     setErro(false);
   }, [storeSlug]);
 
-  useEffect(() => { carregar(); }, [carregar]);
+  // `ativo` no cleanup descarta a resposta de uma busca que já não é a atual.
+  // Sem isso, a resposta ATRASADA da loja anterior chega depois da troca e
+  // repovoa a tela com os dados dela — um vazamento entre lojas que sobrevive
+  // à limpeza síncrona acima, porque o `setDados` do request antigo roda quando
+  // a promessa dele resolve, não quando a loja muda.
+  useEffect(() => {
+    let ativo = true;
+    setBuscando(true);
+    setErro(false);
+    conversationsService
+      .getMensagensAutomaticas({ store: storeSlug || undefined, dias, tipo })
+      .then((r) => { if (ativo) setDados(r); })
+      .catch(() => { if (ativo) setErro(true); }) // Falha não pode virar "nenhum aviso enviado".
+      .finally(() => { if (ativo) setBuscando(false); });
+    return () => { ativo = false; };
+  }, [storeSlug, dias, tipo, tentativa]);
+
+  const recarregar = () => setTentativa((n) => n + 1);
 
   const resumo = dados?.resumo ?? [];
   const itens = dados?.itens ?? [];
@@ -173,13 +176,26 @@ export const AvisosAutomaticosPage: React.FC = () => {
       {estado === 'falhou' && (
         <div role="alert" className="rounded-xl border border-border-token px-5 py-4 flex items-center gap-3">
           <span className="text-sm text-fg-token flex-1">Não foi possível carregar os avisos.</span>
-          <button type="button" onClick={() => carregar()} className="text-sm font-semibold underline">
+          <button type="button" onClick={recarregar} className="text-sm font-semibold underline">
             Tentar novamente
           </button>
         </div>
       )}
 
-      {estado === 'vazio' && (
+      {/* Refetch falhou com um resultado anterior em cache (lista OU vazio): o
+          cache é de OUTROS parâmetros, então não vale como verdade do período
+          atual. Avisa da falha — e no 'vazio' isso substitui o "nenhum aviso"
+          confiante, que estaria mentindo sobre um período cuja busca caiu. */}
+      {erro && (estado === 'lista' || estado === 'vazio') && (
+        <div role="alert" className="rounded-xl border border-border-token px-5 py-4 flex items-center gap-3">
+          <span className="text-sm text-fg-token flex-1">Não foi possível atualizar os avisos.</span>
+          <button type="button" onClick={recarregar} className="text-sm font-semibold underline">
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
+      {estado === 'vazio' && !erro && (
         <EmptyState
           titulo="Nenhum aviso no período"
           descricao="Quando a loja mandar sozinha um status de pedido, lembrete de PIX ou de carrinho, pedido de avaliação ou reengajamento, ele aparece aqui."
@@ -188,16 +204,6 @@ export const AvisosAutomaticosPage: React.FC = () => {
 
       {estado === 'lista' && (
         <div className="space-y-5">
-          {/* Refetch falhou mas há dados em cache: mantém a lista e avisa que
-              não atualizou, em vez de apagar o que o dono já está lendo. */}
-          {erro && (
-            <div role="alert" className="rounded-xl border border-border-token px-5 py-4 flex items-center gap-3">
-              <span className="text-sm text-fg-token flex-1">Não foi possível atualizar os avisos. Mostrando os últimos carregados.</span>
-              <button type="button" onClick={() => carregar()} className="text-sm font-semibold underline">
-                Tentar novamente
-              </button>
-            </div>
-          )}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {resumo.map((r) => (
               <FiltroDeTipo
