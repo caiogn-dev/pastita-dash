@@ -22,7 +22,7 @@ export const STATUS_LABELS: Record<string, string> = {
   delivered: 'Entregue',
   completed: 'Concluído',
   cancelled: 'Cancelado',
-  refunded: 'Estornado',
+  refunded: 'Reembolsado',
   failed: 'Falhou',
 };
 
@@ -76,8 +76,8 @@ export const PAYMENT_RECORD_STATUS_LABELS: Record<string, string> = {
   completed: 'Recebido',
   failed: 'Falhou',
   cancelled: 'Cancelada',
-  refunded: 'Estornada',
-  partially_refunded: 'Estornada em parte',
+  refunded: 'Reembolsada',
+  partially_refunded: 'Reembolsada em parte',
 };
 
 /** Fila de impressão. O dono acompanha isto quando a comanda não sai. */

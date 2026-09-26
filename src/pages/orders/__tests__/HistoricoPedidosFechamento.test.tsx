@@ -101,3 +101,15 @@ test('sem frete no período, não inventa uma linha de desconto', () => {
   renderPagina();
   expect(screen.queryByText(/repasse ao entregador/i)).not.toBeInTheDocument();
 });
+
+test('reembolsado aparece ao lado do cancelado, fora do faturamento', () => {
+  // 26/09: um pedido reembolsado na lista e o KPI dizia "Cancelados 0" —
+  // parecia que o reembolso não tinha sido descontado do faturamento.
+  resumoState = {
+    data: { ...RESUMO_REAL, cancelados: 12, reembolsados: 3 },
+    isLoading: false, isError: false,
+  };
+  renderPagina();
+  expect(screen.getByText('Cancelados e reembolsados')).toBeInTheDocument();
+  expect(screen.getByText('15')).toBeInTheDocument();
+});

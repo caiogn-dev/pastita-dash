@@ -13,8 +13,8 @@ const PAGAMENTO: Record<string, Estado> = {
   approved: { rotulo: 'Pago', tone: 'success' },
   failed: { rotulo: 'Falhou', tone: 'danger' },
   cancelled: { rotulo: 'Cancelado', tone: 'neutral' },
-  refunded: { rotulo: 'Estornado', tone: 'neutral' },
-  partially_refunded: { rotulo: 'Estorno parcial', tone: 'warning' },
+  refunded: { rotulo: 'Reembolsado', tone: 'neutral' },
+  partially_refunded: { rotulo: 'Reembolso parcial', tone: 'warning' },
 };
 
 export function estadoDePagamento(status?: string | null, metodo?: string | null): Estado {
@@ -69,7 +69,7 @@ const PEDIDO: Record<string, Estado> = {
   // Cancelado é fim, não falha — neutro, igual ao pagamento.
   cancelled: { rotulo: 'Cancelado', tone: 'neutral' },
   failed: { rotulo: 'Falhou', tone: 'danger' },
-  refunded: { rotulo: 'Estornado', tone: 'neutral' },
+  refunded: { rotulo: 'Reembolsado', tone: 'neutral' },
 };
 
 /** O NOSSO rótulo primeiro; o do backend (`status_display`) como reserva para

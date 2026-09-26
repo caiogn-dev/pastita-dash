@@ -1165,6 +1165,8 @@ export interface QuebraDeResumo {
 export interface ResumoDePedidos {
   pedidos: number;
   cancelados: number;
+  /** Reembolsado pelo gateway ou pela cobrança: fora do faturamento, como o cancelado. */
+  reembolsados?: number;
   pedidos_faturados: number;
   faturamento: string;
   /**

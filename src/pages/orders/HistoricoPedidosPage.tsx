@@ -357,8 +357,8 @@ export const HistoricoPedidosPage: React.FC = () => {
               definicao: resumo.definicoes?.ticket_medio ?? 'faturamento sem frete ÷ pedidos que faturaram',
             },
             {
-              label: 'Cancelados',
-              value: resumo.cancelados,
+              label: 'Cancelados e reembolsados',
+              value: resumo.cancelados + (resumo.reembolsados ?? 0),
               definicao: 'aparecem na lista e não entram no faturamento',
             },
           ]}

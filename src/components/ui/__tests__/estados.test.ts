@@ -10,6 +10,7 @@ import {
   estadoDeAutomacao,
   estadoDeCliente,
   estadoDeConversa,
+  estadoDePagamento,
   estadoDePedido,
   estadoDeSaude,
   estadoDeSegmento,
@@ -116,5 +117,14 @@ describe('modoDeAtendimento', () => {
     // Com atendente o robô está calado: é o que o dono precisa ver de relance.
     expect(modoDeAtendimento('human')).toEqual({ rotulo: 'Atendente', tone: 'warning' });
     expect(modoDeAtendimento('hybrid')).toEqual({ rotulo: 'Robô e atendente', tone: 'info' });
+  });
+});
+
+describe('reembolso', () => {
+  // Dono (26/09): "coloque no painel Reembolsado, ao invés de refund/estornado".
+  it('pedido e pagamento reembolsados leem "Reembolsado"', () => {
+    expect(estadoDePedido('refunded').rotulo).toBe('Reembolsado');
+    expect(estadoDePagamento('refunded').rotulo).toBe('Reembolsado');
+    expect(estadoDePagamento('partially_refunded').rotulo).toBe('Reembolso parcial');
   });
 });

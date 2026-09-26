@@ -45,7 +45,7 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
   failed:     'Falhou',
   canceled:   'Cancelada',
   cancelled:  'Cancelada',
-  refunded:   'Estornada',
+  refunded:   'Reembolsada',
 };
 
 const invoiceStatusLabel = (status?: string | null): string =>

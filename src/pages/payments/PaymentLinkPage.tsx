@@ -63,8 +63,8 @@ const SITUACAO: Record<string, { rotulo: string; classe: string }> = {
   processing: { rotulo: 'Processando', classe: 'bg-[var(--info-soft)] text-[var(--info)]' },
   failed: { rotulo: 'Falhou', classe: 'bg-[var(--danger-soft)] text-[var(--danger)]' },
   cancelled: { rotulo: 'Cancelada', classe: 'bg-surface-2 text-fg-muted-token' },
-  refunded: { rotulo: 'Estornada', classe: 'bg-surface-2 text-fg-muted-token' },
-  partially_refunded: { rotulo: 'Estorno parcial', classe: 'bg-surface-2 text-fg-muted-token' },
+  refunded: { rotulo: 'Reembolsada', classe: 'bg-surface-2 text-fg-muted-token' },
+  partially_refunded: { rotulo: 'Reembolso parcial', classe: 'bg-surface-2 text-fg-muted-token' },
 };
 
 export const PaymentLinkPage: React.FC = () => {

@@ -38,7 +38,7 @@ const ETAPAS: { chave: string; campo: string; rotulo: string; ruim?: boolean }[]
   { chave: 'picked_up', campo: 'picked_up_at', rotulo: 'Retirado pelo cliente' },
   { chave: 'delivered', campo: 'delivered_at', rotulo: 'Entregue' },
   { chave: 'cancelled', campo: 'cancelled_at', rotulo: 'Cancelado', ruim: true },
-  { chave: 'refunded', campo: 'refunded_at', rotulo: 'Estornado', ruim: true },
+  { chave: 'refunded', campo: 'refunded_at', rotulo: 'Reembolsado', ruim: true },
 ];
 
 type PedidoComMarcos = Record<string, string | null | undefined>;
