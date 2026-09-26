@@ -257,8 +257,8 @@ const AppContent: React.FC = () => {
         <Route path="analytics/:relatorio" element={<PageBoundary><AnalyticsPage /></PageBoundary>} />
         <Route path="conquistas" element={<PageBoundary><ConquistasPage /></PageBoundary>} />
         <Route path="reports" element={<Navigate to="/analytics" replace />} />
-        <Route path="colaboradores" element={<ColaboradoresPage />} />
-        <Route path="cardapio/importar" element={<ImportarCardapioPage />} />
+        <Route path="colaboradores" element={<PageBoundary><ColaboradoresPage /></PageBoundary>} />
+        <Route path="cardapio/importar" element={<PageBoundary><ImportarCardapioPage /></PageBoundary>} />
         
         {/* Stores Routes */}
         <Route path="stores" element={<PageBoundary><StoresPage /></PageBoundary>} />
