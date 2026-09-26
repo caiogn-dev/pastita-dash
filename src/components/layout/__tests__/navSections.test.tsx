@@ -84,6 +84,7 @@ describe('atendimento deixa de ser um item solto', () => {
       '/whatsapp/handover',
       '/whatsapp/avisos',
       '/atendimento/respostas-rapidas',
+      '/atendimento/nao-entendi',
       '/automation/sessions',
       '/automation/conversation-insights',
     ]);

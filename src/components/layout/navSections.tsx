@@ -2,7 +2,7 @@ import React from 'react';
 import {
   HomeIcon, DevicePhoneMobileIcon, ChatBubbleLeftRightIcon,
   ShoppingCartIcon, CreditCardIcon, CpuChipIcon, Cog6ToothIcon,
-  BoltIcon, ChatBubbleBottomCenterTextIcon, UserGroupIcon, TagIcon, Squares2X2Icon, BuildingStorefrontIcon,
+  BoltIcon, ChatBubbleBottomCenterTextIcon, QuestionMarkCircleIcon, UserGroupIcon, TagIcon, Squares2X2Icon, BuildingStorefrontIcon,
   MegaphoneIcon, DocumentTextIcon, EnvelopeIcon,
   ClockIcon, PresentationChartLineIcon, SparklesIcon,
   StarIcon, RectangleGroupIcon,
@@ -195,6 +195,8 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
         { name: 'Avisos automáticos', href: '/whatsapp/avisos',              icon: BellAlertIcon },
         // Texto que o atendente repete o dia todo, a um "/" de distância no chat.
         { name: 'Respostas rápidas', href: '/atendimento/respostas-rapidas', icon: ChatBubbleBottomCenterTextIcon },
+        // O que caiu em "não entendi" — o lojista ensina o bot ali mesmo.
+        { name: 'O bot não entendeu', href: '/atendimento/nao-entendi', icon: QuestionMarkCircleIcon },
         { name: 'Sessões',      href: '/automation/sessions',                icon: RectangleStackIcon },
         { name: 'Insights',     href: '/automation/conversation-insights',   icon: LightBulbIcon },
       ],

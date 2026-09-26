@@ -4,3 +4,4 @@ export { default as WhatsAppInboxPage } from './WhatsAppInboxPage';
 export { HandoverRequestsPage } from './HandoverRequestsPage';
 export { AvisosAutomaticosPage } from './AvisosAutomaticosPage';
 export { RespostasRapidasPage } from './RespostasRapidasPage';
+export { NaoEntendiPage } from './NaoEntendiPage';
