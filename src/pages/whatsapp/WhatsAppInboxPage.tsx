@@ -33,6 +33,7 @@ import type { Conversation, Message } from '../../types';
 import './WhatsAppInbox.css';
 import { rolarParaOFim, estaNoFim, grudarNoFim } from './rolagemDoChat';
 import { classesDoInbox } from './classesDoInbox';
+import { FaixaDoBot } from './FaixaDoBot';
 
 function ensureArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? value : [];
@@ -796,6 +797,15 @@ const WhatsAppInboxPage: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {/* Por que o bot parou + o que ele já anotou (só em modo humano).
+                Pendura no WebSocket do inbox: mensagem nova = nova busca. */}
+            <FaixaDoBot
+              key={selectedConversation.id}
+              conversationId={selectedConversation.id}
+              modo={selectedConversation.mode}
+              gatilho={lastMessage?.id}
+            />
 
             {/* Messages Container */}
             <div className="messages-container" ref={messagesContainerRef} onScroll={handleMessagesScroll}>
