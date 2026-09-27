@@ -68,6 +68,18 @@ describe('<CreditosDeCarteiraHoje />', () => {
     expect(params).toMatchObject({ store: 'ce-saladas', source: 'carteira', date_from: hojeIso() });
   });
 
+  it('usa a superfície de cartão do painel, sem remontá-la à mão', async () => {
+    mockGetOrders.mockResolvedValue({ results: [pedidoDeCarteira] });
+    const { container } = render(<MemoryRouter><CreditosDeCarteiraHoje storeSlug="ce-saladas" /></MemoryRouter>);
+    await screen.findByText(/1 compra de saldo hoje/);
+
+    const secao = container.querySelector('section') as HTMLElement;
+    // A superfície é uma decisão só (`.superficie`): quem precisa de cartão
+    // escreve a palavra, não `rounded-… border border-border-token bg-surface…`.
+    expect(secao.className).toContain('superficie');
+    expect(secao.className).not.toMatch(/rounded-(lg|xl|2xl)\s+border\s+border-border-token\s+bg-surface/);
+  });
+
   it('sem compra hoje não ocupa espaço', async () => {
     mockGetOrders.mockResolvedValue({ results: [] });
     const { container } = render(<MemoryRouter><CreditosDeCarteiraHoje storeSlug="ce-saladas" /></MemoryRouter>);

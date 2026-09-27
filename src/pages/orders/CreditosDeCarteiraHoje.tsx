@@ -77,7 +77,7 @@ export const CreditosDeCarteiraHoje: React.FC<Props> = ({ storeSlug }) => {
   return (
     <section
       aria-label="Créditos de carteira de hoje"
-      className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border-token bg-surface-2 px-3 py-2 text-body"
+      className="superficie mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-body"
     >
       <SeloDeEstado tone="success">Carteira</SeloDeEstado>
       <span className="font-semibold text-fg-token">
