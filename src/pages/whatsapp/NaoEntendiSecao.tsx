@@ -1,10 +1,16 @@
 /**
- * O bot não entendeu — as mensagens de cliente que caíram em "não entendi".
+ * Onde a IA falhou de verdade — e o dono ensinando ali mesmo.
  *
- * Cada linha é uma cliente que ficou sem resposta útil. O lojista ensina ali
- * mesmo: "é um produto" (o bot passa a reconhecer o nome), "responder assim"
- * (texto pronto para aquela pergunta) ou "ignorar" (conversa de gente, não
- * pedido). Ensinou, a linha sai da lista.
+ * Até 28/09 a lista era "tudo que o regex não reconheceu": telefone,
+ * endereço, "bom diaa", e perguntas que a IA tinha respondido bem. E as três
+ * opções não serviam para nada daquilo: ninguém usou nenhuma. Agora o
+ * backend filtra pela RESPOSTA (pedido de desculpa, erro, saudação genérica
+ * a algo que não é saudação), e cada linha tem a opção que cabe:
+ *
+ * - "É um produto": o texto vira apelido, o bot passa a reconhecer o nome;
+ * - "Ensinar a resposta": pergunta + resposta entram no conhecimento da IA;
+ * - "Virar regra da loja": vira um FATO (dura 2 dias, entrega até 14h…);
+ * - "Ignorar": conversa de gente, não pedido.
  */
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -18,10 +24,10 @@ import {
   Modal,
   ModalBody,
   ModalFooter,
-  PageShell,
   PeriodChips,
   Secao,
   Select,
+  Switch,
   Tabela,
   Textarea,
   type ColunaDaTabela,
@@ -31,6 +37,7 @@ import { useProducts } from '../../hooks/queries/useProducts';
 import { useStore } from '../../hooks/useStore';
 import { estadoDaLista } from '../../utils/estadoDaLista';
 import { formatPhone } from '../../utils/formatters';
+import { TEMAS_DE_FATO } from './fatosDoBot';
 
 const PERIODOS = [
   { value: '7', label: '7 dias' },
@@ -43,21 +50,31 @@ const quando = (iso: string) => new Date(iso).toLocaleString('pt-BR', {
   day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
 });
 
-type Ensinando = { item: MensagemNaoEntendida; acao: 'produto' | 'resposta' };
+type Ensinando = { item: MensagemNaoEntendida; acao: 'produto' | 'resposta' | 'regra' };
 
-export const NaoEntendiPage: React.FC = () => {
+const TITULO: Record<Ensinando['acao'], string> = {
+  produto: 'É um produto',
+  resposta: 'Ensinar a resposta',
+  regra: 'Virar regra da loja',
+};
+
+export const NaoEntendiSecao: React.FC = () => {
   const { storeId, storeSlug } = useStore();
   const queryClient = useQueryClient();
   const [dias, setDias] = useState('7');
   const [ensinando, setEnsinando] = useState<Ensinando | null>(null);
   const [produtoId, setProdutoId] = useState('');
   const [resposta, setResposta] = useState('');
+  const [tema, setTema] = useState('produtos');
+  const [todas, setTodas] = useState(false);
   const [enviando, setEnviando] = useState<string | null>(null);
 
-  const chave = ['nao-entendi', storeSlug || storeId, dias];
+  const chave = ['nao-entendi', storeSlug || storeId, dias, todas];
   const consulta = useQuery({
     queryKey: chave,
-    queryFn: () => atendimentoBotService.listarNaoEntendi({ store: storeSlug || storeId || undefined, dias: Number(dias) }),
+    queryFn: () => atendimentoBotService.listarNaoEntendi({
+      store: storeSlug || storeId || undefined, dias: Number(dias), ...(todas ? { todas: true } : {}),
+    }),
     enabled: !!(storeSlug || storeId),
   });
   const itens = consulta.data ?? [];
@@ -80,7 +97,7 @@ export const NaoEntendiPage: React.FC = () => {
   const ensinar = async (item: MensagemNaoEntendida, ensino: Ensino, feito: string) => {
     setEnviando(item.id);
     try {
-      await atendimentoBotService.ensinar(ensino);
+      await atendimentoBotService.ensinar(ensino, storeSlug || storeId || undefined);
       queryClient.setQueryData<MensagemNaoEntendida[]>(chave, (antes) => (antes ?? []).filter((i) => i.id !== item.id));
       setEnsinando(null);
       toast.success(feito);
@@ -94,6 +111,7 @@ export const NaoEntendiPage: React.FC = () => {
   const abrir = (item: MensagemNaoEntendida, acao: Ensinando['acao']) => {
     setProdutoId('');
     setResposta('');
+    setTema('produtos');
     setEnsinando({ item, acao });
   };
 
@@ -103,8 +121,10 @@ export const NaoEntendiPage: React.FC = () => {
     if (acao === 'produto') {
       const nome = opcoesDeProduto.find((o) => o.valor === produtoId)?.rotulo ?? 'o produto';
       void ensinar(item, { texto: item.texto, acao: 'produto', produto_id: produtoId }, `Pronto: o bot agora entende "${item.texto}" como ${nome}.`);
+    } else if (acao === 'regra') {
+      void ensinar(item, { texto: item.texto, acao: 'regra', tema, resposta: resposta.trim() }, 'Pronto: virou regra da loja. A IA passa a afirmar isso.');
     } else {
-      void ensinar(item, { texto: item.texto, acao: 'resposta', resposta: resposta.trim() }, 'Pronto: o bot vai responder assim da próxima vez.');
+      void ensinar(item, { texto: item.texto, acao: 'resposta', resposta: resposta.trim() }, 'Pronto: a IA aprendeu essa resposta.');
     }
   };
 
@@ -145,7 +165,10 @@ export const NaoEntendiPage: React.FC = () => {
             É um produto
           </Button>
           <Button size="xs" variant="outline" disabled={enviando === i.id} onClick={() => abrir(i, 'resposta')}>
-            Responder assim
+            Ensinar a resposta
+          </Button>
+          <Button size="xs" variant="outline" disabled={enviando === i.id} onClick={() => abrir(i, 'regra')}>
+            Virar regra da loja
           </Button>
           <Button
             size="xs"
@@ -163,18 +186,19 @@ export const NaoEntendiPage: React.FC = () => {
   const podeConfirmar = ensinando?.acao === 'produto' ? !!produtoId : resposta.trim().length > 0;
 
   return (
-    <PageShell
-      titulo="O bot não entendeu"
-      descricao="Mensagens de clientes que o bot não soube responder. Ensine uma vez e ele acerta das próximas."
-      filtros={(
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <PeriodChips
           options={PERIODOS}
           value={dias}
           onChange={setDias}
           ariaLabel="Período"
         />
-      )}
-    >
+        <label className="flex items-center gap-2 text-sm text-fg-muted-token">
+          <Switch ligado={todas} onMudar={setTodas} rotulo="Mostrar tudo que o regex não reconheceu" />
+          Mostrar tudo, inclusive o que a IA respondeu bem
+        </label>
+      </div>
       {consulta.data !== undefined && (
         <KpiGrid
           itens={[{
@@ -186,7 +210,11 @@ export const NaoEntendiPage: React.FC = () => {
         />
       )}
 
-      <Secao titulo="Para ensinar" contador={itens.length}>
+      <Secao
+        titulo="Para ensinar"
+        contador={itens.length}
+        descricao="Só o que a IA não soube responder: pediu desculpa, deu erro ou respondeu com uma saudação genérica."
+      >
         {estado === 'falhou' ? (
           <FalhaAoCarregar
             titulo="Não consegui carregar as mensagens."
@@ -195,7 +223,7 @@ export const NaoEntendiPage: React.FC = () => {
         ) : estado === 'vazio' ? (
           <EmptyState
             titulo="O bot entendeu tudo"
-            descricao={`Nenhuma mensagem ficou sem resposta nos últimos ${dias} dias.`}
+            descricao={`Nenhuma mensagem ficou sem resposta nos últimos ${dias} dias. Para dar mais contexto à IA, use as abas "O que a loja sabe" e "Respostas ensinadas".`}
           />
         ) : (
           <Tabela
@@ -211,7 +239,7 @@ export const NaoEntendiPage: React.FC = () => {
       <Modal
         isOpen={ensinando !== null}
         onClose={() => setEnsinando(null)}
-        title={ensinando?.acao === 'produto' ? 'É um produto' : 'Responder assim'}
+        title={ensinando ? TITULO[ensinando.acao] : ''}
         size="md"
       >
         {ensinando && (
@@ -228,13 +256,30 @@ export const NaoEntendiPage: React.FC = () => {
                   onMudar={setProdutoId}
                   vazio={produtos.isLoading ? 'Carregando o cardápio…' : 'Escolha o produto'}
                 />
+              ) : ensinando.acao === 'regra' ? (
+                <>
+                  <Select
+                    rotulo="Tema"
+                    opcoes={TEMAS_DE_FATO.map((t) => ({ valor: t.valor, rotulo: t.rotulo }))}
+                    valor={tema}
+                    onMudar={setTema}
+                  />
+                  <Textarea
+                    label="Regra"
+                    rows={3}
+                    value={resposta}
+                    onChange={(e) => setResposta(e.target.value)}
+                    hint="Escreva como fato, não como resposta: “A salada dura até 2 dias na geladeira, fechada.” A IA passa a afirmar isso em qualquer conversa."
+                    maxLength={300}
+                  />
+                </>
               ) : (
                 <Textarea
                   label="Resposta"
                   rows={4}
                   value={resposta}
                   onChange={(e) => setResposta(e.target.value)}
-                  hint="O bot manda este texto quando alguém perguntar a mesma coisa."
+                  hint="A IA usa este par pergunta → resposta como exemplo. Vale para a mesma dúvida escrita de outro jeito."
                   maxLength={1000}
                 />
               )}
@@ -248,8 +293,6 @@ export const NaoEntendiPage: React.FC = () => {
           </>
         )}
       </Modal>
-    </PageShell>
+    </div>
   );
 };
-
-export default NaoEntendiPage;
