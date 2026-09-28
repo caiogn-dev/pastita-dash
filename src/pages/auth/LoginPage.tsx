@@ -108,13 +108,13 @@ export const LoginPage: React.FC = () => {
             <form onSubmit={handleSubmit}>
               <div className="flex flex-col gap-6">
                 <Input
-                  label="Usuário"
-                  type="email"
+                  label="E-mail ou celular"
+                  type="text"
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="Digite seu e-mail"
-                  autoComplete="email"
+                  placeholder="Seu e-mail ou celular com DDD"
+                  autoComplete="username"
                 />
 
                 <Input

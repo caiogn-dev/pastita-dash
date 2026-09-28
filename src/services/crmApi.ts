@@ -75,7 +75,7 @@ export const crmApi = {
    */
   addTeamMember: (
     storeSlug: string,
-    data: { phone: string; name?: string; role: string },
+    data: { phone: string; name?: string; role: string; password?: string },
   ) => api.post<TeamMember>(`/stores/${storeSlug}/team/`, data),
 
   updateTeamMember: (

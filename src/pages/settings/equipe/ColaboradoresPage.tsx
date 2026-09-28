@@ -31,6 +31,7 @@ export const ColaboradoresPage: React.FC = () => {
   const [enviando, setEnviando] = useState(false);
   const [telefone, setTelefone] = useState('');
   const [nome, setNome] = useState('');
+  const [senha, setSenha] = useState('');
   const [papel, setPapel] = useState<Papel>('operator');
 
   const carregar = useCallback(async () => {
@@ -64,12 +65,19 @@ export const ColaboradoresPage: React.FC = () => {
         phone: telefone,
         name: nome,
         role: papel,
+        password: senha,
       });
       // 201 = entrou agora; 200 = já estava na equipe e o papel mudou. Dizer
       // "adicionado" nos dois casos faria o dono achar que duplicou.
-      toast.success(status === 201 ? 'Colaborador adicionado.' : 'Papel atualizado.');
+      toast.success(
+        status === 201
+          ? 'Colaborador adicionado. Ele entra em painel.cardapidex.com.br com o celular e a senha que você definiu.'
+          : 'Papel atualizado.',
+        { duration: 8000 },
+      );
       setTelefone('');
       setNome('');
+      setSenha('');
       await carregar();
     } catch (erro) {
       toast.error(getErrorMessage(erro));
@@ -102,10 +110,10 @@ export const ColaboradoresPage: React.FC = () => {
   return (
     <PageShell
       titulo="Colaboradores"
-      descricao="Quem pode entrar no painel desta loja e até onde vai."
+      descricao="Quem pode entrar no painel desta loja e até onde vai. O colaborador entra com o celular e a senha que você definir."
     >
       <Card className="superficie p-4 sm:p-5">
-        <form onSubmit={convidar} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+        <form onSubmit={convidar} className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
           <Input
             label="Celular do colaborador"
             placeholder="(63) 99999-0001"
@@ -119,7 +127,17 @@ export const ColaboradoresPage: React.FC = () => {
             value={nome}
             onChange={(e) => setNome(e.target.value)}
           />
-          <Button type="submit" disabled={enviando || !telefone.trim()}>
+          <Input
+            label="Senha de acesso"
+            type="password"
+            placeholder="Mínimo 6 caracteres"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            autoComplete="new-password"
+            minLength={6}
+            required
+          />
+          <Button type="submit" disabled={enviando || !telefone.trim() || senha.length < 6}>
             <UserPlusIcon className="h-5 w-5" aria-hidden="true" />
             {enviando ? 'Convidando…' : 'Convidar'}
           </Button>
