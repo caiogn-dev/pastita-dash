@@ -163,7 +163,13 @@ export interface ElementoDoLayout {
 export interface LayoutDeEtiqueta {
   versao: 1;
   etiqueta: { largura: number; altura: number };
-  papel: { largura: number; colunas: number; espaco: number; margem?: number | null };
+  papel: {
+    largura: number; colunas: number; espaco: number; margem?: number | null;
+    /** gap = rolo picotado com vão entre linhas (o normal); continuo = sem vão; auto = não mexe na impressora. */
+    modo_midia?: 'gap' | 'continuo' | 'auto';
+    /** Só em contínuo: passo entre linhas (altura + vão de linha) em mm. */
+    passo?: number | null;
+  };
   elementos: ElementoDoLayout[];
 }
 

@@ -40,6 +40,11 @@ const CAMPOS = [
   { valor: 'description', rotulo: 'Descrição' }, { valor: 'barcode', rotulo: 'Código de barras' },
   { valor: 'publicUrl', rotulo: 'Link da tabela nutricional' },
 ];
+const MODOS_DE_MIDIA = [
+  { valor: 'gap', rotulo: 'Picotado com vão (gap)' },
+  { valor: 'continuo', rotulo: 'Contínuo (sem vão)' },
+  { valor: 'auto', rotulo: 'Não mexer na impressora' },
+];
 const ALINHAR = [{ valor: 'esquerda', rotulo: 'Esquerda' }, { valor: 'centro', rotulo: 'Centro' }, { valor: 'direita', rotulo: 'Direita' }];
 
 const rotuloNoCanvas = (e: ElementoDoLayout): string => {
@@ -223,6 +228,14 @@ export const EditorDeEtiqueta: React.FC<Props> = ({ open, onClose, storeUuid, mo
                 Imprima a grade: ela desenha a moldura e uma régua em mm onde o programa acha que a etiqueta está.
                 Se a moldura saiu 2 mm à direita da borda real, digite −2 em horizontal. Fica salvo só nesta impressora.
               </p>
+              <details className="text-xs text-fg-muted-token">
+                <summary className="cursor-pointer">Antes de calibrar: 3 coisas na impressora que nenhum número aqui corrige</summary>
+                <ol className="mt-1 list-decimal space-y-1 pl-4">
+                  <li><b>Guia lateral encostado</b> no papel, sem folga. Folga = etiqueta inclinada (torta de verdade).</li>
+                  <li><b>Calibrar o sensor</b> a cada rolo novo: com a impressora ligada, segure FEED até o led verde piscar 2 vezes e solte. Se ela não calibra, cai em "Contínuo" e a impressão desliza um pouco a cada etiqueta.</li>
+                  <li><b>Sensor de etiquetas</b> todo à esquerda (padrão de fábrica), tipo "Gap" no L42Pro Utility.</li>
+                </ol>
+              </details>
               <Select rotulo="Impressora" opcoes={agentes.map((a) => ({ valor: a.id, rotulo: `${a.name} · ${a.printer_name}` }))} valor={agente} onMudar={setAgente} />
               <div className="grid gap-2 sm:grid-cols-3">
                 <NumField label="Horizontal" value={cal.desloc_x ?? 0} min={-30} max={30} step={0.5} onChange={(v) => setCal((c) => ({ ...c, desloc_x: v }))} testId="cal-x" />
@@ -251,6 +264,12 @@ export const EditorDeEtiqueta: React.FC<Props> = ({ open, onClose, storeUuid, mo
             <button type="button" className="text-xs text-brand underline" onClick={() => setRascunho(ajustarPapelAoBloco)}>
               Papel = colunas ({blocoMm(rascunho)} mm)
             </button>
+            <Select rotulo="Rolo" opcoes={MODOS_DE_MIDIA} valor={rascunho.papel.modo_midia ?? 'gap'}
+              onMudar={(v) => setPapel({ modo_midia: v as LayoutDeEtiqueta['papel']['modo_midia'] })} data-testid="lay-modo" />
+            {rascunho.papel.modo_midia === 'continuo' && (
+              <NumField label="Passo entre linhas" value={rascunho.papel.passo ?? rascunho.etiqueta.altura} min={rascunho.etiqueta.altura} max={400}
+                onChange={(v) => setPapel({ passo: v })} testId="lay-passo" />
+            )}
           </div>
 
           <div className="space-y-2">

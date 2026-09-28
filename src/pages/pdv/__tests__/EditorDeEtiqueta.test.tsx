@@ -95,6 +95,18 @@ describe('EditorDeEtiqueta', () => {
     await waitFor(() => expect(salvarCalibracao).toHaveBeenCalledWith('ag-1', { desloc_x: -2, desloc_y: 0.5, escuro: 12 }));
   });
 
+  it('rolo contínuo pede o passo entre linhas e salva no papel', async () => {
+    montar();
+    expect(screen.queryByTestId('lay-passo')).toBeNull();
+    await userEvent.selectOptions(screen.getByTestId('lay-modo'), 'continuo');
+    const passo = screen.getByTestId('lay-passo');
+    await userEvent.clear(passo); await userEvent.type(passo, '25{enter}');
+    await userEvent.click(screen.getByTestId('editor-salvar'));
+    await waitFor(() => expect(salvarLayout).toHaveBeenCalled());
+    const enviado = (salvarLayout as jest.Mock).mock.calls[0][2] as LayoutDeEtiqueta;
+    expect(enviado.papel).toMatchObject({ modo_midia: 'continuo', passo: 25 });
+  });
+
   it('adicionar QR cria o elemento e removê-lo some do desenho', async () => {
     montar();
     await userEvent.click(screen.getByRole('button', { name: '+ QR Code' }));
