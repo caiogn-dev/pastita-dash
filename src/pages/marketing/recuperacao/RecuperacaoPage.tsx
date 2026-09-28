@@ -12,6 +12,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { EmptyState, KpiGrid, PageShell } from '../../../components/ui';
+import { RecuperadorWhatsAppSecao } from './RecuperadorWhatsAppSecao';
 import { useStore } from '../../../hooks/useStore';
 import { recuperacaoService, type PainelDeRecuperacao } from '../../../services/recuperacao';
 import { formatCurrency } from '../../../utils/formatters';
@@ -136,6 +137,7 @@ export const RecuperacaoPage: React.FC = () => {
           </p>
         </div>
       )}
+      <RecuperadorWhatsAppSecao />
     </PageShell>
   );
 };

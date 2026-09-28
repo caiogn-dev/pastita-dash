@@ -2,7 +2,7 @@ import React from 'react';
 import {
   HomeIcon, DevicePhoneMobileIcon, ChatBubbleLeftRightIcon,
   ShoppingCartIcon, CreditCardIcon, CpuChipIcon, Cog6ToothIcon,
-  BoltIcon, ChatBubbleBottomCenterTextIcon, AcademicCapIcon, FunnelIcon, UserGroupIcon, TagIcon, Squares2X2Icon, BuildingStorefrontIcon,
+  BoltIcon, ChatBubbleBottomCenterTextIcon, AcademicCapIcon, FunnelIcon, SunIcon, UserGroupIcon, TagIcon, Squares2X2Icon, BuildingStorefrontIcon,
   MegaphoneIcon, DocumentTextIcon, EnvelopeIcon,
   ClockIcon, PresentationChartLineIcon, SparklesIcon,
   StarIcon, RectangleGroupIcon,
@@ -117,6 +117,8 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
       // Primeiro da lista de propósito: é a única tela de marketing que fala
       // do dinheiro que já está na mesa, sem precisar criar nada.
       { name: 'Recuperador de vendas', href: '/marketing/recuperacao',      icon: ArrowPathIcon },
+      // A oferta do dia sai sozinha, com o card do dia da semana.
+      { name: 'Promoção do dia',     href: '/marketing/promocao-do-dia',    icon: SunIcon },
       { name: 'Campanha WhatsApp',   href: '/marketing/whatsapp',           icon: DevicePhoneMobileIcon },
       { name: 'Campanha por e-mail', href: '/marketing/email/campaigns',    icon: EnvelopeIcon },
       // Promoção de comentário no Instagram: a loja responde no direct quem

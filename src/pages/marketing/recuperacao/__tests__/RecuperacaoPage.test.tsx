@@ -8,6 +8,7 @@ import { MemoryRouter } from 'react-router-dom';
 import RecuperacaoPage from '../RecuperacaoPage';
 
 const painel = jest.fn();
+jest.mock('../../../../services/storesApi', () => ({ __esModule: true, updateStore: jest.fn() }));
 jest.mock('../../../../services/recuperacao', () => ({
   __esModule: true,
   recuperacaoService: { painel: (...a: unknown[]) => painel(...a) },
