@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import logger from '../../services/logger';
 import {
   DocumentTextIcon,
@@ -15,6 +15,8 @@ import {
 import { AutomationLog, CompanyProfile, AutomationLogStats } from '../../types';
 import { toast } from 'react-hot-toast';
 import { PageShell, Tabela, Modal, StatCard, RankedList } from '../../components/ui';
+import { EmptyState } from '../../components/common';
+import { estadoDaLista } from '../../utils/estadoDaLista';
 
 const actionTypeLabels: Record<string, string> = {
   message_received: 'Mensagem Recebida',
@@ -43,6 +45,10 @@ const AutomationLogsPage: React.FC = () => {
   const [companies, setCompanies] = useState<CompanyProfile[]>([]);
   const [stats, setStats] = useState<AutomationLogStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(false);
+  // Uma busca já DEU CERTO alguma vez. É o que separa "vazio de verdade" de
+  // "vazio porque caiu" — sem isso a tela adivinha, e adivinhava errado.
+  const [carregouAlgumaVez, setCarregouAlgumaVez] = useState(false);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [selectedLog, setSelectedLog] = useState<AutomationLog | null>(null);
@@ -56,6 +62,19 @@ const AutomationLogsPage: React.FC = () => {
     phone_number: '',
   });
   const [showFilters, setShowFilters] = useState(false);
+
+  // Sequência da busca em voo. Ao trocar filtros rápido (ou sob StrictMode, que
+  // monta duas vezes), várias `loadLogs` correm em paralelo; só a mais recente
+  // pode aplicar seu resultado. Sem isto, a rejeição de uma busca obsoleta
+  // ligaria `erro` e apagaria o vazio/legítimo já pintado pela busca mais nova.
+  const requisicaoRef = useRef(0);
+
+  const estado = estadoDaLista({
+    temDados: carregouAlgumaVez,
+    buscando: loading,
+    falhou: erro,
+    quantidade: logs.length,
+  });
 
   useEffect(() => {
     loadCompanies();
@@ -75,8 +94,10 @@ const AutomationLogsPage: React.FC = () => {
   };
 
   const loadLogs = async () => {
+    const req = ++requisicaoRef.current;
     try {
       setLoading(true);
+      setErro(false);
       const params = {
         page,
         page_size: POR_PAGINA,
@@ -87,12 +108,19 @@ const AutomationLogsPage: React.FC = () => {
       };
 
       const response = await automationLogService.list(params);
+      if (req !== requisicaoRef.current) return; // busca superada por uma mais nova
       setLogs(response.results);
       setTotalCount(response.count);
+      setCarregouAlgumaVez(true);
     } catch (error) {
+      if (req !== requisicaoRef.current) return; // rejeição obsoleta: ignora
+      // Sem isto, a falha deixava `logs` em `[]` e a Tabela mostrava o vazio
+      // confiante "Nenhum registro" — dizendo ao lojista que o robô não fez
+      // nada quando, na verdade, a busca caiu.
+      setErro(true);
       toast.error('Erro ao carregar logs');
     } finally {
-      setLoading(false);
+      if (req === requisicaoRef.current) setLoading(false);
     }
   };
 
@@ -228,6 +256,18 @@ const AutomationLogsPage: React.FC = () => {
         </div>
       )}
 
+      {estado === 'falhou' ? (
+        // Falha sem dado em cache: erro acionável no lugar do vazio enganoso.
+        // Com dado em cache (falha só ao atualizar), a Tabela abaixo continua
+        // mostrando os registros e o `toast` avisa da falha. Quem decide é
+        // `estadoDaLista` — a mesma regra de todas as listas do painel.
+        <EmptyState
+          icon={<DocumentTextIcon className="h-12 w-12" />}
+          title="Não foi possível carregar os registros"
+          description="A conexão falhou. Isto não quer dizer que o robô parou — tente de novo."
+          action={{ label: 'Tentar novamente', onClick: loadLogs }}
+        />
+      ) : (
       <Tabela<AutomationLog>
         itens={logs}
         chave={(x) => x.id}
@@ -281,6 +321,7 @@ const AutomationLogsPage: React.FC = () => {
           },
         ]}
       />
+      )}
 
       {/* Log Detail Modal */}
       <Modal
