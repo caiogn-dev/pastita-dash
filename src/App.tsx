@@ -114,6 +114,7 @@ const InstagramCallbackPage = lazy(() => import('./pages/instagram/InstagramCall
 const AvisosAutomaticosPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.AvisosAutomaticosPage })));
 const RespostasRapidasPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.RespostasRapidasPage })));
 const EnsinarOBotPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.EnsinarOBotPage })));
+const ConversaoDoBotPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.ConversaoDoBotPage })));
 
 // Protected Route wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -316,6 +317,7 @@ const AppContent: React.FC = () => {
         <Route path="whatsapp/avisos" element={<PageBoundary><AvisosAutomaticosPage /></PageBoundary>} />
         <Route path="atendimento/respostas-rapidas" element={<PageBoundary><RespostasRapidasPage /></PageBoundary>} />
         <Route path="atendimento/ensinar-o-bot" element={<PageBoundary><EnsinarOBotPage /></PageBoundary>} />
+        <Route path="atendimento/conversao-do-bot" element={<PageBoundary><ConversaoDoBotPage /></PageBoundary>} />
         {/* Link antigo da tela "O bot não entendeu" (26/09). */}
         <Route path="atendimento/nao-entendi" element={<PageBoundary><EnsinarOBotPage /></PageBoundary>} />
       </Route>

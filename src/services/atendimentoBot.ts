@@ -82,6 +82,38 @@ export const atendimentoBotService = {
   },
 };
 
+export type MotivoDaPerda = 'atendente' | 'carrinho' | 'bot_falhou' | 'so_perguntou';
+
+export interface ConversaPerdida {
+  conversa_id: string;
+  telefone: string;
+  nome: string;
+  quando: string | null;
+  motivo: MotivoDaPerda;
+  ultima_mensagem: string;
+}
+
+export interface ConversaoDoBot {
+  dias: number;
+  conversas: number;
+  pedidos: number;
+  receita: string;
+  taxa: number;
+  para_atendente: number;
+  carrinho_parado: number;
+  bot_falhou: number;
+  motivos_de_atendente: { motivo: string; vezes: number }[];
+  serie: { dia: string; conversas: number; pedidos: number }[];
+  perdidas: ConversaPerdida[];
+}
+
+export const conversaoDoBotService = {
+  async buscar(params: { store?: string; dias: number }): Promise<ConversaoDoBot> {
+    const { data } = await api.get<ConversaoDoBot>('/conversations/bot/conversao/', { params });
+    return data;
+  },
+};
+
 export const conhecimentoService = {
   async listar(store: string): Promise<Conhecimento[]> {
     const { data } = await api.get<Conhecimento[] | { results?: Conhecimento[] }>('/agents/conhecimento/', { params: { store } });

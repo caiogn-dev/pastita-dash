@@ -2,7 +2,7 @@ import React from 'react';
 import {
   HomeIcon, DevicePhoneMobileIcon, ChatBubbleLeftRightIcon,
   ShoppingCartIcon, CreditCardIcon, CpuChipIcon, Cog6ToothIcon,
-  BoltIcon, ChatBubbleBottomCenterTextIcon, AcademicCapIcon, UserGroupIcon, TagIcon, Squares2X2Icon, BuildingStorefrontIcon,
+  BoltIcon, ChatBubbleBottomCenterTextIcon, AcademicCapIcon, FunnelIcon, UserGroupIcon, TagIcon, Squares2X2Icon, BuildingStorefrontIcon,
   MegaphoneIcon, DocumentTextIcon, EnvelopeIcon,
   ClockIcon, PresentationChartLineIcon, SparklesIcon,
   StarIcon, RectangleGroupIcon,
@@ -197,6 +197,8 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
         { name: 'Respostas rápidas', href: '/atendimento/respostas-rapidas', icon: ChatBubbleBottomCenterTextIcon },
         // Onde a IA falhou + fatos da loja + respostas ensinadas: o contexto do bot.
         { name: 'Ensinar o bot', href: '/atendimento/ensinar-o-bot', icon: AcademicCapIcon },
+        // Conversas → pedidos, e onde a venda parou: a régua do bot.
+        { name: 'Conversão do bot', href: '/atendimento/conversao-do-bot', icon: FunnelIcon },
         { name: 'Sessões',      href: '/automation/sessions',                icon: RectangleStackIcon },
         { name: 'Insights',     href: '/automation/conversation-insights',   icon: LightBulbIcon },
       ],

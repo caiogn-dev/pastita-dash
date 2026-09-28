@@ -5,3 +5,4 @@ export { HandoverRequestsPage } from './HandoverRequestsPage';
 export { AvisosAutomaticosPage } from './AvisosAutomaticosPage';
 export { RespostasRapidasPage } from './RespostasRapidasPage';
 export { EnsinarOBotPage } from './EnsinarOBotPage';
+export { ConversaoDoBotPage } from './ConversaoDoBotPage';
