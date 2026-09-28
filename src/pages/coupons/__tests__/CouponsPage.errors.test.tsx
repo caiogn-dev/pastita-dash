@@ -109,4 +109,23 @@ describe('CouponsPage — feedback de erro', () => {
       expect(mockedToast.error).toHaveBeenCalledWith('Erro ao carregar cupons');
     });
   });
+
+  it('digitar no formulário NÃO dispara aviso de erro a cada tecla (28/09)', async () => {
+    renderPage();
+    const newButtons = await screen.findAllByText('Novo cupom');
+    fireEvent.click(newButtons[0]);
+    const toastErro = (toast as unknown as { error: jest.Mock }).error;
+    toastErro.mockClear();
+
+    const codigo = screen.getByPlaceholderText('Ex: DESCONTO10');
+    for (const v of ['D', 'DE', 'DES', 'DESC']) {
+      fireEvent.change(codigo, { target: { value: v } });
+    }
+
+    expect(toastErro).not.toHaveBeenCalled();
+    // Só o CLIQUE em avançar com pendência avisa — uma vez.
+    fireEvent.click(screen.getByRole('button', { name: /avançar/i }));
+    expect(toastErro).toHaveBeenCalledTimes(1);
+    expect(toastErro.mock.calls[0][0]).toMatch(/valor do desconto/i);
+  });
 });

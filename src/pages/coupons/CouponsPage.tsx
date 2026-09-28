@@ -497,11 +497,9 @@ export const CouponsPage: React.FC = () => {
           // Segura no primeiro passo enquanto faltar código ou valor: sem os
           // dois o cupom não existe, e descobrir isso no terceiro passo obriga
           // a voltar depois de já ter preenchido tudo.
-          podeAvancar={(passo) => {
-            if (passo !== 'beneficio') return true;
-            if (!formData.code) { toast.error('O cupom precisa de um código.'); return false; }
-            if (!formData.discount_value) { toast.error('Defina o valor do desconto.'); return false; }
-            return true;
+          podeAvancar={(passo) => passo !== 'beneficio' || (!!formData.code && !!formData.discount_value)}
+          aoBloquear={() => {
+            toast.error(!formData.code ? 'O cupom precisa de um código.' : 'Defina o valor do desconto.');
           }}
         >
         {(passo) => (

@@ -41,8 +41,18 @@ export interface FormStepperProps {
   children: (passoAtivo: string) => React.ReactNode;
   onConcluir: () => void;
   rotuloConcluir: string;
-  /** Retorne false para segurar o usuário no passo atual. */
+  /**
+   * Retorne false para segurar o usuário no passo atual.
+   *
+   * É chamada A CADA RENDER (decide se o botão fica desabilitado), então tem
+   * que ser pura: nada de toast nem setState aqui. Em 28/09 o cupom avisava
+   * "precisa de um código" a cada tecla digitada porque o aviso estava nesta
+   * função. O que deve acontecer quando a pessoa CLICA bloqueada vai em
+   * `aoBloquear`.
+   */
   podeAvancar?: (passoAtual: string) => boolean;
+  /** Chamada só no CLIQUE em avançar quando `podeAvancar` disse não: é aqui que se avisa. */
+  aoBloquear?: (passoAtual: string) => void;
   onCancelar?: () => void;
   /**
    * Ações extras no rodapé, à esquerda do primário.
@@ -94,6 +104,7 @@ export const FormStepper: React.FC<FormStepperProps> = ({
   onConcluir,
   rotuloConcluir,
   podeAvancar,
+  aoBloquear,
   onCancelar,
   acoesExtras,
   concluindo = false,
@@ -131,7 +142,10 @@ export const FormStepper: React.FC<FormStepperProps> = ({
   const liberado = podeAvancar ? podeAvancar(atual.id) : true;
 
   const avancar = () => {
-    if (!liberado) return;
+    if (!liberado) {
+      aoBloquear?.(atual.id);
+      return;
+    }
     irPara(Math.min(i + 1, passos.length - 1));
   };
 

@@ -521,12 +521,12 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           rotuloConcluir={isCurrentlyEditing ? 'Salvar alterações' : 'Criar produto'}
           // Segura no passo que tem problema. Deixar avançar faria o erro
           // aparecer só no fim, depois de a pessoa ter preenchido todo o resto.
-          podeAvancar={(passo) => {
+          podeAvancar={(passo) => !pendencias.some((e) => e.aba === passo)}
+          aoBloquear={(passo) => {
             const erro = pendencias.find((e) => e.aba === passo);
-            if (!erro) return true;
+            if (!erro) return;
             setErrosPorAba(pendencias);
             toast.error(erro.mensagem);
-            return false;
           }}
           acoesExtras={
             // "Salvar e criar outro" só na criação: quem monta cardápio
