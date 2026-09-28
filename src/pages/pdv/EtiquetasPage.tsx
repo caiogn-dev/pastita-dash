@@ -17,7 +17,12 @@ import { formatCurrency } from '../../utils/formatters';
 import { useAdicional } from '../../hooks/useAdicional';
 import { ADICIONAL_ETIQUETA } from '../../services/billing';
 import { AdicionalBloqueado } from '../../components/billing/AdicionalBloqueado';
-import { enviarEtiquetasParaAgente, imprimeEtiquetas, listPrintAgents, PrintAgent } from '../../services/printing';
+import {
+  enviarEtiquetasParaAgente, imprimeEtiquetas, listPrintAgents, PrintAgent,
+  carregarLayouts, LayoutsDaLoja, LayoutDeEtiqueta, ModeloDesenhavel, MODELOS_DESENHAVEIS,
+} from '../../services/printing';
+import { NumField } from './NumField';
+import { EditorDeEtiqueta } from './EditorDeEtiqueta';
 
 const fmtDate = (d: Date) => d.toLocaleDateString('pt-BR');
 const MM_PX = 96 / 25.4;
@@ -128,41 +133,6 @@ const loadConfig = (): SavedConfig => {
   }
 };
 
-const NumField: React.FC<{
-  label: string; value: number; onChange: (v: number) => void;
-  min?: number; max?: number; step?: number; suffix?: string; testId?: string;
-}> = ({ label, value, onChange, min = 0, max = 300, step = 0.5, suffix = 'mm', testId }) => {
-  // Texto local: corrigir a faixa a cada tecla impedia digitar. Com mínimo 15,
-  // o "3" de "33" virava 15 antes do segundo dígito. A faixa vale ao sair.
-  const [texto, setTexto] = useState(String(value));
-  useEffect(() => { setTexto(String(value)); }, [value]);
-  const confirmar = () => {
-    const n = Number(texto.replace(',', '.'));
-    const corrigido = Number.isFinite(n) && texto.trim() !== '' ? Math.min(max, Math.max(min, n)) : value;
-    setTexto(String(corrigido));
-    if (corrigido !== value) onChange(corrigido);
-  };
-  const id = `num-${label.replace(/\W+/g, '-').toLowerCase()}`;
-  return (
-    <div className="flex items-center justify-between gap-3 text-sm">
-      <label htmlFor={id} className="text-fg-muted-token">{label}</label>
-      <span className="flex items-center gap-1.5">
-        <input
-          id={id}
-          type="number" inputMode="decimal" min={min} max={max} step={step}
-          className="controle h-9 w-24 px-2 text-right tabular-nums"
-          value={texto}
-          data-testid={testId}
-          onChange={(e) => setTexto(e.target.value)}
-          onBlur={confirmar}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmar(); } }}
-        />
-        {suffix && <span className="text-fg-muted-token text-xs whitespace-nowrap">{suffix}</span>}
-      </span>
-    </div>
-  );
-};
-
 const EtiquetasPage: React.FC = () => {
   const { storeId } = useParams<{ storeId: string }>();
   const [catalog, setCatalog] = useState<CatalogEntry[]>([]);
@@ -192,6 +162,10 @@ const EtiquetasPage: React.FC = () => {
   // com "etiquetas" na tela de Impressão: ZPL na Epson sai como lixo. Sem
   // agent, o bloco nem aparece e a impressão pelo navegador segue igual.
   const [agentes, setAgentes] = useState<Map<string, PrintAgent[]>>(new Map());
+  // Layout desenhado por loja (uuid → modelos). Com ele carregado, o envio
+  // remoto vai como bitmap: igual na Zebra e na Elgin, e a prévia é o real.
+  const [layouts, setLayouts] = useState<Map<string, LayoutsDaLoja>>(new Map());
+  const [editorAberto, setEditorAberto] = useState(false);
   const chaveDosLotes = `${LOTES_KEY}:${storeId ?? 'all'}`;
   const [lotes, setLotes] = useState<Lote[]>(() => lerLotes(chaveDosLotes));
   const guardarLote = useCallback((tpl: Template, itens: Lote['itens']) => {
@@ -377,6 +351,28 @@ const EtiquetasPage: React.FC = () => {
     return null;
   }, [selected, storeId]);
   const agentesDaSelecao = lojaDaSelecao ? (agentes.get(lojaDaSelecao) ?? []) : [];
+  const uuidDaSelecao = lojaDaSelecao
+    ? (agentesDaSelecao[0]?.store ?? catalog.find((c) => c.storeSlug === lojaDaSelecao)?.product.store ?? null)
+    : null;
+  useEffect(() => {
+    if (!uuidDaSelecao || layouts.has(uuidDaSelecao)) return;
+    let vivo = true;
+    carregarLayouts(uuidDaSelecao)
+      .then(({ data }) => {
+        if (vivo && data && data.validade?.layout) setLayouts((m) => new Map(m).set(uuidDaSelecao, data));
+      })
+      .catch(() => { /* backend antigo: segue no ZPL nativo */ });
+    return () => { vivo = false; };
+  }, [uuidDaSelecao, layouts]);
+  const modeloDesenhavel = (MODELOS_DESENHAVEIS as string[]).includes(template) ? (template as ModeloDesenhavel) : null;
+  const layoutDaVez = modeloDesenhavel && uuidDaSelecao ? layouts.get(uuidDaSelecao)?.[modeloDesenhavel] ?? null : null;
+  const guardarLayout = (layout: LayoutDeEtiqueta, padrao: boolean) => {
+    if (!uuidDaSelecao || !modeloDesenhavel) return;
+    setLayouts((m) => {
+      const atual = m.get(uuidDaSelecao);
+      return atual ? new Map(m).set(uuidDaSelecao, { ...atual, [modeloDesenhavel]: { layout, padrao } }) : m;
+    });
+  };
   const agenteDaVez = agentesDaSelecao.find((a) => a.id === agenteEscolhido);
   const envioRemotoDisponivel = !nutricaoBloqueada
     && (lojaDaSelecao ? agentesDaSelecao.length > 0 : agentes.size > 0);
@@ -412,6 +408,7 @@ const EtiquetasPage: React.FC = () => {
         modelo: template,
         etiquetas,
         config: template === 'validade' ? { ...cfg.validade } : template === 'produto' ? { ...cfg.produto } : template === 'nutricao-qr' ? { ...cfg.qr } : {},
+        ...(layoutDaVez ? { motor: 'bitmap' as const, layout: layoutDaVez.layout } : {}),
       });
       guardarLote(template, itensDaSelecao());
       toast.success(`${etiquetas.length} etiqueta${etiquetas.length === 1 ? '' : 's'} enviada${etiquetas.length === 1 ? '' : 's'} para ${agent.name} (${agent.printer_name})`);
@@ -892,6 +889,24 @@ const EtiquetasPage: React.FC = () => {
               <p className="text-xs text-fg-muted-token">
                 Sai direto na {agenteDaVez?.printer_name ?? 'Zebra'}{agenteDaVez && !agenteDaVez.is_online ? ' (offline agora: fica na fila)' : ''}.
               </p>
+              {layoutDaVez && uuidDaSelecao && modeloDesenhavel && (
+                <>
+                  <Button variant="secondary" size="sm" className="w-full" onClick={() => setEditorAberto(true)} data-testid="etq-abrir-editor">
+                    Layout e calibração{layoutDaVez.padrao ? '' : ' (personalizado)'}
+                  </Button>
+                  <EditorDeEtiqueta
+                    open={editorAberto}
+                    onClose={() => setEditorAberto(false)}
+                    storeUuid={uuidDaSelecao}
+                    modelo={modeloDesenhavel}
+                    layout={layoutDaVez.layout}
+                    padrao={layoutDaVez.padrao}
+                    agentes={agentesDaSelecao}
+                    agenteInicial={agenteEscolhido}
+                    onSalvo={guardarLayout}
+                  />
+                </>
+              )}
             </div>
           )}
           <div className="space-y-2">

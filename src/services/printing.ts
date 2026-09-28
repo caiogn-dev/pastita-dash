@@ -36,6 +36,8 @@ export interface PrintAgent {
   is_active: boolean;
   /** Impressoras detectadas no PC do agent (via heartbeat) */
   available_printers?: string[];
+  /** Livre: alerta do vigia, calibração da etiqueta ({calibracao: {desloc_x, desloc_y, escuro}}). */
+  metadata?: Record<string, unknown>;
   /** O que este agent imprime. Backend antigo não manda: vale comanda + recibo. */
   imprime?: PapelDoAgente[];
   /**
@@ -113,6 +115,9 @@ export interface EnvioDeEtiquetas {
   modelo: 'produto' | 'validade' | 'nutricao' | 'nutricao-qr';
   etiquetas: unknown[];
   config?: Record<string, unknown>;
+  /** 'bitmap' = layout desenhado (mm → ^GFA), igual na Zebra e na Elgin. Sem isso, ZPL nativo antigo. */
+  motor?: 'bitmap';
+  layout?: LayoutDeEtiqueta;
 }
 
 export const enviarEtiquetasParaAgente = (dados: EnvioDeEtiquetas) =>
@@ -125,3 +130,69 @@ export const papeisDoAgente = (agent: Pick<PrintAgent, 'imprime'>): PapelDoAgent
 /** Só quem está marcado com "etiquetas" recebe ZPL — na Epson sairia lixo. */
 export const imprimeEtiquetas = (agent: Pick<PrintAgent, 'imprime'>): boolean =>
   papeisDoAgente(agent).includes('etiquetas');
+
+// ---------------------------------------------------------------------------
+// Etiqueta desenhada: layout em mm → bitmap no backend → ^GFA. O mesmo desenho
+// sai igual na Zebra e na Elgin; a prévia É o bitmap que vai imprimir.
+// ---------------------------------------------------------------------------
+
+export type ModeloDesenhavel = 'validade' | 'nutricao-qr' | 'produto';
+export const MODELOS_DESENHAVEIS: ModeloDesenhavel[] = ['validade', 'nutricao-qr', 'produto'];
+
+export type TipoDeElemento = 'texto' | 'qr' | 'barras' | 'linha' | 'caixa';
+export type CampoDaEtiqueta = 'name' | 'manip' | 'val' | 'price' | 'description' | 'barcode' | 'publicUrl';
+
+export interface ElementoDoLayout {
+  id: string;
+  tipo: TipoDeElemento;
+  /** Posição e tamanho em mm, relativos ao canto superior esquerdo da etiqueta. */
+  x: number; y: number; w: number; h: number;
+  /** texto: molde com {campo}, ex. "Val.: {val}". */
+  texto?: string;
+  /** texto: altura da letra em mm. */
+  tamanho?: number;
+  negrito?: boolean;
+  linhas?: number;
+  alinhar?: 'esquerda' | 'centro' | 'direita';
+  /** qr / barras: de onde vem o conteúdo. */
+  campo?: CampoDaEtiqueta;
+  /** caixa: espessura da borda em mm. */
+  espessura?: number;
+}
+
+export interface LayoutDeEtiqueta {
+  versao: 1;
+  etiqueta: { largura: number; altura: number };
+  papel: { largura: number; colunas: number; espaco: number; margem?: number | null };
+  elementos: ElementoDoLayout[];
+}
+
+export interface LayoutDaLoja { layout: LayoutDeEtiqueta; padrao: boolean }
+export type LayoutsDaLoja = Record<ModeloDesenhavel, LayoutDaLoja>;
+
+/** Deslocamento da IMPRESSORA (mm) e escurecimento — vive no agent, não no layout. */
+export interface Calibracao { desloc_x?: number; desloc_y?: number; escuro?: number }
+
+export const carregarLayouts = (storeUuid: string) =>
+  api.get<LayoutsDaLoja>('/stores/print-jobs/etiquetas/layouts/', { params: { store: storeUuid } });
+
+/** `layout: null` volta ao padrão. */
+export const salvarLayout = (storeUuid: string, modelo: ModeloDesenhavel, layout: LayoutDeEtiqueta | null) =>
+  api.put<LayoutDaLoja>('/stores/print-jobs/etiquetas/layouts/', { store: storeUuid, modelo, layout });
+
+export interface PedidoDePreview {
+  store: string; modelo: ModeloDesenhavel; layout?: LayoutDeEtiqueta; etiquetas?: unknown[]; grade?: boolean;
+}
+export const previewDeEtiquetas = (dados: PedidoDePreview) =>
+  api.post<{ png: string; largura_mm: number; altura_mm: number }>('/stores/print-jobs/etiquetas/preview/', dados);
+
+export const imprimirGradeDeCalibracao = (dados: { store: string; agent: string; modelo: ModeloDesenhavel; layout?: LayoutDeEtiqueta }) =>
+  api.post<{ job: PrintJob }>('/stores/print-jobs/etiquetas/calibracao/', dados);
+
+export const salvarCalibracao = (agentId: string, calibracao: Calibracao) =>
+  api.post<{ calibracao: Calibracao }>(`/stores/print-agents/${agentId}/calibracao/`, calibracao);
+
+export const calibracaoDoAgente = (agent: Pick<PrintAgent, 'metadata'>): Calibracao => {
+  const meta = (agent.metadata || {}) as { calibracao?: Calibracao };
+  return meta.calibracao || {};
+};

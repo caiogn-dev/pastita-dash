@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import EtiquetasPage from '../EtiquetasPage';
 import { getStores, getProducts, gerarCodigosInternos } from '../../../services/storesApi';
 import { printHtmlDocument } from '../../../utils/labelPrint';
-import { enviarEtiquetasParaAgente, listPrintAgents } from '../../../services/printing';
+import { carregarLayouts, enviarEtiquetasParaAgente, listPrintAgents } from '../../../services/printing';
 
 jest.mock('../../../services/api', () => ({
   __esModule: true,
@@ -23,6 +23,7 @@ jest.mock('../../../services/printing', () => ({
   ...jest.requireActual('../../../services/printing'),
   listPrintAgents: jest.fn().mockResolvedValue({ data: { results: [] } }),
   enviarEtiquetasParaAgente: jest.fn().mockResolvedValue({ data: { job: { id: 'j1' } } }),
+  carregarLayouts: jest.fn().mockRejectedValue(new Error('backend antigo')),
 }));
 
 jest.mock('../../../utils/labelPrint', () => ({
@@ -248,7 +249,28 @@ describe('EtiquetasPage', () => {
       expect(body.etiquetas[0].name).toBe('Marmita P');
       expect(body.etiquetas[0].val).toMatch(/\d{2}\/\d{2}\/\d{4}/);
       expect(body.config.cols).toBeGreaterThan(0);
+      expect(body.motor).toBeUndefined();          // backend antigo: ZPL nativo
       expect(mockedPrint).not.toHaveBeenCalled();
+    });
+
+    it('com layout da loja carregado, o envio vai como bitmap e o botão de layout aparece', async () => {
+      mockedListAgents.mockResolvedValue({ data: { results: [epson, zebraSemPapel, zebra] } });
+      const layout = { versao: 1, etiqueta: { largura: 33, altura: 22 }, papel: { largura: 107, colunas: 3, espaco: 2 },
+        elementos: [{ id: 'nome', tipo: 'texto', x: 1, y: 1, w: 30, h: 9, texto: '{name}', tamanho: 2.6 }] };
+      (carregarLayouts as jest.Mock).mockResolvedValue({ data: {
+        validade: { layout, padrao: false }, 'nutricao-qr': { layout, padrao: true }, produto: { layout, padrao: true },
+      } });
+      renderPage();
+      await screen.findByText('Marmita P');
+      await userEvent.click(screen.getByText('Validade (Elgin)'));
+      await userEvent.clear(screen.getByLabelText('Quantidade de etiquetas de Marmita P'));
+      await userEvent.type(screen.getByLabelText('Quantidade de etiquetas de Marmita P'), '1');
+      expect((await screen.findByTestId('etq-abrir-editor')).textContent).toContain('personalizado');
+      await userEvent.click(screen.getByTestId('etq-enviar-remoto'));
+      await waitFor(() => expect(mockedEnviar).toHaveBeenCalledTimes(1));
+      const body = mockedEnviar.mock.calls[0][0];
+      expect(body.motor).toBe('bitmap');
+      expect(body.layout.elementos[0].texto).toBe('{name}');
     });
 
     it('etiqueta de produto também vai para a impressora remota, gerando o código de quem não tem', async () => {
