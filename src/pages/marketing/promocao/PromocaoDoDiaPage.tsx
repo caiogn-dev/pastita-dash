@@ -137,19 +137,13 @@ export const PromocaoDoDiaPage: React.FC = () => {
             <EmptyState titulo="A loja não tem WhatsApp conectado" descricao="Conecte o WhatsApp em Configurações para a promoção sair por aqui." />
           )}
 
-          <Secao titulo="Quando e como sai" descricao="Marque o dia e o preço promocional em cada produto; aqui você só decide o envio.">
+          <Secao titulo="Quando e como sai" descricao="Sai sempre a promoção de AMANHÃ: na segunda vai a de terça, na terça a de quarta. Marque o dia e o preço promocional em cada produto; aqui você só decide o envio.">
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="flex items-center gap-3 text-sm text-fg-token sm:col-span-2">
                 <Switch ligado={config.ativo} onMudar={(v) => void gravar({ ...config, ativo: v })} rotulo="Enviar a promoção do dia automaticamente" desabilitado={salvando} />
                 Enviar automaticamente todo dia
               </label>
               <Input label="Horário do envio" type="time" value={config.hora} onChange={(e) => setConfig({ ...config, hora: e.target.value })} onBlur={() => void gravar(config)} />
-              <Select
-                rotulo="Anunciar a promoção de"
-                opcoes={[{ valor: 'amanha', rotulo: 'Amanhã (avisa na véspera)' }, { valor: 'hoje', rotulo: 'Hoje' }]}
-                valor={config.para}
-                onMudar={(v) => void gravar({ ...config, para: v as ConfigDaPromoDoDia['para'] })}
-              />
               <Select
                 rotulo="Para quem"
                 opcoes={[
@@ -220,7 +214,7 @@ export const PromocaoDoDiaPage: React.FC = () => {
                 {d.previa.card ? <img src={d.previa.card} alt="Card do dia" className="aspect-square w-40 rounded-md object-cover" /> : <div className="flex aspect-square w-40 items-center justify-center rounded-md border border-dashed border-border-token text-xs text-fg-muted-token">Sem card</div>}
                 <div>
                   <p className="text-xs text-fg-muted-token">{d.previa.quando}</p>
-                  <pre className="whitespace-pre-wrap font-sans text-sm text-fg-token">{d.previa.texto.replace('{nome}', 'Ana')}</pre>
+                  <pre className="whitespace-pre-wrap font-sans text-sm text-fg-token">{d.previa.texto.replace('{{nome}}', 'Ana').replace('{nome}', 'Ana')}</pre>
                 </div>
               </div>
             ) : (

@@ -14,6 +14,7 @@ export const DIAS: { valor: string; rotulo: string }[] = [
 export const TEXTO_PADRAO = 'Oi, {nome}! 🥗\n\n{dia} tem oferta na {loja}:\n\n{ofertas}\n\nPeça pelo cardápio: {cardapio}';
 
 export const CONFIG_PADRAO: ConfigDaPromoDoDia = {
+  // Sempre a véspera: às 18h de segunda sai a de terça. Não é opção.
   ativo: false, hora: '18:00', para: 'amanha', modo: 'janela', modelo: '', cards: {}, texto: TEXTO_PADRAO,
 };
 
