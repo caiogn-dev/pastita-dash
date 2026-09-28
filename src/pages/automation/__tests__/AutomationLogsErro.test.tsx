@@ -117,6 +117,37 @@ test('rejeição de requisição obsoleta não sobrepõe o resultado da mais rec
   expect(screen.getByText(/nenhum registro/i)).toBeInTheDocument();
 });
 
+test('carga inicial vazia + troca de filtro que falha → erro acionável, não "nenhum registro"', async () => {
+  // O latch "já carregou" não pode valer para OUTRA consulta: uma busca inicial
+  // que deu certo e veio vazia (vazio legítimo) não pode fazer uma troca de
+  // filtro que FALHA cair de novo no "Nenhum registro" — os logs em memória são
+  // da consulta anterior. A troca de parâmetros invalida o latch, então a falha
+  // na nova consulta volta a ser acionável.
+  listMock
+    .mockResolvedValueOnce({ results: [], count: 0 }) // carga inicial: vazio legítimo
+    .mockRejectedValueOnce(new Error('500')); // busca do novo filtro: falha
+
+  render(
+    <MemoryRouter>
+      <AutomationLogsPage />
+    </MemoryRouter>,
+  );
+
+  // Vazio legítimo da carga inicial.
+  expect(await screen.findByText(/nenhum registro/i)).toBeInTheDocument();
+
+  // Troca o filtro de telefone → nova consulta, que falha.
+  fireEvent.click(screen.getByRole('button', { name: /filtros/i }));
+  fireEvent.change(screen.getByPlaceholderText(/telefone/i), { target: { value: '11' } });
+
+  // Deve mostrar o erro acionável da nova consulta, NUNCA o "nenhum registro"
+  // herdado da consulta anterior.
+  expect(
+    await screen.findByText(/não foi possível carregar os registros/i),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/nenhum registro/i)).not.toBeInTheDocument();
+});
+
 test('sucesso → renderiza os registros, sem estado de erro', async () => {
   listMock.mockResolvedValue({ results: [umLog()], count: 1 });
 

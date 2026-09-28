@@ -81,6 +81,13 @@ const AutomationLogsPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // Uma nova combinação de página/filtros é OUTRA consulta: o que está em
+    // `logs` é da consulta anterior. Zera o latch para que uma falha na nova
+    // consulta caia em 'falhou' (erro acionável), não em 'vazio' herdando o
+    // "Nenhum registro" — nem mostre linhas de um filtro que não é mais o ativo.
+    // (Um refetch de MESMOS parâmetros — o botão de atualizar — não passa por
+    // aqui, então mantém o "cache manda" de `estadoDaLista`.)
+    setCarregouAlgumaVez(false);
     loadLogs();
   }, [page, filters]);
 
