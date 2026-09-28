@@ -144,6 +144,10 @@ const DesignerDeEtiqueta: React.FC = () => {
         const inicial = lay.data[modelo].layout;
         historico.current = new Historico(inicial);
         setLayoutRaw(inicial); setSelecionado(inicial.elementos[0]?.id ?? null);
+        // Zoom inicial: o maior degrau em que o rolo inteiro cabe na mesa.
+        const larguraMesa = (mesaRef.current?.clientWidth ?? 900) - REGUA - 40;
+        const cabe = ZOOMS.map((z, i) => [z, i] as const).filter(([z]) => z * inicial.papel.largura <= larguraMesa);
+        setZoomIdx(cabe.length ? cabe[cabe.length - 1][1] : 0);
         const casa = lista.find((a) => (modelo === 'produto' ? /zdesigner|zebra/i : /elgin/i).test(a.printer_name || '')) ?? lista[0];
         setAgente(casa?.id ?? '');
       } catch {
@@ -472,7 +476,7 @@ const DesignerDeEtiqueta: React.FC = () => {
                 {elemento.tipo === 'caixa' && (
                   <NumberField rotulo="Espessura" valor={elemento.espessura ?? 0.3} min={0.1} max={10} step={0.1} sufixo="mm" onMudar={(v) => patch({ espessura: v })} />
                 )}
-                <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
                   <NumberField rotulo="X" valor={elemento.x} min={0} max={300} step={0.1} sufixo="mm" onMudar={(v) => aplicar(moverElemento(layout, elemento.id, v - elemento.x, 0))} data-testid="prop-x" />
                   <NumberField rotulo="Y" valor={elemento.y} min={0} max={300} step={0.1} sufixo="mm" onMudar={(v) => aplicar(moverElemento(layout, elemento.id, 0, v - elemento.y))} data-testid="prop-y" />
                   <NumberField rotulo="Largura" valor={elemento.w} min={0.5} max={300} step={0.1} sufixo="mm" onMudar={(v) => aplicar(redimensionarPorAlca(layout, elemento.id, 'l', v - elemento.w, 0))} data-testid="prop-w" />
@@ -486,7 +490,7 @@ const DesignerDeEtiqueta: React.FC = () => {
 
           <div className="superficie p-3 space-y-2">
             <p className="text-sm font-semibold text-fg-token">Papel e rolo</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
               <NumberField rotulo="Etiqueta (largura)" valor={layout.etiqueta.largura} min={5} max={300} step={0.5} sufixo="mm" onMudar={(v) => setEtiqueta({ largura: v })} data-testid="lay-larg" />
               <NumberField rotulo="Etiqueta (altura)" valor={layout.etiqueta.altura} min={5} max={300} step={0.5} sufixo="mm" onMudar={(v) => setEtiqueta({ altura: v })} data-testid="lay-alt" />
               <NumberField rotulo="Colunas" valor={layout.papel.colunas} min={1} max={12} step={1} onMudar={(v) => setPapel({ colunas: Math.round(v) })} data-testid="lay-cols" />
@@ -517,7 +521,7 @@ const DesignerDeEtiqueta: React.FC = () => {
               <p className="text-xs text-fg-muted-token">
                 A grade desenha a moldura e uma régua em mm onde o programa acha que a etiqueta está. Se a moldura saiu 2 mm à direita da borda real, digite −2 em horizontal.
               </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-2">
                 <NumberField rotulo="Horizontal" valor={cal.desloc_x ?? 0} min={-30} max={30} step={0.5} sufixo="mm" onMudar={(v) => setCal((c) => ({ ...c, desloc_x: v }))} data-testid="cal-x" />
                 <NumberField rotulo="Vertical" valor={cal.desloc_y ?? 0} min={-15} max={15} step={0.5} sufixo="mm" onMudar={(v) => setCal((c) => ({ ...c, desloc_y: v }))} data-testid="cal-y" />
                 <NumberField rotulo="Escurecimento" valor={cal.escuro ?? 10} min={0} max={30} step={1} onMudar={(v) => setCal((c) => ({ ...c, escuro: v }))} data-testid="cal-escuro" />
