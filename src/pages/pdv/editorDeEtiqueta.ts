@@ -86,3 +86,108 @@ export const ajustarPapelAoBloco = (l: LayoutDeEtiqueta): LayoutDeEtiqueta =>
 /** Margem esquerda até a 1ª coluna (centralizada, salvo margem fixa). */
 export const margemEsquerda = (l: LayoutDeEtiqueta): number =>
   l.papel.margem != null ? l.papel.margem : Math.max(0, (l.papel.largura - blocoMm(l)) / 2);
+
+// ---------------------------------------------------------------------------
+// Designer: alças de redimensionar, guias de encaixe, camadas e histórico.
+// ---------------------------------------------------------------------------
+
+export const encaixar = (v: number, passo = 0.5): number => Number((Math.round(v / passo) * passo).toFixed(2));
+
+/** Alças no sentido da bússola: n, s, l (leste), o (oeste), nl, no, sl, so → aqui 'sd' = sul-direita etc. */
+export type Alca = 'n' | 's' | 'l' | 'o' | 'ne' | 'no' | 'sd' | 'so';
+
+export const redimensionarPorAlca = (l: LayoutDeEtiqueta, id: string, alca: Alca, dxMm: number, dyMm: number): LayoutDeEtiqueta =>
+  trocar(l, id, (e) => {
+    let { x, y, w, h } = e;
+    const direita = x + w; const baixo = y + h;
+    if (alca.includes('o')) { x = Math.min(Math.max(0, x + dxMm), direita - MINIMO); w = direita - x; }
+    if (alca === 'l' || alca === 'ne' || alca === 'sd') { w = Math.max(MINIMO, Math.min(w + dxMm, l.etiqueta.largura - x)); }
+    if (alca.includes('n')) { y = Math.min(Math.max(0, y + dyMm), baixo - MINIMO); h = baixo - y; }
+    if (alca.includes('s')) { h = Math.max(MINIMO, Math.min(h + dyMm, l.etiqueta.altura - y)); }
+    return { ...e, x: fixo(x), y: fixo(y), w: fixo(w), h: fixo(h) };
+  });
+
+export interface Guias { x: number[]; y: number[] }
+
+/** Onde vale encaixar: bordas e centro da etiqueta, bordas e centro dos outros elementos. */
+export const guiasDoLayout = (l: LayoutDeEtiqueta, ignorarId?: string): Guias => {
+  const x = new Set<number>([0, fixo(l.etiqueta.largura / 2), l.etiqueta.largura]);
+  const y = new Set<number>([0, fixo(l.etiqueta.altura / 2), l.etiqueta.altura]);
+  l.elementos.filter((e) => e.id !== ignorarId).forEach((e) => {
+    x.add(fixo(e.x)); x.add(fixo(e.x + e.w)); x.add(fixo(e.x + e.w / 2));
+    y.add(fixo(e.y)); y.add(fixo(e.y + e.h)); y.add(fixo(e.y + e.h / 2));
+  });
+  return { x: [...x], y: [...y] };
+};
+
+interface Caixa { x: number; y: number; w: number; h: number }
+
+const puxar = (bordas: number[], guias: number[], tol: number): { delta: number; guia: number } | null => {
+  let melhor: { delta: number; guia: number } | null = null;
+  for (const b of bordas) for (const g of guias) {
+    const d = g - b;
+    if (Math.abs(d) <= tol && (!melhor || Math.abs(d) < Math.abs(melhor.delta))) melhor = { delta: d, guia: g };
+  }
+  return melhor;
+};
+
+/** Se a borda esquerda/direita/centro (ou topo/base/centro) passa a `tol` mm de uma guia, cola nela. */
+export const encaixarNasGuias = (c: Caixa, g: Guias, tol: number): { x: number; y: number; guiaX: number | null; guiaY: number | null } => {
+  const px = puxar([c.x, c.x + c.w, c.x + c.w / 2], g.x, tol);
+  const py = puxar([c.y, c.y + c.h, c.y + c.h / 2], g.y, tol);
+  return {
+    x: fixo(c.x + (px?.delta ?? 0)), y: fixo(c.y + (py?.delta ?? 0)),
+    guiaX: px ? px.guia : null, guiaY: py ? py.guia : null,
+  };
+};
+
+export const duplicarElemento = (l: LayoutDeEtiqueta, id: string): LayoutDeEtiqueta => {
+  const e = l.elementos.find((x) => x.id === id);
+  if (!e) return l;
+  contador += 1;
+  const copia: ElementoDoLayout = {
+    ...e, id: `${e.tipo}-${Date.now().toString(36)}-${contador}`,
+    x: fixo(Math.min(e.x + 1, Math.max(0, l.etiqueta.largura - e.w))),
+    y: fixo(Math.min(e.y + 1, Math.max(0, l.etiqueta.altura - e.h))),
+  };
+  return { ...l, elementos: [...l.elementos, copia] };
+};
+
+export const moverCamada = (l: LayoutDeEtiqueta, id: string, direcao: 'cima' | 'baixo'): LayoutDeEtiqueta => {
+  const i = l.elementos.findIndex((e) => e.id === id);
+  const j = direcao === 'cima' ? i + 1 : i - 1;   // maior índice = desenhado por último = por cima
+  if (i < 0 || j < 0 || j >= l.elementos.length) return l;
+  const els = [...l.elementos]; [els[i], els[j]] = [els[j], els[i]];
+  return { ...l, elementos: els };
+};
+
+export const nomeDoElemento = (e: ElementoDoLayout): string => {
+  if (e.tipo === 'texto') return (e.texto || '').trim() || 'Texto';
+  return { qr: 'QR Code', barras: 'Código de barras', linha: 'Linha', caixa: 'Caixa', texto: 'Texto' }[e.tipo];
+};
+
+/** Desfazer/refazer: pilha simples, com o presente no topo de `passado`. */
+export class Historico {
+  private passado: LayoutDeEtiqueta[];
+  private futuro: LayoutDeEtiqueta[] = [];
+  constructor(inicial: LayoutDeEtiqueta, private limite = 100) { this.passado = [inicial]; }
+  get atual(): LayoutDeEtiqueta { return this.passado[this.passado.length - 1]; }
+  get podeDesfazer(): boolean { return this.passado.length > 1; }
+  get podeRefazer(): boolean { return this.futuro.length > 0; }
+  gravar(l: LayoutDeEtiqueta): void {
+    if (l === this.atual) return;
+    this.passado.push(l); this.futuro = [];
+    if (this.passado.length > this.limite) this.passado.shift();
+  }
+  desfazer(): LayoutDeEtiqueta | null {
+    if (!this.podeDesfazer) return null;
+    this.futuro.push(this.passado.pop() as LayoutDeEtiqueta);
+    return this.atual;
+  }
+  refazer(): LayoutDeEtiqueta | null {
+    const l = this.futuro.pop();
+    if (!l) return null;
+    this.passado.push(l);
+    return l;
+  }
+}

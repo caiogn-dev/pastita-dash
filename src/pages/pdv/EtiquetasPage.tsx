@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowDownTrayIcon, PrinterIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Card, Button, SearchInput, Select, ChoiceCards, FormSummary } from '../../components/ui';
@@ -19,10 +19,9 @@ import { ADICIONAL_ETIQUETA } from '../../services/billing';
 import { AdicionalBloqueado } from '../../components/billing/AdicionalBloqueado';
 import {
   enviarEtiquetasParaAgente, imprimeEtiquetas, listPrintAgents, PrintAgent,
-  carregarLayouts, LayoutsDaLoja, LayoutDeEtiqueta, ModeloDesenhavel, MODELOS_DESENHAVEIS,
+  carregarLayouts, LayoutsDaLoja, ModeloDesenhavel, MODELOS_DESENHAVEIS,
 } from '../../services/printing';
 import { NumField } from './NumField';
-import { EditorDeEtiqueta } from './EditorDeEtiqueta';
 
 const fmtDate = (d: Date) => d.toLocaleDateString('pt-BR');
 const MM_PX = 96 / 25.4;
@@ -135,6 +134,7 @@ const loadConfig = (): SavedConfig => {
 
 const EtiquetasPage: React.FC = () => {
   const { storeId } = useParams<{ storeId: string }>();
+  const navigate = useNavigate();
   const [catalog, setCatalog] = useState<CatalogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -165,7 +165,6 @@ const EtiquetasPage: React.FC = () => {
   // Layout desenhado por loja (uuid → modelos). Com ele carregado, o envio
   // remoto vai como bitmap: igual na Zebra e na Elgin, e a prévia é o real.
   const [layouts, setLayouts] = useState<Map<string, LayoutsDaLoja>>(new Map());
-  const [editorAberto, setEditorAberto] = useState(false);
   const chaveDosLotes = `${LOTES_KEY}:${storeId ?? 'all'}`;
   const [lotes, setLotes] = useState<Lote[]>(() => lerLotes(chaveDosLotes));
   const guardarLote = useCallback((tpl: Template, itens: Lote['itens']) => {
@@ -366,13 +365,6 @@ const EtiquetasPage: React.FC = () => {
   }, [uuidDaSelecao, layouts]);
   const modeloDesenhavel = (MODELOS_DESENHAVEIS as string[]).includes(template) ? (template as ModeloDesenhavel) : null;
   const layoutDaVez = modeloDesenhavel && uuidDaSelecao ? layouts.get(uuidDaSelecao)?.[modeloDesenhavel] ?? null : null;
-  const guardarLayout = (layout: LayoutDeEtiqueta, padrao: boolean) => {
-    if (!uuidDaSelecao || !modeloDesenhavel) return;
-    setLayouts((m) => {
-      const atual = m.get(uuidDaSelecao);
-      return atual ? new Map(m).set(uuidDaSelecao, { ...atual, [modeloDesenhavel]: { layout, padrao } }) : m;
-    });
-  };
   const agenteDaVez = agentesDaSelecao.find((a) => a.id === agenteEscolhido);
   const envioRemotoDisponivel = !nutricaoBloqueada
     && (lojaDaSelecao ? agentesDaSelecao.length > 0 : agentes.size > 0);
@@ -890,22 +882,10 @@ const EtiquetasPage: React.FC = () => {
                 Sai direto na {agenteDaVez?.printer_name ?? 'Zebra'}{agenteDaVez && !agenteDaVez.is_online ? ' (offline agora: fica na fila)' : ''}.
               </p>
               {layoutDaVez && uuidDaSelecao && modeloDesenhavel && (
-                <>
-                  <Button variant="secondary" size="sm" className="w-full" onClick={() => setEditorAberto(true)} data-testid="etq-abrir-editor">
-                    Layout e calibração{layoutDaVez.padrao ? '' : ' (personalizado)'}
-                  </Button>
-                  <EditorDeEtiqueta
-                    open={editorAberto}
-                    onClose={() => setEditorAberto(false)}
-                    storeUuid={uuidDaSelecao}
-                    modelo={modeloDesenhavel}
-                    layout={layoutDaVez.layout}
-                    padrao={layoutDaVez.padrao}
-                    agentes={agentesDaSelecao}
-                    agenteInicial={agenteEscolhido}
-                    onSalvo={guardarLayout}
-                  />
-                </>
+                <Button variant="secondary" size="sm" className="w-full"
+                  onClick={() => navigate(`/stores/${lojaDaSelecao}/etiquetas/desenho/${modeloDesenhavel}`)} data-testid="etq-abrir-editor">
+                  Desenhar etiqueta e calibrar{layoutDaVez.padrao ? '' : ' (personalizado)'}
+                </Button>
               )}
             </div>
           )}

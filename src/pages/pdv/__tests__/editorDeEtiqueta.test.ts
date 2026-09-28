@@ -67,3 +67,73 @@ describe('editor de etiqueta — geometria', () => {
     expect(ajustarPapelAoBloco(l).papel.largura).toBe(103);
   });
 });
+
+import {
+  encaixar, redimensionarPorAlca, guiasDoLayout, encaixarNasGuias, duplicarElemento, moverCamada, Historico,
+  nomeDoElemento,
+} from '../editorDeEtiqueta';
+
+describe('designer — alças, guias, camadas e histórico', () => {
+  it('encaixa em 0,5 mm por padrão', () => {
+    expect(encaixar(3.26)).toBe(3.5); expect(encaixar(3.24)).toBe(3); expect(encaixar(3.26, 0.1)).toBe(3.3);
+  });
+
+  it('alça direita-baixo muda só largura e altura; alça esquerda move X e encolhe W', () => {
+    const l = base();
+    const a = redimensionarPorAlca(l, 'val', 'sd', 2, 1);       // sudeste
+    expect(a.elementos[1]).toMatchObject({ x: 1.6, y: 17.6, w: 31.4, h: 4.4 });
+    const b = redimensionarPorAlca(l, 'val', 'o', 1, 0);         // oeste: x avança, w encolhe
+    expect(b.elementos[1]).toMatchObject({ x: 2.6, w: 28.8 });
+    const c = redimensionarPorAlca(l, 'val', 'n', 0, -100);      // norte: y não passa de 0
+    expect(c.elementos[1].y).toBe(0);
+    expect(c.elementos[1].h).toBeCloseTo(17.6 + 3.4, 5);
+    const d = redimensionarPorAlca(l, 'val', 'sd', -100, -100);  // nunca menor que 0,5
+    expect(d.elementos[1].w).toBe(0.5); expect(d.elementos[1].h).toBe(0.5);
+  });
+
+  it('guias: bordas e centro da etiqueta + bordas dos outros elementos', () => {
+    const g = guiasDoLayout(base(), 'val');
+    expect(g.x).toEqual(expect.arrayContaining([0, 16.5, 33, 1.6, 31.4]));
+    expect(g.y).toEqual(expect.arrayContaining([0, 11, 22, 1.4, 10.4]));
+    expect(g.y).not.toContain(17.6);   // o próprio elemento não vira guia dele mesmo
+  });
+
+  it('encaixar nas guias puxa borda ou centro quando passa perto', () => {
+    const g = { x: [0, 16.5, 33], y: [0, 11, 22] };
+    // borda esquerda em 0,3 → 0; nada em y
+    expect(encaixarNasGuias({ x: 0.3, y: 5, w: 10, h: 2 }, g, 0.5)).toEqual({ x: 0, y: 5, guiaX: 0, guiaY: null });
+    // centro em 16,6 (x 11,6 + 5) → centraliza em 16,5
+    expect(encaixarNasGuias({ x: 11.6, y: 5, w: 10, h: 2 }, g, 0.5)).toEqual({ x: 11.5, y: 5, guiaX: 16.5, guiaY: null });
+    // longe de tudo: não mexe
+    expect(encaixarNasGuias({ x: 5, y: 5, w: 3, h: 2 }, g, 0.5)).toEqual({ x: 5, y: 5, guiaX: null, guiaY: null });
+  });
+
+  it('duplicar cria cópia deslocada com id novo; mover camada troca a ordem', () => {
+    const l = duplicarElemento(base(), 'nome');
+    expect(l.elementos).toHaveLength(3);
+    expect(l.elementos[2]).toMatchObject({ x: 2.6, y: 2.4, texto: '{name}' });
+    expect(l.elementos[2].id).not.toBe('nome');
+    expect(moverCamada(base(), 'nome', 'cima').elementos.map((e) => e.id)).toEqual(['val', 'nome']);
+    expect(moverCamada(base(), 'nome', 'baixo').elementos.map((e) => e.id)).toEqual(['nome', 'val']);
+  });
+
+  it('histórico: desfaz e refaz, e um novo passo apaga o futuro', () => {
+    const h = new Historico(base());
+    const l2 = moverElemento(base(), 'val', 1, 0);
+    h.gravar(l2);
+    expect(h.podeDesfazer).toBe(true); expect(h.podeRefazer).toBe(false);
+    expect(h.desfazer()).toEqual(base());
+    expect(h.podeRefazer).toBe(true);
+    expect(h.refazer()).toEqual(l2);
+    h.desfazer(); h.gravar(moverElemento(base(), 'val', 2, 0));
+    expect(h.podeRefazer).toBe(false);
+    expect(h.desfazer()).toEqual(base());
+    expect(h.desfazer()).toBeNull();
+  });
+
+  it('nome legível do elemento para a lista de camadas', () => {
+    expect(nomeDoElemento({ id: 'a', tipo: 'texto', x: 0, y: 0, w: 1, h: 1, texto: 'Val.: {val}' })).toBe('Val.: {val}');
+    expect(nomeDoElemento({ id: 'a', tipo: 'qr', x: 0, y: 0, w: 1, h: 1, campo: 'publicUrl' })).toBe('QR Code');
+    expect(nomeDoElemento({ id: 'a', tipo: 'barras', x: 0, y: 0, w: 1, h: 1 })).toBe('Código de barras');
+  });
+});
