@@ -118,7 +118,10 @@ export default function ConnectionsPage() {
   const [whatsapps, setWhatsapps] = useState<ContaWhatsApp[]>([]);
   const [instagrams, setInstagrams] = useState<ContaInstagram[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState(false);
+  const [erroWhatsapp, setErroWhatsapp] = useState(false);
+  const [erroInstagram, setErroInstagram] = useState(false);
+  // Qualquer um dos dois canais que não carregou já dispara o aviso do topo.
+  const erro = erroWhatsapp || erroInstagram;
   const [instagramIndisponivel, setInstagramIndisponivel] = useState(false);
   const [conectandoInstagram, setConectandoInstagram] = useState(false);
   const limparLoginInstagram = useRef<(() => void) | null>(null);
@@ -134,8 +137,11 @@ export default function ConnectionsPage() {
     }
     if (ig.status === 'fulfilled') setInstagrams(ig.value as ContaInstagram[]);
     // Falha ao carregar não pode virar "nada conectado" — o lojista tentaria
-    // conectar de novo algo que já está ligado.
-    setErro(wa.status === 'rejected');
+    // conectar de novo algo que já está ligado. Cada canal guarda a SUA falha:
+    // se só o Instagram cai, o WhatsApp segue mostrando o que carregou (e
+    // vice-versa), mas o canal que caiu não finge estar "não conectado".
+    setErroWhatsapp(wa.status === 'rejected');
+    setErroInstagram(ig.status === 'rejected');
     setCarregando(false);
   }, []);
 
@@ -287,7 +293,7 @@ export default function ConnectionsPage() {
         <div className="flex flex-col gap-6">
           <div className="grid gap-5 lg:grid-cols-2">
             {/* ── WhatsApp ── */}
-            {whatsapps.length === 0 && !erro && (
+            {whatsapps.length === 0 && !erroWhatsapp && (
               <Cartao icone={<WhatsAppIcon size={48} />} titulo="WhatsApp" subtitulo="Ainda não conectado">
                 <ul className="flex flex-col gap-3">
                   <Beneficio titulo="Seus clientes recebem sozinhos">a confirmação do pedido, o PIX e cada mudança de status.</Beneficio>
@@ -378,7 +384,7 @@ export default function ConnectionsPage() {
                   <button type="button" className={botaoDiscreto} onClick={() => desconectarInstagram(instagramAtivo)}>Desconectar</button>
                 </div>
               </Cartao>
-            ) : (
+            ) : erroInstagram ? null : (
               <Cartao icone={<InstagramIcon size={48} />} titulo="Instagram" subtitulo="Ainda não conectado">
                 <ul className="flex flex-col gap-3">
                   <Beneficio titulo="Direct no mesmo lugar">que o WhatsApp — responda tudo numa tela só.</Beneficio>
