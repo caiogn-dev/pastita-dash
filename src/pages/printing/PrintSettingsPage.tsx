@@ -32,6 +32,10 @@ import {
   deletePrintAgent,
   listPrintJobs,
   requeuePrintJob,
+  imprimeEtiquetas,
+  enviarEtiquetasParaAgente,
+  carregarLayouts,
+  LayoutDeEtiqueta,
 } from '../../services/printing';
 import { PageShell, Tabela, RowActions } from '../../components/ui';
 import {
@@ -150,6 +154,24 @@ const PrintSettingsPage: React.FC = () => {
     }
   };
 
+  // Uma linha de exemplo no layout da loja: prova que a impressora, a chave e
+  // o layout estão conversando, sem precisar abrir a tela de Etiquetas.
+  const handleTesteDeEtiqueta = async (agent: PrintAgent) => {
+    try {
+      let layout: LayoutDeEtiqueta | undefined;
+      try { layout = (await carregarLayouts(agent.store)).data.validade.layout; } catch { layout = undefined; }
+      const colunas = layout?.papel.colunas ?? 1;
+      const exemplo = { name: 'Etiqueta de teste', manip: new Date().toLocaleDateString('pt-BR'), val: new Date(Date.now() + 5 * 86400000).toLocaleDateString('pt-BR') };
+      await enviarEtiquetasParaAgente({
+        store: agent.store, agent: agent.id, modelo: 'validade', etiquetas: Array.from({ length: colunas }, () => exemplo),
+        ...(layout ? { motor: 'bitmap' as const, layout } : { config: { cols: 3, labelW: 33, labelH: 22, gap: 2, paperW: 107 } }),
+      });
+      toast.success(`Teste enviado para ${agent.name}.`);
+    } catch {
+      toast.error('Não foi possível enviar o teste.');
+    }
+  };
+
   // O que o agente imprime. Marcar/desmarcar grava na hora: é uma decisão
   // de bancada ("o pc da produção fica só com etiquetas"), não um formulário.
   const handleTogglePapel = async (agent: PrintAgent, papel: PapelDoAgente) => {
@@ -221,7 +243,7 @@ const PrintSettingsPage: React.FC = () => {
         {loading ? 'Atualizando…' : 'Atualizar'}
         </Button>
         <Button onClick={() => setIsCreateOpen(true)} leftIcon={<PlusIcon className="w-4 h-4" />}>
-        Novo agente
+        Novo computador
         </Button>
         </div>
       }
@@ -238,13 +260,13 @@ const PrintSettingsPage: React.FC = () => {
           vazio={{
             titulo: 'Nenhum agente configurado',
             descricao:
-              'Instale o print-agent no computador do caixa (Windows + impressora térmica), crie um agente aqui e cole a chave no config/agent.json.',
+              'Crie um computador aqui e cole a chave no programa de impressão instalado nele.',
             icone: <PrinterIcon className="h-12 w-12" />,
           }}
           colunas={[
             {
               chave: 'agente',
-              cabecalho: 'Agente',
+              cabecalho: 'Computador',
               render: (a) => (
                 <div className="min-w-0">
                   <p className="font-medium text-fg-token">{a.name}</p>
@@ -385,15 +407,20 @@ const PrintSettingsPage: React.FC = () => {
                 // a atual e para a impressão do caixa até alguém colar a nova —
                 // um pictograma não avisa isso.
                 <RowActions
-                  rotulo={`Ações do agente ${a.name}`}
+                  rotulo={`Ações de ${a.name}`}
                   acoes={[
+                    ...(imprimeEtiquetas(a) ? [{
+                      rotulo: 'Imprimir etiqueta de teste',
+                      icone: <PrinterIcon className="h-4 w-4" />,
+                      onClick: () => handleTesteDeEtiqueta(a),
+                    }] : []),
                     {
                       rotulo: 'Gerar nova chave',
                       icone: <KeyIcon className="h-4 w-4" />,
                       onClick: () => handleRotateKey(a),
                     },
                     {
-                      rotulo: 'Remover agente',
+                      rotulo: 'Remover computador',
                       icone: <TrashIcon className="h-4 w-4" />,
                       destrutiva: true,
                       onClick: () => handleDelete(a),
