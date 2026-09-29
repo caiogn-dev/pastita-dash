@@ -58,7 +58,6 @@ const CSS_FONTE: Record<string, string> = {
   serif: '"Times New Roman", "Liberation Serif", Times, serif',
   mono: '"Courier New", "Liberation Mono", monospace',
 };
-const ALINHAR = [{ valor: 'esquerda', rotulo: 'Esquerda' }, { valor: 'centro', rotulo: 'Centro' }, { valor: 'direita', rotulo: 'Direita' }];
 const MODOS_DE_MIDIA = [
   { valor: 'gap', rotulo: 'Picotado com vão (gap)' },
   { valor: 'continuo', rotulo: 'Contínuo (sem vão)' },
@@ -427,7 +426,7 @@ const DesignerDeEtiqueta: React.FC = () => {
             <Ferramenta rotulo="Código de barras" onClick={() => adicionar('barras')}><Bars3Icon className="w-4 h-4 rotate-90" /></Ferramenta>
             <Ferramenta rotulo="Linha" onClick={() => adicionar('linha')}><MinusIcon className="w-4 h-4" /></Ferramenta>
             <Ferramenta rotulo="Caixa" onClick={() => adicionar('caixa')}><StopIcon className="w-4 h-4" /></Ferramenta>
-            {modelo === 'nutricao' && (
+            {(
               <>
                 <Separador />
                 <Ferramenta rotulo="Tabela nutricional" onClick={() => adicionar('tabela')} data-testid="tool-tabela"><TableCellsIcon className="w-4 h-4" /><span>Tabela</span></Ferramenta>

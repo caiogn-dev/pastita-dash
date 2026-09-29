@@ -347,6 +347,31 @@ const EtiquetasPage: React.FC = () => {
   const montarEtiquetasDeValidade = () =>
     expandCopies((c) => ({ name: c.product.name, manip: fmtDate(manip), val: fmtDate(val) }));
 
+  /** Tudo que se sabe do produto, para QUALQUER modelo: o desenho escolhe o
+   *  que usa. Um layout de QR pode ter {val}; um de validade pode ter QR. */
+  const dadosNutricionais = (c: CatalogEntry) => {
+    const profile = profiles.get(c.product.id);
+    if (!profile) return {};
+    const calc = profile.calculation;
+    const calculated = calc?.label_per_100g ?? calc?.per_100g;
+    const keys = ['energy_kcal','carbohydrates_g','total_sugars_g','added_sugars_g','protein_g','total_fat_g','saturated_fat_g','trans_fat_g','fiber_g','sodium_mg'];
+    const num = (raw: unknown) => (raw == null || raw === '' ? null : Number(raw));
+    const porcao = calc?.label_per_serving;
+    return {
+      servingG: Number(profile.serving_size_g || 100), householdMeasure: profile.household_measure,
+      per100g: Object.fromEntries(keys.map((key) => [key, num(calculated?.[key] ?? profile[key])])),
+      perServing: porcao ? Object.fromEntries(keys.map((key) => [key, num(porcao[key])])) : undefined,
+      allergens: calc?.allergens?.texto || undefined,
+      frontOfPack: calc?.front_of_pack?.conclusivo ? calc.front_of_pack.texto : undefined,
+      publicUrl: profile.public_url,
+      servingsPerContainer: profile.porcoes_por_embalagem != null && profile.porcoes_por_embalagem !== '' ? Number(profile.porcoes_por_embalagem) : undefined,
+      ingredients: profile.ingredientes_declaracao || undefined,
+    };
+  };
+  const dadosCompletos = (c: CatalogEntry, barcode?: string) => ({
+    ...produtoLabel(c, barcode), manip: fmtDate(manip), val: fmtDate(val), ...dadosNutricionais(c),
+  });
+
   // Loja única da seleção: o job é de UMA loja e de UM agent.
   const lojaDaSelecao = useMemo(() => {
     const slugs = new Set(selected.map((c) => c.storeSlug));
@@ -397,12 +422,24 @@ const EtiquetasPage: React.FC = () => {
     if (!agent) { toast.error('Escolha o programa de impressão que está com a Zebra.'); return; }
     setEnviando(true);
     try {
-      const etiquetas = template === 'produto'
-        ? await (async () => { const codes = await garantirCodigos(); return expandCopies((c) => produtoLabel(c, codes.get(c.product.id))); })()
-        : template === 'validade' ? montarEtiquetasDeValidade() : montarEtiquetasNutricionais();
-      if (template !== 'validade' && template !== 'produto' && etiquetas.length !== totalLabels) {
-        toast.error('Alguns produtos selecionados ainda não têm perfil nutricional.');
-        return;
+      let etiquetas: unknown[];
+      if (layoutDaVez) {
+        // Layout desenhado: cada etiqueta leva tudo que se sabe do produto.
+        const precisaDeCodigo = template === 'produto' || layoutDaVez.layout.elementos.some((e) => e.tipo === 'barras');
+        const codes = precisaDeCodigo ? await garantirCodigos() : new Map<string, string>();
+        etiquetas = expandCopies((c) => dadosCompletos(c, codes.get(c.product.id)));
+        if ((template === 'nutricao' || template === 'nutricao-qr') && selected.some((c) => !profiles.get(c.product.id))) {
+          toast.error('Alguns produtos selecionados ainda não têm perfil nutricional.');
+          return;
+        }
+      } else {
+        etiquetas = template === 'produto'
+          ? await (async () => { const codes = await garantirCodigos(); return expandCopies((c) => produtoLabel(c, codes.get(c.product.id))); })()
+          : template === 'validade' ? montarEtiquetasDeValidade() : montarEtiquetasNutricionais();
+        if (template !== 'validade' && template !== 'produto' && etiquetas.length !== totalLabels) {
+          toast.error('Alguns produtos selecionados ainda não têm perfil nutricional.');
+          return;
+        }
       }
       await enviarEtiquetasParaAgente({
         store: selected[0].product.store,
@@ -555,10 +592,7 @@ const EtiquetasPage: React.FC = () => {
   const [previaReal, setPreviaReal] = useState<{ png: string; largura: number; altura: number; chave: string } | null>(null);
   const amostraDaPrevia = useMemo(() => {
     if (!modeloDesenhavel) return null;
-    if (template === 'produto') return selected[0] ? produtoLabel(selected[0]) : null;
-    if (template === 'validade') return selected[0] ? { name: selected[0].product.name, manip: fmtDate(manip), val: fmtDate(val) } : null;
-    const nutri = montarEtiquetasNutricionais();
-    return nutri[0] ?? null;
+    return selected[0] ? dadosCompletos(selected[0]) : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modeloDesenhavel, template, selected, cfg.shelfDays, profiles]);
   useEffect(() => {
@@ -647,7 +681,7 @@ const EtiquetasPage: React.FC = () => {
           />
           {layoutDaVez && modeloDesenhavel ? (
             <section className="space-y-3" data-testid="etq-layout-da-loja">
-              {template === 'validade' && (
+              {(
                 <>
                   <p className="superficie px-3 py-2 text-sm text-fg-token" data-testid="etq-validade-frase">
                     Produzido hoje ({fmtDate(manip)}), vence {DIAS_DA_SEMANA[val.getDay()]} {fmtDate(val)}.

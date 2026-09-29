@@ -292,6 +292,10 @@ describe('EtiquetasPage', () => {
       const body = mockedEnviar.mock.calls[0][0];
       expect(body.motor).toBe('bitmap');
       expect(body.layout.elementos[0].texto).toBe('{name}');
+      // com layout, a etiqueta leva TUDO do produto — o desenho escolhe o que usa
+      expect(body.etiquetas[0].val).toMatch(/\d{2}\/\d{2}\/\d{4}/);
+      expect(body.etiquetas[0].manip).toMatch(/\d{2}\/\d{2}\/\d{4}/);
+      expect(body.etiquetas[0].price).toBeTruthy();
     });
 
     it('etiqueta de produto também vai para a impressora remota, gerando o código de quem não tem', async () => {
