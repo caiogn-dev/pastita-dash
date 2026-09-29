@@ -18,6 +18,7 @@
  * mil linhas que ele não pode revisar vira ruído que ensina a ignorar.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { formatarNutriente } from './rotulosDeNutriente';
 import { useParams } from 'react-router-dom';
 import { BeakerIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
@@ -334,7 +335,7 @@ function IngredientesDaLoja() {
           colunas={[
             {
               chave: 'ingrediente',
-              cabecalho: 'Ingrediente',
+              cabecalho: 'Ingrediente · por 100 g',
               render: (i) => (
                 <div className="min-w-0">
                   <span className="font-medium text-fg-token">{i.display_name}</span>
@@ -366,13 +367,12 @@ function IngredientesDaLoja() {
             },
             ...nutrients.map((n) => ({
               chave: n.key,
-              cabecalho: `${n.label} (${n.unit}/100g)`,
+              cabecalho: `${n.label} (${n.unit})`,
               alinhamento: 'direita' as const,
               classe: 'tabular-nums max-xl:hidden',
               // Em branco quando não se sabe. Virar zero aqui é mentira no
               // rótulo — e rótulo errado é multa da ANVISA.
-              render: (i: (typeof visible)[number]) =>
-                i[n.key] == null ? '—' : String(i[n.key]),
+              render: (i: (typeof visible)[number]) => formatarNutriente(n.key, i[n.key]),
             })),
             {
               chave: 'acoes',

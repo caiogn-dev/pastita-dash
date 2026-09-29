@@ -38,3 +38,16 @@ describe('rótulos de nutriente', () => {
     expect(listaDeNomes(['Salmão', 'Alface'])).toBe('Salmão e Alface');
   });
 });
+
+import { formatarNutriente, unidadeDeNutriente } from '../rotulosDeNutriente';
+describe('formatarNutriente', () => {
+  it('kcal e mg sem casa, gramas com 1 casa, vazio vira travessão', () => {
+    expect(formatarNutriente('energy_kcal', '373.3333')).toBe('373');
+    expect(formatarNutriente('sodium_mg', 126.6667)).toBe('127');
+    expect(formatarNutriente('protein_g', '13.0000')).toBe('13');
+    expect(formatarNutriente('fiber_g', '9.6667')).toBe('9,7');
+    expect(formatarNutriente('trans_fat_g', null)).toBe('—');
+    expect(formatarNutriente('trans_fat_g', '0.0000')).toBe('0');
+    expect(unidadeDeNutriente('sodium_mg')).toBe('mg');
+  });
+});

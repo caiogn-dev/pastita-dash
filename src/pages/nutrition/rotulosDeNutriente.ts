@@ -38,3 +38,23 @@ export function listaDeNomes(nomes: string[] = []): string {
   if (nomes.length > 3) return `${nomes.slice(0, 3).join(', ')} e mais ${nomes.length - 3}`;
   return `${nomes.slice(0, -1).join(', ')} e ${nomes[nomes.length - 1]}`;
 }
+
+/**
+ * Número de nutriente como se lê numa tabela: "373", "13,3", "0,3".
+ * O banco guarda 4 casas ("373.3333"); a tela mostrava isso cru.
+ * kcal e mg sem casa decimal; gramas com até 1 casa. Vazio é travessão, nunca zero.
+ */
+export function formatarNutriente(campo: string, valor: unknown): string {
+  if (valor === null || valor === undefined || valor === '') return '—';
+  const n = Number(valor);
+  if (!Number.isFinite(n)) return '—';
+  const inteiro = campo.endsWith('_kcal') || campo.endsWith('_mg');
+  return n.toLocaleString('pt-BR', { maximumFractionDigits: inteiro ? 0 : 1, minimumFractionDigits: 0 });
+}
+
+/** Unidade do nutriente para rótulo curto. */
+export function unidadeDeNutriente(campo: string): string {
+  if (campo.endsWith('_kcal')) return 'kcal';
+  if (campo.endsWith('_mg')) return 'mg';
+  return 'g';
+}

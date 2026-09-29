@@ -58,7 +58,6 @@
   "pages/cash/CashPage.tsx": 4,
   "pages/marketing/email/NewCampaignPage.tsx": 1,
   "pages/messenger/MessengerAccounts.tsx": 6,
-  "pages/nutrition/RecipeBuilder.tsx": 11,
   "pages/nutrition/RevisaoDeAlergenicos.tsx": 2,
   "pages/nutrition/SeletorDeIngrediente.tsx": 1,
   "pages/payments/PaymentLinkPage.tsx": 2,
