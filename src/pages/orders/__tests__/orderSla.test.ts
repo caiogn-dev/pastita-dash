@@ -89,3 +89,39 @@ describe('situacaoDoPreparo', () => {
     expect(situacaoDoPreparo({ status: 'preparing', prep_due_at: 'lixo' }, agora)).toBeNull();
   });
 });
+
+import { prazoDoAgendado } from '../orderSla';
+
+describe('preparo médio sem distorção de agendado', () => {
+  it('ignora pedido agendado e tempo que não é de cozinha (> 4 h); usa a mediana', () => {
+    const base = { status: 'ready', created_at: '2026-09-29T10:00:00Z' };
+    const orders = [
+      { ...base, confirmed_at: '2026-09-29T10:00:00Z', ready_at: '2026-09-29T10:20:00Z' },            // 20
+      { ...base, confirmed_at: '2026-09-29T11:00:00Z', ready_at: '2026-09-29T11:30:00Z' },            // 30
+      { ...base, confirmed_at: '2026-09-29T12:00:00Z', ready_at: '2026-09-29T12:25:00Z' },            // 25
+      { ...base, confirmed_at: '2026-09-26T09:00:00Z', ready_at: '2026-09-29T09:00:00Z', scheduled_date: '2026-09-29' }, // agendado: fora
+      { ...base, confirmed_at: '2026-09-28T09:00:00Z', ready_at: '2026-09-29T09:00:00Z' },            // 24 h: esqueceram de avançar
+    ];
+    expect(getAvgPrepMinutes(orders as never)).toBe(25);
+  });
+  it('usa preparing_at → ready_at quando existe (tempo real de cozinha)', () => {
+    const o = { status: 'ready', created_at: '2026-09-29T10:00:00Z', confirmed_at: '2026-09-29T10:00:00Z', preparing_at: '2026-09-29T10:40:00Z', ready_at: '2026-09-29T10:55:00Z' };
+    expect(getAvgPrepMinutes([o] as never)).toBe(15);
+  });
+});
+
+describe('prazoDoAgendado', () => {
+  const agora = new Date('2026-09-29T15:00:00-03:00');
+  it('agendado para depois: faltam N min e não é atraso', () => {
+    const p = prazoDoAgendado({ status: 'confirmed', scheduled_date: '2026-09-30', scheduled_time: '14:00:00' } as never, agora);
+    expect(p).toEqual({ faltamMin: 23 * 60, atrasadoMin: 0 });
+  });
+  it('horário do agendado passou e não saiu da etapa: atraso conta do horário, não da criação', () => {
+    const p = prazoDoAgendado({ status: 'confirmed', scheduled_date: '2026-09-29', scheduled_time: '14:30:00' } as never, agora);
+    expect(p).toEqual({ faltamMin: 0, atrasadoMin: 30 });
+  });
+  it('sem agendamento, ou já em preparo, não se aplica', () => {
+    expect(prazoDoAgendado({ status: 'confirmed' } as never, agora)).toBeNull();
+    expect(prazoDoAgendado({ status: 'preparing', scheduled_date: '2026-09-29', scheduled_time: '14:30:00' } as never, agora)).toBeNull();
+  });
+});

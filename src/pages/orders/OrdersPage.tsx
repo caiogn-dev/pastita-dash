@@ -70,7 +70,7 @@ import type { Order } from '../../types';
 import { COLUMNS, resolveFocusColumn } from './orderColumns';
 import { pedidosDaColuna, ENTREGUES_DE_HOJE } from './pedidosDoQuadro';
 import type { ColumnId } from './orderColumns';
-import { getStageStart, getAvgPrepMinutes, situacaoDoPreparo } from './orderSla';
+import { getStageStart, getAvgPrepMinutes, prazoDoAgendado, situacaoDoPreparo } from './orderSla';
 import { proximaAcaoDoPedido } from './proximaAcao';
 import { saldoDoPedido } from './saldoDoPedido';
 import { formatCurrency } from '../../utils/formatters';
@@ -115,6 +115,7 @@ const formatElapsed = (minutes: number): string => {
   if (minutes < 60) return `${minutes}min`;
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
+  if (h >= 48) return `${Math.floor(h / 24)} dias`;
   return m > 0 ? `${h}h ${m}min` : `${h}h`;
 };
 
@@ -172,9 +173,13 @@ const OrderCardBase: React.FC<CardProps> = ({
   // Com previsão de preparo, o atraso é contra a PREVISÃO da loja, não contra
   // os 20/40min fixos. Sem previsão, fica a régua antiga do tempo decorrido.
   const preparo = situacaoDoPreparo(order);
+  // Agendado que ainda não entrou em preparo: prazo é o horário marcado.
+  const agendado = preparo ? null : prazoDoAgendado(order);
   const urgency: ElapsedUrgency = preparo
     ? (preparo.atrasadoMin > 0 ? 'critical' : preparo.faltamMin <= 5 ? 'warning' : 'ok')
-    : getElapsedUrgency(elapsed, order.status);
+    : agendado
+      ? (agendado.atrasadoMin > 0 ? 'critical' : agendado.faltamMin <= 30 ? 'warning' : 'ok')
+      : getElapsedUrgency(elapsed, order.status);
   const isPickup = order.delivery_method === 'pickup' || order.delivery_method === 'digital';
   const canRequestUber =
     storeSlug &&
@@ -212,7 +217,13 @@ const OrderCardBase: React.FC<CardProps> = ({
         <div className="flex items-center gap-1">
           {isUpdating && <ArrowPathIcon className="h-3 w-3 text-brand-ink animate-spin" />}
           {isSuccess && <SeloDeEstado tone="success" className="px-1.5 text-badge">Movido</SeloDeEstado>}
-          {!isUpdating && !isSuccess && elapsed > 0 && (
+          {!isUpdating && !isSuccess && agendado && (
+            <SeloDeEstado tone={tomDoPrazo(urgency)} className="gap-0.5 px-1.5 text-badge" data-testid="prazo-agendado">
+              <ClockIcon className="h-2.5 w-2.5" aria-hidden />
+              {agendado.atrasadoMin > 0 ? `Atrasado ${formatElapsed(agendado.atrasadoMin)}` : `em ${formatElapsed(agendado.faltamMin)}`}
+            </SeloDeEstado>
+          )}
+          {!isUpdating && !isSuccess && !agendado && elapsed > 0 && (
             <SeloDeEstado tone={tomDoPrazo(urgency)} className="gap-0.5 px-1.5 text-badge">
               <ClockIcon className="h-2.5 w-2.5" aria-hidden />
               {formatElapsed(elapsed)}
@@ -814,7 +825,7 @@ export const OrdersPage: React.FC = () => {
                   className="max-md:hidden"
                   title="Tempo médio entre confirmação e pronto (pedidos carregados)"
                 >
-                  <SeloDeEstado tone="neutral">Preparo médio: {avgPrepMinutes}min</SeloDeEstado>
+                  <SeloDeEstado tone="neutral">Preparo típico: {formatElapsed(avgPrepMinutes)}</SeloDeEstado>
                 </span>
               )}
               {focusColumn && (
