@@ -227,7 +227,7 @@ export default function AutomationsPage() {
     <PageShell
       trilha={[{ rotulo: 'Automação' }, { rotulo: 'E-mail' }]}
       titulo="Automações de e-mail"
-      descricao="E-mails que saem sozinhos quando algo acontece com o pedido ou o cliente."
+     
       acoes={
         <Button leftIcon={<PlusIcon className="h-5 w-5" />} onClick={() => setShowCreateModal(true)}>
           Nova automação
@@ -377,9 +377,6 @@ export default function AutomationsPage() {
 
           <div className="rounded-lg bg-surface-2 p-4">
             <p className="mb-1 text-sm font-medium text-fg-token">Variáveis disponíveis</p>
-            <p className="mb-2 text-xs text-fg-muted-token">
-              Use no assunto e no conteúdo; elas são preenchidas no envio.
-            </p>
             <div className="flex flex-wrap gap-1">
               {VARIAVEIS.map((v) => (
                 <code key={v} className="rounded bg-surface px-1.5 py-0.5 text-xs text-fg-token">{`{{${v}}}`}</code>
@@ -394,7 +391,7 @@ export default function AutomationsPage() {
             className="font-mono"
             rows={8}
             placeholder="<html>...</html>"
-            hint="Dica: copie um modelo da página de Marketing e personalize aqui."
+           
           />
 
           <div>
@@ -404,9 +401,6 @@ export default function AutomationsPage() {
               valor={formData.delay_minutes}
               onMudar={(v) => setFormData(prev => ({ ...prev, delay_minutes: v }))}
             />
-            <p className="mt-1 text-xs text-fg-muted-token">
-              0 = envio imediato. Para "pedir avaliação", por exemplo, 1440 = 24h.
-            </p>
           </div>
 
           <div className="flex items-center justify-between gap-3 text-sm">

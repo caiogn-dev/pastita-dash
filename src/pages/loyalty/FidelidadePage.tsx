@@ -438,7 +438,7 @@ const FidelidadePage: React.FC = () => {
     <PageShell
       trilha={[{ rotulo: 'Cardápio' }, { rotulo: 'Fidelidade' }]}
       titulo="Fidelidade & Cupons"
-      descricao="Dê ao cliente um motivo para voltar. Configure o programa e veja como ele aparece no cardápio."
+     
       selo={
         <Badge tone={carimboGravado || cashbackGravado ? 'success' : 'neutral'}>
           {carimboGravado && cashbackGravado
@@ -505,7 +505,7 @@ const FidelidadePage: React.FC = () => {
                       16/set isto era "um OU outro" e salvar um desligava o outro. */}
                   <ChoiceCards<'carimbo' | 'cashback'>
                     rotulo="Programas da sua loja"
-                    descricao="Os dois podem rodar juntos. Escolha qual configurar — cada um liga e desliga no próprio salvar."
+                   
                     valor={programa}
                     onChange={setPrograma}
                     opcoes={[
@@ -564,7 +564,7 @@ const FidelidadePage: React.FC = () => {
 
                         <SecaoDoPrograma titulo="O que ele recebe">
                           <p className="text-caption text-fg-muted-token">
-                            1 item grátis quando o cartão fecha. O brinde aparece sozinho
+                            1 item grátis quando o cartão fecha. Aparece sozinho
                             no carrinho do próximo pedido e o cartão recomeça do zero.
                           </p>
                         </SecaoDoPrograma>

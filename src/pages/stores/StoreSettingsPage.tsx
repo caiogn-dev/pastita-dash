@@ -560,10 +560,6 @@ export const StoreSettingsPage: React.FC = () => {
             <TruckIcon className="w-5 h-5 text-fg-muted-token" />
             <h2 className="text-lg font-semibold text-fg-token">Entrega</h2>
           </div>
-          <p className="text-sm text-fg-muted-token">
-            O preço da entrega é configurado em uma tela só, com prévia do valor por
-            distância enquanto você digita.
-          </p>
           <Link
             to={effectiveStoreId ? `/stores/${effectiveStoreId}/delivery-zones` : '/delivery-zones'}
             className="mt-4 inline-flex items-center gap-2 rounded bg-brand-soft px-4 py-2 text-sm font-medium text-brand-ink transition-colors hover:bg-brand-soft/80"
@@ -656,7 +652,7 @@ export const StoreSettingsPage: React.FC = () => {
             <h3 className="text-base font-semibold text-fg-token">Meta Pixel e Conversions API</h3>
           </div>
           <p className="text-sm text-fg-muted-token mb-5">
-            Configuração exclusiva desta loja. Cole somente o ID numérico do Pixel; nenhum script é necessário.
+            Só o ID numérico do Pixel.
           </p>
           <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5">
             <div className="space-y-4">
@@ -715,7 +711,7 @@ export const StoreSettingsPage: React.FC = () => {
               <h3 className="text-base font-semibold text-fg-token">Microsoft Clarity</h3>
             </div>
             <p className="text-sm text-fg-muted-token mb-5">
-              Heatmaps e gravações de sessão do seu cardápio. Crie um projeto gratuito em clarity.microsoft.com e cole o código do projeto aqui.
+              Código do projeto em clarity.microsoft.com.
             </p>
             <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5">
               <div>

@@ -213,7 +213,7 @@ export const NaoEntendiSecao: React.FC = () => {
       <Secao
         titulo="Para ensinar"
         contador={itens.length}
-        descricao="Só o que a IA não soube responder: pediu desculpa, deu erro ou respondeu com uma saudação genérica."
+       
       >
         {estado === 'falhou' ? (
           <FalhaAoCarregar

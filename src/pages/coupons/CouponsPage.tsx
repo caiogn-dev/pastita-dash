@@ -541,9 +541,6 @@ export const CouponsPage: React.FC = () => {
                 ))}
               </div>
             )}
-            <p className="mt-1.5 text-caption text-fg-muted-token">
-              É isto que o cliente digita no carrinho. Curto e fácil de ditar no WhatsApp.
-            </p>
           </div>
 
           <div>
@@ -692,11 +689,6 @@ export const CouponsPage: React.FC = () => {
               criar: quem ganha, e quanto. Vazio = cupom comum da loja. */}
           <div className="rounded border border-border-token bg-surface-2 p-3">
             <p className="text-sm font-semibold text-fg-token">Parceria (opcional)</p>
-            <p className="mt-0.5 text-caption text-fg-muted-token">
-              Vincule alguém que divulga este cupom — uma academia, um
-              influenciador, um vizinho. A cada venda com o código, essa pessoa
-              ganha saldo na loja.
-            </p>
             <div className="mt-3 grid grid-cols-2 gap-4 max-sm:grid-cols-1">
               <div>
                 <label className="block text-sm font-medium text-fg-token mb-1">

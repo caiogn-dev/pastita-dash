@@ -399,9 +399,6 @@ export const DeliveryZonesPage: React.FC = () => {
                 )}
 
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-caption text-fg-muted-token">
-                    Ctrl + roda do mouse dá zoom. O botão de tela cheia abre o mapa inteiro.
-                  </p>
                   <a
                     href={`https://www.google.com/maps?q=${storeLocation?.latitude},${storeLocation?.longitude}`}
                     target="_blank"
@@ -687,9 +684,6 @@ export const DeliveryZonesPage: React.FC = () => {
                 <option key={band.value} value={band.value}>{band.label}</option>
               ))}
             </select>
-            <p className="mt-1 text-caption text-fg-muted-token">
-              Distância em linha reta entre a loja e o endereço do cliente.
-            </p>
           </div>
 
           <div>

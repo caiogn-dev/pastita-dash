@@ -297,7 +297,7 @@ function IngredientesDaLoja() {
   return (
     <PageShell
       titulo="Ingredientes e TACO"
-      descricao="Valores nutricionais por 100 g, sempre com a fonte à vista. Quando um valor não é conhecido, ele fica em branco — nunca vira zero no rótulo."
+     
       trilha={[{ rotulo: 'Produtos', href: `/stores/${storeId}/products` }, { rotulo: 'Ingredientes e TACO' }]}
       acoes={<Button onClick={() => abrir()}><PlusIcon className="h-5 w-5" />Novo ingrediente</Button>}
       filtros={filtros}
@@ -313,15 +313,8 @@ function IngredientesDaLoja() {
             etiqueta das receitas que os usam não declara nada até você conferir.
           </p>
         )}
-        {aba === 'base' && (
-          <p className="text-sm text-fg-muted-token">
-            Catálogo oficial, compartilhado por todas as lojas e por isso somente
-            leitura. Para usar um alimento e revisar os alergênicos dele, abra e
-            escolha <b>Adotar na minha loja</b> — vira uma cópia sua.
-            {totalBase > daBase.length && (
-              <> Mostrando {daBase.length} de {totalBase}: refine a busca para chegar no resto.</>
-            )}
-          </p>
+        {aba === 'base' && totalBase > daBase.length && (
+          <p className="text-sm text-fg-muted-token">Mostrando {daBase.length} de {totalBase}. Refine a busca.</p>
         )}
 
         {aba === 'custos' ? <TabelaDeCustos storeUuid={storeUuid} /> : (
@@ -417,11 +410,6 @@ function IngredientesDaLoja() {
                 <BeakerIcon className="mr-1 inline h-4 w-4" />
                 Este alimento vem da {editing?.source?.toUpperCase()} e é compartilhado por todas as lojas.
               </p>
-              <p className="mt-1 text-fg-muted-token">
-                Ele não pode ser alterado no lugar. Ao salvar, uma <b>cópia sua</b> é
-                criada com o que você ajustar aqui, e as receitas desta loja passam a
-                apontar para ela. O oficial continua intacto.
-              </p>
             </div>
           )}
 
@@ -460,11 +448,6 @@ function IngredientesDaLoja() {
           <section className="space-y-2 border-t border-border-token pt-4">
             <div>
               <h3 className="font-semibold text-fg-token">Quanto você paga</h3>
-              <p className="text-xs text-fg-muted-token">
-                Copie da nota do fornecedor. É daqui que sai o custo de cada prato
-                que usa este ingrediente.
-                {editandoOficial && ' O preço fica na sua cópia, não no alimento oficial.'}
-              </p>
             </div>
             <div className="flex flex-wrap items-end gap-2 text-sm text-fg-muted-token">
               <label>
@@ -526,11 +509,6 @@ function IngredientesDaLoja() {
               <h3 className="font-semibold text-fg-token">
                 Alergênicos <span className="text-xs font-normal text-fg-muted-token">RDC 26/2015</span>
               </h3>
-              <p className="text-xs text-fg-muted-token">
-                A etiqueta monta a frase sozinha a partir daqui. Enquanto houver
-                ingrediente não revisado na receita, ela não declara nada — melhor
-                calar que afirmar “não contém” sem alguém ter olhado.
-              </p>
             </div>
 
             <div>
@@ -597,10 +575,6 @@ function IngredientesDaLoja() {
             </label>
           </section>
 
-          <p className="text-xs text-fg-muted-token">
-            Use “—”/vazio quando a fonte não informar o nutriente. Para impressão
-            oficial, complete açúcares e gorduras com ficha do fabricante, TBCA ou laudo.
-          </p>
 
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={fechar}>Cancelar</Button>

@@ -122,7 +122,6 @@ export const PromocaoDoDiaPage: React.FC = () => {
   return (
     <PageShell
       titulo="Promoção do dia"
-      descricao="A oferta do dia sai sozinha, todo dia, no horário que você escolher, com o card daquele dia da semana."
       acoes={(
         <Button leftIcon={<PaperAirplaneIcon className="h-4 w-4" />} onClick={() => void enviarAgora()} isLoading={enviando} disabled={!d?.tem_whatsapp}>
           Enviar agora
@@ -137,7 +136,7 @@ export const PromocaoDoDiaPage: React.FC = () => {
             <EmptyState titulo="A loja não tem WhatsApp conectado" descricao="Conecte o WhatsApp em Configurações para a promoção sair por aqui." />
           )}
 
-          <Secao titulo="Quando e como sai" descricao="Sai sempre a promoção de AMANHÃ: na segunda vai a de terça, na terça a de quarta. Marque o dia e o preço promocional em cada produto; aqui você só decide o envio.">
+          <Secao titulo="Quando e como sai">
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="flex items-center gap-3 text-sm text-fg-token sm:col-span-2">
                 <Switch ligado={config.ativo} onMudar={(v) => void gravar({ ...config, ativo: v })} rotulo="Enviar a promoção do dia automaticamente" desabilitado={salvando} />
@@ -176,7 +175,7 @@ export const PromocaoDoDiaPage: React.FC = () => {
             </div>
           </Secao>
 
-          <Secao titulo="Cards por dia da semana" descricao="A imagem de cada dia vai no topo da mensagem. Sem card, sai só o texto (o modelo aprovado com imagem exige card).">
+          <Secao titulo="Cards por dia da semana">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
               {DIAS.map((dia) => {
                 const url = config.cards[dia.valor];
@@ -208,7 +207,7 @@ export const PromocaoDoDiaPage: React.FC = () => {
             </div>
           </Secao>
 
-          <Secao titulo="O que sairia agora" descricao="Prévia montada com as promoções cadastradas e o card do dia.">
+          <Secao titulo="O que sairia agora">
             {d.previa ? (
               <div className="grid gap-4 sm:grid-cols-[160px_1fr]">
                 {d.previa.card ? <img src={d.previa.card} alt="Card do dia" className="aspect-square w-40 rounded-md object-cover" /> : <div className="flex aspect-square w-40 items-center justify-center rounded-md border border-dashed border-border-token text-xs text-fg-muted-token">Sem card</div>}
@@ -222,7 +221,7 @@ export const PromocaoDoDiaPage: React.FC = () => {
             )}
           </Secao>
 
-          <Secao titulo="Histórico" contador={d.historico.length} descricao="Cada envio automático vira uma campanha, também visível em Campanha WhatsApp.">
+          <Secao titulo="Histórico" contador={d.historico.length}>
             {d.historico.length === 0 ? (
               <EmptyState titulo="Nenhum envio automático ainda" descricao="Ligue o envio automático ou use “Enviar agora”." />
             ) : (

@@ -128,7 +128,7 @@ export const CashbackSection: React.FC<Props> = ({
 
           <SecaoDoPrograma
             titulo="Como o cliente ganha"
-            descricao="Uma parte de cada pedido pago volta em saldo. Quem indica um amigo também ganha."
+           
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <Input
@@ -166,7 +166,7 @@ export const CashbackSection: React.FC<Props> = ({
 
           <SecaoDoPrograma
             titulo="O que ele recebe"
-            descricao="Saldo em reais para gastar na loja. Depois do prazo, o saldo some."
+           
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <Input
@@ -181,10 +181,6 @@ export const CashbackSection: React.FC<Props> = ({
           </SecaoDoPrograma>
 
           <SecaoDoPrograma titulo="Onde vale">
-            <p className="text-caption text-fg-muted-token">
-              Em qualquer pedido do cardápio. O saldo entra sozinho no carrinho e
-              desconta do que sobra depois dos outros descontos.
-            </p>
           </SecaoDoPrograma>
 
           <div className="border-t border-border-token pt-5">

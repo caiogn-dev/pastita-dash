@@ -34,7 +34,8 @@ export function contarManual(codigo: string): number {
   for (const m of codigo.matchAll(PARAGRAFO)) {
     const attrs = m[1]; const texto = m[2].replace(/<[^>]+>|\{[^}]*\}/g, '').replace(/\s+/g, ' ').trim();
     if (!/text-fg-muted-token/.test(attrs) || /role="alert"/.test(attrs)) continue;
-    if (texto.length >= 60 && /[.,]/.test(texto) && !/^Não foi possível/.test(texto)) n += 1;
+    if (/\{/.test(m[2])) continue;                       // dado vivo (valor, nome) não é manual
+    if (texto.length >= 60 && /[.,]/.test(texto) && !/^(Não foi possível|Tem certeza|Nenhum|Nenhuma)/.test(texto)) n += 1;
   }
   for (const _ of codigo.matchAll(DESCRICAO)) n += 1;
   return n;
