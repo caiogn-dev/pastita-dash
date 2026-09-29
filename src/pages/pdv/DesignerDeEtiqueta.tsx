@@ -673,7 +673,7 @@ const DesignerDeEtiqueta: React.FC = () => {
                                     </div>
                                   ) : null}
                             {principal && leitura && (
-                              <span className="absolute left-0 top-0 -translate-y-full rounded-sm bg-fg-token px-1 text-[10px] tabular-nums text-surface" data-testid="des-leitura">{leitura.x} · {leitura.y} mm</span>
+                              <span className="absolute left-0 top-0 -translate-y-full rounded-sm bg-fg-token px-1 text-xs tabular-nums text-surface" data-testid="des-leitura">{leitura.x} · {leitura.y} mm</span>
                             )}
                             {el.bloqueado && ativa && <LockClosedIcon className="absolute right-0 top-0 h-3 w-3 opacity-60" />}
                             {principal && !el.bloqueado && ALCAS.map((a) => (
