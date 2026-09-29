@@ -59,10 +59,16 @@ export const prazoDoAgendado = (
   if (!order.scheduled_date) return null;
   const s = (order.status || '').toLowerCase();
   if (!['pending', 'confirmed', 'paid', 'payment_confirmed', 'processing', 'awaiting_payment'].includes(s)) return null;
-  const hora = (order.scheduled_time || '00:00:00').slice(0, 8).padEnd(8, ':00');
-  const alvo = new Date(`${order.scheduled_date}T${hora}-03:00`);
-  const diff = Math.round((alvo.getTime() - agora.getTime()) / 60000);
-  return diff >= 0 ? { faltamMin: diff, atrasadoMin: 0 } : { faltamMin: 0, atrasadoMin: -diff };
+  // O banco guarda "14:00:00" OU a faixa "10:00-12:00": início e fim da janela.
+  const horas = (order.scheduled_time || '00:00').match(/\d{1,2}:\d{2}/g);
+  if (!horas) return null;
+  const quando = (hhmm: string) => new Date(`${order.scheduled_date}T${hhmm.padStart(5, '0')}:00-03:00`).getTime();
+  const inicio = quando(horas[0]); const fim = quando(horas[horas.length - 1]);
+  if (!Number.isFinite(inicio) || !Number.isFinite(fim)) return null;
+  const t = agora.getTime();
+  if (t < inicio) return { faltamMin: Math.round((inicio - t) / 60000), atrasadoMin: 0 };
+  if (t > fim) return { faltamMin: 0, atrasadoMin: Math.round((t - fim) / 60000) };
+  return { faltamMin: 0, atrasadoMin: 0 };
 };
 
 export interface SituacaoDoPreparo {

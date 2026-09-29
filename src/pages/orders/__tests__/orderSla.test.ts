@@ -125,3 +125,19 @@ describe('prazoDoAgendado', () => {
     expect(prazoDoAgendado({ status: 'preparing', scheduled_date: '2026-09-29', scheduled_time: '14:30:00' } as never, agora)).toBeNull();
   });
 });
+
+describe('prazoDoAgendado com faixa de horário ("10:00-12:00", formato real do banco)', () => {
+  const pedido = (hora: string) => ({ status: 'confirmed', scheduled_date: '2026-09-29', scheduled_time: hora }) as never;
+  it('antes da faixa: faltam até o início', () => {
+    expect(prazoDoAgendado(pedido('10:00-12:00'), new Date('2026-09-29T09:00:00-03:00'))).toEqual({ faltamMin: 60, atrasadoMin: 0 });
+  });
+  it('dentro da faixa: nem falta nem atraso', () => {
+    expect(prazoDoAgendado(pedido('10:00-12:00'), new Date('2026-09-29T11:00:00-03:00'))).toEqual({ faltamMin: 0, atrasadoMin: 0 });
+  });
+  it('depois da faixa: atraso conta do FIM da faixa', () => {
+    expect(prazoDoAgendado(pedido('10:00-12:00'), new Date('2026-09-29T12:45:00-03:00'))).toEqual({ faltamMin: 0, atrasadoMin: 45 });
+  });
+  it('horário ilegível não vira NaN', () => {
+    expect(prazoDoAgendado(pedido('manhã'), new Date('2026-09-29T12:45:00-03:00'))).toBeNull();
+  });
+});

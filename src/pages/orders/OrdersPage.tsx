@@ -220,7 +220,7 @@ const OrderCardBase: React.FC<CardProps> = ({
           {!isUpdating && !isSuccess && agendado && (
             <SeloDeEstado tone={tomDoPrazo(urgency)} className="gap-0.5 px-1.5 text-badge" data-testid="prazo-agendado">
               <ClockIcon className="h-2.5 w-2.5" aria-hidden />
-              {agendado.atrasadoMin > 0 ? `Atrasado ${formatElapsed(agendado.atrasadoMin)}` : `em ${formatElapsed(agendado.faltamMin)}`}
+              {agendado.atrasadoMin > 0 ? `Atrasado ${formatElapsed(agendado.atrasadoMin)}` : agendado.faltamMin > 0 ? `em ${formatElapsed(agendado.faltamMin)}` : 'Na janela agora'}
             </SeloDeEstado>
           )}
           {!isUpdating && !isSuccess && !agendado && elapsed > 0 && (
