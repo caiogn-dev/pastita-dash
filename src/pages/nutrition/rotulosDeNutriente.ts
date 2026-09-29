@@ -1,3 +1,5 @@
+import { formatNumber } from '../../utils/formatters';
+
 /**
  * Nome de nutriente como está na etiqueta, não como está no banco.
  *
@@ -49,7 +51,7 @@ export function formatarNutriente(campo: string, valor: unknown): string {
   const n = Number(valor);
   if (!Number.isFinite(n)) return '—';
   const inteiro = campo.endsWith('_kcal') || campo.endsWith('_mg');
-  return n.toLocaleString('pt-BR', { maximumFractionDigits: inteiro ? 0 : 1, minimumFractionDigits: 0 });
+  return formatNumber(n, { maximumFractionDigits: inteiro ? 0 : 1, minimumFractionDigits: 0 });
 }
 
 /** Unidade do nutriente para rótulo curto. */

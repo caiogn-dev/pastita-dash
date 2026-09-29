@@ -13,7 +13,7 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toCsv, downloadCsv } from '../../utils/csv';
 import { formatAxisCurrency, formatCurrency } from '../../utils/formatters';
-import { Card, Button, Badge, StatCard, PageShell, KpiGrid } from '../../components/ui';
+import { Aviso, Card, Button, Badge, StatCard, PageShell, KpiGrid } from '../../components/ui';
 import { relatorioPorSlug, type TabValue } from './relatorios';
 import { TimeSeriesChart } from '../../components/reports/TimeSeriesChart';
 import { RankedList } from './sections/shared';
@@ -499,13 +499,7 @@ const AnalyticsPage: React.FC = () => {
         {stockLoading ? (
           <Loading size="md" />
         ) : stockReport?.low_stock_products.length === 0 ? (
-          <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-            <CheckCircleIcon className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
-            <div>
-              <p className="font-medium text-green-800 dark:text-green-300">Estoque OK!</p>
-              <p className="text-sm text-green-700 dark:text-green-400">Todos os produtos estão com estoque adequado!</p>
-            </div>
-          </div>
+          <Aviso tom="sucesso" titulo="Estoque em dia" />
         ) : (
           <RankedList
             medals={false}
@@ -652,11 +646,7 @@ const AnalyticsPage: React.FC = () => {
     >
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-3 p-4 mb-6 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-          <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
-          <span className="text-sm text-red-700 dark:text-red-300 flex-1">{error}</span>
-          <button onClick={() => setErrorDismissed(true)} className="text-sm text-red-600 hover:underline">Fechar</button>
-        </div>
+        <Aviso tom="erro" titulo={error} className="mb-6" onFechar={() => setErrorDismissed(true)} />
       )}
 
       {/* Uma visão só = nenhum seletor. Botão que não escolhe nada é

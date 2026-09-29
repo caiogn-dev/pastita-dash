@@ -77,3 +77,5 @@ export { FalhaAoCarregar } from './FalhaAoCarregar';
 export type { FalhaAoCarregarProps } from './FalhaAoCarregar';
 export { Textarea } from './Textarea';
 export type { TextareaProps } from './Textarea';
+export { Aviso } from './Aviso';
+export type { AvisoProps, TomDoAviso } from './Aviso';

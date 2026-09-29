@@ -95,7 +95,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
       return (
         <div
           key={item.id}
-          className="my-1 h-px bg-gray-200 dark:bg-zinc-700"
+          className="my-1 h-px bg-border-token"
         />
       );
     }
@@ -114,11 +114,11 @@ export const Dropdown: React.FC<DropdownProps> = ({
             'w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg',
             'transition-all duration-150 ease-out',
             // States
-            !item.disabled && !item.danger && 'hover:bg-surface-muted-token dark:hover:bg-zinc-800',
-            !item.disabled && item.danger && 'hover:bg-danger-soft dark:hover:bg-red-950/30 text-danger-token dark:text-red-400',
+            !item.disabled && !item.danger && 'hover:bg-surface-2',
+            !item.disabled && item.danger && 'hover:bg-danger-soft text-danger-token',
             item.disabled && 'opacity-50 cursor-not-allowed',
             // Active submenu
-            isSubmenuOpen && 'bg-gray-100 dark:bg-zinc-800'
+            isSubmenuOpen && 'bg-surface-2'
           )}
         >
           {/* Icon */}
@@ -127,7 +127,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
               'shrink-0',
               item.danger
                 ? 'text-red-500'
-                : 'text-gray-500 dark:text-zinc-400'
+                : 'text-fg-muted-token'
             )}>
               {item.icon}
             </span>
@@ -138,13 +138,13 @@ export const Dropdown: React.FC<DropdownProps> = ({
             <span className={cn(
               'block font-medium',
               item.danger
-                ? 'text-red-600 dark:text-red-400'
-                : 'text-gray-900 dark:text-white'
+                ? 'text-danger-token'
+                : 'text-fg-token'
             )}>
               {item.label}
             </span>
             {item.description && (
-              <span className="block text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
+              <span className="block text-xs text-fg-muted-token mt-0.5">
                 {item.description}
               </span>
             )}
@@ -152,7 +152,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
           {/* Submenu arrow */}
           {hasChildren && (
-            <ChevronRightIcon className="w-4 h-4 text-gray-400 dark:text-zinc-500" />
+            <ChevronRightIcon className="w-4 h-4 text-fg-muted-token" />
           )}
         </button>
 
@@ -161,7 +161,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
           <div
             className={cn(
               'absolute top-0 left-full ml-1 z-10',
-              'bg-white dark:bg-zinc-900 rounded-xl shadow-xl border border-gray-200 dark:border-zinc-700',
+              'bg-surface rounded-xl shadow-hover border border-border-token',
               'min-w-[180px] py-2 px-1',
               'animate-in fade-in slide-in-from-left-1 duration-200'
             )}
@@ -189,8 +189,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
         <div
           className={cn(
             'absolute z-50 mt-2',
-            'bg-white dark:bg-zinc-900 rounded-xl shadow-xl',
-            'border border-gray-200 dark:border-zinc-700',
+            'bg-surface rounded-xl shadow-hover',
+            'border border-border-token',
             'py-2 px-1',
             // Animation
             'animate-in fade-in slide-in-from-top-2 duration-200',
@@ -221,10 +221,10 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
     <button
       className={cn(
         'inline-flex items-center gap-2 px-4 py-2',
-        'text-sm font-medium text-gray-700 dark:text-zinc-200',
-        'bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700',
+        'text-sm font-medium text-fg-token',
+        'bg-surface border border-border-token',
         'rounded-lg shadow-sm',
-        'hover:bg-surface-muted-token dark:hover:bg-zinc-700',
+        'hover:bg-surface-2',
         'focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2',
         'transition-all duration-150',
         className

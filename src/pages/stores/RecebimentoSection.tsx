@@ -7,7 +7,7 @@ import {
   ArrowTopRightOnSquareIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button } from '../../components/ui';
+import { Aviso, Card, Button } from '../../components/ui';
 import { paymentsService } from '../../services/payments';
 import logger from '../../services/logger';
 
@@ -207,48 +207,19 @@ export const RecebimentoSection: React.FC<RecebimentoSectionProps> = ({
       ) : (
         <>
           {configurado ? (
-            <div className="flex items-start gap-2 p-3 rounded bg-green-50 dark:bg-green-900/20 mb-4">
-              <CheckCircleIcon className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-green-800 dark:text-green-300">
-                  Conta própria configurada
-                </p>
-                <p className="text-green-700 dark:text-green-400">
-                  Os pagamentos desta loja caem na conta dela.
-                  {viaOauth && ' Conectada pelo Mercado Pago.'}
-                  {viaOauth && gateway?.external_account_id
-                    ? ` Conta ${gateway.external_account_id}.`
-                    : ''}
-                  {gateway?.token_expirado && ' ⚠️ A autorização expirou — reconecte.'}
-                </p>
-              </div>
-            </div>
+            <Aviso tom={gateway?.token_expirado ? 'atencao' : 'sucesso'} className="mb-4"
+              titulo={gateway?.token_expirado ? 'Autorização do Mercado Pago expirou' : 'Conta própria configurada'}>
+              {gateway?.token_expirado ? 'Reconecte para voltar a receber.' : 'Os pagamentos desta loja caem na conta dela.'}
+              {viaOauth && gateway?.external_account_id ? ` Conta ${gateway.external_account_id}.` : ''}
+            </Aviso>
           ) : usaGatewayDaPlataforma ? (
-            <div className="flex items-start gap-2 p-3 rounded bg-blue-50 dark:bg-blue-900/20 mb-4">
-              <CheckCircleIcon className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-blue-800 dark:text-blue-300">
-                  Recebe na conta da plataforma
-                </p>
-                <p className="text-blue-700 dark:text-blue-400">
-                  Esta é uma loja própria: os pagamentos caem na conta configurada no
-                  servidor, com a contabilidade que você já usa. Não precisa cadastrar nada
-                  aqui — só se quiser separar esta loja numa conta diferente.
-                </p>
-              </div>
-            </div>
+            <Aviso tom="info" titulo="Recebe na conta da plataforma" className="mb-4">
+              Os pagamentos caem na conta configurada no servidor.
+            </Aviso>
           ) : (
-            <div className="flex items-start gap-2 p-3 rounded bg-amber-50 dark:bg-amber-900/20 mb-4">
-              <ExclamationTriangleIcon className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-amber-800 dark:text-amber-300">
-                  Sem conta própria
-                </p>
-                <p className="text-amber-700 dark:text-amber-400">
-                  Enquanto não configurar, os pagamentos online desta loja não são aceitos.
-                </p>
-              </div>
-            </div>
+            <Aviso tom="atencao" titulo="Sem conta própria" className="mb-4">
+              Pagamento online fica desligado até conectar.
+            </Aviso>
           )}
 
           <div className="flex flex-col items-start gap-2">

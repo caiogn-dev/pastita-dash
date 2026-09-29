@@ -87,7 +87,7 @@ const PauseProductButton: React.FC<PauseProductButtonProps> = ({ productId, isPa
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-20 mt-1 w-36 rounded-md border border-border-token bg-white py-1 shadow-lg"
+          className="absolute right-0 z-20 mt-1 w-36 rounded-md border border-border-token bg-surface py-1 text-fg-token shadow-hover"
         >
           {PAUSE_OPTIONS.map((opt) => (
             <button

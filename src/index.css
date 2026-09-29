@@ -209,6 +209,15 @@ input, textarea, select {
   line-height: 1.5;
 }
 
+/* A lista aberta de um <select> nativo é desenhada pelo sistema operacional.
+   Sem fundo explícito na <option>, o Windows pinta a lista de branco e o texto
+   claro do tema escuro some ("branco no branco"). Fundo e cor vêm do tema. */
+select option,
+select optgroup {
+  background-color: var(--surface);
+  color: var(--fg);
+}
+
 input::placeholder,
 textarea::placeholder {
   color: var(--text-muted);

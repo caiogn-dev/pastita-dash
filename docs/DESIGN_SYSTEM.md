@@ -38,11 +38,12 @@ PageShell (título, descrição em frase, ações à direita)
 - Estado de coisa (pedido, pagamento, campanha, agente) = `SeloDeEstado` com tom vindo de
   `estados.ts` (`estadoDePagamento`, `estadoDeCampanha`). Um mapa por domínio, nunca por página.
 - Ação de entrada ("Nova campanha") = `AcaoCard`. Checagem ok/erro = `Verificacao`.
+- Faixa de estado dentro de seção ("Conta configurada", "Estoque OK", erro de carga) = `Aviso` com `tom`.
 - Vazio = `EmptyState` dizendo o que fazer. Carregando = `Skeleton`.
 - Botão principal: verbo + objeto ("Enviar para 84 clientes", "Salvar programa"); o toast repete.
 
 ## 4. Kit (`src/components/ui`)
-Button, Card, StatCard, KpiGrid, Input/SearchInput, NumberField, Select, Switch, ChoiceCards,
+Aviso, Button, Card, StatCard, KpiGrid, Input/SearchInput, NumberField, Select, Switch, ChoiceCards,
 FormStepper, FormSummary, FormChecklist, StringListField, Secao, PageShell, PageTabs, Tabela,
 Paginacao, RowActions, Badge, SeloDeEstado, Progresso, Verificacao, AcaoCard, EmptyState,
 Skeleton, Modal, Dropdown, Toast, Sparkline, RankedList, InsightList, PhonePreview, estados.
