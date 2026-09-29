@@ -168,7 +168,7 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
 
         {/* Preview */}
         {previewText && (
-          <div className="mb-5 p-3 rounded-xl bg-[#d9fdd3] dark:bg-[#005c4b] text-sm text-gray-800 dark:text-gray-100 italic">
+          <div className="mb-5 p-3 rounded-xl bg-[#d9fdd3] dark:bg-[#005c4b] text-sm text-fg-token italic">
             {previewText}
           </div>
         )}

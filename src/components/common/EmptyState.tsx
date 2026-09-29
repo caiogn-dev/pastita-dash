@@ -28,14 +28,14 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         className
       )}
     >
-      <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
-        {icon || <InboxIcon className="w-8 h-8 text-gray-400 dark:text-gray-500" />}
+      <div className="p-4 bg-surface-2 rounded-full mb-4">
+        {icon || <InboxIcon className="w-8 h-8 text-fg-muted-token" />}
       </div>
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+      <h3 className="text-lg font-medium text-fg-token mb-2">
         {title}
       </h3>
       {description && (
-        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mb-4">
+        <p className="text-sm text-fg-muted-token max-w-sm mb-4">
           {description}
         </p>
       )}

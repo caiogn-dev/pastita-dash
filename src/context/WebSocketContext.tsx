@@ -299,7 +299,7 @@ export function ConnectionStatusIndicator() {
   return (
     <div className="flex items-center gap-2 px-3 py-2 text-sm">
       <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor()} ${status === 'connecting' ? 'animate-pulse' : ''}`} />
-      <span className="text-gray-600 dark:text-gray-400">
+      <span className="text-fg-muted-token">
         {isConnected ? `Conectado (${getTransportLabel()})` : (error || 'Desconectado')}
       </span>
       {!capabilities.websocket && (

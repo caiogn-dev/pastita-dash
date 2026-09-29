@@ -72,7 +72,7 @@ export const IntentBadge: React.FC<IntentBadgeProps> = ({
             'text-xs',
             method === 'regex' && 'text-green-600 dark:text-green-400',
             method === 'llm' && 'text-purple-600 dark:text-purple-400',
-            method === 'none' && 'text-gray-500 dark:text-gray-400'
+            method === 'none' && 'text-fg-muted-token'
           )}
           title={method === 'regex' ? 'Detectado via Regex (rápido)' : method === 'llm' ? 'Detectado via IA' : 'Não detectado'}
         >
@@ -96,7 +96,7 @@ export const IntentBadge: React.FC<IntentBadgeProps> = ({
               style={{ width: `${confidence * 100}%` }}
             />
           </div>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-xs text-fg-muted-token">
             {(confidence * 100).toFixed(0)}%
           </span>
         </div>

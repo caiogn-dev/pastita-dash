@@ -174,7 +174,7 @@ export const AgentFlowsPage: React.FC = () => {
       {/* Flows List */}
       {flows.length === 0 ? (
         <Card className="p-12 text-center">
-          <CpuChipIcon className="w-16 h-16 mx-auto text-gray-300 dark:text-zinc-600 mb-4" />
+          <CpuChipIcon className="w-16 h-16 mx-auto text-fg-muted-token opacity-50 mb-4" />
           <p className="text-lg font-medium text-fg-token mb-2">Nenhum flow criado</p>
           <p className="text-sm text-fg-muted-token mb-6">
             Crie flows para automatizar atendimentos com IA
@@ -222,7 +222,7 @@ export const AgentFlowsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 pt-2 border-t border-border-token dark:border-zinc-800">
+              <div className="flex items-center gap-2 pt-2 border-t border-border-token">
                 <Button
                   size="sm"
                   variant={flow.is_active ? 'secondary' : 'primary'}
@@ -238,7 +238,7 @@ export const AgentFlowsPage: React.FC = () => {
                   <PencilIcon className="h-4 w-4" />
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => handleDelete(flow.id)}>
-                  <TrashIcon className="h-4 w-4 text-red-500" />
+                  <TrashIcon className="h-4 w-4 text-danger-token" />
                 </Button>
               </div>
             </Card>
@@ -266,7 +266,7 @@ export const AgentFlowsPage: React.FC = () => {
               rows={2}
               value={formData.description}
               onChange={e => setFormData(p => ({ ...p, description: e.target.value }))}
-              className="w-full rounded-lg border border-border-token dark:border-zinc-700 bg-surface dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-brand focus:border-transparent"
+              className="controle w-full py-2 text-sm"
             />
           </div>
           <div>
@@ -277,7 +277,7 @@ export const AgentFlowsPage: React.FC = () => {
               rows={8}
               value={formData.flow_json}
               onChange={e => setFormData(p => ({ ...p, flow_json: e.target.value }))}
-              className="w-full rounded-lg border border-border-token dark:border-zinc-700 bg-surface dark:bg-zinc-900 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-brand focus:border-transparent"
+              className="controle h-auto w-full py-2 text-sm font-mono"
               placeholder='{"nodes": [], "edges": []}'
             />
             <p className="text-xs text-fg-muted-token mt-1">JSON de definição do fluxo</p>

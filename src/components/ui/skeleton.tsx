@@ -51,7 +51,7 @@ export const TableSkeleton: React.FC<{ rows?: number; columns?: number }> = ({
   return (
     <div className="space-y-2">
       {/* Header */}
-      <div className="flex gap-4 pb-4 border-b border-gray-200 dark:border-zinc-800">
+      <div className="flex gap-4 pb-4 border-b border-border-token">
         {Array.from({ length: columns }).map((_, i) => (
           <Skeleton key={i} variant="text" className="flex-1 h-6" />
         ))}
@@ -80,7 +80,7 @@ export const CardSkeleton: React.FC<{
 
 = ({ hasHeader = true, hasImage = false, lines = 3 }) => {
   return (
-    <div className="space-y-4 p-6 rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+    <div className="superficie space-y-4 p-6">
       {hasHeader && <Skeleton variant="text" className="w-1/3 h-6" />}
       {hasImage && <Skeleton variant="card" />}
       <div className="space-y-2">

@@ -387,15 +387,15 @@ export function ConnectionIndicator() {
   };
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-sm">
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-2 text-sm">
       <span className="relative flex h-3 w-3">
         {status === 'connecting' && (
           <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${bgColors[statusColor]} opacity-75`}></span>
         )}
         <span className={`relative inline-flex rounded-full h-3 w-3 ${bgColors[statusColor]}`}></span>
       </span>
-      <span className="text-gray-700 dark:text-gray-300">{transportIcon}</span>
-      <span className="text-gray-600 dark:text-gray-400">{statusText}</span>
+      <span className="text-fg-muted-token">{transportIcon}</span>
+      <span className="text-fg-muted-token">{statusText}</span>
     </div>
   );
 }

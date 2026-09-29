@@ -45,7 +45,7 @@ export const InteractiveList: React.FC<InteractiveListProps> = ({
   const totalRows = sections.reduce((acc, section) => acc + section.rows.length, 0);
 
   return (
-    <div className={cn('bg-white dark:bg-zinc-800 rounded-lg overflow-hidden', className)}>
+    <div className={cn('bg-surface rounded-lg overflow-hidden', className)}>
       {/* Body text */}
       <div className="p-4 text-sm text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap">
         {body}

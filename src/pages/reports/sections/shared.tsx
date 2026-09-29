@@ -49,7 +49,7 @@ export const SectionError: React.FC<{ onRetry?: () => void }> = ({ onRetry }) =>
     role="alert"
     className="flex flex-col items-center gap-2 py-8 text-center"
   >
-    <ExclamationTriangleIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
+    <ExclamationTriangleIcon className="w-6 h-6 text-danger-token" />
     <p className="text-sm text-fg-muted-token">
       Não foi possível carregar esta seção. Os números podem estar incompletos.
     </p>
@@ -97,8 +97,8 @@ export const DeltaPill: React.FC<{ pct: number | null | undefined; invert?: bool
     <span
       className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${
         good
-          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-          : 'bg-red-500/15 text-red-600 dark:text-red-400'
+          ? 'bg-success-soft text-success-token'
+          : 'bg-danger-soft text-danger-token'
       }`}
     >
       {pct >= 0 ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}%

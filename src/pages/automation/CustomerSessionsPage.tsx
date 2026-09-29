@@ -211,7 +211,7 @@ const CustomerSessionsPage: React.FC = () => {
                     setPage(1);
                   }}
                   placeholder="Buscar por telefone"
-                  className="block w-full pl-10 rounded-md border-border-token dark:border-zinc-700 focus:ring-brand"
+                  className="block w-full pl-10 rounded-md border-border-token focus:ring-brand"
                 />
               </div>
             </div>

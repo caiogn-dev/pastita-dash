@@ -90,7 +90,7 @@ export const SkeletonButton: React.FC<{ width?: string | number; className?: str
 );
 
 export const SkeletonCard: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <div className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 ${className}`}>
+  <div className={`bg-surface rounded-lg shadow p-4 ${className}`}>
     <div className="flex items-start space-x-4">
       <SkeletonAvatar size={48} />
       <div className="flex-1">
@@ -119,9 +119,9 @@ export const SkeletonTable: React.FC<{ rows?: number; columns?: number; classNam
   columns = 5,
   className = '',
 }) => (
-  <div className={`bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden ${className}`}>
+  <div className={`bg-surface rounded-lg shadow overflow-hidden ${className}`}>
     <table className="min-w-full">
-      <thead className="bg-gray-50 dark:bg-gray-900">
+      <thead className="bg-surface-2">
         <tr>
           {Array.from({ length: columns }).map((_, i) => (
             <th key={i} className="px-4 py-3">
@@ -130,7 +130,7 @@ export const SkeletonTable: React.FC<{ rows?: number; columns?: number; classNam
           ))}
         </tr>
       </thead>
-      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+      <tbody className="divide-y divide-border-token">
         {Array.from({ length: rows }).map((_, i) => (
           <SkeletonTableRow key={i} columns={columns} />
         ))}
@@ -145,7 +145,7 @@ export const SkeletonList: React.FC<{ items?: number; className?: string }> = ({
 }) => (
   <div className={`space-y-3 ${className}`}>
     {Array.from({ length: items }).map((_, i) => (
-      <div key={i} className="flex items-center space-x-3 p-3 bg-white dark:bg-gray-800 rounded-lg">
+      <div key={i} className="flex items-center space-x-3 p-3 bg-surface rounded-lg">
         <SkeletonAvatar size={40} />
         <div className="flex-1">
           <Skeleton variant="text" height={16} width="50%" className="mb-1" />
@@ -163,7 +163,7 @@ export const SkeletonStats: React.FC<{ items?: number; className?: string }> = (
 }) => (
   <div className={`grid grid-cols-4 max-md:grid-cols-2 gap-4 ${className}`}>
     {Array.from({ length: items }).map((_, i) => (
-      <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <div key={i} className="bg-surface rounded-lg shadow p-4">
         <Skeleton variant="text" height={14} width="60%" className="mb-2" />
         <Skeleton variant="text" height={28} width="40%" className="mb-1" />
         <Skeleton variant="text" height={12} width="50%" />
@@ -176,7 +176,7 @@ export const SkeletonChart: React.FC<{ height?: number; className?: string }> = 
   height = 300,
   className = '',
 }) => (
-  <div className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 ${className}`}>
+  <div className={`bg-surface rounded-lg shadow p-4 ${className}`}>
     <div className="flex justify-between items-center mb-4">
       <Skeleton variant="text" height={20} width={150} />
       <Skeleton variant="rounded" height={32} width={100} />
@@ -186,7 +186,7 @@ export const SkeletonChart: React.FC<{ height?: number; className?: string }> = 
 );
 
 export const SkeletonProduct: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <div className={`bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden ${className}`}>
+  <div className={`bg-surface rounded-lg shadow overflow-hidden ${className}`}>
     <Skeleton height={200} />
     <div className="p-4">
       <Skeleton variant="text" height={18} width="70%" className="mb-2" />

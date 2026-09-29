@@ -380,7 +380,7 @@ export default function ScheduledMessagesPage() {
           <div>
             <label className="block text-sm font-medium text-fg-token">Conta WhatsApp *</label>
             <select
-              className="mt-1 block w-full rounded-md border-border-token dark:border-zinc-700 shadow-sm focus:ring-brand"
+              className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:ring-brand"
               value={formData.account}
               onChange={(e) => setFormData({ ...formData, account: e.target.value })}
             >
@@ -410,7 +410,7 @@ export default function ScheduledMessagesPage() {
           <div>
             <label className="block text-sm font-medium text-fg-token">Tipo de Mensagem</label>
             <select
-              className="mt-1 block w-full rounded-md border-border-token dark:border-zinc-700 shadow-sm focus:ring-brand"
+              className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:ring-brand"
               value={formData.message_type}
               onChange={(e) =>
                 setFormData({ ...formData, message_type: e.target.value as any })
@@ -427,7 +427,7 @@ export default function ScheduledMessagesPage() {
           <div>
             <label className="block text-sm font-medium text-fg-token">Mensagem</label>
             <textarea
-              className="mt-1 block w-full rounded-md border-border-token dark:border-zinc-700 shadow-sm focus:ring-brand"
+              className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:ring-brand"
               rows={4}
               value={formData.message_text || ''}
               onChange={(e) => setFormData({ ...formData, message_text: e.target.value })}
@@ -439,7 +439,7 @@ export default function ScheduledMessagesPage() {
             <label className="block text-sm font-medium text-fg-token">Data e Hora *</label>
             <input
               type="datetime-local"
-              className="mt-1 block w-full rounded-md border-border-token dark:border-zinc-700 shadow-sm focus:ring-brand"
+              className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:ring-brand"
               value={formData.scheduled_at}
               onChange={(e) => setFormData({ ...formData, scheduled_at: e.target.value })}
             />
@@ -448,7 +448,7 @@ export default function ScheduledMessagesPage() {
           <div>
             <label className="block text-sm font-medium text-fg-token">Notas</label>
             <textarea
-              className="mt-1 block w-full rounded-md border-border-token dark:border-zinc-700 shadow-sm focus:ring-brand"
+              className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:ring-brand"
               rows={2}
               value={formData.notes || ''}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -483,7 +483,7 @@ export default function ScheduledMessagesPage() {
             <label className="block text-sm font-medium text-fg-token">Nova Data e Hora</label>
             <input
               type="datetime-local"
-              className="mt-1 block w-full rounded-md border-border-token dark:border-zinc-700 shadow-sm focus:ring-brand"
+              className="mt-1 block w-full rounded-md border-border-token shadow-sm focus:ring-brand"
               value={newScheduledAt}
               onChange={(e) => setNewScheduledAt(e.target.value)}
             />

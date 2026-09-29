@@ -232,7 +232,7 @@ export const UnifiedOrchestratorTest: React.FC = () => {
       case 'agent':
         return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
       default:
-        return 'bg-surface-2 text-fg-token dark:bg-gray-900/30 dark:text-gray-300';
+        return 'bg-surface-2 text-fg-token/30';
     }
   };
 

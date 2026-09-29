@@ -470,7 +470,7 @@ const MediaPreview: React.FC<{
     if (typeof rawEmoji === 'string' && rawEmoji.trim() === '') {
       return (
         <div className="flex items-center gap-2 py-1 px-2">
-          <span className="text-xs text-gray-400 dark:text-zinc-500 italic">Reação removida</span>
+          <span className="text-xs text-fg-muted-token italic">Reação removida</span>
         </div>
       );
     }

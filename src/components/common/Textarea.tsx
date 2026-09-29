@@ -17,7 +17,7 @@ export const Textarea: React.FC<TextareaProps> = ({
 }) => {
   return (
     <textarea
-      className={`w-full border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-brand bg-white dark:bg-zinc-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-500 resize-y ${sizeClasses[size]} ${className}`}
+      className={`w-full border border-border-token rounded-lg focus:ring-2 focus:ring-brand bg-surface text-fg-token placeholder-gray-400 dark:placeholder-zinc-500 resize-y ${sizeClasses[size]} ${className}`}
       {...props}
     />
   );

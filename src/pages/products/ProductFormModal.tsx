@@ -1060,7 +1060,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                           setImagePreview(null);
                           setFormData((prev) => ({ ...prev, main_image: null }));
                         }}
-                        className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 mt-2"
+                        className="text-sm text-danger-token hover:underline mt-2"
                       >
                         Remover imagem
                       </button>
@@ -1137,10 +1137,10 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               <Card className="p-4 bg-surface-2 dark:bg-black">
                 <h4 className="text-sm font-medium text-fg-token mb-2">Prévia no Google</h4>
                 <div className="bg-surface p-3 rounded border border-border-token">
-                  <p className="text-blue-600 dark:text-blue-400 text-lg hover:underline cursor-pointer">
+                  <p className="text-brand text-lg hover:underline cursor-pointer">
                     {formData.meta_title || formData.name || 'Título do Produto'}
                   </p>
-                  <p className="text-green-700 dark:text-green-300 text-sm">
+                  <p className="text-success-token text-sm">
                     sualoja.com.br › produtos › {formData.sku || 'sku'}
                   </p>
                   <p className="text-fg-muted-token text-sm line-clamp-2">

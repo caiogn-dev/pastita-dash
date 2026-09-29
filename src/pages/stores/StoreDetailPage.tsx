@@ -237,9 +237,9 @@ export const StoreDetailPage: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               <Link
                 to={`/stores/${storeId}/products`}
-                className="flex items-center gap-3 p-4 bg-surface-2 rounded-lg hover:bg-surface-2 dark:hover:bg-zinc-700 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
+                className="superficie-alta flex items-center gap-3 p-4"
               >
-                <CubeIcon className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                <CubeIcon className="w-8 h-8 text-brand" />
                 <div>
                   <p className="font-medium">Produtos</p>
                   <p className="text-sm text-fg-muted-token">{store.products_count} itens</p>
@@ -247,9 +247,9 @@ export const StoreDetailPage: React.FC = () => {
               </Link>
               <Link
                 to={`/stores/${storeId}/orders`}
-                className="flex items-center gap-3 p-4 bg-surface-2 rounded-lg hover:bg-surface-2 dark:hover:bg-zinc-700 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
+                className="superficie-alta flex items-center gap-3 p-4"
               >
-                <ShoppingCartIcon className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                <ShoppingCartIcon className="w-8 h-8 text-brand" />
                 <div>
                   <p className="font-medium">Pedidos</p>
                   <p className="text-sm text-fg-muted-token">{store.orders_count} pedidos</p>
@@ -257,9 +257,9 @@ export const StoreDetailPage: React.FC = () => {
               </Link>
               <Link
                 to={`/stores/${storeId}/combos`}
-                className="flex items-center gap-3 p-4 bg-surface-2 rounded-lg hover:bg-surface-2 dark:hover:bg-zinc-700 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
+                className="superficie-alta flex items-center gap-3 p-4"
               >
-                <CubeIcon className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+                <CubeIcon className="w-8 h-8 text-brand" />
                 <div>
                   <p className="font-medium">Combos</p>
                   <p className="text-sm text-fg-muted-token">Kits de produtos</p>
@@ -267,9 +267,9 @@ export const StoreDetailPage: React.FC = () => {
               </Link>
               <Link
                 to={`/stores/${storeId}/coupons`}
-                className="flex items-center gap-3 p-4 bg-surface-2 rounded-lg hover:bg-surface-2 dark:hover:bg-zinc-700 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
+                className="superficie-alta flex items-center gap-3 p-4"
               >
-                <TagIcon className="w-8 h-8 text-green-600 dark:text-green-400" />
+                <TagIcon className="w-8 h-8 text-brand" />
                 <div>
                   <p className="font-medium">Cupons</p>
                   <p className="text-sm text-fg-muted-token">Gerenciar descontos</p>
@@ -277,9 +277,9 @@ export const StoreDetailPage: React.FC = () => {
               </Link>
               <Link
                 to={`/stores/${storeId}/delivery`}
-                className="flex items-center gap-3 p-4 bg-surface-2 rounded-lg hover:bg-surface-2 dark:hover:bg-zinc-700 dark:hover:bg-[var(--dark-bg-hover,#161616)] transition-colors"
+                className="superficie-alta flex items-center gap-3 p-4"
               >
-                <TruckIcon className="w-8 h-8 text-orange-600" />
+                <TruckIcon className="w-8 h-8 text-brand" />
                 <div>
                   <p className="font-medium">Entrega</p>
                   <p className="text-sm text-fg-muted-token">Zonas e taxas</p>
@@ -323,10 +323,10 @@ export const StoreDetailPage: React.FC = () => {
               <div className="pt-3 border-t">
                 <p className="text-sm text-fg-muted-token">Configurações de Entrega</p>
                 <div className="flex gap-4 mt-1">
-                  <span className={`text-sm ${store.delivery_enabled ? 'text-green-600' : 'text-fg-muted-token'}`}>
+                  <span className={`text-sm ${store.delivery_enabled ? 'text-success-token' : 'text-fg-muted-token'}`}>
                     {store.delivery_enabled ? '✓ Delivery' : '✗ Delivery'}
                   </span>
-                  <span className={`text-sm ${store.pickup_enabled ? 'text-green-600' : 'text-fg-muted-token'}`}>
+                  <span className={`text-sm ${store.pickup_enabled ? 'text-success-token' : 'text-fg-muted-token'}`}>
                     {store.pickup_enabled ? '✓ Retirada' : '✗ Retirada'}
                   </span>
                 </div>

@@ -89,7 +89,7 @@ export default function SeletorDeIngrediente({
         aria-label="Buscar ingrediente"
       />
       {aberto && (
-        <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded border border-black/15 bg-white dark:bg-zinc-900 shadow-lg text-sm">
+        <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded border border-black/15 bg-surface shadow-lg text-sm">
           {buscando && <li className="p-2 opacity-60">Buscando…</li>}
           {!buscando && !opcoes.length && <li className="p-2 opacity-60">Nada encontrado</li>}
           {opcoes.map((o) => (

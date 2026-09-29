@@ -128,7 +128,7 @@ export const DialogTitle: React.FC<DialogTitleProps> = ({
   return (
     <h2
       id={titleId}
-      className={cn('text-lg font-semibold text-gray-900 dark:text-white', className)}
+      className={cn('text-lg font-semibold text-fg-token', className)}
       {...props}
     >
       {children}
@@ -145,7 +145,7 @@ export const DialogDescription: React.FC<DialogDescriptionProps> = ({
   ...props
 }) => (
   <p
-    className={cn('text-sm text-gray-500 dark:text-zinc-400 mt-1', className)}
+    className={cn('text-sm text-fg-muted-token mt-1', className)}
     {...props}
   >
     {children}
