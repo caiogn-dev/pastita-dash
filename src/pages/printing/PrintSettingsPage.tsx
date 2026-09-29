@@ -229,11 +229,11 @@ const PrintSettingsPage: React.FC = () => {
 
       {/* Agentes */}
       <Card className="p-6">
-        <h2 className="text-lg font-semibold text-fg-token mb-4">Agentes (computadores com impressora)</h2>
+        <h2 className="text-lg font-semibold text-fg-token mb-4">Computadores com impressora</h2>
         <Tabela<(typeof agents)[number]>
           itens={agents}
           chave={(a) => String(a.id)}
-          rotuloDaLinha={(a) => `Agente ${a.name}`}
+          rotuloDaLinha={(a) => a.name}
           carregando={loading}
           vazio={{
             titulo: 'Nenhum agente configurado',
@@ -308,7 +308,7 @@ const PrintSettingsPage: React.FC = () => {
                     ))}
                   </select>
                 ) : (
-                  <span title="Conecte o agente para detectar as impressoras automaticamente">
+                  <span title="As impressoras aparecem quando o computador conectar">
                     {a.printer_name || '—'}
                     <span className="block text-badge text-fg-muted-token">
                       aguardando detecção…
@@ -471,7 +471,7 @@ const PrintSettingsPage: React.FC = () => {
       </Card>
 
       {/* Modal de criação */}
-      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Novo agente de impressão">
+      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Novo computador com impressora">
         <div className="flex flex-col gap-4">
           <Input label="Nome" value={newAgentName} onChange={(e) => setNewAgentName(e.target.value)} placeholder="Caixa principal" />
           <Select
@@ -492,7 +492,7 @@ const PrintSettingsPage: React.FC = () => {
       </Modal>
 
       {/* Modal da chave (exibida uma única vez) */}
-      <Modal isOpen={Boolean(revealedKey)} onClose={() => setRevealedKey(null)} title="Chave do agente — copie agora">
+      <Modal isOpen={Boolean(revealedKey)} onClose={() => setRevealedKey(null)} title="Chave de acesso — copie agora">
         <div className="flex flex-col gap-3">
           <p className="text-sm text-fg-muted-token">
             <strong>{revealedKey?.agentName}</strong> · aparece uma vez só. Cole em <code>config/agent.json</code>.
