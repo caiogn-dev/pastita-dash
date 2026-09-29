@@ -343,10 +343,7 @@ export const StoreDetailPage: React.FC = () => {
         title="Editar Loja"
         size="lg"
       >
-        <p className="text-fg-muted-token">
-          Funcionalidade de edição em desenvolvimento.
-          Por enquanto, use o Django Admin para editar os dados da loja.
-        </p>
+        <Link to={`/stores/${store.slug}/settings`} className="text-brand underline">Abrir configurações da loja</Link>
         <div className="flex justify-end mt-4">
           <Button onClick={() => setIsEditModalOpen(false)}>
             Fechar

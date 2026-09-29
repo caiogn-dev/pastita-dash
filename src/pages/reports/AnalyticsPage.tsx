@@ -55,8 +55,7 @@ const UpgradeCard: React.FC = () => (
     <LockClosedIcon className="w-10 h-10 mx-auto text-brand-ink" />
     <h2 className="mt-3 text-lg font-semibold text-fg-token">Relatórios avançados são do plano Pro</h2>
     <p className="mt-1 text-sm text-fg-muted-token max-w-md mx-auto">
-      Horários de pico, mapa de calor, segmentos de clientes, engenharia de cardápio e mais —
-      liberados no Pro e no Premium. A Visão Geral continua disponível no seu plano.
+      Horários de pico, mapa de calor, segmentos e engenharia de cardápio.
     </p>
     <Link
       to="/assinatura"

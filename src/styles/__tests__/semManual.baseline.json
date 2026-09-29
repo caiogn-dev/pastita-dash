@@ -9,9 +9,7 @@
   "pages/marketing/whatsapp/campanha/passos/PassoDaRevisao.tsx": 1,
   "pages/orders/NotaFiscalPedido.tsx": 1,
   "pages/orders/OrderDetailContent.tsx": 1,
-  "pages/payments/PaymentsPage.tsx": 1,
   "pages/reports/AnalyticsPage.tsx": 1,
   "pages/settings/SettingsPage.tsx": 1,
-  "pages/stores/BannersSection.tsx": 1,
-  "pages/stores/StoreDetailPage.tsx": 1
+  "pages/stores/BannersSection.tsx": 1
 }

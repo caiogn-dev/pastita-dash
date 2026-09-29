@@ -40,7 +40,7 @@ export function contarManual(codigo: string): number {
   for (const m of codigo.matchAll(DESCRICAO)) {
     const t = m[2];
     if (/\$\{/.test(t)) continue;                                                     // dado vivo
-    if (/(falhou|não p[uô]de|não puderam|Não há|Houve um erro|Tente (de novo|novamente)|aparece[m]? aqui|Conecte )/.test(t)) continue; // erro, vazio, bloqueio
+    if (/(falhou|não p[uô]de|não puderam|Não há|Houve um erro|Não foi possível|Tente (de novo|novamente)|aparece[m]? aqui|Conecte )/.test(t)) continue; // erro, vazio, bloqueio
     n += 1;
   }
   return n;
