@@ -33,11 +33,11 @@ interface AgentCardProps {
 }
 
 const providerColors: Record<string, { bg: string; text: string; border: string }> = {
-  kimi: { bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-700 dark:text-purple-300', border: 'border-purple-200 dark:border-purple-800' },
-  openai: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-300', border: 'border-green-200 dark:border-green-800' },
-  anthropic: { bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-700 dark:text-orange-300', border: 'border-orange-200 dark:border-orange-800' },
-  nvidia: { bg: 'bg-teal-100 dark:bg-teal-900/30', text: 'text-teal-700 dark:text-teal-300', border: 'border-teal-200 dark:border-teal-800' },
-  ollama: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-300', border: 'border-blue-200 dark:border-blue-800' },
+  kimi: { bg: 'bg-brand-soft ', text: 'text-brand ', border: 'border-brand ' },
+  openai: { bg: 'bg-success-soft ', text: 'text-success-token ', border: 'border-border-token ' },
+  anthropic: { bg: 'bg-warning-soft ', text: 'text-warning-token ', border: 'border-border-token ' },
+  nvidia: { bg: 'bg-success-soft ', text: 'text-success-token ', border: 'border-border-token ' },
+  ollama: { bg: 'bg-info-soft ', text: 'text-info-token ', border: 'border-border-token ' },
 };
 
 const statusColors: Record<string, { bg: string; text: string; dot: string }> = {

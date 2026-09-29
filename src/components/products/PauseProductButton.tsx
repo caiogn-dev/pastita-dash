@@ -63,7 +63,7 @@ const PauseProductButton: React.FC<PauseProductButtonProps> = ({ productId, isPa
         type="button"
         onClick={handleUnpause}
         disabled={loading}
-        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 disabled:opacity-50"
+        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-success-token bg-success-soft hover:brightness-110 disabled:opacity-50"
       >
         <PlayCircleIcon className="h-4 w-4" />
         Retomar
@@ -79,7 +79,7 @@ const PauseProductButton: React.FC<PauseProductButtonProps> = ({ productId, isPa
         disabled={loading}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300 disabled:opacity-50"
+        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-warning-token bg-warning-soft hover:brightness-110 disabled:opacity-50"
       >
         <PauseCircleIcon className="h-4 w-4" />
         Pausar

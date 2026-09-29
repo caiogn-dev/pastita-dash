@@ -45,8 +45,8 @@ export function StepCliente({
         </p>
       )}
       {isNewCustomer && (
-        <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3 space-y-3">
-          <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+        <div className="rounded-xl border border-border-token bg-warning-soft p-3 space-y-3">
+          <p className="text-xs font-semibold text-warning-token ">
             Novo cliente — preencha o telefone
           </p>
           <input
@@ -54,7 +54,7 @@ export function StepCliente({
             value={customer.phone_number_edited || ''}
             onChange={(e) => handlePhoneChange(e.target.value)}
             placeholder="(11) 99999-9999"
-            className="w-full px-3 py-2 rounded-lg border border-amber-300 dark:border-amber-700 bg-surface text-sm text-fg-token placeholder:text-fg-muted-token focus:outline-none focus:ring-1 focus:ring-brand"
+            className="controle w-full py-2 text-sm placeholder:text-fg-muted-token"
           />
         </div>
       )}

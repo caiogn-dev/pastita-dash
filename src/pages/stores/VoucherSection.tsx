@@ -217,9 +217,9 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
         />
 
         {ambientesDivergem && (
-          <div role="alert" className="flex items-start gap-2 p-3 rounded bg-amber-50 dark:bg-amber-900/20">
-            <ExclamationTriangleIcon className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-800 dark:text-amber-300">
+          <div role="alert" className="flex items-start gap-2 p-3 rounded bg-warning-soft ">
+            <ExclamationTriangleIcon className="w-5 h-5 text-warning-token shrink-0 mt-0.5" />
+            <p className="text-sm text-warning-token ">
               As duas chaves parecem ser de ambientes diferentes (uma de teste e
               outra de produção). Assim o cartão é lido numa conta e a
               cobrança tentada em outra, e o pagamento falha.

@@ -226,7 +226,7 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MessageCircle className="w-6 h-6 text-green-500" />
+            <MessageCircle className="w-6 h-6 text-success-token" />
             Login com WhatsApp
           </DialogTitle>
         </DialogHeader>
@@ -242,9 +242,9 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
           <div className="space-y-4">
             <div className="text-center py-4">
               <div className="w-20 h-20 mx-auto mb-4 bg-success-soft rounded-full flex items-center justify-center">
-                <Smartphone className="w-10 h-10 text-green-600" />
+                <Smartphone className="w-10 h-10 text-success-token" />
               </div>
-              <p className="text-gray-600">
+              <p className="text-fg-muted-token">
                 Digite seu número de WhatsApp para receber um código de verificação
               </p>
             </div>
@@ -277,7 +277,7 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
               )}
             </Button>
             
-            <p className="text-xs text-center text-gray-500">
+            <p className="text-xs text-center text-fg-muted-token">
               Você receberá um código de 6 dígitos no WhatsApp
             </p>
           </div>
@@ -287,9 +287,9 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
           <div className="space-y-4">
             <div className="text-center py-2">
               <div className="w-16 h-16 mx-auto mb-3 bg-success-soft rounded-full flex items-center justify-center">
-                <Lock className="w-8 h-8 text-green-600" />
+                <Lock className="w-8 h-8 text-success-token" />
               </div>
-              <p className="text-gray-600">
+              <p className="text-fg-muted-token">
                 Digite o código de 6 dígitos enviado para
               </p>
               <p className="font-semibold text-lg">{phone}</p>
@@ -312,7 +312,7 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
             </div>
             
             {remainingAttempts < 3 && (
-              <p className="text-center text-sm text-amber-600">
+              <p className="text-center text-sm text-warning-token">
                 {remainingAttempts} tentativas restantes
               </p>
             )}
@@ -336,14 +336,14 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
               <Button
                 variant="ghost"
                 onClick={() => setStep('phone')}
-                className="text-gray-500"
+                className="text-fg-muted-token"
               >
                 <ArrowLeft className="w-4 h-4 mr-1" />
                 Voltar
               </Button>
               
               {countdown > 0 ? (
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-fg-muted-token">
                   Reenviar em {countdown}s
                 </span>
               ) : (
@@ -363,10 +363,10 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
         {step === 'success' && (
           <div className="text-center py-8">
             <div className="w-20 h-20 mx-auto mb-4 bg-success-soft rounded-full flex items-center justify-center animate-bounce">
-              <CheckCircle2 className="w-10 h-10 text-green-600" />
+              <CheckCircle2 className="w-10 h-10 text-success-token" />
             </div>
             <h3 className="text-xl font-semibold mb-2">Autenticado!</h3>
-            <p className="text-gray-600">Redirecionando...</p>
+            <p className="text-fg-muted-token">Redirecionando...</p>
           </div>
         )}
       </DialogContent>

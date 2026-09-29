@@ -164,17 +164,17 @@ export function StepEntrega({
 
           {/* Resultado da rota */}
           {routeQuote && (
-            <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-3 space-y-1">
+            <div className="rounded-xl border border-border-token bg-success-soft p-3 space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                <span className="text-sm font-semibold text-success-token ">
                   Taxa de entrega
                 </span>
-                <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                <span className="text-sm font-bold text-success-token ">
                   {fmt(routeQuote.fee)}
                 </span>
               </div>
               {routeQuote.distance_km != null && (
-                <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                <p className="text-xs text-success-token ">
                   {Number(routeQuote.distance_km).toFixed(1)} km
                   {routeQuote.duration_minutes != null &&
                     `· ~${Math.round(Number(routeQuote.duration_minutes))} min`}
@@ -186,7 +186,7 @@ export function StepEntrega({
           {/* Sem taxa calculada, "Avançar" fica travado — o pedido da Ana Paula
               foi enviado com frete 0 justamente por não ter passado por aqui. */}
           {!routeQuote && !calculatingRoute && freeAddressText.trim().length > 0 && (
-            <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+            <p className="text-xs font-medium text-warning-token ">
               Calcule a taxa de entrega para continuar.
             </p>
           )}

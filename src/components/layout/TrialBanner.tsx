@@ -72,7 +72,7 @@ export const TrialBanner: FC = () => {
       <div
         role="alert"
         aria-live="assertive"
-        className="flex items-center gap-3 px-4 py-2 text-sm bg-red-600 text-white border-b border-red-700 max-sm:px-3"
+        className="flex items-center gap-3 px-4 py-2 text-sm bg-danger-token text-white border-b border-danger-token max-sm:px-3"
       >
         <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
         <p className="flex-1 min-w-0 leading-tight">
@@ -98,7 +98,7 @@ export const TrialBanner: FC = () => {
       <div
         role="alert"
         aria-live="assertive"
-        className="flex items-center gap-3 px-4 py-2 text-sm bg-red-600 text-white border-b border-red-700 max-sm:px-3"
+        className="flex items-center gap-3 px-4 py-2 text-sm bg-danger-token text-white border-b border-danger-token max-sm:px-3"
       >
         <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
         <p className="flex-1 min-w-0 leading-tight">
@@ -121,7 +121,7 @@ export const TrialBanner: FC = () => {
       <div
         role="alert"
         aria-live="assertive"
-        className="flex items-center gap-3 px-4 py-2 text-sm bg-amber-500 text-white border-b border-amber-600 max-sm:px-3"
+        className="flex items-center gap-3 px-4 py-2 text-sm bg-warning-token text-white border-b border-warning-token max-sm:px-3"
       >
         <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
         <p className="flex-1 min-w-0 leading-tight">

@@ -143,7 +143,7 @@ const CashPage: React.FC = () => {
             </div>
             <div>
               <p className="text-fg-muted-token">Diferença</p>
-              <p className={`font-bold ${Number(closedResult.difference) < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+              <p className={`font-bold ${Number(closedResult.difference) < 0 ? 'text-danger-token' : 'text-success-token'}`}>
                 {formatCurrency(closedResult.difference)}
               </p>
             </div>
@@ -255,7 +255,7 @@ const CashPage: React.FC = () => {
                   {session.movements.map((mv) => (
                     <tr key={mv.id} className="border-t border-border-token">
                       <td className="py-1.5 capitalize text-fg-token">{mv.kind}</td>
-                      <td className={`py-1.5 font-medium ${mv.kind === 'sangria' ? 'text-red-600' : 'text-emerald-600'}`}>
+                      <td className={`py-1.5 font-medium ${mv.kind === 'sangria' ? 'text-danger-token' : 'text-success-token'}`}>
                         {mv.kind === 'sangria' ? '−' : '+'}{formatCurrency(mv.amount)}
                       </td>
                       <td className="py-1.5 text-fg-muted-token">{mv.reason || '—'}</td>

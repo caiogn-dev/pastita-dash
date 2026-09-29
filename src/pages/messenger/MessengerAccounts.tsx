@@ -97,7 +97,7 @@ export default function MessengerAccounts() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 dark:bg-red-900/20 rounded-lg border-l-4 border-red-500 text-red-700 dark:text-red-400">
+        <div className="flex items-center gap-2 p-4 mb-4 bg-danger-soft rounded-lg border-l-4 border-danger-token text-danger-token ">
           <XCircleIcon className="w-5 h-5 flex-shrink-0" />
           <span className="font-medium">{error}</span>
         </div>
@@ -138,7 +138,7 @@ export default function MessengerAccounts() {
                     onClick={() => handleDelete(account.id)}
                     aria-label={`Excluir conta ${account.page_name}`}
                     title="Excluir conta"
-                    className="p-1.5 rounded hover:bg-bg-hover text-red-500 transition-colors"
+                    className="p-1.5 rounded hover:bg-bg-hover text-danger-token transition-colors"
                   >
                     <TrashIcon className="w-4 h-4" />
                   </button>

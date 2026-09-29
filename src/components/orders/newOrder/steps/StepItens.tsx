@@ -90,7 +90,7 @@ export function StepItens({
                 }`}
               >
                 <span className="truncate font-medium">{product.name}</span>
-                <span className="flex-shrink-0 text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span className="flex-shrink-0 text-success-token font-semibold">
                   {inCart ? 'Adicionado' : fmt(precoVigenteDoProduto(product))}
                 </span>
               </button>
@@ -152,7 +152,7 @@ export function StepItens({
                   type="button"
                   onClick={() => onRemove(item.product.id)}
                   aria-label={`Remover ${item.product.name} do carrinho`}
-                  className="ml-1 text-red-400 hover:text-red-600 transition-colors"
+                  className="ml-1 text-danger-token hover:text-danger-token transition-colors"
                 >
                   <TrashIcon className="h-4 w-4" />
                 </button>

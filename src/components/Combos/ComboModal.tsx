@@ -131,12 +131,12 @@ export const ComboModal: React.FC<ComboModalProps> = ({
 
         {/* Validation Errors */}
         {errors.length > 0 && (
-          <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+          <div className="p-4 rounded-lg bg-danger-soft border border-border-token ">
             <div className="flex gap-3">
-              <ExclamationCircleIcon className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+              <ExclamationCircleIcon className="w-5 h-5 text-danger-token flex-shrink-0 mt-0.5" />
               <div className="space-y-1">
                 {errors.map((error, idx) => (
-                  <p key={idx} className="text-sm text-red-700 dark:text-red-300">
+                  <p key={idx} className="text-sm text-danger-token ">
                     {error}
                   </p>
                 ))}
@@ -169,7 +169,7 @@ export const ComboModal: React.FC<ComboModalProps> = ({
                       </h4>
                       <p className="text-xs text-fg-muted-token mt-1">
                         {group.is_required ? (
-                          <span className="text-red-600 dark:text-red-400 font-medium">
+                          <span className="text-danger-token font-medium">
                             Obrigatório: {group.min_selections} - {group.max_selections} seleção(ões)
                           </span>
                         ) : (
@@ -180,7 +180,7 @@ export const ComboModal: React.FC<ComboModalProps> = ({
                       </p>
                     </div>
                     {selected.length > 0 && !hasError && (
-                      <span className="text-xs px-2 py-1 rounded-full bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400">
+                      <span className="text-xs px-2 py-1 rounded-full bg-success-soft text-success-token ">
                         {selected.length}/{group.max_selections}
                       </span>
                     )}
@@ -229,7 +229,7 @@ export const ComboModal: React.FC<ComboModalProps> = ({
                                   {variantLimit.stock > 0 ? (
                                     <>Estoque: {variantLimit.stock}</>
                                   ) : (
-                                    <span className="text-red-600 dark:text-red-400 font-medium">Sem estoque</span>
+                                    <span className="text-danger-token font-medium">Sem estoque</span>
                                   )}
                                 </span>
                                 {maxForVariant > 1 && (

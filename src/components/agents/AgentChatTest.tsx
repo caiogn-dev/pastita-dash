@@ -263,12 +263,12 @@ export const AgentChatTest: React.FC<AgentChatTestProps> = ({
 
       {/* Debug Panel */}
       {showDebug && (
-        <div className="px-4 py-2 bg-slate-900 text-slate-300 text-xs font-mono border-b border-border-token">
+        <div className="px-4 py-2 bg-surface-2 text-fg-muted-token text-xs font-mono border-b border-border-token">
           <div>Agent ID: {agentId || 'N/A'}</div>
           <div>Session ID: {sessionId || 'N/A'}</div>
           <div>Status: {connectionStatus}</div>
           <div>Messages: {messages.length}</div>
-          <div className="mt-1 text-slate-500">Abra o console (F12) para logs detalhados</div>
+          <div className="mt-1 text-fg-muted-token">Abra o console (F12) para logs detalhados</div>
         </div>
       )}
 

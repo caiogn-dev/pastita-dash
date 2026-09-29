@@ -66,7 +66,7 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
         <button aria-label="Limpar busca"
           type="button"
           onClick={handleClear}
-          className="p-1 rounded-full text-fg-muted-token hover:text-red-500 hover:bg-danger-soft dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
+          className="p-1 rounded-full text-fg-muted-token hover:text-danger-token hover:bg-danger-soft transition-colors flex-shrink-0"
           title="Remover cliente"
         >
           <XMarkIcon className="h-4 w-4" />
@@ -164,7 +164,7 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
                 </div>
                 {/* Spent */}
                 {customer.total_spent > 0 && (
-                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+                  <span className="text-xs font-semibold text-success-token flex-shrink-0">
                     {formatCurrency(customer.total_spent)}
                   </span>
                 )}

@@ -60,7 +60,7 @@ export const TableSkeleton: React.FC<{ rows?: number; columns?: number }> = ({
       {Array.from({ length: rows }).map((_, i) => (
         <div
           key={i}
-          className="flex gap-4 py-3 border-b border-gray-100 dark:border-zinc-800"
+          className="flex gap-4 py-3 border-b border-border-token "
         >
           {Array.from({ length: columns }).map((_, j) => (
             <Skeleton key={j} variant="text" className="flex-1" />

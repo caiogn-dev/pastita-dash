@@ -26,17 +26,17 @@ const badgeConfig: Record<BadgeTone, { label: string; className: string }> = {
   paid: {
     label: 'Pago',
     className:
-      'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400',
+      'bg-success-soft text-success-token  ',
   },
   pending: {
     label: 'Pendente',
     className:
-      'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+      'bg-warning-soft text-warning-token  ',
   },
   expired: {
     label: 'Expirado',
     className:
-      'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-400',
+      'bg-surface-2 text-fg-muted-token dark:bg-white/10 ',
   },
 };
 

@@ -50,15 +50,15 @@ export const AvisoEnderecoDivergente: React.FC<{ metadata?: unknown }> = ({ meta
     <div
       role="alert"
       data-testid="aviso-endereco-divergente"
-      className="rounded-xl border border-amber-400/60 bg-amber-50 px-4 py-4 dark:border-amber-700/60 dark:bg-amber-950/30 sm:px-5"
+      className="rounded-xl border border-warning-token bg-warning-soft px-4 py-4 sm:px-5"
     >
       <div className="flex items-start gap-3">
-        <ExclamationTriangleIcon className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+        <ExclamationTriangleIcon className="mt-0.5 h-5 w-5 shrink-0 text-warning-token " />
         <div className="min-w-0 space-y-2">
-          <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+          <p className="text-sm font-semibold text-warning-token ">
             Confirme o endereço antes de sair para a entrega
           </p>
-          <p className="text-sm text-amber-800 dark:text-amber-300">
+          <p className="text-sm text-warning-token ">
             O cliente escreveu <strong>{d.digitado}</strong>, mas o pin do mapa
             cai em <strong>{d.pin}</strong>. A taxa de entrega foi calculada
             pelo pin.
@@ -68,7 +68,7 @@ export const AvisoEnderecoDivergente: React.FC<{ metadata?: unknown }> = ({ meta
               href={maps}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-sm font-medium text-amber-900 underline underline-offset-2 dark:text-amber-200"
+              className="inline-block text-sm font-medium text-warning-token underline underline-offset-2 "
             >
               Ver no mapa onde o pin caiu
             </a>
