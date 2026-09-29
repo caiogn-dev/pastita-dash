@@ -1,6 +1,6 @@
 import { copyToClipboard } from '../../utils/clipboard';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import {
   PrinterIcon,
   PlusIcon,
@@ -277,6 +277,9 @@ const PrintSettingsPage: React.FC = () => {
                           aria-label={`${a.name} imprime ${rotulo}`}
                         />
                         {rotulo}
+                        {valor === 'etiquetas' && papeis.includes('etiquetas') && storeId && (
+                          <Link to={`/stores/${storeId}/etiquetas/desenho/validade`} className="ml-1 text-xs text-brand underline" title="Desenhar e calibrar a etiqueta desta impressora">desenhar</Link>
+                        )}
                       </label>
                     ))}
                   </div>

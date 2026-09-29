@@ -136,11 +136,11 @@ export const imprimeEtiquetas = (agent: Pick<PrintAgent, 'imprime'>): boolean =>
 // sai igual na Zebra e na Elgin; a prévia É o bitmap que vai imprimir.
 // ---------------------------------------------------------------------------
 
-export type ModeloDesenhavel = 'validade' | 'nutricao-qr' | 'produto';
-export const MODELOS_DESENHAVEIS: ModeloDesenhavel[] = ['validade', 'nutricao-qr', 'produto'];
+export type ModeloDesenhavel = 'validade' | 'nutricao-qr' | 'produto' | 'nutricao';
+export const MODELOS_DESENHAVEIS: ModeloDesenhavel[] = ['validade', 'nutricao-qr', 'produto', 'nutricao'];
 
-export type TipoDeElemento = 'texto' | 'qr' | 'barras' | 'linha' | 'caixa';
-export type CampoDaEtiqueta = 'name' | 'manip' | 'val' | 'price' | 'description' | 'barcode' | 'publicUrl';
+export type TipoDeElemento = 'texto' | 'qr' | 'barras' | 'linha' | 'caixa' | 'tabela';
+export type CampoDaEtiqueta = 'name' | 'manip' | 'val' | 'price' | 'description' | 'barcode' | 'publicUrl' | 'ingredients' | 'allergens';
 
 export interface ElementoDoLayout {
   id: string;

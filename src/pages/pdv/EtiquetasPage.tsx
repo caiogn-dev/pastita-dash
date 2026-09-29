@@ -19,7 +19,7 @@ import { ADICIONAL_ETIQUETA } from '../../services/billing';
 import { AdicionalBloqueado } from '../../components/billing/AdicionalBloqueado';
 import {
   enviarEtiquetasParaAgente, imprimeEtiquetas, listPrintAgents, PrintAgent,
-  carregarLayouts, LayoutsDaLoja, ModeloDesenhavel, MODELOS_DESENHAVEIS,
+  carregarLayouts, LayoutsDaLoja, ModeloDesenhavel, MODELOS_DESENHAVEIS, previewDeEtiquetas,
 } from '../../services/printing';
 import { NumField } from './NumField';
 
@@ -31,6 +31,8 @@ type Template = 'produto' | 'validade' | 'nutricao' | 'nutricao-qr';
 interface NutritionProfile {
   product: string; serving_size_g: string; household_measure?: string;
   public_url?: string;
+  ingredientes_declaracao?: string;
+  porcoes_por_embalagem?: string | number | null;
   calculation?: {
     per_100g?: Record<string, string | number | null>;
     /** Arredondados pela IN 75/2020 — é o que vai impresso. */
@@ -334,7 +336,11 @@ const EtiquetasPage: React.FC = () => {
     // a lupa só é impressa quando a avaliação foi conclusiva.
     const frontOfPack = calc?.front_of_pack?.conclusivo ? calc.front_of_pack.texto : undefined;
     const publicUrl = profile.public_url;
-    return { name: c.product.name, servingG: Number(profile.serving_size_g || 100), householdMeasure: profile.household_measure, per100g, perServing, allergens, frontOfPack, publicUrl };
+    const servingsPerContainer = profile.porcoes_por_embalagem != null && profile.porcoes_por_embalagem !== '' ? Number(profile.porcoes_por_embalagem) : undefined;
+    return {
+      name: c.product.name, servingG: Number(profile.serving_size_g || 100), householdMeasure: profile.household_measure,
+      per100g, perServing, allergens, frontOfPack, publicUrl, servingsPerContainer, ingredients: profile.ingredientes_declaracao || undefined,
+    };
   }).filter((row): row is NonNullable<typeof row> => Boolean(row));
 
 
@@ -541,6 +547,30 @@ const EtiquetasPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template, cfg, selected, cfg.shelfDays]);
   const previewScale = Math.min(352 / preview.w, 1);
+  // Prévia real: o bitmap que a impressora recebe, quando a loja tem layout desenhado.
+  const [previaReal, setPreviaReal] = useState<{ png: string; largura: number; altura: number; chave: string } | null>(null);
+  const amostraDaPrevia = useMemo(() => {
+    if (!modeloDesenhavel) return null;
+    if (template === 'produto') return selected[0] ? produtoLabel(selected[0]) : null;
+    if (template === 'validade') return selected[0] ? { name: selected[0].product.name, manip: fmtDate(manip), val: fmtDate(val) } : null;
+    const nutri = montarEtiquetasNutricionais();
+    return nutri[0] ?? null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modeloDesenhavel, template, selected, cfg.shelfDays, profiles]);
+  useEffect(() => {
+    if (!layoutDaVez || !uuidDaSelecao || !modeloDesenhavel) { setPreviaReal(null); return undefined; }
+    const chave = `${modeloDesenhavel}:${JSON.stringify(layoutDaVez.layout)}:${JSON.stringify(amostraDaPrevia)}`;
+    let vivo = true;
+    const t = setTimeout(async () => {
+      try {
+        const etiquetas = Array.from({ length: layoutDaVez.layout.papel.colunas }, () => amostraDaPrevia ?? { name: 'Produto de exemplo', manip: fmtDate(manip), val: fmtDate(val), price: 'R$ 19,90', barcode: '7891234567895' });
+        const { data } = await previewDeEtiquetas({ store: uuidDaSelecao, modelo: modeloDesenhavel, layout: layoutDaVez.layout, etiquetas });
+        if (vivo) setPreviaReal({ png: data.png, largura: data.largura_mm, altura: data.altura_mm, chave });
+      } catch { if (vivo) setPreviaReal(null); }
+    }, 300);
+    return () => { vivo = false; clearTimeout(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layoutDaVez, uuidDaSelecao, modeloDesenhavel, amostraDaPrevia]);
 
   if (loading) return <Loading />;
 
@@ -811,7 +841,11 @@ const EtiquetasPage: React.FC = () => {
         <Card className="p-4 sm:p-5 space-y-5">
           <>
           <section>
-            <h3 className="text-sm font-semibold text-fg-token mb-1.5">Pré-visualização <span className="font-normal text-fg-muted-token">(tamanho real)</span></h3>
+            <h3 className="text-sm font-semibold text-fg-token mb-1.5">Pré-visualização <span className="font-normal text-fg-muted-token">{previaReal ? '(como sai na impressora)' : '(tamanho real)'}</span></h3>
+            {previaReal ? (
+              <img src={`data:image/png;base64,${previaReal.png}`} alt="Como sai na impressora" data-testid="etq-previa-real"
+                className="rounded border border-border-token bg-white" style={{ width: Math.min(352, previaReal.largura * MM_PX), height: 'auto' }} />
+            ) : (
             <div
               className="rounded border border-border-token overflow-hidden bg-white"
               style={{ width: preview.w * previewScale + 2, height: preview.h * previewScale + 2 }}
@@ -829,6 +863,7 @@ const EtiquetasPage: React.FC = () => {
                 }}
               />
             </div>
+            )}
           </section>
 
           <FormSummary

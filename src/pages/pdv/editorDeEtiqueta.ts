@@ -17,6 +17,10 @@ export const ETIQUETA_DE_EXEMPLO = {
   description: 'Alface, frango, parmesão e croutons',
   barcode: '7891234567895',
   publicUrl: 'https://backend.pastita.com.br/api/v1/nutrition/public/exemplo/',
+  ingredients: 'Alface, frango grelhado, parmesão, croutons, molho caesar',
+  allergens: 'ALÉRGICOS: CONTÉM LEITE, TRIGO E OVOS.',
+  servingG: 350, householdMeasure: '1 pote', servingsPerContainer: 1,
+  per100g: { energy_kcal: 128, carbohydrates_g: 28.1, total_sugars_g: null, added_sugars_g: 0, protein_g: 8.5, total_fat_g: 4.2, saturated_fat_g: 1.1, trans_fat_g: 0, fiber_g: 3.2, sodium_mg: 210 },
 };
 
 const arredondar = (v: number) => Math.round(v / PASSO) * PASSO;
@@ -65,12 +69,13 @@ export const novoElemento = (l: LayoutDeEtiqueta, tipo: TipoDeElemento): LayoutD
     barras: { campo: 'barcode', h: Math.min(15, l.etiqueta.altura - 2) },
     linha: { h: 0.3 },
     caixa: { espessura: 0.3, w: l.etiqueta.largura, h: l.etiqueta.altura, x: 0, y: 0 },
+    tabela: { w: Math.min(60, l.etiqueta.largura - 2), h: Math.min(62, l.etiqueta.altura - 2) },
   };
   return { ...l, elementos: [...l.elementos, { ...base, ...porTipo[tipo] }] };
 };
 
-export const textoDeExemplo = (molde: string, exemplo: Record<string, string>): string =>
-  molde.replace(/\{(\w+)\}/g, (_, k: string) => exemplo[k] ?? '');
+export const textoDeExemplo = (molde: string, exemplo: Record<string, unknown>): string =>
+  molde.replace(/\{(\w+)\}/g, (_, k: string) => (typeof exemplo[k] === 'string' ? (exemplo[k] as string) : ''));
 
 export const problemaDoLayout = (l: LayoutDeEtiqueta): string | null => {
   if (!(l.etiqueta.largura >= 5) || !(l.etiqueta.altura >= 5)) return 'A etiqueta precisa de largura e altura de pelo menos 5 mm.';
@@ -180,7 +185,7 @@ export const moverCamada = (l: LayoutDeEtiqueta, id: string, direcao: 'cima' | '
 
 export const nomeDoElemento = (e: ElementoDoLayout): string => {
   if (e.tipo === 'texto') return (e.texto || '').trim() || 'Texto';
-  return { qr: 'QR Code', barras: 'Código de barras', linha: 'Linha', caixa: 'Caixa', texto: 'Texto' }[e.tipo];
+  return { qr: 'QR Code', barras: 'Código de barras', linha: 'Linha', caixa: 'Caixa', texto: 'Texto', tabela: 'Tabela nutricional' }[e.tipo];
 };
 
 /** Desfazer/refazer: pilha simples, com o presente no topo de `passado`. */

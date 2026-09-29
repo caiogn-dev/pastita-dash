@@ -11,9 +11,9 @@ import toast from 'react-hot-toast';
 import {
   ArrowUturnLeftIcon, ArrowUturnRightIcon, ArrowsPointingInIcon, Bars3BottomLeftIcon, Bars3BottomRightIcon, Bars3Icon,
   BoldIcon, ChevronDownIcon, ChevronUpIcon, DocumentDuplicateIcon, EyeIcon, MagnifyingGlassMinusIcon,
-  MagnifyingGlassPlusIcon, MinusIcon, PrinterIcon, QrCodeIcon, StopIcon, TrashIcon, ViewfinderCircleIcon,
+  MagnifyingGlassPlusIcon, MinusIcon, PrinterIcon, QrCodeIcon, StopIcon, TableCellsIcon, TrashIcon, ViewfinderCircleIcon,
 } from '@heroicons/react/24/outline';
-import { Button, Input, NumberField, PageShell, Select } from '../../components/ui';
+import { Button, Input, PageShell, Select } from '../../components/ui';
 import { Loading } from '../../components/common';
 import { getStores } from '../../services/storesApi';
 import { normalizePaginatedResponse } from '../../services/api';
@@ -33,13 +33,14 @@ const ZOOMS = [2, 3, 4, PX_POR_MM_REAL, 5, 6, 8, 10, 12, 16];
 const REGUA = 22; // px
 const TOLERANCIA_GUIA = 0.4; // mm
 
-const NOME_DO_MODELO: Record<ModeloDesenhavel, string> = { validade: 'Validade', 'nutricao-qr': 'QR da tabela nutricional', produto: 'Produto com código de barras' };
-const NOMES: Record<TipoDeElemento, string> = { texto: 'Texto', qr: 'QR Code', barras: 'Código de barras', linha: 'Linha', caixa: 'Caixa' };
+const NOME_DO_MODELO: Record<ModeloDesenhavel, string> = { validade: 'Validade', 'nutricao-qr': 'QR da tabela nutricional', produto: 'Produto com código de barras', nutricao: 'Tabela nutricional' };
+const NOMES: Record<TipoDeElemento, string> = { texto: 'Texto', qr: 'QR Code', barras: 'Código de barras', linha: 'Linha', caixa: 'Caixa', tabela: 'Tabela nutricional' };
 const CAMPOS = [
   { valor: 'name', rotulo: 'Nome do produto' }, { valor: 'manip', rotulo: 'Data de manipulação' },
   { valor: 'val', rotulo: 'Data de validade' }, { valor: 'price', rotulo: 'Preço' },
   { valor: 'description', rotulo: 'Descrição' }, { valor: 'barcode', rotulo: 'Código de barras' },
   { valor: 'publicUrl', rotulo: 'Link da tabela nutricional' },
+  { valor: 'ingredients', rotulo: 'Ingredientes' }, { valor: 'allergens', rotulo: 'Alergênicos' },
 ];
 const CAMPOS_RAPIDOS: { rotulo: string; texto: string; tamanho: number; negrito: boolean }[] = [
   { rotulo: 'Nome do produto', texto: '{name}', tamanho: 2.6, negrito: true },
@@ -83,6 +84,28 @@ const Ferramenta: React.FC<{ rotulo: string; dica?: string; ativo?: boolean; des
     {children}
   </button>
 );
+/** Medida em mm, compacta: rótulo curto em cima, campo embaixo. Corrige a faixa só ao sair. */
+const Medida: React.FC<{ rotulo: string; valor: number; onMudar: (v: number) => void; min?: number; max?: number; step?: number; sufixo?: string; desabilitado?: boolean; 'data-testid'?: string }> = ({ rotulo, valor, onMudar, min = 0, max = 1000, step = 0.5, sufixo = 'mm', desabilitado, ...resto }) => {
+  const [texto, setTexto] = useState(String(valor));
+  useEffect(() => { setTexto(String(valor)); }, [valor]);
+  const confirmar = () => {
+    const n = Number(texto.replace(',', '.'));
+    const corrigido = Number.isFinite(n) && texto.trim() !== '' ? Math.min(max, Math.max(min, n)) : valor;
+    setTexto(String(corrigido));
+    if (corrigido !== valor) onMudar(corrigido);
+  };
+  return (
+    <label className="block text-xs text-fg-muted-token">
+      <span className="block truncate">{rotulo}</span>
+      <span className="mt-0.5 flex items-center gap-1">
+        <input type="number" inputMode="decimal" min={min} max={max} step={step} value={texto} disabled={desabilitado} aria-label={rotulo}
+          className="controle h-8 w-full px-2 text-right text-sm tabular-nums text-fg-token disabled:opacity-60" data-testid={resto['data-testid']}
+          onChange={(e) => setTexto(e.target.value)} onBlur={confirmar} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmar(); } }} />
+        {sufixo && <span className="w-6 shrink-0 text-xs">{sufixo}</span>}
+      </span>
+    </label>
+  );
+};
 const Separador: React.FC = () => <span className="mx-1 h-5 w-px bg-border-token" aria-hidden="true" />;
 const T: React.FC<{ negrito?: boolean }> = ({ negrito }) => <span className={`font-serif text-base leading-none ${negrito ? 'font-bold' : ''}`}>T</span>;
 
@@ -364,7 +387,7 @@ const DesignerDeEtiqueta: React.FC = () => {
             {[...layout.elementos].reverse().map((e) => (
               <li key={e.id} className={`flex items-center gap-1 rounded-md px-1.5 py-1 text-sm ${e.id === selecionado ? 'bg-brand/15 text-fg-token' : 'text-fg-muted-token hover:bg-surface-2'}`}>
                 <span className="w-4 shrink-0 text-fg-muted-token" aria-hidden="true">
-                  {e.tipo === 'texto' ? <T /> : e.tipo === 'qr' ? <QrCodeIcon className="w-4 h-4" /> : e.tipo === 'barras' ? <Bars3Icon className="w-4 h-4 rotate-90" /> : e.tipo === 'linha' ? <MinusIcon className="w-4 h-4" /> : <StopIcon className="w-4 h-4" />}
+                  {e.tipo === 'texto' ? <T /> : e.tipo === 'qr' ? <QrCodeIcon className="w-4 h-4" /> : e.tipo === 'barras' ? <Bars3Icon className="w-4 h-4 rotate-90" /> : e.tipo === 'linha' ? <MinusIcon className="w-4 h-4" /> : e.tipo === 'tabela' ? <TableCellsIcon className="w-4 h-4" /> : <StopIcon className="w-4 h-4" />}
                 </span>
                 <button type="button" className="min-w-0 flex-1 truncate text-left" onClick={() => setSelecionado(e.id)}>{nomeDoElemento(e)}</button>
                 <button type="button" aria-label="Subir camada" title="Trazer para frente" className="p-0.5 hover:text-fg-token" onClick={() => aplicar(moverCamada(layout, e.id, 'cima'))}><ChevronUpIcon className="w-3.5 h-3.5" /></button>
@@ -388,6 +411,14 @@ const DesignerDeEtiqueta: React.FC = () => {
             <Ferramenta rotulo="Código de barras" onClick={() => adicionar('barras')}><Bars3Icon className="w-4 h-4 rotate-90" /></Ferramenta>
             <Ferramenta rotulo="Linha" onClick={() => adicionar('linha')}><MinusIcon className="w-4 h-4" /></Ferramenta>
             <Ferramenta rotulo="Caixa" onClick={() => adicionar('caixa')}><StopIcon className="w-4 h-4" /></Ferramenta>
+            {modelo === 'nutricao' && (
+              <>
+                <Separador />
+                <Ferramenta rotulo="Tabela nutricional" onClick={() => adicionar('tabela')} data-testid="tool-tabela"><TableCellsIcon className="w-4 h-4" /><span>Tabela</span></Ferramenta>
+                <Ferramenta rotulo="Ingredientes" onClick={() => adicionar('texto', { texto: 'INGREDIENTES: {ingredients}', tamanho: 1.7, linhas: 10, w: 32, h: 25 })}><span>Ingredientes</span></Ferramenta>
+                <Ferramenta rotulo="Alergênicos" onClick={() => adicionar('texto', { texto: '{allergens}', tamanho: 1.8, negrito: true, linhas: 4, w: 32, h: 10 })}><span>Alergênicos</span></Ferramenta>
+              </>
+            )}
           </div>
 
           {elemento && (
@@ -424,6 +455,14 @@ const DesignerDeEtiqueta: React.FC = () => {
                 <>
                   <select aria-label="Conteúdo" className="controle h-8 px-2 text-sm" value={elemento.campo ?? ''} onChange={(e) => patch({ campo: e.target.value as ElementoDoLayout['campo'] })}>
                     {CAMPOS.map((c) => <option key={c.valor} value={c.valor}>{c.rotulo}</option>)}
+                  </select>
+                  <Separador />
+                </>
+              )}
+              {elemento.tipo === 'tabela' && (
+                <>
+                  <select aria-label="Fonte" className="controle h-8 px-2 text-sm" value={elemento.fonte ?? 'sans'} onChange={(e) => patch({ fonte: e.target.value as ElementoDoLayout['fonte'] })}>
+                    {FONTES.map((f) => <option key={f.valor} value={f.valor}>{f.rotulo}</option>)}
                   </select>
                   <Separador />
                 </>
@@ -489,7 +528,16 @@ const DesignerDeEtiqueta: React.FC = () => {
                               boxShadow: sel ? '0 0 0 1.5px var(--brand)' : ativa ? '0 0 0 1px rgba(0,0,0,.12)' : undefined,
                             }}
                           >
-                            {el.tipo === 'texto' ? textoDeExemplo(el.texto || '', ETIQUETA_DE_EXEMPLO) : el.tipo === 'qr' ? <QrCodeIcon className="h-full w-full opacity-60" /> : el.tipo === 'barras' ? <span className="text-xs">|||| ||| ||||</span> : null}
+                            {el.tipo === 'texto' ? textoDeExemplo(el.texto || '', ETIQUETA_DE_EXEMPLO)
+                              : el.tipo === 'qr' ? <QrCodeIcon className="h-full w-full opacity-60" />
+                                : el.tipo === 'barras' ? <span className="text-xs">|||| ||| ||||</span>
+                                  : el.tipo === 'tabela' ? (
+                                    <div className="flex h-full w-full flex-col" style={{ border: '2px solid #111', fontFamily: CSS_FONTE.sans }}>
+                                      <div className="text-center font-bold" style={{ fontSize: Math.max(6, h * 0.07), borderBottom: '1px solid #111' }}>INFORMAÇÃO NUTRICIONAL</div>
+                                      <div style={{ fontSize: Math.max(4, h * 0.035), padding: '0 2px', borderBottom: '3px solid #111' }}>Porções por embalagem · Porção</div>
+                                      <div className="flex-1" style={{ backgroundImage: 'repeating-linear-gradient(#111 0 1px, transparent 1px 100%)', backgroundSize: `100% ${Math.max(4, (h * 0.58) / 11)}px`, backgroundPosition: '0 0', opacity: 0.35 }} />
+                                    </div>
+                                  ) : null}
                             {sel && ALCAS.map((a) => (
                               <span key={a.alca} role="presentation" data-testid={`alca-${a.alca}`}
                                 onPointerDown={(e) => iniciarAlca(e, el, a.alca)}
@@ -521,28 +569,32 @@ const DesignerDeEtiqueta: React.FC = () => {
               {elemento.tipo === 'texto' && (
                 <Input label="Texto" value={elemento.texto || ''} onChange={(e) => patch({ texto: e.target.value })} data-testid="prop-texto" />
               )}
-              <NumberField rotulo="X" valor={elemento.x} min={0} max={300} step={0.1} sufixo="mm" onMudar={(v) => aplicar(moverElemento(layout, elemento.id, v - elemento.x, 0))} data-testid="prop-x" />
-              <NumberField rotulo="Y" valor={elemento.y} min={0} max={300} step={0.1} sufixo="mm" onMudar={(v) => aplicar(moverElemento(layout, elemento.id, 0, v - elemento.y))} data-testid="prop-y" />
-              <NumberField rotulo="Largura" valor={elemento.w} min={0.5} max={300} step={0.1} sufixo="mm" onMudar={(v) => aplicar(redimensionarPorAlca(layout, elemento.id, 'l', v - elemento.w, 0))} data-testid="prop-w" />
-              <NumberField rotulo="Altura" valor={elemento.h} min={0.5} max={300} step={0.1} sufixo="mm" onMudar={(v) => aplicar(redimensionarPorAlca(layout, elemento.id, 's', 0, v - elemento.h))} data-testid="prop-h" />
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                <Medida rotulo="X" valor={elemento.x} min={0} max={300} step={0.1} onMudar={(v) => aplicar(moverElemento(layout, elemento.id, v - elemento.x, 0))} data-testid="prop-x" />
+                <Medida rotulo="Y" valor={elemento.y} min={0} max={300} step={0.1} onMudar={(v) => aplicar(moverElemento(layout, elemento.id, 0, v - elemento.y))} data-testid="prop-y" />
+                <Medida rotulo="Largura" valor={elemento.w} min={0.5} max={300} step={0.1} onMudar={(v) => aplicar(redimensionarPorAlca(layout, elemento.id, 'l', v - elemento.w, 0))} data-testid="prop-w" />
+                <Medida rotulo="Altura" valor={elemento.h} min={0.5} max={300} step={0.1} onMudar={(v) => aplicar(redimensionarPorAlca(layout, elemento.id, 's', 0, v - elemento.h))} data-testid="prop-h" />
+              </div>
             </div>
           )}
 
           <div className="superficie p-3 space-y-2">
             <p className="text-sm font-semibold text-fg-token">Etiqueta</p>
-            <NumberField rotulo="Largura" valor={layout.etiqueta.largura} min={5} max={300} step={0.5} sufixo="mm" onMudar={(v) => setEtiqueta({ largura: v })} data-testid="lay-larg" />
-            <NumberField rotulo="Altura" valor={layout.etiqueta.altura} min={5} max={300} step={0.5} sufixo="mm" onMudar={(v) => setEtiqueta({ altura: v })} data-testid="lay-alt" />
-            <NumberField rotulo="Colunas" valor={layout.papel.colunas} min={1} max={12} step={1} onMudar={(v) => setPapel({ colunas: Math.round(v) })} data-testid="lay-cols" />
-            <NumberField rotulo="Vão entre colunas" valor={layout.papel.espaco} min={0} max={50} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ espaco: v })} data-testid="lay-vao" />
-            <NumberField rotulo="Vão entre linhas" valor={layout.papel.vao_linhas ?? 0} min={0} max={100} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ vao_linhas: v })} data-testid="lay-vao-linhas" />
-            <NumberField rotulo="Margem esquerda" valor={layout.papel.margem_esquerda ?? 0} min={0} max={200} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ margem_esquerda: v })} data-testid="lay-margem-esq" />
-            <NumberField rotulo="Margem direita" valor={layout.papel.margem_direita ?? 0} min={0} max={200} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ margem_direita: v })} data-testid="lay-margem-dir" />
-            {temMargensMedidas(layout)
-              ? <p className="text-xs tabular-nums text-fg-muted-token">Rolo {layout.papel.largura} mm</p>
-              : <NumberField rotulo="Rolo" valor={layout.papel.largura} min={5} max={400} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ largura: v })} data-testid="lay-papel" />}
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+              <Medida rotulo="Largura" valor={layout.etiqueta.largura} min={5} max={300} onMudar={(v) => setEtiqueta({ largura: v })} data-testid="lay-larg" />
+              <Medida rotulo="Altura" valor={layout.etiqueta.altura} min={5} max={300} onMudar={(v) => setEtiqueta({ altura: v })} data-testid="lay-alt" />
+              <Medida rotulo="Colunas" valor={layout.papel.colunas} min={1} max={12} step={1} sufixo="" onMudar={(v) => setPapel({ colunas: Math.round(v) })} data-testid="lay-cols" />
+              <Medida rotulo="Vão colunas" valor={layout.papel.espaco} min={0} max={50} onMudar={(v) => setPapel({ espaco: v })} data-testid="lay-vao" />
+              <Medida rotulo="Vão linhas" valor={layout.papel.vao_linhas ?? 0} min={0} max={100} onMudar={(v) => setPapel({ vao_linhas: v })} data-testid="lay-vao-linhas" />
+              {temMargensMedidas(layout)
+                ? <Medida rotulo="Rolo" valor={layout.papel.largura} min={5} max={400} desabilitado onMudar={() => undefined} />
+                : <Medida rotulo="Rolo" valor={layout.papel.largura} min={5} max={400} onMudar={(v) => setPapel({ largura: v })} data-testid="lay-papel" />}
+              <Medida rotulo="Margem esq." valor={layout.papel.margem_esquerda ?? 0} min={0} max={200} onMudar={(v) => setPapel({ margem_esquerda: v })} data-testid="lay-margem-esq" />
+              <Medida rotulo="Margem dir." valor={layout.papel.margem_direita ?? 0} min={0} max={200} onMudar={(v) => setPapel({ margem_direita: v })} data-testid="lay-margem-dir" />
+            </div>
             <Select rotulo="Tipo de rolo" opcoes={MODOS_DE_MIDIA} valor={layout.papel.modo_midia ?? 'gap'} onMudar={(v) => setPapel({ modo_midia: v as LayoutDeEtiqueta['papel']['modo_midia'] })} data-testid="lay-modo" />
             {layout.papel.modo_midia === 'continuo' && (
-              <NumberField rotulo="Passo" valor={layout.papel.passo ?? layout.etiqueta.altura} min={layout.etiqueta.altura} max={400} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ passo: v })} data-testid="lay-passo" />
+              <Medida rotulo="Passo entre linhas" valor={layout.papel.passo ?? layout.etiqueta.altura} min={layout.etiqueta.altura} max={400} onMudar={(v) => setPapel({ passo: v })} data-testid="lay-passo" />
             )}
             {!temMargensMedidas(layout) && Math.abs(layout.papel.largura - blocoMm(layout)) > 0.01 && (
               <button type="button" className="text-xs text-brand underline" onClick={() => aplicar(ajustarPapelAoBloco(layout))}>Rolo = {blocoMm(layout)} mm</button>
@@ -552,7 +604,7 @@ const DesignerDeEtiqueta: React.FC = () => {
           {agentes.length > 0 && (
             <div className="superficie p-3 space-y-2" data-testid="des-impressora">
               <p className="text-sm font-semibold text-fg-token">Impressora</p>
-              <Select rotulo="Impressora" opcoes={agentes.map((a) => ({ valor: a.id, rotulo: `${a.name} · ${a.printer_name}` }))} valor={agente} onMudar={setAgente} />
+              <Select rotuloOculto="Impressora" opcoes={agentes.map((a) => ({ valor: a.id, rotulo: `${a.name} · ${a.printer_name}` }))} valor={agente} onMudar={setAgente} />
               <div className="flex flex-wrap gap-1.5">
                 <Button variant="secondary" size="sm" disabled={!agente || !!ocupado || !!problema} onClick={imprimirTeste} data-testid="des-teste" title="Imprime uma linha com dados de exemplo">
                   <PrinterIcon className="w-4 h-4" />{ocupado === 'teste' ? 'Enviando…' : 'Teste'}
@@ -561,9 +613,11 @@ const DesignerDeEtiqueta: React.FC = () => {
                   <ViewfinderCircleIcon className="w-4 h-4" />{ocupado === 'grade' ? 'Enviando…' : 'Grade'}
                 </Button>
               </div>
-              <NumberField rotulo="Horizontal" valor={cal.desloc_x ?? 0} min={-30} max={30} step={0.5} sufixo="mm" onMudar={(v) => setCal((c) => ({ ...c, desloc_x: v }))} data-testid="cal-x" />
-              <NumberField rotulo="Vertical" valor={cal.desloc_y ?? 0} min={-15} max={15} step={0.5} sufixo="mm" onMudar={(v) => setCal((c) => ({ ...c, desloc_y: v }))} data-testid="cal-y" />
-              <NumberField rotulo="Escurecimento" valor={cal.escuro ?? 10} min={0} max={30} step={1} onMudar={(v) => setCal((c) => ({ ...c, escuro: v }))} data-testid="cal-escuro" />
+              <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
+                <Medida rotulo="Horizontal" valor={cal.desloc_x ?? 0} min={-30} max={30} onMudar={(v) => setCal((c) => ({ ...c, desloc_x: v }))} data-testid="cal-x" />
+                <Medida rotulo="Vertical" valor={cal.desloc_y ?? 0} min={-15} max={15} onMudar={(v) => setCal((c) => ({ ...c, desloc_y: v }))} data-testid="cal-y" />
+                <Medida rotulo="Escuro" valor={cal.escuro ?? 10} min={0} max={30} step={1} sufixo="" onMudar={(v) => setCal((c) => ({ ...c, escuro: v }))} data-testid="cal-escuro" />
+              </div>
               <Button variant="secondary" size="sm" disabled={!agente || !!ocupado} onClick={salvarCal} data-testid="cal-salvar">Salvar calibração</Button>
             </div>
           )}
