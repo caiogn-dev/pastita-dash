@@ -158,6 +158,10 @@ export interface ElementoDoLayout {
   campo?: CampoDaEtiqueta;
   /** caixa: espessura da borda em mm. */
   espessura?: number;
+  /** texto: família (Liberation no backend = métricas de Arial / Arial Narrow / Times / Courier). */
+  fonte?: 'sans' | 'estreita' | 'serif' | 'mono';
+  /** texto: quebrar em `linhas` (padrão) ou manter em uma linha encolhendo a letra até caber. */
+  ajuste?: 'quebrar' | 'encolher';
 }
 
 export interface LayoutDeEtiqueta {

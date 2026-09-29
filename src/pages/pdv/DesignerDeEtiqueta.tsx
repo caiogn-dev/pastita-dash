@@ -9,10 +9,11 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
-  ArrowUturnLeftIcon, ArrowUturnRightIcon, ChevronDownIcon, ChevronUpIcon, DocumentDuplicateIcon,
-  MagnifyingGlassMinusIcon, MagnifyingGlassPlusIcon, TrashIcon,
+  ArrowUturnLeftIcon, ArrowUturnRightIcon, ArrowsPointingInIcon, Bars3BottomLeftIcon, Bars3BottomRightIcon, Bars3Icon,
+  BoldIcon, ChevronDownIcon, ChevronUpIcon, DocumentDuplicateIcon, EyeIcon, MagnifyingGlassMinusIcon,
+  MagnifyingGlassPlusIcon, MinusIcon, PrinterIcon, QrCodeIcon, StopIcon, TrashIcon, ViewfinderCircleIcon,
 } from '@heroicons/react/24/outline';
-import { Button, Input, NumberField, PageShell, Select, Switch } from '../../components/ui';
+import { Button, Input, NumberField, PageShell, Select } from '../../components/ui';
 import { Loading } from '../../components/common';
 import { getStores } from '../../services/storesApi';
 import { normalizePaginatedResponse } from '../../services/api';
@@ -46,6 +47,16 @@ const CAMPOS_RAPIDOS: { rotulo: string; texto: string; tamanho: number; negrito:
   { rotulo: 'Manipulação', texto: 'Manip.: {manip}', tamanho: 2.1, negrito: false },
   { rotulo: 'Preço', texto: '{price}', tamanho: 4, negrito: true },
 ];
+const FONTES = [
+  { valor: 'sans', rotulo: 'Arial' }, { valor: 'estreita', rotulo: 'Arial estreita' },
+  { valor: 'serif', rotulo: 'Times' }, { valor: 'mono', rotulo: 'Courier' },
+];
+const CSS_FONTE: Record<string, string> = {
+  sans: 'Arial, "Liberation Sans", Helvetica, sans-serif',
+  estreita: '"Arial Narrow", "Liberation Sans Narrow", Arial, sans-serif',
+  serif: '"Times New Roman", "Liberation Serif", Times, serif',
+  mono: '"Courier New", "Liberation Mono", monospace',
+};
 const ALINHAR = [{ valor: 'esquerda', rotulo: 'Esquerda' }, { valor: 'centro', rotulo: 'Centro' }, { valor: 'direita', rotulo: 'Direita' }];
 const MODOS_DE_MIDIA = [
   { valor: 'gap', rotulo: 'Picotado com vão (gap)' },
@@ -62,6 +73,18 @@ const ALCAS: { alca: Alca; cursor: string; estilo: (w: number, h: number) => Rea
   { alca: 'so', cursor: 'nesw-resize', estilo: (_w, h) => ({ left: -4, top: h - 4 }) },
   { alca: 'o', cursor: 'ew-resize', estilo: (_w, h) => ({ left: -4, top: h / 2 - 4 }) },
 ];
+
+const Ferramenta: React.FC<{ rotulo: string; dica?: string; ativo?: boolean; desabilitado?: boolean; onClick: () => void; children: React.ReactNode; 'data-testid'?: string }> = ({ rotulo, dica, ativo, desabilitado, onClick, children, ...resto }) => (
+  <button
+    type="button" title={dica ?? rotulo} aria-label={rotulo} aria-pressed={ativo} disabled={desabilitado} onClick={onClick}
+    data-testid={resto['data-testid']}
+    className={`inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-md px-1.5 text-sm transition-colors disabled:opacity-40 ${ativo ? 'bg-brand/20 text-fg-token' : 'text-fg-muted-token hover:bg-surface-2 hover:text-fg-token'}`}
+  >
+    {children}
+  </button>
+);
+const Separador: React.FC = () => <span className="mx-1 h-5 w-px bg-border-token" aria-hidden="true" />;
+const T: React.FC<{ negrito?: boolean }> = ({ negrito }) => <span className={`font-serif text-base leading-none ${negrito ? 'font-bold' : ''}`}>T</span>;
 
 type Arrasto =
   | { tipo: 'mover'; id: string; x0: number; y0: number; ex: number; ey: number }
@@ -313,73 +336,117 @@ const DesignerDeEtiqueta: React.FC = () => {
       descricao={`${NOME_DO_MODELO[modelo]} · ${nomeDaLoja}${padrao ? ' · layout padrão' : sujo ? ' · alterações não salvas' : ' · layout da loja'}`}
       trilha={[{ rotulo: 'Etiquetas', href: `/stores/${storeId}/etiquetas` }, { rotulo: NOME_DO_MODELO[modelo] }]}
       acoes={
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="ghost" size="sm" aria-label="Desfazer" disabled={!historico.current?.podeDesfazer} onClick={desfazer} data-testid="des-desfazer"><ArrowUturnLeftIcon className="w-4 h-4" /></Button>
-          <Button variant="ghost" size="sm" aria-label="Refazer" disabled={!historico.current?.podeRefazer} onClick={refazer}><ArrowUturnRightIcon className="w-4 h-4" /></Button>
-          <span className="mx-1 h-5 w-px bg-border-token" aria-hidden="true" />
-          <Button variant="ghost" size="sm" aria-label="Diminuir zoom" disabled={zoomIdx === 0} onClick={() => setZoomIdx((z) => Math.max(0, z - 1))}><MagnifyingGlassMinusIcon className="w-4 h-4" /></Button>
-          <button type="button" className="tabular-nums text-sm text-fg-muted-token hover:text-fg-token" title="Voltar ao tamanho real" onClick={() => setZoomIdx(3)}>
+        <div className="flex flex-wrap items-center gap-1">
+          <Ferramenta rotulo="Desfazer" dica="Desfazer (Ctrl+Z)" desabilitado={!historico.current?.podeDesfazer} onClick={desfazer} data-testid="des-desfazer"><ArrowUturnLeftIcon className="w-4 h-4" /></Ferramenta>
+          <Ferramenta rotulo="Refazer" dica="Refazer (Ctrl+Y)" desabilitado={!historico.current?.podeRefazer} onClick={refazer}><ArrowUturnRightIcon className="w-4 h-4" /></Ferramenta>
+          <Separador />
+          <Ferramenta rotulo="Diminuir zoom" desabilitado={zoomIdx === 0} onClick={() => setZoomIdx((z) => Math.max(0, z - 1))}><MagnifyingGlassMinusIcon className="w-4 h-4" /></Ferramenta>
+          <button type="button" className="w-12 text-center tabular-nums text-sm text-fg-muted-token hover:text-fg-token" title="Tamanho real" onClick={() => setZoomIdx(3)}>
             {Math.round((escala / PX_POR_MM_REAL) * 100)}%
           </button>
-          <Button variant="ghost" size="sm" aria-label="Aumentar zoom" disabled={zoomIdx === ZOOMS.length - 1} onClick={() => setZoomIdx((z) => Math.min(ZOOMS.length - 1, z + 1))}><MagnifyingGlassPlusIcon className="w-4 h-4" /></Button>
-          <span className="mx-1 h-5 w-px bg-border-token" aria-hidden="true" />
-          <Switch rotulo="Ver como sai" ligado={verComoSai} onMudar={setVerComoSai} />
-          <span className="text-sm text-fg-muted-token">Ver como sai</span>
-          <span className="mx-1 h-5 w-px bg-border-token" aria-hidden="true" />
-          <Button variant="secondary" size="sm" disabled={!!ocupado || padrao} onClick={restaurar}>Restaurar padrão</Button>
+          <Ferramenta rotulo="Aumentar zoom" desabilitado={zoomIdx === ZOOMS.length - 1} onClick={() => setZoomIdx((z) => Math.min(ZOOMS.length - 1, z + 1))}><MagnifyingGlassPlusIcon className="w-4 h-4" /></Ferramenta>
+          <Separador />
+          <Ferramenta rotulo="Ver como sai" dica="Ver como sai na impressora" ativo={verComoSai} onClick={() => setVerComoSai((v) => !v)} data-testid="des-ver-como-sai"><EyeIcon className="w-4 h-4" /><span className="hidden sm:inline">Ver como sai</span></Ferramenta>
+          <Separador />
+          <Button variant="ghost" size="sm" disabled={!!ocupado || padrao} onClick={restaurar}>Restaurar padrão</Button>
           <Button variant="primary" size="sm" disabled={!!ocupado || !!problema || !sujo} onClick={salvar} data-testid="des-salvar">
-            {ocupado === 'salvar' ? 'Salvando…' : 'Salvar layout'}
+            {ocupado === 'salvar' ? 'Salvando…' : 'Salvar'}
           </Button>
         </div>
       }
     >
-      <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_320px]" data-testid="designer">
-        {/* ---------- coluna esquerda: adicionar + camadas ---------- */}
-        <aside className="space-y-4">
-          <div className="superficie p-3 space-y-2">
-            <p className="text-sm font-semibold text-fg-token">Adicionar</p>
-            <div className="grid grid-cols-1 gap-1">
-              {CAMPOS_RAPIDOS.map((c) => (
-                <button key={c.texto} type="button" className="controle h-8 px-2 text-left text-sm hover:bg-surface-2"
-                  onClick={() => adicionar('texto', { texto: c.texto, tamanho: c.tamanho, negrito: c.negrito, w: Math.min(30, layout.etiqueta.largura - 2), h: c.tamanho * 1.3 })}>
-                  {c.rotulo}
-                </button>
-              ))}
-            </div>
-            <p className="pt-1 text-xs text-fg-muted-token">Outros</p>
-            <div className="flex flex-wrap gap-1">
-              {(Object.keys(NOMES) as TipoDeElemento[]).map((t) => (
-                <Button key={t} size="xs" variant="secondary" onClick={() => adicionar(t)}>{NOMES[t]}</Button>
-              ))}
-            </div>
-          </div>
-
-          <div className="superficie p-3 space-y-1" data-testid="des-camadas">
-            <p className="text-sm font-semibold text-fg-token">Camadas</p>
-            <p className="text-xs text-fg-muted-token">De cima para baixo: a primeira é desenhada por último.</p>
-            <ul className="space-y-0.5">
-              {[...layout.elementos].reverse().map((e) => (
-                <li key={e.id} className={`flex items-center gap-1 rounded-md px-1.5 py-1 text-sm ${e.id === selecionado ? 'bg-brand/15 text-fg-token' : 'text-fg-muted-token hover:bg-surface-2'}`}>
-                  <button type="button" className="min-w-0 flex-1 truncate text-left" onClick={() => setSelecionado(e.id)}>
-                    <span className="text-xs text-fg-muted-token">{NOMES[e.tipo]} · </span>{nomeDoElemento(e)}
-                  </button>
-                  <button type="button" aria-label="Subir camada" className="p-0.5 hover:text-fg-token" onClick={() => aplicar(moverCamada(layout, e.id, 'cima'))}><ChevronUpIcon className="w-3.5 h-3.5" /></button>
-                  <button type="button" aria-label="Descer camada" className="p-0.5 hover:text-fg-token" onClick={() => aplicar(moverCamada(layout, e.id, 'baixo'))}><ChevronDownIcon className="w-3.5 h-3.5" /></button>
-                </li>
-              ))}
-            </ul>
-          </div>
+      <div className="grid gap-3 lg:grid-cols-[200px_minmax(0,1fr)_300px]" data-testid="designer">
+        {/* ---------- esquerda: camadas ---------- */}
+        <aside className="superficie p-2" data-testid="des-camadas">
+          <p className="px-1 pb-1 text-sm font-semibold text-fg-token">Camadas</p>
+          <ul className="space-y-0.5">
+            {[...layout.elementos].reverse().map((e) => (
+              <li key={e.id} className={`flex items-center gap-1 rounded-md px-1.5 py-1 text-sm ${e.id === selecionado ? 'bg-brand/15 text-fg-token' : 'text-fg-muted-token hover:bg-surface-2'}`}>
+                <span className="w-4 shrink-0 text-fg-muted-token" aria-hidden="true">
+                  {e.tipo === 'texto' ? <T /> : e.tipo === 'qr' ? <QrCodeIcon className="w-4 h-4" /> : e.tipo === 'barras' ? <Bars3Icon className="w-4 h-4 rotate-90" /> : e.tipo === 'linha' ? <MinusIcon className="w-4 h-4" /> : <StopIcon className="w-4 h-4" />}
+                </span>
+                <button type="button" className="min-w-0 flex-1 truncate text-left" onClick={() => setSelecionado(e.id)}>{nomeDoElemento(e)}</button>
+                <button type="button" aria-label="Subir camada" title="Trazer para frente" className="p-0.5 hover:text-fg-token" onClick={() => aplicar(moverCamada(layout, e.id, 'cima'))}><ChevronUpIcon className="w-3.5 h-3.5" /></button>
+                <button type="button" aria-label="Descer camada" title="Enviar para trás" className="p-0.5 hover:text-fg-token" onClick={() => aplicar(moverCamada(layout, e.id, 'baixo'))}><ChevronDownIcon className="w-3.5 h-3.5" /></button>
+              </li>
+            ))}
+          </ul>
         </aside>
 
-        {/* ---------- centro: a mesa ---------- */}
+        {/* ---------- centro: ferramentas + formatação + mesa ---------- */}
         <section className="min-w-0 space-y-2">
-          <div ref={mesaRef} className="superficie overflow-auto bg-surface-2 p-4" style={{ maxHeight: '70vh' }} data-testid="des-mesa"
+          <div className="superficie flex flex-wrap items-center gap-1 p-1.5" role="toolbar" aria-label="Inserir">
+            <Ferramenta rotulo="Texto" onClick={() => adicionar('texto')}><T /><span>Texto</span></Ferramenta>
+            {CAMPOS_RAPIDOS.map((c) => (
+              <Ferramenta key={c.texto} rotulo={c.rotulo} onClick={() => adicionar('texto', { texto: c.texto, tamanho: c.tamanho, negrito: c.negrito, w: Math.min(30, layout.etiqueta.largura - 2), h: c.tamanho * 1.3 })}>
+                <span>{c.rotulo}</span>
+              </Ferramenta>
+            ))}
+            <Separador />
+            <Ferramenta rotulo="QR Code" onClick={() => adicionar('qr')}><QrCodeIcon className="w-4 h-4" /></Ferramenta>
+            <Ferramenta rotulo="Código de barras" onClick={() => adicionar('barras')}><Bars3Icon className="w-4 h-4 rotate-90" /></Ferramenta>
+            <Ferramenta rotulo="Linha" onClick={() => adicionar('linha')}><MinusIcon className="w-4 h-4" /></Ferramenta>
+            <Ferramenta rotulo="Caixa" onClick={() => adicionar('caixa')}><StopIcon className="w-4 h-4" /></Ferramenta>
+          </div>
+
+          {elemento && (
+            <div className="superficie flex flex-wrap items-center gap-1 p-1.5" role="toolbar" aria-label="Formatação" data-testid="des-formatacao">
+              {elemento.tipo === 'texto' && (
+                <>
+                  <select aria-label="Fonte" className="controle h-8 px-2 text-sm" value={elemento.fonte ?? 'sans'} onChange={(e) => patch({ fonte: e.target.value as ElementoDoLayout['fonte'] })} data-testid="fmt-fonte">
+                    {FONTES.map((f) => <option key={f.valor} value={f.valor}>{f.rotulo}</option>)}
+                  </select>
+                  <span className="inline-flex items-center" title="Tamanho da letra (mm)">
+                    <Ferramenta rotulo="Letra menor" onClick={() => patch({ tamanho: Math.max(0.8, Number(((elemento.tamanho ?? 2.5) - 0.2).toFixed(1))) })}><MinusIcon className="w-3.5 h-3.5" /></Ferramenta>
+                    <span className="w-10 text-center tabular-nums text-sm text-fg-token" data-testid="fmt-tamanho">{(elemento.tamanho ?? 2.5).toFixed(1)}</span>
+                    <Ferramenta rotulo="Letra maior" onClick={() => patch({ tamanho: Math.min(60, Number(((elemento.tamanho ?? 2.5) + 0.2).toFixed(1))) })}><span className="text-base leading-none">+</span></Ferramenta>
+                  </span>
+                  <Separador />
+                  <Ferramenta rotulo="Negrito" ativo={!!elemento.negrito} onClick={() => patch({ negrito: !elemento.negrito })} data-testid="fmt-negrito"><BoldIcon className="w-4 h-4" /></Ferramenta>
+                  <Separador />
+                  <Ferramenta rotulo="Alinhar à esquerda" ativo={(elemento.alinhar ?? 'esquerda') === 'esquerda'} onClick={() => patch({ alinhar: 'esquerda' })}><Bars3BottomLeftIcon className="w-4 h-4" /></Ferramenta>
+                  <Ferramenta rotulo="Centralizar" ativo={elemento.alinhar === 'centro'} onClick={() => patch({ alinhar: 'centro' })}><Bars3Icon className="w-4 h-4" /></Ferramenta>
+                  <Ferramenta rotulo="Alinhar à direita" ativo={elemento.alinhar === 'direita'} onClick={() => patch({ alinhar: 'direita' })}><Bars3BottomRightIcon className="w-4 h-4" /></Ferramenta>
+                  <Separador />
+                  <Ferramenta rotulo="Uma linha, encolhe até caber" ativo={elemento.ajuste === 'encolher'} onClick={() => patch({ ajuste: elemento.ajuste === 'encolher' ? 'quebrar' : 'encolher', linhas: elemento.ajuste === 'encolher' ? (elemento.linhas ?? 1) : 1 })} data-testid="fmt-encolher"><ArrowsPointingInIcon className="w-4 h-4" /></Ferramenta>
+                  {elemento.ajuste !== 'encolher' && (
+                    <span className="inline-flex items-center" title="Linhas">
+                      <Ferramenta rotulo="Menos linhas" onClick={() => patch({ linhas: Math.max(1, (elemento.linhas ?? 1) - 1) })}><MinusIcon className="w-3.5 h-3.5" /></Ferramenta>
+                      <span className="w-8 text-center tabular-nums text-sm text-fg-token">{elemento.linhas ?? 1}<span className="text-fg-muted-token"> lin</span></span>
+                      <Ferramenta rotulo="Mais linhas" onClick={() => patch({ linhas: Math.min(20, (elemento.linhas ?? 1) + 1) })}><span className="text-base leading-none">+</span></Ferramenta>
+                    </span>
+                  )}
+                  <Separador />
+                </>
+              )}
+              {(elemento.tipo === 'qr' || elemento.tipo === 'barras') && (
+                <>
+                  <select aria-label="Conteúdo" className="controle h-8 px-2 text-sm" value={elemento.campo ?? ''} onChange={(e) => patch({ campo: e.target.value as ElementoDoLayout['campo'] })}>
+                    {CAMPOS.map((c) => <option key={c.valor} value={c.valor}>{c.rotulo}</option>)}
+                  </select>
+                  <Separador />
+                </>
+              )}
+              {elemento.tipo === 'caixa' && (
+                <span className="inline-flex items-center" title="Espessura (mm)">
+                  <Ferramenta rotulo="Borda mais fina" onClick={() => patch({ espessura: Math.max(0.1, Number(((elemento.espessura ?? 0.3) - 0.1).toFixed(1))) })}><MinusIcon className="w-3.5 h-3.5" /></Ferramenta>
+                  <span className="w-8 text-center tabular-nums text-sm text-fg-token">{(elemento.espessura ?? 0.3).toFixed(1)}</span>
+                  <Ferramenta rotulo="Borda mais grossa" onClick={() => patch({ espessura: Math.min(10, Number(((elemento.espessura ?? 0.3) + 0.1).toFixed(1))) })}><span className="text-base leading-none">+</span></Ferramenta>
+                  <Separador />
+                </span>
+              )}
+              <Ferramenta rotulo="Centralizar na etiqueta" onClick={() => aplicar(moverElemento(layout, elemento.id, (layout.etiqueta.largura - elemento.w) / 2 - elemento.x, 0))}><ViewfinderCircleIcon className="w-4 h-4" /></Ferramenta>
+              <Ferramenta rotulo="Duplicar" dica="Duplicar (Ctrl+D)" onClick={() => { const l = duplicarElemento(layout, elemento.id); aplicar(l); setSelecionado(l.elementos[l.elementos.length - 1].id); }}><DocumentDuplicateIcon className="w-4 h-4" /></Ferramenta>
+              <Ferramenta rotulo="Remover elemento" dica="Remover (Delete)" onClick={() => { aplicar(removerElemento(layout, elemento.id)); setSelecionado(null); }}><TrashIcon className="w-4 h-4" /></Ferramenta>
+            </div>
+          )}
+
+          <div ref={mesaRef} className="superficie overflow-auto bg-surface-2 p-4" style={{ maxHeight: '66vh' }} data-testid="des-mesa"
             onPointerDown={(e) => { if (e.target === e.currentTarget) setSelecionado(null); }}>
             <div className="inline-grid" style={{ gridTemplateColumns: `${REGUA}px ${larguraPapel}px`, gridTemplateRows: `${REGUA}px ${alturaPapel}px` }}>
               <div />
               <Regua mm={layout.papel.largura} escala={escala} eixo="x" />
               <Regua mm={layout.etiqueta.altura} escala={escala} eixo="y" />
-              {/* o papel */}
               <div
                 className="relative select-none shadow-repouso"
                 style={{ width: larguraPapel, height: alturaPapel, background: '#fff', color: '#111' }}
@@ -387,7 +454,7 @@ const DesignerDeEtiqueta: React.FC = () => {
                 onPointerDown={(e) => { if (e.target === e.currentTarget) setSelecionado(null); }}
               >
                 {verComoSai && preview && (
-                  <img src={`data:image/png;base64,${preview.png}`} alt="Prévia real da impressão" data-testid="des-preview"
+                  <img src={`data:image/png;base64,${preview.png}`} alt="Como sai na impressora" data-testid="des-preview"
                     className="pointer-events-none absolute left-0 top-0"
                     style={{ width: px(preview.largura), height: px(preview.altura), imageRendering: escala > 4 ? 'pixelated' : 'auto' }} />
                 )}
@@ -413,14 +480,15 @@ const DesignerDeEtiqueta: React.FC = () => {
                               left: px(el.x), top: px(el.y), width: w, height: h,
                               fontSize: el.tipo === 'texto' ? Math.max(4, px(el.tamanho || 2.5) * 0.85) : Math.max(8, px(2)),
                               fontWeight: el.negrito ? 700 : 400,
+                              whiteSpace: el.ajuste === 'encolher' ? 'nowrap' : 'normal',
                               textAlign: el.alinhar === 'centro' ? 'center' : el.alinhar === 'direita' ? 'right' : 'left',
-                              fontFamily: 'Verdana, "Bitstream Vera Sans", "DejaVu Sans", sans-serif',
+                              fontFamily: CSS_FONTE[el.fonte ?? 'sans'],
                               background: el.tipo === 'linha' ? '#111' : el.tipo === 'qr' || el.tipo === 'barras' ? 'rgba(0,0,0,.06)' : undefined,
                               border: el.tipo === 'caixa' ? `${Math.max(1, px(el.espessura || 0.3))}px solid #111` : undefined,
                               boxShadow: sel ? '0 0 0 1.5px var(--brand)' : ativa ? '0 0 0 1px rgba(0,0,0,.12)' : undefined,
                             }}
                           >
-                            {el.tipo === 'texto' ? textoDeExemplo(el.texto || '', ETIQUETA_DE_EXEMPLO) : el.tipo === 'qr' ? <span className="text-xs">QR</span> : el.tipo === 'barras' ? <span className="text-xs">|||| ||| ||||</span> : null}
+                            {el.tipo === 'texto' ? textoDeExemplo(el.texto || '', ETIQUETA_DE_EXEMPLO) : el.tipo === 'qr' ? <QrCodeIcon className="h-full w-full opacity-60" /> : el.tipo === 'barras' ? <span className="text-xs">|||| ||| ||||</span> : null}
                             {sel && ALCAS.map((a) => (
                               <span key={a.alca} role="presentation" data-testid={`alca-${a.alca}`}
                                 onPointerDown={(e) => iniciarAlca(e, el, a.alca)}
@@ -433,76 +501,45 @@ const DesignerDeEtiqueta: React.FC = () => {
                     </div>
                   );
                 })}
-                {/* guias de encaixe */}
                 {guia.x != null && <div className="pointer-events-none absolute top-0 h-full w-px bg-info-token" style={{ left: px(margem + guia.x) }} />}
                 {guia.y != null && <div className="pointer-events-none absolute left-0 w-full h-px bg-info-token" style={{ top: px(guia.y) }} />}
               </div>
             </div>
           </div>
-          <p className="text-xs text-fg-muted-token">
-            Arraste para mover, puxe as alças para esticar. Setas movem 0,5 mm (com Shift, 0,1 mm). Ctrl+Z desfaz, Ctrl+D duplica, Delete apaga.
-            Segure Alt para não encaixar nas guias. Papel {layout.papel.largura} mm · {layout.papel.colunas} × {layout.etiqueta.largura} mm = {blocoMm(layout)} mm · margem {margem.toFixed(1)} mm.
+          <p className="text-xs tabular-nums text-fg-muted-token">
+            {layout.papel.largura} mm · {layout.papel.colunas} × {layout.etiqueta.largura} × {layout.etiqueta.altura} mm · margem {margem.toFixed(1)} mm
+            {problema && <span className="ml-2 text-danger-token" role="alert">{problema}</span>}
           </p>
-          {problema && <p className="text-sm text-danger-token" role="alert">{problema}</p>}
         </section>
 
-        {/* ---------- coluna direita ---------- */}
-        <aside className="space-y-4">
-          <div className="superficie p-3 space-y-2" data-testid="des-props">
-            {elemento ? (
-              <>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-fg-token">{NOMES[elemento.tipo]}</p>
-                  <span className="flex gap-1">
-                    <button type="button" aria-label="Duplicar elemento" className="p-1 text-fg-muted-token hover:text-fg-token" onClick={() => { const l = duplicarElemento(layout, elemento.id); aplicar(l); setSelecionado(l.elementos[l.elementos.length - 1].id); }}><DocumentDuplicateIcon className="w-4 h-4" /></button>
-                    <button type="button" aria-label="Remover elemento" className="p-1 text-fg-muted-token hover:text-danger-token" onClick={() => { aplicar(removerElemento(layout, elemento.id)); setSelecionado(null); }}><TrashIcon className="w-4 h-4" /></button>
-                  </span>
-                </div>
-                {elemento.tipo === 'texto' && (
-                  <>
-                    <Input label="Texto" value={elemento.texto || ''} onChange={(e) => patch({ texto: e.target.value })} hint="Use {name}, {val}, {manip}, {price}, {description}" data-testid="prop-texto" />
-                    <NumberField rotulo="Tamanho da letra" valor={elemento.tamanho ?? 2.5} min={0.8} max={60} step={0.1} sufixo="mm" onMudar={(v) => patch({ tamanho: v })} />
-                    <NumberField rotulo="Linhas" valor={elemento.linhas ?? 1} min={1} max={20} step={1} onMudar={(v) => patch({ linhas: Math.round(v) })} />
-                    <div className="flex items-center justify-between text-sm text-fg-muted-token">
-                      <span>Negrito</span>
-                      <Switch rotulo="Negrito" ligado={!!elemento.negrito} onMudar={(v) => patch({ negrito: v })} />
-                    </div>
-                    <Select rotulo="Alinhar" opcoes={ALINHAR} valor={elemento.alinhar ?? 'esquerda'} onMudar={(v) => patch({ alinhar: v as ElementoDoLayout['alinhar'] })} />
-                  </>
-                )}
-                {(elemento.tipo === 'qr' || elemento.tipo === 'barras') && (
-                  <Select rotulo="Conteúdo" opcoes={CAMPOS} valor={elemento.campo ?? ''} onMudar={(v) => patch({ campo: v as ElementoDoLayout['campo'] })} />
-                )}
-                {elemento.tipo === 'caixa' && (
-                  <NumberField rotulo="Espessura" valor={elemento.espessura ?? 0.3} min={0.1} max={10} step={0.1} sufixo="mm" onMudar={(v) => patch({ espessura: v })} />
-                )}
-                <div className="space-y-2">
-                  <NumberField rotulo="X" valor={elemento.x} min={0} max={300} step={0.1} sufixo="mm" onMudar={(v) => aplicar(moverElemento(layout, elemento.id, v - elemento.x, 0))} data-testid="prop-x" />
-                  <NumberField rotulo="Y" valor={elemento.y} min={0} max={300} step={0.1} sufixo="mm" onMudar={(v) => aplicar(moverElemento(layout, elemento.id, 0, v - elemento.y))} data-testid="prop-y" />
-                  <NumberField rotulo="Largura" valor={elemento.w} min={0.5} max={300} step={0.1} sufixo="mm" onMudar={(v) => aplicar(redimensionarPorAlca(layout, elemento.id, 'l', v - elemento.w, 0))} data-testid="prop-w" />
-                  <NumberField rotulo="Altura" valor={elemento.h} min={0.5} max={300} step={0.1} sufixo="mm" onMudar={(v) => aplicar(redimensionarPorAlca(layout, elemento.id, 's', 0, v - elemento.h))} data-testid="prop-h" />
-                </div>
-              </>
-            ) : (
-              <p className="text-sm text-fg-muted-token">Clique num campo do papel para editar. Ou adicione um à esquerda.</p>
-            )}
-          </div>
+        {/* ---------- direita ---------- */}
+        <aside className="space-y-3">
+          {elemento && (
+            <div className="superficie p-3 space-y-2" data-testid="des-props">
+              <p className="text-sm font-semibold text-fg-token">{NOMES[elemento.tipo]}</p>
+              {elemento.tipo === 'texto' && (
+                <Input label="Texto" value={elemento.texto || ''} onChange={(e) => patch({ texto: e.target.value })} data-testid="prop-texto" />
+              )}
+              <NumberField rotulo="X" valor={elemento.x} min={0} max={300} step={0.1} sufixo="mm" onMudar={(v) => aplicar(moverElemento(layout, elemento.id, v - elemento.x, 0))} data-testid="prop-x" />
+              <NumberField rotulo="Y" valor={elemento.y} min={0} max={300} step={0.1} sufixo="mm" onMudar={(v) => aplicar(moverElemento(layout, elemento.id, 0, v - elemento.y))} data-testid="prop-y" />
+              <NumberField rotulo="Largura" valor={elemento.w} min={0.5} max={300} step={0.1} sufixo="mm" onMudar={(v) => aplicar(redimensionarPorAlca(layout, elemento.id, 'l', v - elemento.w, 0))} data-testid="prop-w" />
+              <NumberField rotulo="Altura" valor={elemento.h} min={0.5} max={300} step={0.1} sufixo="mm" onMudar={(v) => aplicar(redimensionarPorAlca(layout, elemento.id, 's', 0, v - elemento.h))} data-testid="prop-h" />
+            </div>
+          )}
 
           <div className="superficie p-3 space-y-2">
-            <p className="text-sm font-semibold text-fg-token">Papel e rolo</p>
-            <div className="space-y-2">
-              <NumberField rotulo="Etiqueta (largura)" valor={layout.etiqueta.largura} min={5} max={300} step={0.5} sufixo="mm" onMudar={(v) => setEtiqueta({ largura: v })} data-testid="lay-larg" />
-              <NumberField rotulo="Etiqueta (altura)" valor={layout.etiqueta.altura} min={5} max={300} step={0.5} sufixo="mm" onMudar={(v) => setEtiqueta({ altura: v })} data-testid="lay-alt" />
-              <NumberField rotulo="Colunas" valor={layout.papel.colunas} min={1} max={12} step={1} onMudar={(v) => setPapel({ colunas: Math.round(v) })} data-testid="lay-cols" />
-              <NumberField rotulo="Vão entre colunas" valor={layout.papel.espaco} min={0} max={50} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ espaco: v })} data-testid="lay-vao" />
-            </div>
-            <NumberField rotulo="Largura do rolo inteiro" valor={layout.papel.largura} min={5} max={400} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ largura: v })} data-testid="lay-papel" />
-            <button type="button" className="text-xs text-brand underline" onClick={() => aplicar(ajustarPapelAoBloco(layout))}>
-              Rolo = colunas ({blocoMm(layout)} mm)
-            </button>
-            <Select rotulo="Rolo" opcoes={MODOS_DE_MIDIA} valor={layout.papel.modo_midia ?? 'gap'} onMudar={(v) => setPapel({ modo_midia: v as LayoutDeEtiqueta['papel']['modo_midia'] })} data-testid="lay-modo" />
+            <p className="text-sm font-semibold text-fg-token">Etiqueta</p>
+            <NumberField rotulo="Largura" valor={layout.etiqueta.largura} min={5} max={300} step={0.5} sufixo="mm" onMudar={(v) => setEtiqueta({ largura: v })} data-testid="lay-larg" />
+            <NumberField rotulo="Altura" valor={layout.etiqueta.altura} min={5} max={300} step={0.5} sufixo="mm" onMudar={(v) => setEtiqueta({ altura: v })} data-testid="lay-alt" />
+            <NumberField rotulo="Colunas" valor={layout.papel.colunas} min={1} max={12} step={1} onMudar={(v) => setPapel({ colunas: Math.round(v) })} data-testid="lay-cols" />
+            <NumberField rotulo="Vão" valor={layout.papel.espaco} min={0} max={50} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ espaco: v })} data-testid="lay-vao" />
+            <NumberField rotulo="Rolo" valor={layout.papel.largura} min={5} max={400} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ largura: v })} data-testid="lay-papel" />
+            <Select rotulo="Tipo de rolo" opcoes={MODOS_DE_MIDIA} valor={layout.papel.modo_midia ?? 'gap'} onMudar={(v) => setPapel({ modo_midia: v as LayoutDeEtiqueta['papel']['modo_midia'] })} data-testid="lay-modo" />
             {layout.papel.modo_midia === 'continuo' && (
-              <NumberField rotulo="Passo entre linhas" valor={layout.papel.passo ?? layout.etiqueta.altura} min={layout.etiqueta.altura} max={400} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ passo: v })} data-testid="lay-passo" />
+              <NumberField rotulo="Passo" valor={layout.papel.passo ?? layout.etiqueta.altura} min={layout.etiqueta.altura} max={400} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ passo: v })} data-testid="lay-passo" />
+            )}
+            {Math.abs(layout.papel.largura - blocoMm(layout)) > 0.01 && (
+              <button type="button" className="text-xs text-brand underline" onClick={() => aplicar(ajustarPapelAoBloco(layout))}>Rolo = {blocoMm(layout)} mm</button>
             )}
           </div>
 
@@ -510,31 +547,18 @@ const DesignerDeEtiqueta: React.FC = () => {
             <div className="superficie p-3 space-y-2" data-testid="des-impressora">
               <p className="text-sm font-semibold text-fg-token">Impressora</p>
               <Select rotulo="Impressora" opcoes={agentes.map((a) => ({ valor: a.id, rotulo: `${a.name} · ${a.printer_name}` }))} valor={agente} onMudar={setAgente} />
-              <div className="flex flex-wrap gap-2">
-                <Button variant="secondary" size="sm" disabled={!agente || !!ocupado || !!problema} onClick={imprimirTeste} data-testid="des-teste">
-                  {ocupado === 'teste' ? 'Enviando…' : 'Imprimir 1 linha de teste'}
+              <div className="flex flex-wrap gap-1.5">
+                <Button variant="secondary" size="sm" disabled={!agente || !!ocupado || !!problema} onClick={imprimirTeste} data-testid="des-teste" title="Imprime uma linha com dados de exemplo">
+                  <PrinterIcon className="w-4 h-4" />{ocupado === 'teste' ? 'Enviando…' : 'Teste'}
                 </Button>
-                <Button variant="secondary" size="sm" disabled={!agente || !!ocupado || !!problema} onClick={imprimirGrade} data-testid="cal-imprimir-grade">
-                  {ocupado === 'grade' ? 'Enviando…' : 'Imprimir grade de calibração'}
+                <Button variant="secondary" size="sm" disabled={!agente || !!ocupado || !!problema} onClick={imprimirGrade} data-testid="cal-imprimir-grade" title="Imprime moldura e régua em mm; leia o deslocamento e ajuste abaixo">
+                  <ViewfinderCircleIcon className="w-4 h-4" />{ocupado === 'grade' ? 'Enviando…' : 'Grade'}
                 </Button>
               </div>
-              <p className="text-xs text-fg-muted-token">
-                A grade desenha a moldura e uma régua em mm onde o programa acha que a etiqueta está. Se a moldura saiu 2 mm à direita da borda real, digite −2 em horizontal.
-              </p>
-              <div className="space-y-2">
-                <NumberField rotulo="Horizontal" valor={cal.desloc_x ?? 0} min={-30} max={30} step={0.5} sufixo="mm" onMudar={(v) => setCal((c) => ({ ...c, desloc_x: v }))} data-testid="cal-x" />
-                <NumberField rotulo="Vertical" valor={cal.desloc_y ?? 0} min={-15} max={15} step={0.5} sufixo="mm" onMudar={(v) => setCal((c) => ({ ...c, desloc_y: v }))} data-testid="cal-y" />
-                <NumberField rotulo="Escurecimento" valor={cal.escuro ?? 10} min={0} max={30} step={1} onMudar={(v) => setCal((c) => ({ ...c, escuro: v }))} data-testid="cal-escuro" />
-              </div>
-              <Button variant="secondary" size="sm" disabled={!agente || !!ocupado} onClick={salvarCal} data-testid="cal-salvar">Salvar calibração desta impressora</Button>
-              <details className="text-xs text-fg-muted-token">
-                <summary className="cursor-pointer">Antes de calibrar, na impressora</summary>
-                <ol className="mt-1 list-decimal space-y-1 pl-4">
-                  <li>Guia lateral encostado no papel, sem folga. Folga = etiqueta inclinada.</li>
-                  <li>Calibrar o sensor a cada rolo novo: ligada, segure FEED até o led verde piscar 2 vezes. Sem isso a Elgin cai em "Contínuo" e desliza a cada etiqueta.</li>
-                  <li>Sensor de etiquetas todo à esquerda, tipo "Gap".</li>
-                </ol>
-              </details>
+              <NumberField rotulo="Horizontal" valor={cal.desloc_x ?? 0} min={-30} max={30} step={0.5} sufixo="mm" onMudar={(v) => setCal((c) => ({ ...c, desloc_x: v }))} data-testid="cal-x" />
+              <NumberField rotulo="Vertical" valor={cal.desloc_y ?? 0} min={-15} max={15} step={0.5} sufixo="mm" onMudar={(v) => setCal((c) => ({ ...c, desloc_y: v }))} data-testid="cal-y" />
+              <NumberField rotulo="Escurecimento" valor={cal.escuro ?? 10} min={0} max={30} step={1} onMudar={(v) => setCal((c) => ({ ...c, escuro: v }))} data-testid="cal-escuro" />
+              <Button variant="secondary" size="sm" disabled={!agente || !!ocupado} onClick={salvarCal} data-testid="cal-salvar">Salvar calibração</Button>
             </div>
           )}
         </aside>

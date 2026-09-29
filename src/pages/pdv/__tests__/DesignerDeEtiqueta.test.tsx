@@ -101,10 +101,23 @@ describe('DesignerDeEtiqueta', () => {
 
   it('"Ver como sai" troca o desenho pela prévia real do backend', async () => {
     await montar();
-    await userEvent.click(screen.getByRole('switch', { name: 'Ver como sai' }));
+    await userEvent.click(screen.getByTestId('des-ver-como-sai'));
     const img = await screen.findByTestId('des-preview');
     expect(img).toHaveAttribute('src', 'data:image/png;base64,AAAA');
     expect(screen.queryByTestId('el-nome')).toBeNull();
+  });
+
+  it('barra de formatação: fonte, negrito e uma linha que encolhe', async () => {
+    await montar();
+    fireEvent.pointerDown(screen.getByTestId('el-nome'), { clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerUp(window, { pointerId: 1 });
+    await userEvent.selectOptions(screen.getByTestId('fmt-fonte'), 'estreita');
+    await userEvent.click(screen.getByTestId('fmt-negrito'));   // era negrito → desliga
+    await userEvent.click(screen.getByTestId('fmt-encolher'));
+    await userEvent.click(screen.getByTestId('des-salvar'));
+    await waitFor(() => expect(salvarLayout).toHaveBeenCalled());
+    const enviado = (salvarLayout as jest.Mock).mock.calls[0][2] as LayoutDeEtiqueta;
+    expect(enviado.elementos[0]).toMatchObject({ fonte: 'estreita', negrito: false, ajuste: 'encolher', linhas: 1 });
   });
 
   it('salvar manda o layout mexido; teste e grade vão para a impressora escolhida; calibração salva no agent', async () => {

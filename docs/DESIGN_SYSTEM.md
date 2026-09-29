@@ -52,3 +52,10 @@ Pedidos (73) · Pagamentos (70) · Dashboard (47) · Clientes (39) · Automaçõ
 mensageiro (28) · Campanhas WhatsApp (lista) e E-mail (lista) · Marketing (13) · Conversas (11).
 Cada migração: zero cor crua no arquivo, componentes locais removidos, Secao/PageShell, testes
 existentes verdes, base da catraca atualizada.
+
+## 6. Sem manual na tela (regra do dono, 28/09/2026)
+"Algo que é bom não precisa de descrição." Nenhum parágrafo explicando como usar dentro da
+interface. A dica curta vai no `title` do ícone. Ação = botão com ícone e rótulo de 1–2 palavras;
+formatação = barra contextual (negrito, alinhamento, fonte, tamanho), como em editor de texto.
+Referência para ferramentas de trabalho: ZebraDesigner/BarTender — barra em cima, objetos à
+esquerda, propriedades à direita, canvas com régua no meio.
