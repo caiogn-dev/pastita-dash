@@ -139,7 +139,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             value={termo}
             onChange={(e) => setTermo(e.target.value)}
             onKeyDown={aoTeclar}
-            className="flex-1 bg-transparent py-3.5 text-lead text-fg-token outline-none placeholder:text-fg-muted-token"
+            className="flex-1 border-0 focus:ring-0 bg-transparent py-3.5 text-lead text-fg-token outline-none placeholder:text-fg-muted-token"
           />
           <kbd className="rounded border border-border-token px-1.5 py-0.5 text-badge text-fg-muted-token">
             esc

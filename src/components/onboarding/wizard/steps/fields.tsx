@@ -65,7 +65,7 @@ export const MoneyInput: FC<{
         value={value}
         placeholder={placeholder}
         onChange={(e) => handle(e.target.value)}
-        className="w-full rounded-r-lg bg-transparent py-2.5 pr-3 text-fg-token outline-none placeholder:text-fg-muted-token/60"
+        className="w-full rounded-r-lg border-0 focus:ring-0 bg-transparent py-2.5 pr-3 text-fg-token outline-none placeholder:text-fg-muted-token/60"
       />
     </div>
   );

@@ -85,7 +85,7 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
           value={query}
           onChange={(e) => search(e.target.value)}
           placeholder="Buscar cliente por nome ou telefone..."
-          className="flex-1 bg-transparent text-sm text-fg-token placeholder:text-fg-muted-token outline-none min-w-0"
+          className="flex-1 border-0 p-0 shadow-none focus:ring-0 bg-transparent text-sm text-fg-token placeholder:text-fg-muted-token outline-none min-w-0"
           autoComplete="off"
         />
         {loading && (

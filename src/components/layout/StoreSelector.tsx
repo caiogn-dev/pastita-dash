@@ -185,7 +185,7 @@ export const StoreSelector: React.FC<StoreSelectorProps> = ({
                 value={termo}
                 onChange={(e) => setTermo(e.target.value)}
                 placeholder="Buscar loja…"
-                className="w-full bg-transparent py-2.5 text-body text-fg-token outline-none placeholder:text-fg-muted-token"
+                className="w-full border-0 focus:ring-0 bg-transparent py-2.5 text-body text-fg-token outline-none placeholder:text-fg-muted-token"
               />
             </div>
           )}
