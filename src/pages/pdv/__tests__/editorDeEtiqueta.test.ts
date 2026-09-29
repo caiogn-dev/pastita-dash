@@ -156,3 +156,18 @@ describe('margens medidas no rolo', () => {
     expect(margemEsquerda(base())).toBe(2);
   });
 });
+
+import { irmaosDoRolo } from '../editorDeEtiqueta';
+describe('rolo compartilhado', () => {
+  it('lista os modelos do mesmo rolo, sem o próprio', () => {
+    const l = base(); const r = { ...l, papel: { ...l.papel, rolo: 'rolo-3-colunas' } }; const z = { ...l, papel: { ...l.papel, rolo: 'zebra-100' } };
+    const layouts = { validade: { layout: r }, 'nutricao-qr': { layout: r }, produto: { layout: z }, nutricao: { layout: z } };
+    expect(irmaosDoRolo(layouts, 'validade')).toEqual(['QR Nutrição']);
+    expect(irmaosDoRolo(layouts, 'produto')).toEqual(['Tabela nutricional']);
+    expect(irmaosDoRolo(null, 'validade')).toEqual([]);
+  });
+  it('texto novo nasce com linhas automáticas e caixa de 6 mm', () => {
+    const l = novoElemento(base(), 'texto');
+    expect(l.elementos[2]).toMatchObject({ linhas: 0, h: 6 });
+  });
+});

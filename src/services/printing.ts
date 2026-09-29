@@ -152,6 +152,7 @@ export interface ElementoDoLayout {
   /** texto: altura da letra em mm. */
   tamanho?: number;
   negrito?: boolean;
+  /** 0 = quantas linhas couberem na altura da caixa. */
   linhas?: number;
   alinhar?: 'esquerda' | 'centro' | 'direita';
   /** qr / barras: de onde vem o conteúdo. */
@@ -178,6 +179,8 @@ export interface LayoutDeEtiqueta {
     margem_direita?: number | null;
     /** Vão entre uma linha de etiquetas e a próxima. */
     vao_linhas?: number | null;
+    /** Modelos com o mesmo rolo compartilham papel e tamanho da etiqueta (o servidor propaga ao salvar). */
+    rolo?: string | null;
   };
   elementos: ElementoDoLayout[];
 }

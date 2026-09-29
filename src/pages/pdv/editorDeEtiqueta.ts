@@ -64,7 +64,7 @@ export const novoElemento = (l: LayoutDeEtiqueta, tipo: TipoDeElemento): LayoutD
   const w = Math.min(20, l.etiqueta.largura - 2);
   const base: ElementoDoLayout = { id, tipo, x: 1, y: 1, w, h: 4 };
   const porTipo: Record<TipoDeElemento, Partial<ElementoDoLayout>> = {
-    texto: { texto: 'Texto', tamanho: 2.5, negrito: false, linhas: 1, alinhar: 'esquerda' },
+    texto: { texto: 'Texto', tamanho: 2.5, negrito: false, linhas: 0, alinhar: 'esquerda', h: 6 },
     qr: { campo: 'publicUrl', w: Math.min(14, l.etiqueta.largura - 2), h: Math.min(14, l.etiqueta.altura - 2) },
     barras: { campo: 'barcode', h: Math.min(15, l.etiqueta.altura - 2) },
     linha: { h: 0.3 },
@@ -213,3 +213,15 @@ export class Historico {
     return l;
   }
 }
+
+/** Modelos que saem do mesmo rolo que `modelo` (para avisar que o papel é compartilhado). */
+export const NOME_CURTO_DO_MODELO: Record<string, string> = { validade: 'Validade', 'nutricao-qr': 'QR Nutrição', produto: 'Produto', nutricao: 'Tabela nutricional' };
+export const irmaosDoRolo = (layouts: Record<string, unknown> | null, modelo: string): string[] => {
+  if (!layouts) return [];
+  const atual = layouts[modelo] as { layout?: LayoutDeEtiqueta } | undefined;
+  const rolo = atual?.layout?.papel.rolo;
+  if (!rolo) return [];
+  return Object.entries(layouts)
+    .filter(([k, v]) => k !== modelo && !!v && typeof v === 'object' && 'layout' in (v as object) && (v as { layout?: LayoutDeEtiqueta }).layout?.papel?.rolo === rolo)
+    .map(([k]) => NOME_CURTO_DO_MODELO[k] ?? k);
+};

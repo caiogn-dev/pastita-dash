@@ -126,6 +126,17 @@ describe('DesignerDeEtiqueta', () => {
     expect(screen.queryByTestId('el-nome')).toBeNull();
   });
 
+  it('mais linhas cresce a caixa para caber; auto é o padrão do texto novo', async () => {
+    await montar();
+    await userEvent.click(screen.getByRole('button', { name: 'Texto' }));
+    expect(screen.getByTestId('fmt-linhas').textContent).toBe('auto');
+    await userEvent.click(screen.getByRole('button', { name: 'Mais linhas' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Mais linhas' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Mais linhas' }));
+    expect(screen.getByTestId('fmt-linhas').textContent).toBe('3 lin');
+    expect(Number((screen.getByTestId('prop-h') as HTMLInputElement).value)).toBeGreaterThanOrEqual(3 * 2.5 * 1.15);
+  });
+
   it('barra de formatação: fonte, negrito e uma linha que encolhe', async () => {
     await montar();
     fireEvent.pointerDown(screen.getByTestId('el-nome'), { clientX: 0, clientY: 0, pointerId: 1 });

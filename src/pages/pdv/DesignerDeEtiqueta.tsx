@@ -25,7 +25,7 @@ import {
 import {
   Alca, ETIQUETA_DE_EXEMPLO, Historico, ajustarPapelAoBloco, blocoMm, comPapel, duplicarElemento, editarElemento, encaixar,
   encaixarNasGuias, guiasDoLayout, margemEsquerda, moverCamada, moverElemento, nomeDoElemento, novoElemento,
-  problemaDoLayout, redimensionarPorAlca, removerElemento, temMargensMedidas, textoDeExemplo,
+  irmaosDoRolo, problemaDoLayout, redimensionarPorAlca, removerElemento, temMargensMedidas, textoDeExemplo,
 } from './editorDeEtiqueta';
 
 const PX_POR_MM_REAL = 96 / 25.4;
@@ -325,7 +325,10 @@ const DesignerDeEtiqueta: React.FC = () => {
     try {
       const { data } = await salvarLayout(storeUuid, modelo, layout);
       setLayouts({ ...layouts, [modelo]: data }); setSujo(false);
-      toast.success('Layout salvo para todas as impressoras da loja.');
+      // O servidor propaga papel e tamanho aos modelos do mesmo rolo: recarrega para a tela saber.
+      carregarLayouts(storeUuid).then((r) => setLayouts(r.data)).catch(() => undefined);
+      const irmaos = irmaosDoRolo(layouts, modelo);
+      toast.success(irmaos.length ? `Layout salvo. Papel aplicado também em ${irmaos.join(' e ')}.` : 'Layout salvo para todas as impressoras da loja.');
       return true;
     } catch { toast.error('Não foi possível salvar o layout.'); return false; } finally { setOcupado(null); }
   };
@@ -455,10 +458,10 @@ const DesignerDeEtiqueta: React.FC = () => {
                   <Separador />
                   <Ferramenta rotulo="Uma linha, encolhe até caber" ativo={elemento.ajuste === 'encolher'} onClick={() => patch({ ajuste: elemento.ajuste === 'encolher' ? 'quebrar' : 'encolher', linhas: elemento.ajuste === 'encolher' ? (elemento.linhas ?? 1) : 1 })} data-testid="fmt-encolher"><ArrowsPointingInIcon className="w-4 h-4" /></Ferramenta>
                   {elemento.ajuste !== 'encolher' && (
-                    <span className="inline-flex items-center" title="Linhas">
-                      <Ferramenta rotulo="Menos linhas" onClick={() => patch({ linhas: Math.max(1, (elemento.linhas ?? 1) - 1) })}><MinusIcon className="w-3.5 h-3.5" /></Ferramenta>
-                      <span className="w-8 text-center tabular-nums text-sm text-fg-token">{elemento.linhas ?? 1}<span className="text-fg-muted-token"> lin</span></span>
-                      <Ferramenta rotulo="Mais linhas" onClick={() => patch({ linhas: Math.min(20, (elemento.linhas ?? 1) + 1) })}><span className="text-base leading-none">+</span></Ferramenta>
+                    <span className="inline-flex items-center" title="Linhas (auto = quantas couberem na caixa)">
+                      <Ferramenta rotulo="Menos linhas" onClick={() => patch({ linhas: Math.max(0, (elemento.linhas ?? 0) - 1) })}><MinusIcon className="w-3.5 h-3.5" /></Ferramenta>
+                      <span className="w-12 text-center tabular-nums text-sm text-fg-token" data-testid="fmt-linhas">{(elemento.linhas ?? 0) === 0 ? 'auto' : `${elemento.linhas} lin`}</span>
+                      <Ferramenta rotulo="Mais linhas" onClick={() => { const n = Math.min(20, (elemento.linhas ?? 0) + 1); const alturaMinima = Number((n * (elemento.tamanho ?? 2.5) * 1.15 + 0.6).toFixed(1)); patch({ linhas: n, h: Math.max(elemento.h, alturaMinima) }); }}><span className="text-base leading-none">+</span></Ferramenta>
                     </span>
                   )}
                   <Separador />
@@ -593,6 +596,9 @@ const DesignerDeEtiqueta: React.FC = () => {
 
           <div className="superficie p-3 space-y-2">
             <p className="text-sm font-semibold text-fg-token">Etiqueta</p>
+            {irmaosDoRolo(layouts, modelo).length > 0 && (
+              <p className="text-xs text-fg-muted-token" data-testid="des-rolo-irmaos">Mesmo rolo que {irmaosDoRolo(layouts, modelo).join(' e ')}</p>
+            )}
             <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
               <Medida rotulo="Largura" valor={layout.etiqueta.largura} min={5} max={300} onMudar={(v) => setEtiqueta({ largura: v })} data-testid="lay-larg" />
               <Medida rotulo="Altura" valor={layout.etiqueta.altura} min={5} max={300} onMudar={(v) => setEtiqueta({ altura: v })} data-testid="lay-alt" />
