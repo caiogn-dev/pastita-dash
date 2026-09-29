@@ -323,7 +323,7 @@ export const WhatsAppCampaignsPage: React.FC = () => {
     <PageShell
       trilha={[{ rotulo: 'Campanhas', href: '/marketing' }, { rotulo: 'WhatsApp' }]}
       titulo="Campanhas no WhatsApp"
-      descricao="O que saiu, o que chegou e o que foi lido. Clique numa campanha para ver quem recebeu."
+     
       acoes={estado === 'lista' ? criar : undefined}
     >
       {estado === 'lista' && (
@@ -372,7 +372,7 @@ export const WhatsAppCampaignsPage: React.FC = () => {
           <EmptyState
             icone={<MegaphoneIcon className="h-10 w-10" />}
             titulo="Nenhuma campanha ainda"
-            descricao="Fale com quem já comprou de você: escolha quem recebe, escreva a mensagem e envie agora ou agende."
+           
             acao={criar}
           />
         </div>

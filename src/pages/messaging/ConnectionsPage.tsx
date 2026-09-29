@@ -272,7 +272,7 @@ export default function ConnectionsPage() {
     <PageShell
       className="mx-auto max-w-6xl"
       titulo="Conexões"
-      descricao="Ligue o WhatsApp e o Instagram da sua loja. É só entrar com a sua conta e autorizar — seus clientes continuam falando com você no mesmo número."
+     
     >
       {erro && (
         <div role="alert" className="mb-6 flex items-center gap-3 rounded-xl border border-border-token bg-danger-soft px-5 py-4">
@@ -296,7 +296,6 @@ export default function ConnectionsPage() {
                 </ul>
                 <div className="mt-auto flex flex-col gap-2">
                   <ConnectWhatsAppButton onConnected={carregar} />
-                  <p className="text-xs text-fg-muted-token">Você entra com o Facebook, escolhe o número da loja e confirma no celular.</p>
                 </div>
               </Cartao>
             )}
@@ -397,9 +396,6 @@ export default function ConnectionsPage() {
                       {conectandoInstagram ? 'Aguardando o Instagram…' : 'Entrar com o Instagram'}
                     </button>
                   )}
-                  <p className="text-center text-xs text-fg-muted-token">
-                    Precisa ser conta profissional (comercial ou criador). Dá para mudar no app em 1 minuto.
-                  </p>
                 </div>
               </Cartao>
             )}

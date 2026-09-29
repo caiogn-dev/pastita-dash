@@ -62,9 +62,6 @@ export const FreteGratisCard: React.FC<Props> = ({ metadataAtual, onSalvar }) =>
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-fg-token">Frete grátis</h2>
-          <p className="mt-1 text-sm text-fg-muted-token">
-            Uma promoção por distância de rota, por cima do preço acima. Some quando você desligar.
-          </p>
         </div>
         <label className="flex flex-none items-center gap-2 text-sm text-fg-token">
           <input
@@ -98,9 +95,6 @@ export const FreteGratisCard: React.FC<Props> = ({ metadataAtual, onSalvar }) =>
             />
             <span className="text-sm text-fg-muted-token">km</span>
           </div>
-          <p className="mt-1 text-xs text-fg-muted-token">
-            Distância de ROTA — o caminho que o entregador faz, não linha reta. Quem estiver dentro dela não paga entrega.
-          </p>
         </div>
 
         <div>
@@ -126,9 +120,6 @@ export const FreteGratisCard: React.FC<Props> = ({ metadataAtual, onSalvar }) =>
               className="w-28 rounded border border-border-token bg-transparent px-3 py-2 text-sm text-fg-token disabled:opacity-50"
             />
           </div>
-          <p className="mt-1 text-xs text-fg-muted-token">
-            Vazio = grátis em qualquer valor. Com mínimo, o carrinho mostra quanto falta.
-          </p>
         </div>
       </div>
 

@@ -723,7 +723,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 }
                 placeholder="Ex.: 1 Molho Branco"
                 addLabel="Adicionar"
-                helperText="Use em pratos que já saem acompanhados (ex.: Sexta do Bacalhau = 1 rondelli + 1 molho). O atendente do WhatsApp só afirma que algo acompanha se estiver listado aqui — em branco, ele diz que o item é vendido à parte."
+               
               />
 
               <div>
@@ -751,11 +751,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   className="w-full px-3 py-2 border border-border-token rounded bg-surface text-fg-token focus:ring-2 focus:ring-brand"
                   placeholder="Vazio = segue a regra da categoria"
                 />
-                <p className="mt-1 text-xs text-fg-muted-token">
-                  Use em combos que valem mais de 1 selo no cartão fidelidade (ex.: Combo
-                  Tilápia com 4 saladas = 4). Produtos com este campo contam mesmo fora das
-                  categorias qualificantes.
-                </p>
               </div>
             </div>
           )}
@@ -814,10 +809,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 <div className="sm:col-span-2 superficie-2 p-3">
                   <p className="text-sm font-medium text-fg-token mb-1">
                     Promoção semanal <span className="font-normal text-fg-muted-token">(opcional)</span>
-                  </p>
-                  <p className="text-xs text-fg-muted-token mb-3">
-                    Um preço menor que vale só num dia da semana, toda semana. O
-                    preço normal continua intacto.
                   </p>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>

@@ -850,7 +850,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
                 className="rounded-lg border border-dashed border-border-token py-8"
                 icone={<PhoneIcon className="h-7 w-7" />}
                 titulo="Cliente sem telefone"
-                descricao="Os pedidos são encontrados pelo telefone. Edite o cadastro para ver o histórico."
+               
               />
             ) : loadingOrders ? (
               <Skeleton count={3} className="h-8" />
@@ -1164,7 +1164,7 @@ export const CustomersPage: React.FC = () => {
       {insights.length > 0 && (
         <InsightList
           titulo="Sua base agora"
-          descricao="Cada grupo pede uma conversa diferente — a régua vai escrita."
+         
           tom={insights.some((i) => i.direcao === 'baixa') ? 'alerta' : 'neutro'}
           itens={insights.map((i) => ({
             direcao: i.direcao,

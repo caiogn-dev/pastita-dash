@@ -156,11 +156,6 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
           <h3 className="text-lg font-medium text-fg-token">
             Vale-refeição e vale-alimentação
           </h3>
-          <p className="text-sm text-fg-muted-token">
-            Em qual conta do Pagar.me cai o dinheiro dos pedidos pagos com vale
-            nesta loja. As bandeiras marcadas aqui são as que aparecem no
-            cardápio.
-          </p>
         </div>
       </div>
 

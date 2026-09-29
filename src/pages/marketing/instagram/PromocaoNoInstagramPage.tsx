@@ -168,7 +168,7 @@ export const PromocaoNoInstagramPage: React.FC = () => {
   return (
     <PageShell
       titulo="Promoção no Instagram"
-      descricao="Quem comentar na sua publicação recebe a mensagem da loja no direct."
+     
       selo={<InstagramIcon className="h-6 w-6" aria-label="Instagram" />}
       acoes={
         !semConta && (
@@ -181,7 +181,7 @@ export const PromocaoNoInstagramPage: React.FC = () => {
       {semConta ? (
         <EmptyState
           titulo="Conecte o Instagram da loja"
-          descricao="A promoção responde os comentários da sua conta profissional. Conecte uma vez e ela passa a valer."
+         
           acao={<Link to="/connections" className={BOTAO_PRINCIPAL}>Conectar Instagram</Link>}
         />
       ) : (
@@ -205,7 +205,7 @@ export const PromocaoNoInstagramPage: React.FC = () => {
           ) : (
             <EmptyState
               titulo="Nenhuma promoção ainda"
-              descricao="Crie uma promoção, cole o link do post e a loja passa a responder cada comentário no direct."
+             
             />
           )}
         </div>

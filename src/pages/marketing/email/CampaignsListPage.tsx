@@ -285,7 +285,7 @@ export const CampaignsListPage: React.FC = () => {
     <PageShell
       trilha={[{ rotulo: 'Campanhas', href: '/marketing' }, { rotulo: 'E-mail' }]}
       titulo="Campanhas de e-mail"
-      descricao="O que saiu, quem abriu e quem clicou. Clique numa campanha para ver os destinatários."
+     
       acoes={estado === 'lista' ? criar : undefined}
     >
       {estado === 'lista' && (
@@ -334,7 +334,7 @@ export const CampaignsListPage: React.FC = () => {
           <EmptyState
             icone={<EnvelopeIcon className="h-10 w-10" />}
             titulo="Nenhuma campanha de e-mail ainda"
-            descricao="Escolha um modelo, escreva o assunto e envie para seus contatos."
+           
             acao={criar}
           />
         </div>

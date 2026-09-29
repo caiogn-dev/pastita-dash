@@ -269,7 +269,7 @@ export const NaoEntendiSecao: React.FC = () => {
                     rows={3}
                     value={resposta}
                     onChange={(e) => setResposta(e.target.value)}
-                    hint="Escreva como fato, não como resposta: “A salada dura até 2 dias na geladeira, fechada.” A IA passa a afirmar isso em qualquer conversa."
+                   
                     maxLength={300}
                   />
                 </>
@@ -279,7 +279,7 @@ export const NaoEntendiSecao: React.FC = () => {
                   rows={4}
                   value={resposta}
                   onChange={(e) => setResposta(e.target.value)}
-                  hint="A IA usa este par pergunta → resposta como exemplo. Vale para a mesma dúvida escrita de outro jeito."
+                 
                   maxLength={1000}
                 />
               )}

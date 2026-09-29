@@ -168,7 +168,7 @@ export const PromocaoDoDiaPage: React.FC = () => {
                   value={config.texto}
                   onChange={(e) => setConfig({ ...config, texto: e.target.value })}
                   onBlur={() => void gravar(config)}
-                  hint="{nome} vira o nome da cliente; {dia} vira “Amanhã (terça)”; {ofertas} vira a lista com preço; {loja} e {cardapio} você já sabe."
+                 
                   maxLength={1000}
                 />
               </div>

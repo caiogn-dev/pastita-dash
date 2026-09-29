@@ -107,7 +107,7 @@ export const MarketingPage: React.FC = () => {
           <EmptyState
             icone={<MegaphoneIcon className="h-10 w-10" />}
             titulo="Escolha uma loja"
-            descricao="As campanhas são de cada loja. Escolha uma para ver os números e criar campanhas."
+           
             acao={<Button onClick={() => navigate('/stores')}>Ver lojas</Button>}
           />
         </div>
@@ -261,7 +261,7 @@ export const MarketingPage: React.FC = () => {
           {modelos.length > 0 && (
             <Secao
               titulo="Modelos de e-mail"
-              descricao="Abra um modelo para ver como ele chega e começar uma campanha com ele."
+             
               acoes={
                 <Button variant="secondary" size="sm" onClick={() => navigate('/marketing/email/templates')}>
                   Ver todos

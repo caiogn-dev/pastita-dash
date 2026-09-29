@@ -234,9 +234,6 @@ export const PaymentLinkPage: React.FC = () => {
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-fg-muted-token">
-            Vinculado a um pedido, o pagamento conta como venda daquele pedido.
-          </p>
 
           {/* Aviso, não bloqueio: cobrar avulso um valor que coincide com um
               pedido é raro, mas legítimo. Quem decide é quem está no balcão. */}
@@ -332,9 +329,6 @@ export const PaymentLinkPage: React.FC = () => {
             className="mt-1 w-full superficie-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
             placeholder="000.000.000-00"
           />
-          <p className="mt-1 text-xs text-fg-muted-token">
-            Informar os dados reais do cliente aumenta a taxa de aprovação do cartão.
-          </p>
         </div>
 
         {!pedidoId && !description.trim() && (
@@ -395,10 +389,6 @@ export const PaymentLinkPage: React.FC = () => {
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
           <div>
             <h2 className="text-base font-semibold text-fg-token">Cobranças geradas</h2>
-            <p className="text-xs text-fg-muted-token">
-              O link fica guardado aqui — não se perde ao atualizar a página. O
-              pagamento aparece assim que o Mercado Pago avisa.
-            </p>
           </div>
           <button
             type="button"

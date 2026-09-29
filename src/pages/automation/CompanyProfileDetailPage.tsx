@@ -758,9 +758,6 @@ const CompanyProfileDetailPage: React.FC = () => {
                 <label id="bot-order-enabled-label" className="text-sm font-medium text-fg-token">
                   Aceitar pedidos pelo bot
                 </label>
-                <p className="text-sm text-fg-muted-token">
-                  Quando desligado, o bot responde dúvidas mas não monta carrinho nem fecha pedidos
-                </p>
               </div>
               <Switch
                 ariaLabelledby="bot-order-enabled-label"
@@ -780,9 +777,6 @@ const CompanyProfileDetailPage: React.FC = () => {
                 onChange={(e) => setUpsellCategoriesText(e.target.value)}
                 placeholder="Ex.: Bebidas, Sobremesas"
               />
-              <p className="mt-1 text-sm text-fg-muted-token">
-                Nomes de categorias do cardápio usadas nas sugestões do bot. Vazio = seleção automática.
-              </p>
             </div>
 
             <div>
@@ -798,9 +792,6 @@ const CompanyProfileDetailPage: React.FC = () => {
                 spellCheck={false}
                 className="font-mono text-xs"
               />
-              <p className="mt-1 text-sm text-fg-muted-token">
-                Modo restrito: array JSON de intents que o bot pode atender. Vazio = todos os intents.
-              </p>
             </div>
           </div>
         </div>

@@ -37,7 +37,12 @@ export function contarManual(codigo: string): number {
     if (/\{/.test(m[2])) continue;                       // dado vivo (valor, nome) não é manual
     if (texto.length >= 60 && /[.,]/.test(texto) && !/^(Não foi possível|Tem certeza|Nenhum|Nenhuma)/.test(texto)) n += 1;
   }
-  for (const _ of codigo.matchAll(DESCRICAO)) n += 1;
+  for (const m of codigo.matchAll(DESCRICAO)) {
+    const t = m[2];
+    if (/\$\{/.test(t)) continue;                                                     // dado vivo
+    if (/(falhou|não p[uô]de|não puderam|Não há|Tente (de novo|novamente)|aparece[m]? aqui|Conecte )/.test(t)) continue; // erro, vazio, bloqueio
+    n += 1;
+  }
   return n;
 }
 
