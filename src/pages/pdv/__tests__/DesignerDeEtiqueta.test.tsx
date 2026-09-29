@@ -137,6 +137,57 @@ describe('DesignerDeEtiqueta', () => {
     expect(Number((screen.getByTestId('prop-h') as HTMLInputElement).value)).toBeGreaterThanOrEqual(3 * 2.5 * 1.15);
   });
 
+  it('Shift+clique seleciona vários, a barra Alinhar aparece e alinha às esquerdas', async () => {
+    await montar();
+    fireEvent.pointerDown(screen.getByTestId('el-nome'), { clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerUp(window, { pointerId: 1 });
+    fireEvent.pointerDown(screen.getByTestId('el-val'), { clientX: 0, clientY: 0, pointerId: 1, shiftKey: true });
+    fireEvent.pointerUp(window, { pointerId: 1 });
+    expect(screen.getByTestId('des-alinhar').textContent).toContain('2 selecionados');
+    // move o val para a direita pelo teclado e depois alinha as esquerdas ao conjunto
+    fireEvent.keyDown(window, { key: 'Escape' });
+    fireEvent.pointerDown(screen.getByTestId('el-val'), { clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerUp(window, { pointerId: 1 });
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    expect((screen.getByTestId('prop-x') as HTMLInputElement).value).toBe('2.1');
+    fireEvent.pointerDown(screen.getByTestId('el-nome'), { clientX: 0, clientY: 0, pointerId: 1, shiftKey: true });
+    fireEvent.pointerUp(window, { pointerId: 1 });
+    await userEvent.click(screen.getByTestId('al-esquerda'));
+    fireEvent.keyDown(window, { key: 'Escape' });
+    fireEvent.pointerDown(screen.getByTestId('el-val'), { clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerUp(window, { pointerId: 1 });
+    expect((screen.getByTestId('prop-x') as HTMLInputElement).value).toBe('1.6');
+  });
+
+  it('travado não arrasta; destravar volta a arrastar', async () => {
+    await montar();
+    fireEvent.pointerDown(screen.getByTestId('el-nome'), { clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerUp(window, { pointerId: 1 });
+    await userEvent.click(screen.getByTestId('fmt-travar'));
+    fireEvent.pointerDown(screen.getByTestId('el-nome'), { clientX: 100, clientY: 100, pointerId: 1 });
+    fireEvent.pointerMove(window, { clientX: 160, clientY: 100, pointerId: 1 });
+    fireEvent.pointerUp(window, { pointerId: 1 });
+    expect((screen.getByTestId('prop-x') as HTMLInputElement).value).toBe('1.6');
+    await userEvent.click(screen.getByTestId('fmt-travar'));
+    fireEvent.pointerDown(screen.getByTestId('el-nome'), { clientX: 100, clientY: 100, pointerId: 1 });
+    fireEvent.pointerMove(window, { clientX: 112, clientY: 100, pointerId: 1 });
+    fireEvent.pointerUp(window, { pointerId: 1 });
+    expect((screen.getByTestId('prop-x') as HTMLInputElement).value).toBe('3.5');
+  });
+
+  it('modelo pronto "Faixa PROMOÇÃO" troca os campos e o texto invertido aparece nas camadas', async () => {
+    await montar();
+    await userEvent.selectOptions(screen.getByTestId('tool-modelos'), 'promo');
+    expect(screen.getByTestId('des-camadas').textContent).toContain('PROMOÇÃO');
+    expect(screen.getByTestId('fmt-inverso')).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(screen.getByTestId('fmt-girar'));
+    expect(screen.getByTestId('fmt-girar')).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(screen.getByTestId('des-salvar'));
+    await waitFor(() => expect(salvarLayout).toHaveBeenCalled());
+    const enviado = (salvarLayout as jest.Mock).mock.calls[0][2] as LayoutDeEtiqueta;
+    expect(enviado.elementos[0]).toMatchObject({ inverso: true, rotacao: 90 });
+  });
+
   it('barra de formatação: fonte, negrito e uma linha que encolhe', async () => {
     await montar();
     fireEvent.pointerDown(screen.getByTestId('el-nome'), { clientX: 0, clientY: 0, pointerId: 1 });

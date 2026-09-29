@@ -70,6 +70,7 @@ export const novoElemento = (l: LayoutDeEtiqueta, tipo: TipoDeElemento): LayoutD
     linha: { h: 0.3 },
     caixa: { espessura: 0.3, w: l.etiqueta.largura, h: l.etiqueta.altura, x: 0, y: 0 },
     tabela: { w: Math.min(60, l.etiqueta.largura - 2), h: Math.min(62, l.etiqueta.altura - 2) },
+    imagem: { w: Math.min(15, l.etiqueta.largura - 2), h: Math.min(15, l.etiqueta.altura - 2) },
   };
   return { ...l, elementos: [...l.elementos, { ...base, ...porTipo[tipo] }] };
 };
@@ -185,7 +186,7 @@ export const moverCamada = (l: LayoutDeEtiqueta, id: string, direcao: 'cima' | '
 
 export const nomeDoElemento = (e: ElementoDoLayout): string => {
   if (e.tipo === 'texto') return (e.texto || '').trim() || 'Texto';
-  return { qr: 'QR Code', barras: 'Código de barras', linha: 'Linha', caixa: 'Caixa', texto: 'Texto', tabela: 'Tabela nutricional' }[e.tipo];
+  return { qr: 'QR Code', barras: 'Código de barras', linha: 'Linha', caixa: 'Caixa', texto: 'Texto', tabela: 'Tabela nutricional', imagem: 'Imagem' }[e.tipo];
 };
 
 /** Desfazer/refazer: pilha simples, com o presente no topo de `passado`. */
@@ -225,3 +226,96 @@ export const irmaosDoRolo = (layouts: Record<string, unknown> | null, modelo: st
     .filter(([k, v]) => k !== modelo && !!v && typeof v === 'object' && 'layout' in (v as object) && (v as { layout?: LayoutDeEtiqueta }).layout?.papel?.rolo === rolo)
     .map(([k]) => NOME_CURTO_DO_MODELO[k] ?? k);
 };
+
+// ---------------------------------------------------------------------------
+// Seleção múltipla: alinhar e distribuir, como em qualquer app de etiqueta.
+// ---------------------------------------------------------------------------
+export type ModoDeAlinhar = 'esquerda' | 'centro' | 'direita' | 'topo' | 'meio' | 'base';
+
+export const alinharElementos = (l: LayoutDeEtiqueta, ids: string[], modo: ModoDeAlinhar): LayoutDeEtiqueta => {
+  const els = l.elementos.filter((e) => ids.includes(e.id) && !e.bloqueado);
+  if (els.length === 0) return l;
+  // Com 1 selecionado, alinha à etiqueta; com vários, ao conjunto.
+  const ref = els.length === 1
+    ? { x: 0, y: 0, w: l.etiqueta.largura, h: l.etiqueta.altura }
+    : { x: Math.min(...els.map((e) => e.x)), y: Math.min(...els.map((e) => e.y)),
+        w: Math.max(...els.map((e) => e.x + e.w)) - Math.min(...els.map((e) => e.x)),
+        h: Math.max(...els.map((e) => e.y + e.h)) - Math.min(...els.map((e) => e.y)) };
+  const alvo = (e: ElementoDoLayout): Partial<ElementoDoLayout> => {
+    switch (modo) {
+      case 'esquerda': return { x: ref.x };
+      case 'centro': return { x: ref.x + (ref.w - e.w) / 2 };
+      case 'direita': return { x: ref.x + ref.w - e.w };
+      case 'topo': return { y: ref.y };
+      case 'meio': return { y: ref.y + (ref.h - e.h) / 2 };
+      default: return { y: ref.y + ref.h - e.h };
+    }
+  };
+  return { ...l, elementos: l.elementos.map((e) => (els.includes(e) ? { ...e, ...Object.fromEntries(Object.entries(alvo(e)).map(([k, v]) => [k, fixo(v as number)])) } : e)) };
+};
+
+export const distribuirElementos = (l: LayoutDeEtiqueta, ids: string[], eixo: 'x' | 'y'): LayoutDeEtiqueta => {
+  const els = l.elementos.filter((e) => ids.includes(e.id) && !e.bloqueado).sort((a, b) => a[eixo] - b[eixo]);
+  if (els.length < 3) return l;
+  const tam = eixo === 'x' ? 'w' : 'h';
+  const inicio = els[0][eixo]; const fim = els[els.length - 1][eixo] + els[els.length - 1][tam];
+  const ocupado = els.reduce((t, e) => t + e[tam], 0);
+  const vao = (fim - inicio - ocupado) / (els.length - 1);
+  let cursor = inicio;
+  const novos = new Map<string, number>();
+  els.forEach((e) => { novos.set(e.id, fixo(cursor)); cursor += e[tam] + vao; });
+  return { ...l, elementos: l.elementos.map((e) => (novos.has(e.id) ? { ...e, [eixo]: novos.get(e.id) as number } : e)) };
+};
+
+export const moverVarios = (l: LayoutDeEtiqueta, ids: string[], dxMm: number, dyMm: number): LayoutDeEtiqueta =>
+  ids.reduce((acc, id) => {
+    const e = acc.elementos.find((x) => x.id === id);
+    return e && !e.bloqueado ? moverElemento(acc, id, dxMm, dyMm) : acc;
+  }, l);
+
+/** Redimensiona uma imagem do usuário para caber em `maxPx` e devolve PNG em data URL. */
+export const imagemParaDataUrl = (arquivo: File, maxPx = 600): Promise<string> => new Promise((resolve, reject) => {
+  const url = URL.createObjectURL(arquivo);
+  const im = new Image();
+  im.onload = () => {
+    const escala = Math.min(1, maxPx / Math.max(im.width, im.height));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(im.width * escala)); c.height = Math.max(1, Math.round(im.height * escala));
+    const ctx = c.getContext('2d');
+    if (!ctx) { reject(new Error('sem canvas')); return; }
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(im, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(url);
+    resolve(c.toDataURL('image/png'));
+  };
+  im.onerror = () => { URL.revokeObjectURL(url); reject(new Error('imagem inválida')); };
+  im.src = url;
+});
+
+/** Modelos prontos para começar: variações úteis por rolo. */
+export const MODELOS_PRONTOS: { id: string; nome: string; monta: (l: LayoutDeEtiqueta) => LayoutDeEtiqueta }[] = [
+  { id: 'validade-simples', nome: 'Nome + validade', monta: (l) => ({ ...l, elementos: [
+    { id: 'nome', tipo: 'texto', x: 1.5, y: 1.5, w: l.etiqueta.largura - 3, h: l.etiqueta.altura * 0.45, texto: '{name}', tamanho: 2.6, negrito: true, linhas: 0 },
+    { id: 'manip', tipo: 'texto', x: 1.5, y: l.etiqueta.altura - 7.4, w: l.etiqueta.largura - 3, h: 2.8, texto: 'Manip.: {manip}', tamanho: 2.1, linhas: 1 },
+    { id: 'val', tipo: 'texto', x: 1.5, y: l.etiqueta.altura - 4.4, w: l.etiqueta.largura - 3, h: 3.4, texto: 'Val.: {val}', tamanho: 2.8, negrito: true, linhas: 1 },
+  ] }) },
+  { id: 'validade-qr', nome: 'Nome + validade + QR', monta: (l) => { const q = Math.min(14, l.etiqueta.altura - 4); return { ...l, elementos: [
+    { id: 'nome', tipo: 'texto', x: 1.5, y: 1.5, w: l.etiqueta.largura - q - 4, h: l.etiqueta.altura * 0.45, texto: '{name}', tamanho: 2.4, negrito: true, linhas: 0 },
+    { id: 'manip', tipo: 'texto', x: 1.5, y: l.etiqueta.altura - 7.4, w: l.etiqueta.largura - q - 4, h: 2.8, texto: 'Manip.: {manip}', tamanho: 2, linhas: 1 },
+    { id: 'val', tipo: 'texto', x: 1.5, y: l.etiqueta.altura - 4.4, w: l.etiqueta.largura - q - 4, h: 3.4, texto: 'Val.: {val}', tamanho: 2.6, negrito: true, linhas: 1 },
+    { id: 'qr', tipo: 'qr', x: l.etiqueta.largura - q - 1.5, y: (l.etiqueta.altura - q) / 2, w: q, h: q, campo: 'publicUrl' },
+  ] }; } },
+  { id: 'preco', nome: 'Nome + preço grande', monta: (l) => ({ ...l, elementos: [
+    { id: 'nome', tipo: 'texto', x: 1.5, y: 1.5, w: l.etiqueta.largura - 3, h: l.etiqueta.altura * 0.4, texto: '{name}', tamanho: 2.4, negrito: false, linhas: 0 },
+    { id: 'preco', tipo: 'texto', x: 1.5, y: l.etiqueta.altura * 0.45, w: l.etiqueta.largura - 3, h: l.etiqueta.altura * 0.5, texto: '{price}', tamanho: Math.min(9, l.etiqueta.altura * 0.4), negrito: true, linhas: 1, alinhar: 'centro', ajuste: 'encolher' },
+  ] }) },
+  { id: 'promo', nome: 'Faixa PROMOÇÃO + preço', monta: (l) => ({ ...l, elementos: [
+    { id: 'faixa', tipo: 'texto', x: 0, y: 0, w: l.etiqueta.largura, h: Math.min(6, l.etiqueta.altura * 0.28), texto: 'PROMOÇÃO', tamanho: Math.min(4, l.etiqueta.altura * 0.18), negrito: true, linhas: 1, alinhar: 'centro', inverso: true },
+    { id: 'nome', tipo: 'texto', x: 1.5, y: Math.min(6, l.etiqueta.altura * 0.28) + 1, w: l.etiqueta.largura - 3, h: l.etiqueta.altura * 0.3, texto: '{name}', tamanho: 2.2, linhas: 0 },
+    { id: 'preco', tipo: 'texto', x: 1.5, y: l.etiqueta.altura * 0.62, w: l.etiqueta.largura - 3, h: l.etiqueta.altura * 0.36, texto: '{price}', tamanho: Math.min(8, l.etiqueta.altura * 0.32), negrito: true, linhas: 1, alinhar: 'centro', ajuste: 'encolher' },
+  ] }) },
+  { id: 'barras', nome: 'Nome + código de barras', monta: (l) => ({ ...l, elementos: [
+    { id: 'nome', tipo: 'texto', x: 1.5, y: 1.5, w: l.etiqueta.largura - 3, h: l.etiqueta.altura * 0.35, texto: '{name}', tamanho: 2.4, negrito: true, linhas: 0 },
+    { id: 'barras', tipo: 'barras', x: 1.5, y: l.etiqueta.altura * 0.42, w: l.etiqueta.largura - 3, h: l.etiqueta.altura * 0.55, campo: 'barcode' },
+  ] }) },
+];

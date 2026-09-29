@@ -139,7 +139,7 @@ export const imprimeEtiquetas = (agent: Pick<PrintAgent, 'imprime'>): boolean =>
 export type ModeloDesenhavel = 'validade' | 'nutricao-qr' | 'produto' | 'nutricao';
 export const MODELOS_DESENHAVEIS: ModeloDesenhavel[] = ['validade', 'nutricao-qr', 'produto', 'nutricao'];
 
-export type TipoDeElemento = 'texto' | 'qr' | 'barras' | 'linha' | 'caixa' | 'tabela';
+export type TipoDeElemento = 'texto' | 'qr' | 'barras' | 'linha' | 'caixa' | 'tabela' | 'imagem';
 export type CampoDaEtiqueta = 'name' | 'manip' | 'val' | 'price' | 'description' | 'barcode' | 'publicUrl' | 'ingredients' | 'allergens';
 
 export interface ElementoDoLayout {
@@ -163,6 +163,16 @@ export interface ElementoDoLayout {
   fonte?: 'sans' | 'estreita' | 'serif' | 'mono';
   /** texto: quebrar em `linhas` (padrão) ou manter em uma linha encolhendo a letra até caber. */
   ajuste?: 'quebrar' | 'encolher';
+  /** texto: branco sobre fundo preto. */
+  inverso?: boolean;
+  /** texto: giro em graus. */
+  rotacao?: 0 | 90 | 180 | 270;
+  /** barras: número impresso embaixo. */
+  mostrar_numero?: boolean;
+  /** imagem: data URL (PNG/JPG em base64, máx. 200 KB). */
+  imagem?: string;
+  /** editor: não arrasta nem estica sem destravar. */
+  bloqueado?: boolean;
 }
 
 export interface LayoutDeEtiqueta {

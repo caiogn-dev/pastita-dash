@@ -171,3 +171,38 @@ describe('rolo compartilhado', () => {
     expect(l.elementos[2]).toMatchObject({ linhas: 0, h: 6 });
   });
 });
+
+import { alinharElementos, distribuirElementos, moverVarios, MODELOS_PRONTOS } from '../editorDeEtiqueta';
+describe('seleção múltipla e modelos prontos', () => {
+  it('alinha à etiqueta com 1 selecionado e ao conjunto com vários; travado não mexe', () => {
+    const l = alinharElementos(base(), ['val'], 'direita');
+    expect(l.elementos[1].x).toBeCloseTo(33 - 29.8, 5);
+    const b = base(); b.elementos[1] = { ...b.elementos[1], x: 5, w: 10 };
+    const m = alinharElementos(b, ['nome', 'val'], 'esquerda');
+    expect(m.elementos.map((e) => e.x)).toEqual([1.6, 1.6]);
+    const t = { ...b, elementos: b.elementos.map((e) => (e.id === 'val' ? { ...e, bloqueado: true } : e)) };
+    expect(alinharElementos(t, ['nome', 'val'], 'esquerda').elementos[1].x).toBe(5);
+  });
+  it('distribui 3 elementos com vãos iguais no eixo', () => {
+    const b = base();
+    b.elementos = [
+      { id: 'a', tipo: 'caixa', x: 0, y: 0, w: 5, h: 2 }, { id: 'b', tipo: 'caixa', x: 6, y: 0, w: 5, h: 2 }, { id: 'c', tipo: 'caixa', x: 25, y: 0, w: 5, h: 2 },
+    ];
+    const d = distribuirElementos(b, ['a', 'b', 'c'], 'x');
+    expect(d.elementos.map((e) => e.x)).toEqual([0, 12.5, 25]);
+  });
+  it('move vários de uma vez, pulando os travados', () => {
+    const b = base(); b.elementos[1] = { ...b.elementos[1], bloqueado: true };
+    const m = moverVarios(b, ['nome', 'val'], 1, 0);
+    expect(m.elementos[0].x).toBeCloseTo(2.6, 5); expect(m.elementos[1].x).toBe(1.6);
+  });
+  it('modelos prontos cabem na etiqueta e usam os campos', () => {
+    for (const mp of MODELOS_PRONTOS) {
+      const l = mp.monta(base());
+      for (const e of l.elementos) {
+        expect(e.x + e.w).toBeLessThanOrEqual(33.01); expect(e.y + e.h).toBeLessThanOrEqual(22.01);
+      }
+    }
+    expect(MODELOS_PRONTOS.find((m) => m.id === 'promo')!.monta(base()).elementos[0].inverso).toBe(true);
+  });
+});

@@ -10,8 +10,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   ArrowUturnLeftIcon, ArrowUturnRightIcon, ArrowsPointingInIcon, Bars3BottomLeftIcon, Bars3BottomRightIcon, Bars3Icon,
-  BoldIcon, ChevronDownIcon, ChevronUpIcon, DocumentDuplicateIcon, EyeIcon, MagnifyingGlassMinusIcon,
-  MagnifyingGlassPlusIcon, MinusIcon, PrinterIcon, QrCodeIcon, StopIcon, TableCellsIcon, TrashIcon, ViewfinderCircleIcon,
+  ArrowPathIcon, ArrowsRightLeftIcon, ArrowsUpDownIcon, BoldIcon, ChevronDownIcon, ChevronUpIcon, DocumentDuplicateIcon,
+  EyeIcon, LockClosedIcon, LockOpenIcon, MagnifyingGlassMinusIcon, MagnifyingGlassPlusIcon, MinusIcon, PhotoIcon, PrinterIcon,
+  QrCodeIcon, Squares2X2Icon, StopIcon, TableCellsIcon, TrashIcon, ViewfinderCircleIcon,
 } from '@heroicons/react/24/outline';
 import { Button, Input, PageShell, Select } from '../../components/ui';
 import { Loading } from '../../components/common';
@@ -23,9 +24,10 @@ import {
   imprimirGradeDeCalibracao, listPrintAgents, previewDeEtiquetas, salvarCalibracao, salvarLayout,
 } from '../../services/printing';
 import {
-  Alca, ETIQUETA_DE_EXEMPLO, Historico, ajustarPapelAoBloco, blocoMm, comPapel, duplicarElemento, editarElemento, encaixar,
-  encaixarNasGuias, guiasDoLayout, margemEsquerda, moverCamada, moverElemento, nomeDoElemento, novoElemento,
-  irmaosDoRolo, problemaDoLayout, redimensionarPorAlca, removerElemento, temMargensMedidas, textoDeExemplo,
+  Alca, ETIQUETA_DE_EXEMPLO, Historico, MODELOS_PRONTOS, ModoDeAlinhar, ajustarPapelAoBloco, alinharElementos, blocoMm, comPapel,
+  distribuirElementos, duplicarElemento, editarElemento, encaixar, encaixarNasGuias, guiasDoLayout, imagemParaDataUrl, irmaosDoRolo,
+  margemEsquerda, moverCamada, moverElemento, moverVarios, nomeDoElemento, novoElemento, problemaDoLayout, redimensionarPorAlca,
+  removerElemento, temMargensMedidas, textoDeExemplo,
 } from './editorDeEtiqueta';
 
 const PX_POR_MM_REAL = 96 / 25.4;
@@ -34,7 +36,7 @@ const REGUA = 22; // px
 const TOLERANCIA_GUIA = 0.4; // mm
 
 const NOME_DO_MODELO: Record<ModeloDesenhavel, string> = { validade: 'Validade', 'nutricao-qr': 'QR da tabela nutricional', produto: 'Produto com código de barras', nutricao: 'Tabela nutricional' };
-const NOMES: Record<TipoDeElemento, string> = { texto: 'Texto', qr: 'QR Code', barras: 'Código de barras', linha: 'Linha', caixa: 'Caixa', tabela: 'Tabela nutricional' };
+const NOMES: Record<TipoDeElemento, string> = { texto: 'Texto', qr: 'QR Code', barras: 'Código de barras', linha: 'Linha', caixa: 'Caixa', tabela: 'Tabela nutricional', imagem: 'Imagem' };
 const CAMPOS = [
   { valor: 'name', rotulo: 'Nome do produto' }, { valor: 'manip', rotulo: 'Data de manipulação' },
   { valor: 'val', rotulo: 'Data de validade' }, { valor: 'price', rotulo: 'Preço' },
@@ -109,7 +111,7 @@ const Separador: React.FC = () => <span className="mx-1 h-5 w-px bg-border-token
 const T: React.FC<{ negrito?: boolean }> = ({ negrito }) => <span className={`font-serif text-base leading-none ${negrito ? 'font-bold' : ''}`}>T</span>;
 
 type Arrasto =
-  | { tipo: 'mover'; id: string; x0: number; y0: number; ex: number; ey: number }
+  | { tipo: 'mover'; id: string; ids: string[]; x0: number; y0: number; ex: number; ey: number; base: LayoutDeEtiqueta }
   | { tipo: 'alca'; id: string; alca: Alca; x0: number; y0: number; base: LayoutDeEtiqueta };
 
 /** Régua em mm, desenhada em SVG para ficar nítida em qualquer zoom. */
@@ -154,8 +156,14 @@ const DesignerDeEtiqueta: React.FC = () => {
   const historico = useRef<Historico | null>(null);
   const [layout, setLayoutRaw] = useState<LayoutDeEtiqueta | null>(null);
   const [sujo, setSujo] = useState(false);
-  const [selecionado, setSelecionado] = useState<string | null>(null);
+  const [selecionados, setSelecionados] = useState<string[]>([]);
+  const selecionado = selecionados[selecionados.length - 1] ?? null;
+  const setSelecionado = useCallback((id: string | null) => setSelecionados(id ? [id] : []), []);
   const [zoomIdx, setZoomIdx] = useState(5);
+  const [grade, setGrade] = useState(true);
+  const [encaixe, setEncaixe] = useState(true);
+  const [leitura, setLeitura] = useState<{ x: number; y: number } | null>(null);
+  const arquivoRef = useRef<HTMLInputElement>(null);
   const [verComoSai, setVerComoSai] = useState(false);
   const [preview, setPreview] = useState<{ png: string; largura: number; altura: number } | null>(null);
   const [guia, setGuia] = useState<{ x: number | null; y: number | null }>({ x: null, y: null });
@@ -200,7 +208,7 @@ const DesignerDeEtiqueta: React.FC = () => {
       } finally { if (vivo) setCarregando(false); }
     })();
     return () => { vivo = false; };
-  }, [storeId, modelo]);
+  }, [storeId, modelo, setSelecionado]);
 
   useEffect(() => {
     const a = agentes.find((x) => x.id === agente);
@@ -224,10 +232,27 @@ const DesignerDeEtiqueta: React.FC = () => {
   }, [layout, storeUuid, modelo, exemplos, problema]);
 
   // ---- arrastar / esticar ----------------------------------------------------
+  const selecionar = (id: string, e?: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean }) => {
+    if (e && (e.shiftKey || e.ctrlKey || e.metaKey)) {
+      setSelecionados((atual) => (atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id]));
+    } else if (!selecionados.includes(id)) {
+      setSelecionados([id]);
+    } else {
+      setSelecionados((atual) => [...atual.filter((x) => x !== id), id]);
+    }
+  };
   const iniciarMover = (e: React.PointerEvent, el: ElementoDoLayout) => {
     e.preventDefault(); e.stopPropagation();
-    setSelecionado(el.id);
-    arrasto.current = { tipo: 'mover', id: el.id, x0: e.clientX, y0: e.clientY, ex: el.x, ey: el.y };
+    if (!layout) return;
+    const multi = e.shiftKey || e.ctrlKey || e.metaKey;
+    selecionar(el.id, e);
+    if (multi || el.bloqueado) return;                       // clique com Shift só seleciona; travado não arrasta
+    let base = layout; let alvo = el; let ids = selecionados.includes(el.id) ? selecionados : [el.id];
+    if (e.altKey) {                                          // Alt + arrastar = duplica e arrasta a cópia
+      base = duplicarElemento(layout, el.id); alvo = base.elementos[base.elementos.length - 1]; ids = [alvo.id];
+      aplicar(base); setSelecionados([alvo.id]);
+    }
+    arrasto.current = { tipo: 'mover', id: alvo.id, ids, x0: e.clientX, y0: e.clientY, ex: alvo.x, ey: alvo.y, base };
   };
   const iniciarAlca = (e: React.PointerEvent, el: ElementoDoLayout, alca: Alca) => {
     e.preventDefault(); e.stopPropagation();
@@ -241,26 +266,30 @@ const DesignerDeEtiqueta: React.FC = () => {
       const dx = (e.clientX - a.x0) / escala; const dy = (e.clientY - a.y0) / escala;
       if (!Number.isFinite(dx) || !Number.isFinite(dy)) return;
       if (a.tipo === 'mover') {
-        const el = layout.elementos.find((x) => x.id === a.id);
+        const el = a.base.elementos.find((x) => x.id === a.id);
         if (!el) return;
-        // Primeiro a guia (borda/centro de algo), depois a grade de 0,5 mm.
+        // Primeiro a guia (borda/centro de algo), depois a grade de 0,5 mm — se o encaixe estiver ligado.
         const cru = { x: a.ex + dx, y: a.ey + dy, w: el.w, h: el.h };
-        const enc = e.altKey ? { x: cru.x, y: cru.y, guiaX: null, guiaY: null } : encaixarNasGuias(cru, guiasDoLayout(layout, a.id), TOLERANCIA_GUIA);
-        const x = enc.guiaX != null ? enc.x : encaixar(cru.x);
-        const y = enc.guiaY != null ? enc.y : encaixar(cru.y);
+        const semEncaixe = !encaixe || e.altKey;
+        const enc = semEncaixe ? { x: cru.x, y: cru.y, guiaX: null, guiaY: null } : encaixarNasGuias(cru, guiasDoLayout(a.base, a.id), TOLERANCIA_GUIA);
+        const x = enc.guiaX != null ? enc.x : semEncaixe ? Number(cru.x.toFixed(1)) : encaixar(cru.x);
+        const y = enc.guiaY != null ? enc.y : semEncaixe ? Number(cru.y.toFixed(1)) : encaixar(cru.y);
         setGuia({ x: enc.guiaX, y: enc.guiaY });
-        setLayoutRaw(moverElemento(layout, a.id, x - el.x, y - el.y));
+        const novo = moverVarios(a.base, a.ids, x - el.x, y - el.y);
+        const movido = novo.elementos.find((z) => z.id === a.id);
+        setLeitura(movido ? { x: movido.x, y: movido.y } : null);
+        setLayoutRaw(novo);
       } else {
         setLayoutRaw(redimensionarPorAlca(a.base, a.id, a.alca, encaixar(dx), encaixar(dy)));
       }
     };
     const soltar = () => {
       if (arrasto.current && layout) { historico.current?.gravar(layout); setSujo(true); }
-      arrasto.current = null; setGuia({ x: null, y: null });
+      arrasto.current = null; setGuia({ x: null, y: null }); setLeitura(null);
     };
     window.addEventListener('pointermove', mover); window.addEventListener('pointerup', soltar);
     return () => { window.removeEventListener('pointermove', mover); window.removeEventListener('pointerup', soltar); };
-  }, [layout, escala]);
+  }, [layout, escala, encaixe]);
 
   useEffect(() => {
     if (!sujo) return undefined;
@@ -278,16 +307,22 @@ const DesignerDeEtiqueta: React.FC = () => {
       const ctrl = e.ctrlKey || e.metaKey;
       if (ctrl && e.key.toLowerCase() === 'z') { e.preventDefault(); const l = e.shiftKey ? historico.current?.refazer() : historico.current?.desfazer(); if (l) { setLayoutRaw(l); setSujo(true); } return; }
       if (ctrl && e.key.toLowerCase() === 'y') { e.preventDefault(); const l = historico.current?.refazer(); if (l) { setLayoutRaw(l); setSujo(true); } return; }
+      if (ctrl && e.key.toLowerCase() === 'a') { e.preventDefault(); setSelecionados(layout.elementos.map((x) => x.id)); return; }
+      if (e.key === 'Escape') { setSelecionados([]); return; }
       if (!selecionado) return;
       if (ctrl && e.key.toLowerCase() === 'd') { e.preventDefault(); const l = duplicarElemento(layout, selecionado); aplicar(l); setSelecionado(l.elementos[l.elementos.length - 1].id); return; }
-      if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); aplicar(removerElemento(layout, selecionado)); setSelecionado(null); return; }
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        aplicar(selecionados.reduce((acc, id) => (acc.elementos.find((x) => x.id === id)?.bloqueado ? acc : removerElemento(acc, id)), layout));
+        setSelecionados([]); return;
+      }
       const passo = e.shiftKey ? 0.1 : 0.5;
       const d: Record<string, [number, number]> = { ArrowLeft: [-passo, 0], ArrowRight: [passo, 0], ArrowUp: [0, -passo], ArrowDown: [0, passo] };
-      if (d[e.key]) { e.preventDefault(); aplicar(moverElemento(layout, selecionado, ...d[e.key])); }
+      if (d[e.key]) { e.preventDefault(); aplicar(moverVarios(layout, selecionados, ...d[e.key])); }
     };
     window.addEventListener('keydown', tecla);
     return () => window.removeEventListener('keydown', tecla);
-  }, [layout, selecionado, aplicar]);
+  }, [layout, selecionado, selecionados, aplicar, setSelecionado]);
 
   if (carregando) return <Loading />;
   if (!layout || !layouts) {
@@ -305,6 +340,23 @@ const DesignerDeEtiqueta: React.FC = () => {
 
   const patch = (p: Partial<ElementoDoLayout>) => { if (elemento) aplicar(editarElemento(layout, elemento.id, p)); };
   const setEtiqueta = (p: Partial<LayoutDeEtiqueta['etiqueta']>) => aplicar({ ...layout, etiqueta: { ...layout.etiqueta, ...p } });
+  const alinhar = (modo: ModoDeAlinhar) => aplicar(alinharElementos(layout, selecionados, modo));
+  const distribuir = (eixo: 'x' | 'y') => aplicar(distribuirElementos(layout, selecionados, eixo));
+  const travar = (id: string) => { const e = layout.elementos.find((x) => x.id === id); if (e) aplicar(editarElemento(layout, id, { bloqueado: !e.bloqueado })); };
+  const escolherImagem = async (arquivo: File | undefined) => {
+    if (!arquivo) return;
+    try {
+      const dataUrl = await imagemParaDataUrl(arquivo, 600);
+      if (dataUrl.length > 200_000) { toast.error('Imagem grande demais. Use um logo simples, até 600 px.'); return; }
+      adicionar('imagem', { imagem: dataUrl });
+    } catch { toast.error('Não foi possível ler a imagem.'); }
+  };
+  const aplicarModeloPronto = (id: string) => {
+    const mp = MODELOS_PRONTOS.find((m) => m.id === id);
+    if (!mp) return;
+    const l = mp.monta(layout); aplicar(l); setSelecionados(l.elementos[0] ? [l.elementos[0].id] : []);
+  };
+  const girar = () => { if (elemento) patch({ rotacao: (((elemento.rotacao ?? 0) + 90) % 360) as ElementoDoLayout['rotacao'] }); };
   const setPapel = (p: Partial<LayoutDeEtiqueta['papel']>) => aplicar(comPapel(layout, p));
   const adicionar = (tipo: TipoDeElemento, extra: Partial<ElementoDoLayout> = {}) => {
     const l = novoElemento(layout, tipo);
@@ -400,11 +452,14 @@ const DesignerDeEtiqueta: React.FC = () => {
           <p className="px-1 pb-1 text-sm font-semibold text-fg-token">Camadas</p>
           <ul className="space-y-0.5">
             {[...layout.elementos].reverse().map((e) => (
-              <li key={e.id} className={`flex items-center gap-1 rounded-md px-1.5 py-1 text-sm ${e.id === selecionado ? 'bg-brand/15 text-fg-token' : 'text-fg-muted-token hover:bg-surface-2'}`}>
+              <li key={e.id} className={`flex items-center gap-1 rounded-md px-1.5 py-1 text-sm ${e.id === selecionado ? 'bg-brand/15 text-fg-token' : selecionados.includes(e.id) ? 'bg-info-token/10 text-fg-token' : 'text-fg-muted-token hover:bg-surface-2'}`}>
                 <span className="w-4 shrink-0 text-fg-muted-token" aria-hidden="true">
-                  {e.tipo === 'texto' ? <T /> : e.tipo === 'qr' ? <QrCodeIcon className="w-4 h-4" /> : e.tipo === 'barras' ? <Bars3Icon className="w-4 h-4 rotate-90" /> : e.tipo === 'linha' ? <MinusIcon className="w-4 h-4" /> : e.tipo === 'tabela' ? <TableCellsIcon className="w-4 h-4" /> : <StopIcon className="w-4 h-4" />}
+                  {e.tipo === 'texto' ? <T /> : e.tipo === 'qr' ? <QrCodeIcon className="w-4 h-4" /> : e.tipo === 'barras' ? <Bars3Icon className="w-4 h-4 rotate-90" /> : e.tipo === 'linha' ? <MinusIcon className="w-4 h-4" /> : e.tipo === 'tabela' ? <TableCellsIcon className="w-4 h-4" /> : e.tipo === 'imagem' ? <PhotoIcon className="w-4 h-4" /> : <StopIcon className="w-4 h-4" />}
                 </span>
-                <button type="button" className="min-w-0 flex-1 truncate text-left" onClick={() => setSelecionado(e.id)}>{nomeDoElemento(e)}</button>
+                <button type="button" className="min-w-0 flex-1 truncate text-left" onClick={(ev) => selecionar(e.id, ev)}>{nomeDoElemento(e)}</button>
+                <button type="button" aria-label={e.bloqueado ? `Destravar ${nomeDoElemento(e)}` : `Travar ${nomeDoElemento(e)}`} className={`p-0.5 ${e.bloqueado ? 'text-fg-token' : 'opacity-40 hover:opacity-100'}`} onClick={() => travar(e.id)}>
+                  {e.bloqueado ? <LockClosedIcon className="w-3.5 h-3.5" /> : <LockOpenIcon className="w-3.5 h-3.5" />}
+                </button>
                 <button type="button" aria-label="Subir camada" title="Trazer para frente" className="p-0.5 hover:text-fg-token" onClick={() => aplicar(moverCamada(layout, e.id, 'cima'))}><ChevronUpIcon className="w-3.5 h-3.5" /></button>
                 <button type="button" aria-label="Descer camada" title="Enviar para trás" className="p-0.5 hover:text-fg-token" onClick={() => aplicar(moverCamada(layout, e.id, 'baixo'))}><ChevronDownIcon className="w-3.5 h-3.5" /></button>
               </li>
@@ -426,6 +481,8 @@ const DesignerDeEtiqueta: React.FC = () => {
             <Ferramenta rotulo="Código de barras" onClick={() => adicionar('barras')}><Bars3Icon className="w-4 h-4 rotate-90" /></Ferramenta>
             <Ferramenta rotulo="Linha" onClick={() => adicionar('linha')}><MinusIcon className="w-4 h-4" /></Ferramenta>
             <Ferramenta rotulo="Caixa" onClick={() => adicionar('caixa')}><StopIcon className="w-4 h-4" /></Ferramenta>
+            <Ferramenta rotulo="Imagem" dica="Logo ou imagem (PNG/JPG)" onClick={() => arquivoRef.current?.click()} data-testid="tool-imagem"><PhotoIcon className="w-4 h-4" /></Ferramenta>
+            <input ref={arquivoRef} type="file" accept="image/png,image/jpeg" className="hidden" aria-label="Arquivo de imagem" onChange={(e) => { escolherImagem(e.target.files?.[0]); e.target.value = ''; }} />
             {(
               <>
                 <Separador />
@@ -434,9 +491,37 @@ const DesignerDeEtiqueta: React.FC = () => {
                 <Ferramenta rotulo="Alergênicos" onClick={() => adicionar('texto', { texto: '{allergens}', tamanho: 1.8, negrito: true, linhas: 4, w: 32, h: 10 })}><span>Alergênicos</span></Ferramenta>
               </>
             )}
+            <span className="ml-auto inline-flex items-center gap-1">
+              <select aria-label="Começar de um modelo pronto" className="controle h-8 px-2 text-sm" value="" onChange={(e) => { if (e.target.value) aplicarModeloPronto(e.target.value); }} data-testid="tool-modelos">
+                <option value="">Começar de…</option>
+                {MODELOS_PRONTOS.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
+              </select>
+              <Separador />
+              <Ferramenta rotulo="Grade" dica="Mostrar grade de 1 mm" ativo={grade} onClick={() => setGrade((g) => !g)}><Squares2X2Icon className="w-4 h-4" /></Ferramenta>
+              <Ferramenta rotulo="Encaixar" dica="Encaixar nas guias e na grade (Alt desliga na hora)" ativo={encaixe} onClick={() => setEncaixe((v) => !v)} data-testid="tool-encaixe"><ViewfinderCircleIcon className="w-4 h-4" /></Ferramenta>
+            </span>
           </div>
 
-          {elemento && (
+          {selecionados.length > 1 && (
+            <div className="superficie flex flex-wrap items-center gap-1 p-1.5" role="toolbar" aria-label="Alinhar" data-testid="des-alinhar">
+              <span className="px-1 text-xs text-fg-muted-token">{selecionados.length} selecionados</span>
+              <Separador />
+              <Ferramenta rotulo="Alinhar esquerdas" onClick={() => alinhar('esquerda')} data-testid="al-esquerda"><Bars3BottomLeftIcon className="w-4 h-4" /></Ferramenta>
+              <Ferramenta rotulo="Alinhar centros" onClick={() => alinhar('centro')}><Bars3Icon className="w-4 h-4" /></Ferramenta>
+              <Ferramenta rotulo="Alinhar direitas" onClick={() => alinhar('direita')}><Bars3BottomRightIcon className="w-4 h-4" /></Ferramenta>
+              <Separador />
+              <Ferramenta rotulo="Alinhar topos" onClick={() => alinhar('topo')}><Bars3BottomLeftIcon className="w-4 h-4 rotate-90" /></Ferramenta>
+              <Ferramenta rotulo="Alinhar meios" onClick={() => alinhar('meio')}><Bars3Icon className="w-4 h-4 rotate-90" /></Ferramenta>
+              <Ferramenta rotulo="Alinhar bases" onClick={() => alinhar('base')}><Bars3BottomRightIcon className="w-4 h-4 rotate-90" /></Ferramenta>
+              <Separador />
+              <Ferramenta rotulo="Distribuir na horizontal" desabilitado={selecionados.length < 3} onClick={() => distribuir('x')}><ArrowsRightLeftIcon className="w-4 h-4" /></Ferramenta>
+              <Ferramenta rotulo="Distribuir na vertical" desabilitado={selecionados.length < 3} onClick={() => distribuir('y')}><ArrowsUpDownIcon className="w-4 h-4" /></Ferramenta>
+              <Separador />
+              <Ferramenta rotulo="Remover selecionados" dica="Remover (Delete)" onClick={() => { aplicar(selecionados.reduce((acc, id) => removerElemento(acc, id), layout)); setSelecionados([]); }}><TrashIcon className="w-4 h-4" /></Ferramenta>
+            </div>
+          )}
+
+          {elemento && selecionados.length === 1 && (
             <div className="superficie flex flex-wrap items-center gap-1 p-1.5" role="toolbar" aria-label="Formatação" data-testid="des-formatacao">
               {elemento.tipo === 'texto' && (
                 <>
@@ -456,6 +541,8 @@ const DesignerDeEtiqueta: React.FC = () => {
                   <Ferramenta rotulo="Alinhar à direita" ativo={elemento.alinhar === 'direita'} onClick={() => patch({ alinhar: 'direita' })}><Bars3BottomRightIcon className="w-4 h-4" /></Ferramenta>
                   <Separador />
                   <Ferramenta rotulo="Uma linha, encolhe até caber" ativo={elemento.ajuste === 'encolher'} onClick={() => patch({ ajuste: elemento.ajuste === 'encolher' ? 'quebrar' : 'encolher', linhas: elemento.ajuste === 'encolher' ? (elemento.linhas ?? 1) : 1 })} data-testid="fmt-encolher"><ArrowsPointingInIcon className="w-4 h-4" /></Ferramenta>
+                  <Ferramenta rotulo="Branco sobre preto" ativo={!!elemento.inverso} onClick={() => patch({ inverso: !elemento.inverso })} data-testid="fmt-inverso"><span className="rounded-sm bg-fg-token px-1 text-xs font-bold leading-4 text-surface">A</span></Ferramenta>
+                  <Ferramenta rotulo="Girar 90°" dica={`Girar (${elemento.rotacao ?? 0}°)`} ativo={!!elemento.rotacao} onClick={girar} data-testid="fmt-girar"><ArrowPathIcon className="w-4 h-4" /></Ferramenta>
                   {elemento.ajuste !== 'encolher' && (
                     <span className="inline-flex items-center" title="Linhas (auto = quantas couberem na caixa)">
                       <Ferramenta rotulo="Menos linhas" onClick={() => patch({ linhas: Math.max(0, (elemento.linhas ?? 0) - 1) })}><MinusIcon className="w-3.5 h-3.5" /></Ferramenta>
@@ -471,6 +558,9 @@ const DesignerDeEtiqueta: React.FC = () => {
                   <select aria-label="Conteúdo" className="controle h-8 px-2 text-sm" value={elemento.campo ?? ''} onChange={(e) => patch({ campo: e.target.value as ElementoDoLayout['campo'] })}>
                     {CAMPOS.map((c) => <option key={c.valor} value={c.valor}>{c.rotulo}</option>)}
                   </select>
+                  {elemento.tipo === 'barras' && (
+                    <Ferramenta rotulo="Número embaixo das barras" ativo={elemento.mostrar_numero !== false} onClick={() => patch({ mostrar_numero: elemento.mostrar_numero === false })} data-testid="fmt-numero"><span className="text-xs tabular-nums">123</span></Ferramenta>
+                  )}
                   <Separador />
                 </>
               )}
@@ -490,14 +580,20 @@ const DesignerDeEtiqueta: React.FC = () => {
                   <Separador />
                 </span>
               )}
-              <Ferramenta rotulo="Centralizar na etiqueta" onClick={() => aplicar(moverElemento(layout, elemento.id, (layout.etiqueta.largura - elemento.w) / 2 - elemento.x, 0))}><ViewfinderCircleIcon className="w-4 h-4" /></Ferramenta>
+              <Ferramenta rotulo="Alinhar à esquerda da etiqueta" onClick={() => alinhar('esquerda')}><Bars3BottomLeftIcon className="w-4 h-4" /></Ferramenta>
+              <Ferramenta rotulo="Centralizar na etiqueta" onClick={() => alinhar('centro')} data-testid="fmt-centralizar"><Bars3Icon className="w-4 h-4" /></Ferramenta>
+              <Ferramenta rotulo="Alinhar à direita da etiqueta" onClick={() => alinhar('direita')}><Bars3BottomRightIcon className="w-4 h-4" /></Ferramenta>
+              <Ferramenta rotulo="Meio da etiqueta" onClick={() => alinhar('meio')}><Bars3Icon className="w-4 h-4 rotate-90" /></Ferramenta>
+              <Separador />
+              <Ferramenta rotulo={elemento.bloqueado ? 'Destravar' : 'Travar'} dica="Travado não arrasta nem estica" ativo={!!elemento.bloqueado} onClick={() => travar(elemento.id)} data-testid="fmt-travar">{elemento.bloqueado ? <LockClosedIcon className="w-4 h-4" /> : <LockOpenIcon className="w-4 h-4" />}</Ferramenta>
               <Ferramenta rotulo="Duplicar" dica="Duplicar (Ctrl+D)" onClick={() => { const l = duplicarElemento(layout, elemento.id); aplicar(l); setSelecionado(l.elementos[l.elementos.length - 1].id); }}><DocumentDuplicateIcon className="w-4 h-4" /></Ferramenta>
               <Ferramenta rotulo="Remover elemento" dica="Remover (Delete)" onClick={() => { aplicar(removerElemento(layout, elemento.id)); setSelecionado(null); }}><TrashIcon className="w-4 h-4" /></Ferramenta>
             </div>
           )}
 
           <div ref={mesaRef} className="superficie overflow-auto bg-surface-2 p-4" style={{ maxHeight: '66vh' }} data-testid="des-mesa"
-            onPointerDown={(e) => { if (e.target === e.currentTarget) setSelecionado(null); }}>
+            onPointerDown={(e) => { if (e.target === e.currentTarget) setSelecionado(null); }}
+            onWheel={(e) => { if (e.ctrlKey || e.metaKey) { e.preventDefault(); setZoomIdx((z) => Math.max(0, Math.min(ZOOMS.length - 1, z + (e.deltaY < 0 ? 1 : -1)))); } }}>
             <div className="inline-grid" style={{ gridTemplateColumns: `${REGUA}px ${larguraPapel}px`, gridTemplateRows: `${REGUA}px ${alturaPapel + alturaVao}px` }}>
               <div />
               <Regua mm={layout.papel.largura} escala={escala} eixo="x" />
@@ -513,14 +609,24 @@ const DesignerDeEtiqueta: React.FC = () => {
                     className="pointer-events-none absolute left-0 top-0"
                     style={{ width: px(preview.largura), height: px(preview.altura), imageRendering: escala > 4 ? 'pixelated' : 'auto' }} />
                 )}
+                {grade && !verComoSai && escala >= 4 && (
+                  <div className="pointer-events-none absolute inset-0" aria-hidden="true"
+                    style={{ backgroundImage: 'radial-gradient(rgba(0,0,0,.28) 0.6px, transparent 0.7px)', backgroundSize: `${escala}px ${escala}px`, backgroundPosition: `${px(margem)}px 0` }} />
+                )}
                 {Array.from({ length: layout.papel.colunas }).map((_, col) => {
                   const x = px(margem + col * (layout.etiqueta.largura + layout.papel.espaco));
                   const ativa = col === 0;
                   return (
                     <div key={col} className="absolute top-0" style={{ left: x, width: px(layout.etiqueta.largura), height: alturaPapel, outline: '1px dashed rgba(0,0,0,.25)', outlineOffset: -1 }}>
                       {!verComoSai && layout.elementos.map((el) => {
-                        const sel = ativa && el.id === selecionado;
+                        const sel = ativa && selecionados.includes(el.id);
+                        const principal = ativa && el.id === selecionado;
                         const w = px(el.w); const h = px(el.h);
+                        const girado = el.tipo === 'texto' && (el.rotacao === 90 || el.rotacao === 270);
+                        const estiloGiro: React.CSSProperties = el.tipo === 'texto' && el.rotacao
+                          ? { width: girado ? h : w, height: girado ? w : h, transformOrigin: 'top left',
+                              transform: el.rotacao === 90 ? `rotate(90deg) translateY(-${h}px)` : el.rotacao === 270 ? `rotate(-90deg) translateX(-${w}px)` : `rotate(180deg) translate(-${w}px, -${h}px)` }
+                          : {};
                         return (
                           <div
                             key={el.id}
@@ -530,7 +636,7 @@ const DesignerDeEtiqueta: React.FC = () => {
                             data-testid={ativa ? `el-${el.id}` : undefined}
                             onPointerDown={ativa ? (e) => iniciarMover(e, el) : undefined}
                             onFocus={ativa ? () => setSelecionado(el.id) : undefined}
-                            className={`absolute overflow-hidden leading-tight ${ativa ? 'cursor-move' : 'pointer-events-none opacity-40'} ${el.tipo === 'linha' || el.tipo === 'caixa' ? '' : 'px-px'}`}
+                            className={`absolute overflow-hidden leading-tight ${ativa ? (el.bloqueado ? 'cursor-default' : 'cursor-move') : 'pointer-events-none opacity-40'} ${el.tipo === 'linha' || el.tipo === 'caixa' || el.tipo === 'imagem' ? '' : 'px-px'}`}
                             style={{
                               left: px(el.x), top: px(el.y), width: w, height: h,
                               fontSize: el.tipo === 'texto' ? Math.max(4, px(el.tamanho || 2.5) * 0.85) : Math.max(8, px(2)),
@@ -538,12 +644,15 @@ const DesignerDeEtiqueta: React.FC = () => {
                               whiteSpace: el.ajuste === 'encolher' ? 'nowrap' : 'normal',
                               textAlign: el.alinhar === 'centro' ? 'center' : el.alinhar === 'direita' ? 'right' : 'left',
                               fontFamily: CSS_FONTE[el.fonte ?? 'sans'],
-                              background: el.tipo === 'linha' ? '#111' : el.tipo === 'qr' || el.tipo === 'barras' ? 'rgba(0,0,0,.06)' : undefined,
+                              background: el.tipo === 'linha' ? '#111' : el.tipo === 'qr' || el.tipo === 'barras' ? 'rgba(0,0,0,.06)' : el.inverso ? '#111' : undefined,
+                              color: el.inverso ? '#fff' : undefined,
                               border: el.tipo === 'caixa' ? `${Math.max(1, px(el.espessura || 0.3))}px solid #111` : undefined,
-                              boxShadow: sel ? '0 0 0 1.5px var(--brand)' : ativa ? '0 0 0 1px rgba(0,0,0,.12)' : undefined,
+                              boxShadow: principal ? '0 0 0 1.5px var(--brand)' : sel ? '0 0 0 1.5px var(--info)' : ativa ? '0 0 0 1px rgba(0,0,0,.12)' : undefined,
                             }}
                           >
-                            {el.tipo === 'texto' ? textoDeExemplo(el.texto || '', ETIQUETA_DE_EXEMPLO)
+                            {el.tipo === 'texto' && el.rotacao ? <div className="absolute left-0 top-0 leading-tight" style={estiloGiro}>{textoDeExemplo(el.texto || '', ETIQUETA_DE_EXEMPLO)}</div>
+                              : el.tipo === 'texto' ? textoDeExemplo(el.texto || '', ETIQUETA_DE_EXEMPLO)
+                              : el.tipo === 'imagem' ? <img src={el.imagem} alt="" className="h-full w-full object-contain" draggable={false} />
                               : el.tipo === 'qr' ? <QrCodeIcon className="h-full w-full opacity-60" />
                                 : el.tipo === 'barras' ? <span className="text-xs">|||| ||| ||||</span>
                                   : el.tipo === 'tabela' ? (
@@ -553,7 +662,11 @@ const DesignerDeEtiqueta: React.FC = () => {
                                       <div className="flex-1" style={{ backgroundImage: 'repeating-linear-gradient(#111 0 1px, transparent 1px 100%)', backgroundSize: `100% ${Math.max(4, (h * 0.58) / 11)}px`, backgroundPosition: '0 0', opacity: 0.35 }} />
                                     </div>
                                   ) : null}
-                            {sel && ALCAS.map((a) => (
+                            {principal && leitura && (
+                              <span className="absolute left-0 top-0 -translate-y-full rounded-sm bg-fg-token px-1 text-[10px] tabular-nums text-surface" data-testid="des-leitura">{leitura.x} · {leitura.y} mm</span>
+                            )}
+                            {el.bloqueado && ativa && <LockClosedIcon className="absolute right-0 top-0 h-3 w-3 opacity-60" />}
+                            {principal && !el.bloqueado && ALCAS.map((a) => (
                               <span key={a.alca} role="presentation" data-testid={`alca-${a.alca}`}
                                 onPointerDown={(e) => iniciarAlca(e, el, a.alca)}
                                 className="absolute h-2 w-2 rounded-sm bg-brand"
@@ -578,7 +691,7 @@ const DesignerDeEtiqueta: React.FC = () => {
 
         {/* ---------- direita ---------- */}
         <aside className="space-y-3">
-          {elemento && (
+          {elemento && selecionados.length === 1 && (
             <div className="superficie p-3 space-y-2" data-testid="des-props">
               <p className="text-sm font-semibold text-fg-token">{NOMES[elemento.tipo]}</p>
               {elemento.tipo === 'texto' && (
