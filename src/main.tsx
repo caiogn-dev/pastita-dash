@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import { AvisoDeNovaVersao } from './components/common/AvisoDeNovaVersao'
 import { Toaster } from 'react-hot-toast'
 import App from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -34,6 +35,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <ThemeProvider>
         <BrowserRouter>
           <App />
+          <AvisoDeNovaVersao />
           <Toaster
             position="top-right"
             toastOptions={{
