@@ -217,7 +217,7 @@ const AudioPlayer: React.FC<{ url: string; mimeType?: string; fileName?: string 
       </audio>
 
       {error ? (
-        <div className="flex items-center gap-2 text-amber-600 text-sm">
+        <div className="flex items-center gap-2 text-warning-token text-sm">
           <SpeakerXMarkIcon className="w-5 h-5 flex-shrink-0" />
           <span>{error}</span>
         </div>
@@ -342,11 +342,11 @@ const MediaPreview: React.FC<{
   if (type === 'document') {
     return (
       <div 
-        className="flex items-center gap-3 p-3 bg-surface-2 rounded-lg mb-2 cursor-pointer hover:bg-surface-2 transition-colors max-w-[280px]"
+        className="flex items-center gap-3 p-3 bg-surface-2 rounded-lg mb-2 cursor-pointer hover:brightness-110 transition max-w-[280px]"
         onClick={onClick}
       >
-        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-          <DocumentIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <div className="w-10 h-10 bg-brand-soft rounded-lg flex items-center justify-center flex-shrink-0">
+          <DocumentIcon className="w-5 h-5 text-brand" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-fg-token truncate">
@@ -385,11 +385,11 @@ const MediaPreview: React.FC<{
         href={mapsUrl ?? '#'}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg mb-2 max-w-[280px] hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+        className="flex items-center gap-3 p-3 bg-surface-2 rounded-lg mb-2 max-w-[280px] hover:brightness-110 transition-colors"
         onClick={mapsUrl ? undefined : (e) => e.preventDefault()}
       >
-        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-          <MapPinIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+        <div className="w-10 h-10 bg-brand-soft rounded-lg flex items-center justify-center flex-shrink-0">
+          <MapPinIcon className="w-5 h-5 text-brand" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-fg-token">
@@ -407,7 +407,7 @@ const MediaPreview: React.FC<{
               {lat.toFixed(6)}, {lng.toFixed(6)}
             </p>
           )}
-          <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">Abrir no Maps</p>
+          <p className="text-xs text-brand mt-0.5">Abrir no Maps</p>
         </div>
       </a>
     );
@@ -424,9 +424,9 @@ const MediaPreview: React.FC<{
     const displayPhone = contactsList[0]?.phones?.[0]?.phone;
     const extra = contactsList.length > 1 ? ` +${contactsList.length - 1}` : '';
     return (
-      <div className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg mb-2 max-w-[280px]">
-        <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-          <UserIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+      <div className="flex items-center gap-3 p-3 bg-surface-2 rounded-lg mb-2 max-w-[280px]">
+        <div className="w-10 h-10 bg-brand-soft rounded-lg flex items-center justify-center flex-shrink-0">
+          <UserIcon className="w-5 h-5 text-brand" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-fg-token truncate">
@@ -446,9 +446,9 @@ const MediaPreview: React.FC<{
   if (type === 'order') {
     const itensDoPedido = listaDe(comoObjeto(content), 'product_items');
     return (
-      <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg mb-2 max-w-[280px]">
-        <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-          <ShoppingCartIcon className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+      <div className="flex items-center gap-3 p-3 bg-surface-2 rounded-lg mb-2 max-w-[280px]">
+        <div className="w-10 h-10 bg-brand-soft rounded-lg flex items-center justify-center flex-shrink-0">
+          <ShoppingCartIcon className="w-5 h-5 text-brand" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-fg-token">Pedido WhatsApp</p>
@@ -488,7 +488,7 @@ const MediaPreview: React.FC<{
     const btnText = textoDe(comoObjeto(content), 'text', 'title') ?? renderText(content);
     return (
       <div className="flex items-center gap-2 mb-1">
-        <div className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-full text-xs font-medium text-blue-700 dark:text-blue-300">
+        <div className="px-3 py-1.5 bg-surface-2 border border-border-token rounded-full text-xs font-medium text-fg-token">
           ↩ {btnText}
         </div>
       </div>
@@ -527,7 +527,7 @@ const InteractiveContent: React.FC<{
   if (buttonReply) {
     return (
       <div className="px-3 pb-2 pt-1">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-full text-xs font-medium text-blue-700 dark:text-blue-300">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-2 border border-border-token rounded-full text-xs font-medium text-fg-token">
           ↩ {buttonReply.title || buttonReply.id}
         </div>
       </div>
@@ -539,10 +539,10 @@ const InteractiveContent: React.FC<{
   if (listReply) {
     return (
       <div className="px-3 pb-2 pt-1">
-        <div className="inline-flex flex-col px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg text-xs font-medium text-blue-700 dark:text-blue-300">
+        <div className="inline-flex flex-col px-3 py-1.5 bg-surface-2 border border-border-token rounded-lg text-xs font-medium text-fg-token">
           <span>☰ {listReply.title || listReply.id}</span>
           {listReply.description && (
-            <span className="font-normal text-blue-500 dark:text-blue-400 mt-0.5">{listReply.description}</span>
+            <span className="font-normal text-fg-muted-token mt-0.5">{listReply.description}</span>
           )}
         </div>
       </div>
@@ -557,7 +557,7 @@ const InteractiveContent: React.FC<{
         {buttons.map((btn, i) => (
           <div
             key={btn.id || i}
-            className="px-3 py-2.5 text-center text-sm font-medium text-blue-600 dark:text-blue-400 border-t border-border-token first:border-t-0 cursor-default select-none"
+            className="px-3 py-2.5 text-center text-sm font-medium text-brand border-t border-border-token first:border-t-0 cursor-default select-none"
           >
             {btn.title || btn.id}
           </div>
@@ -576,7 +576,7 @@ const InteractiveContent: React.FC<{
     }, 0);
     return (
       <div className="border-t border-border-token px-3 py-2">
-        <div className="flex items-center justify-center gap-1.5 text-sm font-medium text-blue-600 dark:text-blue-400">
+        <div className="flex items-center justify-center gap-1.5 text-sm font-medium text-brand">
           <span>☰</span>
           <span>{buttonText}</span>
           {totalItems > 0 && (

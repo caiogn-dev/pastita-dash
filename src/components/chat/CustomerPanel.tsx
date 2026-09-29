@@ -20,6 +20,8 @@ import {
 import { crmApi } from '../../services/crmApi';
 import type { CustomerProfile, CustomerSearchResult } from '../../types/crm';
 import { formatCurrency } from '../../utils/formatters';
+import { SeloDeEstado } from '../ui/SeloDeEstado';
+import { estadoDePedido } from '../ui/estados';
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 
@@ -34,21 +36,6 @@ interface CustomerPanelProps {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 
-const ORDER_STATUS_LABELS: Record<string, { label: string; cls: string }> = {
-  pending:          { label: 'Recebido',       cls: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
-  processing:       { label: 'Processando',    cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
-  confirmed:        { label: 'Confirmado',     cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
-  preparing:        { label: 'Preparando',     cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' },
-  ready:            { label: 'Pronto',         cls: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' },
-  out_for_delivery: { label: 'Em entrega',     cls: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' },
-  delivered:        { label: 'Entregue',       cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
-  cancelled:        { label: 'Cancelado',      cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-  awaiting_payment: { label: 'Ag. pagamento',  cls: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
-};
-
-function getStatusBadge(status: string) {
-  return ORDER_STATUS_LABELS[status] ?? { label: status, cls: 'bg-surface-2 text-fg-muted-token' };
-}
 
 function AddressIcon({ label }: { label: string }) {
   const lower = label.toLowerCase();
@@ -99,17 +86,14 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
       .finally(() => setLoading(false));
   }, [storeSlug, unifiedUserId]);
 
-  const activeOrderStatus = profile?.active_order
-    ? getStatusBadge(profile.active_order.status)
-    : null;
+  // Um mapa de status só no painel inteiro: o quadro de Pedidos e aqui dizem a mesma coisa com a mesma cor.
+  const activeOrderStatus = profile?.active_order ? estadoDePedido(profile.active_order.status) : null;
 
   return (
     <div className="w-64 flex-shrink-0 flex flex-col border-l border-border-token bg-surface overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-token flex-shrink-0">
-        <span className="text-xs font-bold uppercase tracking-widest text-fg-muted-token">
-          Cliente CRM
-        </span>
+        <span className="text-sm font-semibold text-fg-token">Cliente</span>
         <button
           type="button"
           onClick={onClose}
@@ -173,7 +157,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
               </p>
               {profile.total_orders > 0 && (
                 <div className="flex items-center gap-2 flex-wrap justify-center">
-                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                  <span className="text-xs text-success-token font-semibold">
                     {formatCurrency(profile.total_spent)} gastos
                   </span>
                   <span className="text-xs text-fg-muted-token">
@@ -192,7 +176,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
             {/* Addresses */}
             {profile.addresses.length > 0 && (
               <div>
-                <p className="overline mb-2">
+                <p className="mb-2 text-sm font-semibold text-fg-token">
                   Endereços salvos
                 </p>
                 <div className="space-y-1.5">
@@ -205,7 +189,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
                         <AddressIcon label={addr.label} />
                       </span>
                       <div className="min-w-0">
-                        <p className="overline">
+                        <p className="text-xs font-medium text-fg-muted-token">
                           {addr.label}
                           {addr.is_default && (
                             <span className="ml-1 text-primary-600 dark:text-primary-400">
@@ -229,15 +213,9 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
             {/* Active order */}
             {profile.active_order && activeOrderStatus && (
               <div>
-                <p className="overline mb-2">
-                  Pedido ativo
-                </p>
+                <p className="mb-2 text-sm font-semibold text-fg-token">Pedido ativo</p>
                 <div className="flex items-center justify-between px-3 py-2 rounded-xl border border-border-token">
-                  <span
-                    className={`text-badge font-semibold px-2 py-0.5 rounded-full ${activeOrderStatus.cls}`}
-                  >
-                    {activeOrderStatus.label}
-                  </span>
+                  <SeloDeEstado tone={activeOrderStatus.tone} ponto>{activeOrderStatus.rotulo}</SeloDeEstado>
                   <span className="text-sm font-bold text-fg-token">
                     {formatCurrency(profile.active_order.total)}
                   </span>
@@ -247,7 +225,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({
 
             {/* Quick actions */}
             <div>
-              <p className="overline mb-2">
+              <p className="mb-2 text-sm font-semibold text-fg-token">
                 Ações rápidas
               </p>
               <div className="space-y-1.5">
