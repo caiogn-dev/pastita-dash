@@ -183,7 +183,11 @@ export interface LayoutDeEtiqueta {
 }
 
 export interface LayoutDaLoja { layout: LayoutDeEtiqueta; padrao: boolean }
-export type LayoutsDaLoja = Record<ModeloDesenhavel, LayoutDaLoja>;
+export type LayoutsDaLoja = Record<ModeloDesenhavel, LayoutDaLoja> & { preferencias?: { validade_dias: number } };
+
+/** Regras da loja que não são desenho: 'validade em N dias'. Ficam no servidor, não no navegador. */
+export const salvarPreferenciasDeEtiqueta = (storeUuid: string, preferencias: { validade_dias: number }) =>
+  api.put<{ preferencias: { validade_dias: number } }>('/stores/print-jobs/etiquetas/layouts/', { store: storeUuid, preferencias });
 
 /** Deslocamento da IMPRESSORA (mm) e escurecimento — vive no agent, não no layout. */
 export interface Calibracao { desloc_x?: number; desloc_y?: number; escuro?: number }

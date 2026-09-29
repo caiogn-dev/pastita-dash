@@ -139,6 +139,23 @@ describe('DesignerDeEtiqueta', () => {
     expect(enviado.elementos[0]).toMatchObject({ fonte: 'estreita', negrito: false, ajuste: 'encolher', linhas: 1 });
   });
 
+  it('Teste e Grade salvam o layout antes de imprimir — o que sai é o que fica', async () => {
+    await montar();
+    fireEvent.pointerDown(screen.getByTestId('el-nome'), { clientX: 100, clientY: 100, pointerId: 1 });
+    fireEvent.pointerMove(window, { clientX: 113, clientY: 100, pointerId: 1 });
+    fireEvent.pointerUp(window, { pointerId: 1 });
+    await userEvent.click(screen.getByTestId('des-teste'));
+    await waitFor(() => expect(enviarEtiquetasParaAgente).toHaveBeenCalled());
+    expect(salvarLayout).toHaveBeenCalledTimes(1);
+    const salvo = (salvarLayout as jest.Mock).mock.calls[0][2] as LayoutDeEtiqueta;
+    const enviado = (enviarEtiquetasParaAgente as jest.Mock).mock.calls[0][0].layout as LayoutDeEtiqueta;
+    expect(enviado.elementos[0].x).toBe(salvo.elementos[0].x);
+    expect(screen.getByTestId('des-salvar')).toBeDisabled();       // nada pendente depois
+    await userEvent.click(screen.getByTestId('cal-imprimir-grade'));
+    await waitFor(() => expect(imprimirGradeDeCalibracao).toHaveBeenCalled());
+    expect(salvarLayout).toHaveBeenCalledTimes(1);                  // sem mudança nova, não salva de novo
+  });
+
   it('salvar manda o layout mexido; teste e grade vão para a impressora escolhida; calibração salva no agent', async () => {
     await montar();
     await userEvent.click(screen.getByRole('button', { name: 'QR Code' }));

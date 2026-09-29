@@ -263,6 +263,13 @@ const DesignerDeEtiqueta: React.FC = () => {
     return () => { window.removeEventListener('pointermove', mover); window.removeEventListener('pointerup', soltar); };
   }, [layout, escala]);
 
+  useEffect(() => {
+    if (!sujo) return undefined;
+    const avisar = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', avisar);
+    return () => window.removeEventListener('beforeunload', avisar);
+  }, [sujo]);
+
   // ---- teclado ---------------------------------------------------------------
   useEffect(() => {
     const tecla = (e: KeyboardEvent) => {
@@ -309,14 +316,18 @@ const DesignerDeEtiqueta: React.FC = () => {
   const desfazer = () => { const l = historico.current?.desfazer(); if (l) { setLayoutRaw(l); setSujo(true); } };
   const refazer = () => { const l = historico.current?.refazer(); if (l) { setLayoutRaw(l); setSujo(true); } };
 
-  const salvar = async () => {
-    if (problema) { toast.error(problema); return; }
+  // O que se imprime é o que fica salvo: Teste e Grade gravam o layout antes.
+  // Senão a pessoa calibra num computador e abre noutro sem nada.
+  const salvar = async (): Promise<boolean> => {
+    if (problema) { toast.error(problema); return false; }
+    if (!sujo) return true;
     setOcupado('salvar');
     try {
       const { data } = await salvarLayout(storeUuid, modelo, layout);
       setLayouts({ ...layouts, [modelo]: data }); setSujo(false);
       toast.success('Layout salvo para todas as impressoras da loja.');
-    } catch { toast.error('Não foi possível salvar o layout.'); } finally { setOcupado(null); }
+      return true;
+    } catch { toast.error('Não foi possível salvar o layout.'); return false; } finally { setOcupado(null); }
   };
   const restaurar = async () => {
     setOcupado('restaurar');
@@ -328,6 +339,7 @@ const DesignerDeEtiqueta: React.FC = () => {
     } catch { toast.error('Não foi possível restaurar.'); } finally { setOcupado(null); }
   };
   const imprimirGrade = async () => {
+    if (!(await salvar())) return;
     setOcupado('grade');
     try {
       await imprimirGradeDeCalibracao({ store: storeUuid, agent: agente, modelo, layout });
@@ -335,6 +347,7 @@ const DesignerDeEtiqueta: React.FC = () => {
     } catch { toast.error('Não foi possível imprimir a grade.'); } finally { setOcupado(null); }
   };
   const imprimirTeste = async () => {
+    if (!(await salvar())) return;
     setOcupado('teste');
     try {
       await enviarEtiquetasParaAgente({ store: storeUuid, agent: agente, modelo, etiquetas: exemplos, motor: 'bitmap', layout });

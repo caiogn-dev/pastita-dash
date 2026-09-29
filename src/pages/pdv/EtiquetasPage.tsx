@@ -19,7 +19,7 @@ import { ADICIONAL_ETIQUETA } from '../../services/billing';
 import { AdicionalBloqueado } from '../../components/billing/AdicionalBloqueado';
 import {
   enviarEtiquetasParaAgente, imprimeEtiquetas, listPrintAgents, PrintAgent,
-  carregarLayouts, LayoutsDaLoja, ModeloDesenhavel, MODELOS_DESENHAVEIS, previewDeEtiquetas,
+  carregarLayouts, LayoutsDaLoja, ModeloDesenhavel, MODELOS_DESENHAVEIS, previewDeEtiquetas, salvarPreferenciasDeEtiqueta,
 } from '../../services/printing';
 import { NumField } from './NumField';
 
@@ -364,7 +364,11 @@ const EtiquetasPage: React.FC = () => {
     let vivo = true;
     carregarLayouts(uuidDaSelecao)
       .then(({ data }) => {
-        if (vivo && data && data.validade?.layout) setLayouts((m) => new Map(m).set(uuidDaSelecao, data));
+        if (vivo && data && data.validade?.layout) {
+          setLayouts((m) => new Map(m).set(uuidDaSelecao, data));
+          // A validade em dias é da loja: o servidor manda na abertura.
+          if (data.preferencias?.validade_dias) setCfg((p) => ({ ...p, shelfDays: data.preferencias!.validade_dias }));
+        }
       })
       .catch(() => { /* backend antigo: segue no ZPL nativo */ });
     return () => { vivo = false; };
@@ -651,7 +655,10 @@ const EtiquetasPage: React.FC = () => {
                   <NumField
                     label="Validade em" suffix="dias" min={1} max={365} step={1}
                     value={cfg.shelfDays} testId="etq-shelf-days"
-                    onChange={(v) => setCfg((p) => ({ ...p, shelfDays: v }))}
+                    onChange={(v) => {
+                      setCfg((p) => ({ ...p, shelfDays: v }));
+                      if (uuidDaSelecao) salvarPreferenciasDeEtiqueta(uuidDaSelecao, { validade_dias: v }).catch(() => toast.error('Não foi possível guardar a validade na loja.'));
+                    }}
                   />
                 </>
               )}

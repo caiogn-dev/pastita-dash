@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import EtiquetasPage from '../EtiquetasPage';
 import { getStores, getProducts, gerarCodigosInternos } from '../../../services/storesApi';
 import { printHtmlDocument } from '../../../utils/labelPrint';
-import { carregarLayouts, enviarEtiquetasParaAgente, listPrintAgents } from '../../../services/printing';
+import { carregarLayouts, enviarEtiquetasParaAgente, listPrintAgents, salvarPreferenciasDeEtiqueta } from '../../../services/printing';
 
 jest.mock('../../../services/api', () => ({
   __esModule: true,
@@ -24,6 +24,7 @@ jest.mock('../../../services/printing', () => ({
   listPrintAgents: jest.fn().mockResolvedValue({ data: { results: [] } }),
   enviarEtiquetasParaAgente: jest.fn().mockResolvedValue({ data: { job: { id: 'j1' } } }),
   carregarLayouts: jest.fn().mockRejectedValue(new Error('backend antigo')),
+  salvarPreferenciasDeEtiqueta: jest.fn().mockResolvedValue({ data: { preferencias: { validade_dias: 7 } } }),
 }));
 
 jest.mock('../../../utils/labelPrint', () => ({
@@ -254,6 +255,23 @@ describe('EtiquetasPage', () => {
       expect(body.config.cols).toBeGreaterThan(0);
       expect(body.motor).toBeUndefined();          // backend antigo: ZPL nativo
       expect(mockedPrint).not.toHaveBeenCalled();
+    });
+
+    it('validade em dias vem da loja e, ao mudar, é guardada na loja (não no navegador)', async () => {
+      mockedListAgents.mockResolvedValue({ data: { results: [epson, zebraSemPapel, zebra] } });
+      const layout = { versao: 1, etiqueta: { largura: 33, altura: 22 }, papel: { largura: 107, colunas: 3, espaco: 2 },
+        elementos: [{ id: 'nome', tipo: 'texto', x: 1, y: 1, w: 30, h: 9, texto: '{name}', tamanho: 2.6 }] };
+      (carregarLayouts as jest.Mock).mockResolvedValue({ data: {
+        validade: { layout, padrao: true }, 'nutricao-qr': { layout, padrao: true }, produto: { layout, padrao: true }, nutricao: { layout, padrao: true },
+        preferencias: { validade_dias: 9 },
+      } });
+      renderPage();
+      await screen.findByText('Marmita P');
+      await userEvent.click(screen.getByText('Validade (Elgin)'));
+      const dias = await screen.findByTestId('etq-shelf-days') as HTMLInputElement;
+      await waitFor(() => expect(dias.value).toBe('9'));
+      await userEvent.clear(dias); await userEvent.type(dias, '7{enter}');
+      await waitFor(() => expect(salvarPreferenciasDeEtiqueta).toHaveBeenCalledWith('s1', { validade_dias: 7 }));
     });
 
     it('com layout da loja carregado, o envio vai como bitmap e o botão de layout aparece', async () => {
