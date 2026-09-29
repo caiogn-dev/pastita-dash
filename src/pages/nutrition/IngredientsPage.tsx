@@ -56,6 +56,11 @@ interface Ingredient {
 
 interface Alergenico { valor: string; rotulo: string; gluten: boolean }
 
+/** Nome que o lojista entende para cada fonte de dado nutricional. */
+const ROTULO_DA_FONTE: Record<string, string> = {
+  taco: 'TACO', pof: 'POF/IBGE', tbca: 'TBCA', off: 'Fabricante', manufacturer: 'Fabricante', lab: 'Laudo', manual: 'Manual', calculated: 'Calculado',
+};
+
 const nutrients: { key: NutrientKey; label: string; unit: string }[] = [
   { key: 'energy_kcal', label: 'Energia', unit: 'kcal' },
   { key: 'carbohydrates_g', label: 'Carboidratos', unit: 'g' },
@@ -341,7 +346,7 @@ function IngredientesDaLoja() {
               chave: 'fonte',
               cabecalho: 'Fonte',
               classe: 'max-lg:hidden',
-              render: (i) => <span className="text-xs uppercase text-fg-muted-token">{i.source}</span>,
+              render: (i) => <span className="text-xs text-fg-muted-token" title={i.source === 'off' ? 'Rótulo do fabricante, via Open Food Facts' : undefined}>{ROTULO_DA_FONTE[i.source] ?? i.source}</span>,
             },
             {
               chave: 'alergenicos',
@@ -408,7 +413,7 @@ function IngredientesDaLoja() {
             <div className="rounded-lg border border-[var(--info)]/35 bg-[var(--info-soft)] p-3 text-sm">
               <p className="font-medium text-fg-token">
                 <BeakerIcon className="mr-1 inline h-4 w-4" />
-                Este alimento vem da {editing?.source?.toUpperCase()} e é compartilhado por todas as lojas.
+                Este alimento vem de {ROTULO_DA_FONTE[editing?.source ?? ''] ?? editing?.source} e é compartilhado por todas as lojas.
               </p>
             </div>
           )}
