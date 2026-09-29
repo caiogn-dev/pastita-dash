@@ -57,6 +57,9 @@ const zebraSemPapel = { ...zebra, id: 'ag-zebra-2', name: 'zebra sem papel', imp
 
 const page = (results: unknown[]) => ({ count: results.length, next: null, previous: null, results });
 
+// Sem layout desenhado (backend antigo), a tela mostra os campos de papel do navegador.
+beforeEach(() => { (carregarLayouts as jest.Mock).mockRejectedValue(new Error('backend antigo')); });
+
 const renderPage = () =>
   render(
     <MemoryRouter initialEntries={['/stores/loja-1/etiquetas']}>

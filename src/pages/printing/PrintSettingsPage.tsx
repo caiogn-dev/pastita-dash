@@ -14,7 +14,7 @@ import {
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Card, Button, Badge } from '../../components/ui';
+import { Card, Button, Badge, Input, Select } from '../../components/ui';
 import { Modal } from '../../components/common';
 import { useConfirm } from '../../hooks/useConfirm';
 import { useStore } from '../../hooks/useStore';
@@ -294,8 +294,8 @@ const PrintSettingsPage: React.FC = () => {
                   <select
                     value={a.printer_name || ''}
                     onChange={(e) => handleSelectPrinter(a, e.target.value)}
-                    className="max-w-[220px] rounded border border-border-token bg-surface px-2 py-1.5 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
-                    title="Impressoras detectadas no computador do agente"
+                    className="controle h-9 max-w-[220px] px-2 text-sm"
+                    title="Impressoras detectadas no computador"
                   >
                     {!a.printer_name && <option value="">Escolha a impressora…</option>}
                     {a.printer_name && !a.available_printers!.includes(a.printer_name) && (
@@ -473,40 +473,15 @@ const PrintSettingsPage: React.FC = () => {
       {/* Modal de criação */}
       <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Novo agente de impressão">
         <div className="flex flex-col gap-4">
-          <div>
-            <label className="block text-sm font-medium text-fg-token mb-1">Nome do agente</label>
-            <input
-              type="text"
-              value={newAgentName}
-              onChange={(e) => setNewAgentName(e.target.value)}
-              placeholder="Ex.: Caixa principal"
-              className="w-full text-sm border border-border-token rounded px-3 py-2 bg-surface text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-fg-token mb-1">Estação</label>
-            <select
-              value={newStation}
-              onChange={(e) => setNewStation(e.target.value)}
-              className="w-full text-sm border border-border-token rounded px-3 py-2 bg-surface text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
-              data-testid="print-agent-station"
-            >
-              <option value="kitchen">Cozinha — comanda de pedido</option>
-              <option value="balcao">Balcão — cupom do cliente (PDV)</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-fg-token mb-1">
-              Impressora <span className="text-fg-muted-token font-normal">(opcional)</span>
-            </label>
-            <input
-              type="text"
-              value={newPrinterName}
-              onChange={(e) => setNewPrinterName(e.target.value)}
-              placeholder="Deixe vazio — detectamos automaticamente"
-              className="w-full text-sm border border-border-token rounded px-3 py-2 bg-surface text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
-            />
-          </div>
+          <Input label="Nome" value={newAgentName} onChange={(e) => setNewAgentName(e.target.value)} placeholder="Caixa principal" />
+          <Select
+            rotulo="Estação"
+            opcoes={[{ valor: 'kitchen', rotulo: 'Cozinha — comanda' }, { valor: 'balcao', rotulo: 'Balcão — cupom do PDV' }]}
+            valor={newStation}
+            onMudar={setNewStation}
+            data-testid="print-agent-station"
+          />
+          <Input label="Impressora (opcional)" value={newPrinterName} onChange={(e) => setNewPrinterName(e.target.value)} placeholder="Detectada quando o programa conectar" />
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancelar</Button>
             <Button onClick={handleCreate} disabled={creating || !newAgentName.trim()}>

@@ -641,7 +641,32 @@ const EtiquetasPage: React.FC = () => {
             valor={template}
             onChange={setTemplate}
           />
-          {template === 'produto' ? (
+          {layoutDaVez && modeloDesenhavel ? (
+            <section className="space-y-3" data-testid="etq-layout-da-loja">
+              {template === 'validade' && (
+                <>
+                  <p className="superficie px-3 py-2 text-sm text-fg-token" data-testid="etq-validade-frase">
+                    Produzido hoje ({fmtDate(manip)}), vence {DIAS_DA_SEMANA[val.getDay()]} {fmtDate(val)}.
+                  </p>
+                  <NumField
+                    label="Validade em" suffix="dias" min={1} max={365} step={1}
+                    value={cfg.shelfDays} testId="etq-shelf-days"
+                    onChange={(v) => setCfg((p) => ({ ...p, shelfDays: v }))}
+                  />
+                </>
+              )}
+              <div className="superficie flex flex-wrap items-center justify-between gap-3 px-3 py-2 text-sm">
+                <span className="tabular-nums text-fg-token">
+                  {layoutDaVez.layout.etiqueta.largura} × {layoutDaVez.layout.etiqueta.altura} mm
+                  {layoutDaVez.layout.papel.colunas > 1 ? ` · ${layoutDaVez.layout.papel.colunas} colunas` : ''} · rolo {layoutDaVez.layout.papel.largura} mm
+                </span>
+                <Button variant="secondary" size="sm"
+                  onClick={() => navigate(`/stores/${lojaDaSelecao}/etiquetas/desenho/${modeloDesenhavel}`)} data-testid="etq-abrir-editor">
+                  Desenhar e calibrar{layoutDaVez.padrao ? '' : ' (personalizado)'}
+                </Button>
+              </div>
+            </section>
+          ) : template === 'produto' ? (
             <section className="space-y-3">
               <h3 className="text-sm font-semibold text-fg-token">Papel</h3>
               <div className="flex flex-wrap gap-2">
@@ -741,7 +766,6 @@ const EtiquetasPage: React.FC = () => {
               </details>
             </section>
           )}
-
         </Card>
 
         {lotes.length > 0 && (
@@ -905,12 +929,6 @@ const EtiquetasPage: React.FC = () => {
               <p className="text-xs text-fg-muted-token">
                 Sai direto na {agenteDaVez?.printer_name ?? 'Zebra'}{agenteDaVez && !agenteDaVez.is_online ? ' (offline agora: fica na fila)' : ''}.
               </p>
-              {layoutDaVez && uuidDaSelecao && modeloDesenhavel && (
-                <Button variant="secondary" size="sm" className="w-full"
-                  onClick={() => navigate(`/stores/${lojaDaSelecao}/etiquetas/desenho/${modeloDesenhavel}`)} data-testid="etq-abrir-editor">
-                  Desenhar etiqueta e calibrar{layoutDaVez.padrao ? '' : ' (personalizado)'}
-                </Button>
-              )}
             </div>
           )}
           <div className="space-y-2">
