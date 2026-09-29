@@ -57,6 +57,25 @@ const montar = async () => {
   await screen.findByTestId('des-papel');
 };
 
+describe('DesignerDeEtiqueta — nutrição', () => {
+  it('no modelo Nutrição a barra oferece Tabela, Ingredientes e Alergênicos e o layout traz a tabela', async () => {
+    const { carregarLayouts } = jest.requireMock('../../../services/printing');
+    const nutri: LayoutDeEtiqueta = { versao: 1, etiqueta: { largura: 100, altura: 80 }, papel: { largura: 100, colunas: 1, espaco: 0 },
+      elementos: [{ id: 'tabela', tipo: 'tabela', x: 3, y: 8, w: 60, h: 62 }] };
+    (carregarLayouts as jest.Mock).mockResolvedValue({ data: { validade: { layout: layout(), padrao: true }, 'nutricao-qr': { layout: layout(), padrao: true }, produto: { layout: layout(), padrao: true }, nutricao: { layout: nutri, padrao: true } } });
+    render(
+      <MemoryRouter initialEntries={['/stores/ce-saladas/etiquetas/desenho/nutricao']}>
+        <Routes><Route path="/stores/:storeId/etiquetas/desenho/:modelo" element={<DesignerDeEtiqueta />} /></Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByTestId('des-papel');
+    expect(screen.getByTestId('tool-tabela')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ingredientes' })).toBeInTheDocument();
+    expect(screen.getByTestId('el-tabela').textContent).toContain('INFORMAÇÃO NUTRICIONAL');
+    expect(screen.getByTestId('des-camadas').textContent).toContain('Tabela nutricional');
+  });
+});
+
 describe('DesignerDeEtiqueta', () => {
   beforeEach(() => jest.clearAllMocks());
 

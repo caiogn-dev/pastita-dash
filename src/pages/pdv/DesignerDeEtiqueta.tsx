@@ -533,7 +533,7 @@ const DesignerDeEtiqueta: React.FC = () => {
                                 : el.tipo === 'barras' ? <span className="text-xs">|||| ||| ||||</span>
                                   : el.tipo === 'tabela' ? (
                                     <div className="flex h-full w-full flex-col" style={{ border: '2px solid #111', fontFamily: CSS_FONTE.sans }}>
-                                      <div className="text-center font-bold" style={{ fontSize: Math.max(6, h * 0.07), borderBottom: '1px solid #111' }}>INFORMAÇÃO NUTRICIONAL</div>
+                                      <div className="truncate text-center font-bold" style={{ fontSize: Math.max(6, Math.min(h * 0.07, w * 0.055)), borderBottom: '1px solid #111' }}>INFORMAÇÃO NUTRICIONAL</div>
                                       <div style={{ fontSize: Math.max(4, h * 0.035), padding: '0 2px', borderBottom: '3px solid #111' }}>Porções por embalagem · Porção</div>
                                       <div className="flex-1" style={{ backgroundImage: 'repeating-linear-gradient(#111 0 1px, transparent 1px 100%)', backgroundSize: `100% ${Math.max(4, (h * 0.58) / 11)}px`, backgroundPosition: '0 0', opacity: 0.35 }} />
                                     </div>
