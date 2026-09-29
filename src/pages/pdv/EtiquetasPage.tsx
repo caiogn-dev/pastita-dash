@@ -556,7 +556,6 @@ const EtiquetasPage: React.FC = () => {
   return (
     <PageShell
       titulo="Etiquetas"
-      descricao="Escolha o modelo, marque quantas etiquetas de cada produto e imprima."
       acoes={
         <div className="flex flex-col items-stretch gap-2 sm:min-w-80">
           <div className="flex flex-wrap items-center gap-2">
@@ -664,13 +663,10 @@ const EtiquetasPage: React.FC = () => {
           ) : template === 'nutricao' ? (
             <section className="superficie p-3 text-sm space-y-1.5">
               <p className="font-semibold text-fg-token">Zebra, 100 × 80 mm</p>
-              <p className="text-fg-muted-token">Tabela completa: por 100 g, por porção, %VD, alergênicos e QR Code.</p>
-              <p className="text-xs text-fg-muted-token">Os valores vêm da receita de cada produto, em Cardápio → Ingredientes e TACO.</p>
             </section>
           ) : template === 'nutricao-qr' ? (
             <section className="space-y-3">
               <h3 className="text-sm font-semibold text-fg-token">Rolo do QR</h3>
-              <p className="text-xs text-fg-muted-token">Para embalagem pequena: o QR abre a tabela completa no celular. Mesmo rolo de colunas da validade.</p>
               <NumField label="Colunas" suffix="" min={1} max={6} step={1} value={cfg.qr.cols} onChange={(v) => setQr({ cols: v })} />
               <NumField label="Etiqueta (largura)" value={cfg.qr.labelW} min={20} max={80} onChange={(v) => setQr({ labelW: v })} />
               <NumField label="Etiqueta (altura)" value={cfg.qr.labelH} min={12} max={60} onChange={(v) => setQr({ labelH: v })} />
@@ -704,11 +700,7 @@ const EtiquetasPage: React.FC = () => {
               <NumField label="Etiqueta (altura)" value={cfg.validade.labelH} min={10} max={60} onChange={(v) => setValidade({ labelH: v })} />
               <NumField label="Vão entre colunas" value={cfg.validade.gap} min={0} max={10} onChange={(v) => setValidade({ gap: v })} />
               <NumField label="Largura do papel" value={cfg.validade.paperW} min={30} max={120} onChange={(v) => setValidade({ paperW: v })} />
-              <p className="text-xs text-fg-muted-token">
-                Colunas centralizadas no papel: {validadeMargin(cfg.validade).toFixed(1)} mm de margem por lado
-                ({cfg.validade.cols}×{cfg.validade.labelW} + {cfg.validade.cols - 1}×{cfg.validade.gap} mm
-                em {cfg.validade.paperW} mm).
-              </p>
+              <p className="text-xs tabular-nums text-fg-muted-token">margem {validadeMargin(cfg.validade).toFixed(1)} mm por lado</p>
               <BorderSelect value={cfg.validade.border} onChange={(v) => setValidade({ border: v })} />
               <details className="text-sm">
                 <summary className="cursor-pointer text-fg-muted-token">Calibração fina</summary>
@@ -717,9 +709,6 @@ const EtiquetasPage: React.FC = () => {
                   <NumField label="Deslocar vertical" value={cfg.validade.offsetY} min={-10} max={10} onChange={(v) => setValidade({ offsetY: v })} />
                 </div>
               </details>
-              <p className="text-xs text-fg-muted-token">
-                A largura do papel deve bater com a do driver da Elgin (bobina inteira). Manipulação = hoje.
-              </p>
             </section>
           )}
 
@@ -903,12 +892,6 @@ const EtiquetasPage: React.FC = () => {
                 ? `Imprimir ${totalLabels} pelo navegador`
                 : `Imprimir ${totalLabels} etiqueta${totalLabels === 1 ? '' : 's'}`}
             </Button>
-            {!envioRemotoDisponivel && (
-              <p className="text-xs text-fg-muted-token">
-                Na janela de impressão: impressora de etiquetas, papel igual ao configurado aqui,
-                margens "Nenhuma" e escala 100%.
-              </p>
-            )}
           </div>
           </>
         </Card>

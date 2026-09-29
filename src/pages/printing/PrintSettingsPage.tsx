@@ -491,9 +491,6 @@ const PrintSettingsPage: React.FC = () => {
               <option value="kitchen">Cozinha — comanda de pedido</option>
               <option value="balcao">Balcão — cupom do cliente (PDV)</option>
             </select>
-            <p className="text-xs text-fg-muted-token mt-1">
-              Cada estação recebe seus próprios jobs: comanda vai pra cozinha, cupom do PDV vai pro balcão.
-            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-fg-token mb-1">
@@ -506,9 +503,6 @@ const PrintSettingsPage: React.FC = () => {
               placeholder="Deixe vazio — detectamos automaticamente"
               className="w-full text-sm border border-border-token rounded px-3 py-2 bg-surface text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
             />
-            <p className="text-xs text-fg-muted-token mt-1">
-              Assim que o agent conectar, as impressoras do computador aparecem aqui num dropdown para você escolher.
-            </p>
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancelar</Button>
@@ -523,8 +517,7 @@ const PrintSettingsPage: React.FC = () => {
       <Modal isOpen={Boolean(revealedKey)} onClose={() => setRevealedKey(null)} title="Chave do agente — copie agora">
         <div className="flex flex-col gap-3">
           <p className="text-sm text-fg-muted-token">
-            Esta chave do agente <strong>{revealedKey?.agentName}</strong> é exibida{' '}
-            <strong>uma única vez</strong>. Cole no <code>config/agent.json</code> do print-agent.
+            <strong>{revealedKey?.agentName}</strong> · aparece uma vez só. Cole em <code>config/agent.json</code>.
           </p>
           <div className="flex items-center gap-2">
             <code className="flex-1 text-xs bg-surface-2 rounded px-3 py-2 break-all select-all">

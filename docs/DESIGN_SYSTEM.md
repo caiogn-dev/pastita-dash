@@ -59,3 +59,6 @@ interface. A dica curta vai no `title` do ícone. Ação = botão com ícone e r
 formatação = barra contextual (negrito, alinhamento, fonte, tamanho), como em editor de texto.
 Referência para ferramentas de trabalho: ZebraDesigner/BarTender — barra em cima, objetos à
 esquerda, propriedades à direita, canvas com régua no meio.
+Testado: `src/styles/__tests__/semManual.test.ts` é catraca — parágrafo apagado com 60+ caracteres
+e pontuação de frase conta como manual; nenhum arquivo pode subir da linha de base, arquivo novo
+nasce com 0. Limpou uma página? `npm run manual:baseline`. Medido em 29/09: 179 parágrafos em 84 páginas.

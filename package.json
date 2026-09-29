@@ -9,7 +9,8 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 400",
     "preview": "vite preview",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "manual:baseline": "node scripts/manual-baseline.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
