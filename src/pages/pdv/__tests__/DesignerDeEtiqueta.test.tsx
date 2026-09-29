@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import DesignerDeEtiqueta from '../DesignerDeEtiqueta';
-import { imprimirGradeDeCalibracao, salvarCalibracao, salvarLayout, enviarEtiquetasParaAgente } from '../../../services/printing';
+import { imprimirGradeDeCalibracao, salvarCalibracao, salvarLayout, enviarEtiquetasParaAgente, salvarPreferenciasDeEtiqueta } from '../../../services/printing';
 import type { LayoutDeEtiqueta } from '../../../services/printing';
 
 jest.mock('../../../services/api', () => ({
@@ -32,6 +32,7 @@ jest.mock('../../../services/printing', () => ({
   previewDeEtiquetas: jest.fn().mockResolvedValue({ data: { png: 'AAAA', largura_mm: 107, altura_mm: 22 } }),
   salvarLayout: jest.fn(),
   salvarCalibracao: jest.fn().mockResolvedValue({ data: { calibracao: {} } }),
+  salvarPreferenciasDeEtiqueta: jest.fn().mockResolvedValue({ data: { preferencias: { validade_dias: 7 } } }),
   imprimirGradeDeCalibracao: jest.fn().mockResolvedValue({ data: { job: { id: 'g1' } } }),
   enviarEtiquetasParaAgente: jest.fn().mockResolvedValue({ data: { job: { id: 'j1' } } }),
 }));
@@ -186,6 +187,16 @@ describe('DesignerDeEtiqueta', () => {
     await waitFor(() => expect(salvarLayout).toHaveBeenCalled());
     const enviado = (salvarLayout as jest.Mock).mock.calls[0][2] as LayoutDeEtiqueta;
     expect(enviado.elementos[0]).toMatchObject({ inverso: true, rotacao: 90 });
+  });
+
+  it('validade em dias fica na bancada, muda a data do desenho e é guardada na loja', async () => {
+    await montar();
+    const dias = screen.getByTestId('lay-validade-dias') as HTMLInputElement;
+    expect(dias.value).toBe('5');
+    await userEvent.clear(dias); await userEvent.type(dias, '10{enter}');
+    await waitFor(() => expect(salvarPreferenciasDeEtiqueta).toHaveBeenCalledWith('st-1', { validade_dias: 10 }));
+    const vence = new Date(Date.now() + 10 * 86400000).toLocaleDateString('pt-BR');
+    expect(screen.getByTestId('el-val').textContent).toContain(vence);
   });
 
   it('barra de formatação: fonte, negrito e uma linha que encolhe', async () => {

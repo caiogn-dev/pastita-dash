@@ -21,7 +21,7 @@ import { normalizePaginatedResponse } from '../../services/api';
 import {
   Calibracao, ElementoDoLayout, LayoutDeEtiqueta, LayoutsDaLoja, ModeloDesenhavel, MODELOS_DESENHAVEIS, PrintAgent,
   TipoDeElemento, calibracaoDoAgente, carregarLayouts, enviarEtiquetasParaAgente, imprimeEtiquetas,
-  imprimirGradeDeCalibracao, listPrintAgents, previewDeEtiquetas, salvarCalibracao, salvarLayout,
+  imprimirGradeDeCalibracao, listPrintAgents, previewDeEtiquetas, salvarCalibracao, salvarLayout, salvarPreferenciasDeEtiqueta,
 } from '../../services/printing';
 import {
   Alca, ETIQUETA_DE_EXEMPLO, Historico, MODELOS_PRONTOS, ModoDeAlinhar, ajustarPapelAoBloco, alinharElementos, blocoMm, comPapel,
@@ -161,6 +161,7 @@ const DesignerDeEtiqueta: React.FC = () => {
   const setSelecionado = useCallback((id: string | null) => setSelecionados(id ? [id] : []), []);
   const [zoomIdx, setZoomIdx] = useState(5);
   const [grade, setGrade] = useState(true);
+  const [validadeDias, setValidadeDias] = useState(5);
   const [encaixe, setEncaixe] = useState(true);
   const [leitura, setLeitura] = useState<{ x: number; y: number } | null>(null);
   const arquivoRef = useRef<HTMLInputElement>(null);
@@ -194,6 +195,7 @@ const DesignerDeEtiqueta: React.FC = () => {
         if (!vivo) return;
         const lista = normalizePaginatedResponse<PrintAgent>(ag.data).filter((a) => a.is_active && a.status === 'active' && imprimeEtiquetas(a));
         setStoreUuid(loja.id); setNomeDaLoja(loja.name); setAgentes(lista); setLayouts(lay.data);
+        if (lay.data.preferencias?.validade_dias) setValidadeDias(lay.data.preferencias.validade_dias);
         const inicial = lay.data[modelo].layout;
         historico.current = new Historico(inicial);
         setLayoutRaw(inicial); setSelecionado(inicial.elementos[0]?.id ?? null);
@@ -216,7 +218,15 @@ const DesignerDeEtiqueta: React.FC = () => {
   }, [agente, agentes]);
 
   const problema = layout ? problemaDoLayout(layout) : null;
-  const exemplos = useMemo(() => Array.from({ length: layout?.papel.colunas ?? 1 }, () => ETIQUETA_DE_EXEMPLO), [layout?.papel.colunas]);
+  const exemplo = useMemo(() => {
+    const hoje = new Date(); const vence = new Date(hoje.getTime() + validadeDias * 86400000);
+    return { ...ETIQUETA_DE_EXEMPLO, manip: hoje.toLocaleDateString('pt-BR'), val: vence.toLocaleDateString('pt-BR') };
+  }, [validadeDias]);
+  const exemplos = useMemo(() => Array.from({ length: layout?.papel.colunas ?? 1 }, () => exemplo), [layout?.papel.colunas, exemplo]);
+  const mudarValidade = (dias: number) => {
+    setValidadeDias(dias);
+    if (storeUuid) salvarPreferenciasDeEtiqueta(storeUuid, { validade_dias: dias }).catch(() => toast.error('Não foi possível guardar a validade na loja.'));
+  };
 
   // Prévia real, com atraso curto para não bater no backend a cada pixel arrastado.
   useEffect(() => {
@@ -650,8 +660,8 @@ const DesignerDeEtiqueta: React.FC = () => {
                               boxShadow: principal ? '0 0 0 1.5px var(--brand)' : sel ? '0 0 0 1.5px var(--info)' : ativa ? '0 0 0 1px rgba(0,0,0,.12)' : undefined,
                             }}
                           >
-                            {el.tipo === 'texto' && el.rotacao ? <div className="absolute left-0 top-0 leading-tight" style={estiloGiro}>{textoDeExemplo(el.texto || '', ETIQUETA_DE_EXEMPLO)}</div>
-                              : el.tipo === 'texto' ? textoDeExemplo(el.texto || '', ETIQUETA_DE_EXEMPLO)
+                            {el.tipo === 'texto' && el.rotacao ? <div className="absolute left-0 top-0 leading-tight" style={estiloGiro}>{textoDeExemplo(el.texto || '', exemplo)}</div>
+                              : el.tipo === 'texto' ? textoDeExemplo(el.texto || '', exemplo)
                               : el.tipo === 'imagem' ? <img src={el.imagem} alt="" className="h-full w-full object-contain" draggable={false} />
                               : el.tipo === 'qr' ? <QrCodeIcon className="h-full w-full opacity-60" />
                                 : el.tipo === 'barras' ? <span className="text-xs">|||| ||| ||||</span>
@@ -708,6 +718,10 @@ const DesignerDeEtiqueta: React.FC = () => {
 
           <div className="superficie p-3 space-y-2">
             <p className="text-sm font-semibold text-fg-token">Etiqueta</p>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+              <Medida rotulo="Validade" valor={validadeDias} min={1} max={365} step={1} sufixo="dias" onMudar={mudarValidade} data-testid="lay-validade-dias" />
+              <p className="self-end pb-2 text-xs tabular-nums text-fg-muted-token">vence {exemplo.val}</p>
+            </div>
             {irmaosDoRolo(layouts, modelo).length > 0 && (
               <p className="text-xs text-fg-muted-token" data-testid="des-rolo-irmaos">Mesmo rolo que {irmaosDoRolo(layouts, modelo).join(' e ')}</p>
             )}
