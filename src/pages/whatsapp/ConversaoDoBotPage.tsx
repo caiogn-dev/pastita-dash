@@ -108,7 +108,7 @@ export const ConversaoDoBotPage: React.FC = () => {
   return (
     <PageShell
       titulo="Conversão do bot"
-      descricao="De cada conversa no WhatsApp, quantas viraram pedido, e onde as outras pararam. Mude o bot e veja aqui se melhorou."
+     
       filtros={<PeriodChips options={PERIODOS} value={dias} onChange={setDias} ariaLabel="Período" />}
     >
       {consulta.isError ? (

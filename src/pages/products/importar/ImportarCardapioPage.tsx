@@ -136,7 +136,7 @@ export const ImportarCardapioPage: React.FC = () => {
   return (
     <PageShell
       titulo="Importar cardápio"
-      descricao="Suba uma planilha, fotos ou o PDF do cardápio e cadastre tudo de uma vez."
+     
     >
       <PageTabs
         ariaLabel="Como enviar o cardápio"

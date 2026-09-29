@@ -1000,7 +1000,7 @@ const WhatsAppInboxPage: React.FC = () => {
             <EmptyState
               icone={<ChatBubbleIcon className="h-14 w-14" />}
               titulo="Selecione uma conversa"
-              descricao="Escolha um contato na lista à esquerda para ver o histórico e responder. Mensagens novas aparecem no topo em tempo real."
+             
             />
           </div>
         )}

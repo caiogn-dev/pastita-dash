@@ -116,7 +116,7 @@ export const AvaliacoesPage: React.FC = () => {
   return (
     <PageShell
       titulo="Avaliações"
-      descricao="O que o cliente achou, prato por prato. Quem dá 4 ou 5 estrelas vai para o Google; o que chega aqui é o que tem conserto."
+     
       filtros={(
         <div className="flex flex-wrap gap-2">
           <button
@@ -202,7 +202,7 @@ export const AvaliacoesPage: React.FC = () => {
           {lista.length === 0 ? (
             <EmptyState
               titulo={nota ? 'Nenhuma avaliação com essa nota' : 'Nenhuma avaliação ainda'}
-              descricao="O convite sai sozinho depois da entrega. Quem dá 4 ou 5 estrelas é levado ao Google; de 3 para baixo, o cliente conta aqui o que houve."
+             
             />
           ) : (
             <ul className="superficie">

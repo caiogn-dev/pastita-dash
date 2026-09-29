@@ -63,7 +63,7 @@ export const AvisoFilaHumanaSection: React.FC<AvisoFilaHumanaSectionProps> = ({ 
   return (
     <Secao
       titulo="Avisar no WhatsApp quando alguém espera atendente"
-      descricao="Você recebe uma mensagem pelo WhatsApp da loja quando um cliente fica esperando mais que este tempo."
+     
       acoes={(
         <Switch
           ligado={aviso.ativo}

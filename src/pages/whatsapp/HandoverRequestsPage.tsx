@@ -192,7 +192,7 @@ export const HandoverRequestsPage: React.FC = () => {
   return (
     <PageShell
       titulo="Fila humana"
-      descricao="Clientes esperando uma pessoa responder, quem espera há mais tempo primeiro. Quem é atendido por humano volta para o bot no dia seguinte — ou quando você devolve."
+     
       acoes={(
         <Button variant="outline" size="sm" leftIcon={<ArrowPathIcon className="h-4 w-4" />} onClick={() => void carregar()}>
           Atualizar

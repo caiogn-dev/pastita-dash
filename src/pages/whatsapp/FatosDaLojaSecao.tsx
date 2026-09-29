@@ -147,7 +147,7 @@ export const FatosDaLojaSecao: React.FC = () => {
     <>
       <Secao
         titulo="O que a loja sabe"
-        descricao="Tudo que a IA pode afirmar sem perguntar: validade, área e horário de entrega, formas de pagamento, feriados. O que não estiver aqui ela diz que vai confirmar — em vez de inventar."
+       
         contador={fatos.length}
         acoes={(
           <Button leftIcon={<PlusIcon className="h-4 w-4" />} onClick={() => abrir(-1)} disabled={salvando}>

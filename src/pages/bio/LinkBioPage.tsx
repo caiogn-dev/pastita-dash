@@ -432,7 +432,7 @@ const LinkBioPage: React.FC = () => {
               ) : links.length === 0 ? (
                 <EmptyState
                   titulo="Nenhum link personalizado"
-                  descricao="Use o formulário abaixo para apontar para uma promoção, uma pesquisa ou outra loja sua."
+                 
                   icone={<PlusIcon className="h-7 w-7" />}
                 />
               ) : (

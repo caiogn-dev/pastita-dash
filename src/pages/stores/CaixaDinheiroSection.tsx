@@ -59,11 +59,6 @@ export const CaixaDinheiroSection: React.FC<CaixaDinheiroSectionProps> = ({ loja
             <h3 id="caixa-dinheiro-titulo" className="text-lg font-medium text-fg-token">
               Uso caixa com dinheiro vivo
             </h3>
-            <p className="text-sm text-fg-muted-token">
-              Ligado, o menu mostra o Caixa para abrir o dia com o fundo de troco,
-              registrar sangria e fechar contando a gaveta. Se a loja só recebe
-              PIX e cartão, desligue: o Caixa sai do menu.
-            </p>
             {erro && <p className="mt-2 text-sm text-[var(--danger)]">{erro}</p>}
           </div>
         </div>

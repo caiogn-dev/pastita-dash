@@ -74,6 +74,7 @@ export const textoDeExemplo = (molde: string, exemplo: Record<string, string>): 
 
 export const problemaDoLayout = (l: LayoutDeEtiqueta): string | null => {
   if (!(l.etiqueta.largura >= 5) || !(l.etiqueta.altura >= 5)) return 'A etiqueta precisa de largura e altura de pelo menos 5 mm.';
+  if (temMargensMedidas(l) && Math.abs(l.papel.largura - roloPelasMargens(l)) > 0.05) return `Rolo de ${l.papel.largura} mm não fecha: ${roloPelasMargens(l)} mm pelas margens.`;
   if (!(l.papel.colunas >= 1)) return 'Pelo menos 1 coluna.';
   const bloco = blocoMm(l);
   if (l.papel.largura + 0.01 < bloco) return `O papel tem ${l.papel.largura} mm e as colunas ocupam ${bloco} mm: não cabe.`;
@@ -84,8 +85,24 @@ export const ajustarPapelAoBloco = (l: LayoutDeEtiqueta): LayoutDeEtiqueta =>
   ({ ...l, papel: { ...l.papel, largura: blocoMm(l) } });
 
 /** Margem esquerda até a 1ª coluna (centralizada, salvo margem fixa). */
-export const margemEsquerda = (l: LayoutDeEtiqueta): number =>
-  l.papel.margem != null ? l.papel.margem : Math.max(0, (l.papel.largura - blocoMm(l)) / 2);
+export const margemEsquerda = (l: LayoutDeEtiqueta): number => {
+  if (l.papel.margem_esquerda != null) return l.papel.margem_esquerda;
+  if (l.papel.margem != null) return l.papel.margem;
+  return Math.max(0, (l.papel.largura - blocoMm(l)) / 2);
+};
+
+/** Com as duas margens medidas, o rolo é a soma; a pessoa não digita a largura. */
+export const temMargensMedidas = (l: LayoutDeEtiqueta): boolean =>
+  l.papel.margem_esquerda != null && l.papel.margem_direita != null;
+
+export const roloPelasMargens = (l: LayoutDeEtiqueta): number =>
+  fixo((l.papel.margem_esquerda ?? 0) + blocoMm(l) + (l.papel.margem_direita ?? 0));
+
+/** Muda margens/colunas mantendo o rolo coerente quando as margens são medidas. */
+export const comPapel = (l: LayoutDeEtiqueta, p: Partial<LayoutDeEtiqueta['papel']>): LayoutDeEtiqueta => {
+  const novo = { ...l, papel: { ...l.papel, ...p } };
+  return temMargensMedidas(novo) ? { ...novo, papel: { ...novo.papel, largura: roloPelasMargens(novo) } } : novo;
+};
 
 // ---------------------------------------------------------------------------
 // Designer: alças de redimensionar, guias de encaixe, camadas e histórico.

@@ -306,10 +306,6 @@ export const CashbackSection: React.FC<Props> = ({
               {erroAjuste && (
                 <p role="alert" className="text-caption text-danger-token">{erroAjuste}</p>
               )}
-              <p className="text-caption text-fg-muted-token">
-                O crédito entra como cortesia da loja e o cliente usa sem precisar
-                confirmar o número — diferente do saldo comprado.
-              </p>
               <div className="flex gap-2">
                 <Button onClick={creditar} disabled={ajustando}>
                   {ajustando ? 'Creditando…' : 'Creditar'}

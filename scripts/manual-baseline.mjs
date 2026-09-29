@@ -8,14 +8,14 @@ function contar(codigo) {
   let n = 0;
   for (const m of codigo.matchAll(PARAGRAFO)) {
     const texto = m[2].replace(/<[^>]+>|\{[^}]*\}/g, '').replace(/\s+/g, ' ').trim();
-    if (!/text-fg-muted-token/.test(m[1]) || /role="alert"/.test(m[1])) continue;
+    if (!/text-fg-muted-token/.test(m[1]) || /role="(alert|status)"/.test(m[1])) continue;
     if (/\{/.test(m[2])) continue;                       // dado vivo (valor, nome) não é manual
     if (texto.length >= 60 && /[.,]/.test(texto) && !/^(Não foi possível|Tem certeza|Nenhum|Nenhuma)/.test(texto)) n += 1;
   }
   for (const m of codigo.matchAll(DESCRICAO)) {
     const t = m[2];
     if (/\$\{/.test(t)) continue;                                                     // dado vivo
-    if (/(falhou|não p[uô]de|não puderam|Não há|Tente (de novo|novamente)|aparece[m]? aqui|Conecte )/.test(t)) continue; // erro, vazio, bloqueio
+    if (/(falhou|não p[uô]de|não puderam|Não há|Houve um erro|Tente (de novo|novamente)|aparece[m]? aqui|Conecte )/.test(t)) continue; // erro, vazio, bloqueio
     n += 1;
   }
   return n;

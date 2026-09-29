@@ -73,7 +73,7 @@ export const RecuperacaoPage: React.FC = () => {
   return (
     <PageShell
       titulo="Recuperador de vendas"
-      descricao="Quem encheu o carrinho e não finalizou — e quanto disso voltou depois do lembrete."
+     
       filtros={(
         <div className="flex flex-wrap gap-2">
           {PERIODOS.map((p) => (

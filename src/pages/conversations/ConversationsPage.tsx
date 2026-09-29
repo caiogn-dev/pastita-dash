@@ -371,7 +371,7 @@ export const ConversationsPage: React.FC = () => {
   return (
     <PageShell
       titulo="Conversas"
-      descricao="Todas as conversas de WhatsApp, Instagram e Messenger num lugar só."
+     
       acoes={
         <Button
           variant="secondary"

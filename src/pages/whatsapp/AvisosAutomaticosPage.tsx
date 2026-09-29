@@ -152,7 +152,7 @@ export const AvisosAutomaticosPage: React.FC = () => {
   return (
     <PageShell
       titulo="Avisos automáticos"
-      descricao="O que a loja mandou sozinha no WhatsApp — status do pedido, lembretes, avaliação — e se chegou ao cliente. Os textos se editam em Automação › Mensagens automáticas."
+     
       filtros={(
         <label className="inline-flex items-center gap-2 text-sm text-fg-token">
           Período

@@ -839,7 +839,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
         { rotulo: 'Nova campanha' },
       ]}
       titulo="Nova campanha de WhatsApp"
-      descricao="Escolha quem recebe, escreva a mensagem e veja como ela chega antes de enviar."
+     
       acoes={voltarParaCampanhas}
     >
       {conteudo}
@@ -919,9 +919,6 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
           <div className="superficie flex flex-col items-center gap-2 p-6 text-center">
             <DocumentTextIcon className="h-8 w-8 text-fg-muted-token" aria-hidden />
             <p className="text-body font-medium text-fg-token">Nenhum template aprovado nesta conta</p>
-            <p className="text-caption text-fg-muted-token">
-              Aprovou um template agora na Meta? Sincronize para ele aparecer aqui.
-            </p>
             <Button
               variant="outline"
               size="sm"

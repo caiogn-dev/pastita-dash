@@ -85,11 +85,6 @@ export const ValePorLinkSection: React.FC<ValePorLinkSectionProps> = ({
         <LinkIcon className="w-6 h-6 text-fg-muted-token shrink-0 mt-0.5" />
         <div>
           <h3 className="text-lg font-medium text-fg-token">Vale cobrado por QR Code</h3>
-          <p className="text-sm text-fg-muted-token">
-            Bandeiras que não fecham o pagamento dentro do cardápio. O cliente
-            escolhe, o pedido fica registrado como pendente e você manda o QR
-            Code de cobrança pelo WhatsApp.
-          </p>
         </div>
       </div>
 

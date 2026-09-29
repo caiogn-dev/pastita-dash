@@ -37,9 +37,6 @@ export const PediramParaParar: React.FC<{ accountId?: string }> = ({ accountId }
         <p className={`text-2xl font-bold ${dados && dados.total > 0 ? 'text-danger-token' : 'text-fg-token'}`}>
           {erro ? '—' : dados ? dados.total : '…'}
         </p>
-        <p className="text-xs text-fg-muted-token mt-0.5">
-          Não recebem mais campanha, mas continuam recebendo aviso de pedido.
-        </p>
       </div>
       {dados && dados.total > 0 && (
         <button

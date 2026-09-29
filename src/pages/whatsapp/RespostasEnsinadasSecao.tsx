@@ -147,7 +147,7 @@ export const RespostasEnsinadasSecao: React.FC = () => {
     <>
       <Secao
         titulo="Respostas ensinadas"
-        descricao="Pergunta e resposta que você ensinou. A IA usa como exemplo: vale para a mesma dúvida escrita de outro jeito."
+       
         contador={consulta.data !== undefined ? itens.length : undefined}
         acoes={(
           <Button leftIcon={<PlusIcon className="h-4 w-4" />} onClick={() => abrir()}>
@@ -181,7 +181,7 @@ export const RespostasEnsinadasSecao: React.FC = () => {
                 rows={2}
                 value={edicao.pergunta}
                 onChange={(e) => setEdicao({ ...edicao, pergunta: e.target.value })}
-                hint="Como o cliente escreve, por exemplo: “aceita vale refeição?”"
+               
                 maxLength={300}
               />
               <Textarea

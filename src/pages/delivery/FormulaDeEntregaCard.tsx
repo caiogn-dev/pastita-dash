@@ -151,10 +151,6 @@ export const FormulaDeEntregaCard: React.FC<Props> = ({
     <Card className="p-4 md:p-6">
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-fg-token">Preço da entrega</h2>
-        <p className="mt-1 text-sm text-fg-muted-token">
-          Uma regra por distância, em vez de uma faixa por quilômetro. O cliente vê
-          esse valor no checkout.
-        </p>
       </div>
 
       {/* A precedência precisa estar dita na tela: enquanto houver faixa ativa,

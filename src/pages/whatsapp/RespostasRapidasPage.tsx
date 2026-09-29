@@ -131,7 +131,7 @@ export const RespostasRapidasPage: React.FC = () => {
   return (
     <PageShell
       titulo="Respostas rápidas"
-      descricao="Textos prontos para o atendimento. No chat, digite / e o atalho: o texto entra na caixa com o nome da cliente, e você revisa antes de enviar."
+     
       acoes={(
         <Button leftIcon={<PlusIcon className="h-4 w-4" />} onClick={() => abrir(-1)} disabled={salvando}>
           Nova resposta
@@ -179,7 +179,7 @@ export const RespostasRapidasPage: React.FC = () => {
                 rows={5}
                 value={edicao.texto}
                 onChange={(e) => setEdicao({ ...edicao, texto: e.target.value })}
-                hint="{nome} vira o primeiro nome da cliente; {cardapio}, o link do cardápio."
+               
                 maxLength={1000}
               />
               {erroDoForm && <p role="alert" className="text-sm text-danger-token">{erroDoForm}</p>}

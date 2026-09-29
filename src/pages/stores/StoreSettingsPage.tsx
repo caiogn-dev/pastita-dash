@@ -792,11 +792,6 @@ export const StoreSettingsPage: React.FC = () => {
               <>
         <Card className="p-6">
           <h3 className="text-base font-semibold text-fg-token">Avaliações no Google</h3>
-          <p className="text-sm text-fg-muted-token mt-1">
-            Com o link preenchido, quem dá 5 estrelas no WhatsApp recebe o convite para avaliar
-            no Google e ganha um cupom de 5% ao confirmar. Sem link, o fluxo de avaliação
-            continua normal, só sem essa etapa.
-          </p>
           <div className="mt-4">
             <label className="text-sm text-fg-muted-token">Link de avaliação do Google</label>
             <input

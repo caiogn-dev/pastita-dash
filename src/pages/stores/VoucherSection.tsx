@@ -192,10 +192,7 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
         <span>Aceitar vale nesta loja</span>
       </label>
       {!aceitaVale && (
-        <p role="status" className="text-sm text-fg-muted-token">
-          O vale deixa de aparecer no cardápio. As chaves e as bandeiras ficam
-          guardadas — é só marcar de novo para voltar a aceitar.
-        </p>
+        <p role="status" className="text-sm text-fg-muted-token">Vale desligado no cardápio. Chaves e bandeiras ficam guardadas.</p>
       )}
 
       <div className="space-y-4">
@@ -209,10 +206,7 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
           onChange={(e) => setSecreta(e.target.value)}
         />
         {jaTemSegredo && !secreta && (
-          <p role="status" className="-mt-2 text-sm text-fg-muted-token">
-            Chave secreta já configurada. Ela não aparece aqui por segurança —
-            preencha só se for trocar a conta.
-          </p>
+          <p role="status" className="-mt-2 text-sm text-fg-muted-token">Chave secreta já configurada. Preencha só para trocar.</p>
         )}
 
         <Input

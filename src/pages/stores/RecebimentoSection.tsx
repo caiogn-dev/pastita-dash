@@ -199,9 +199,6 @@ export const RecebimentoSection: React.FC<RecebimentoSectionProps> = ({
         <BanknotesIcon className="w-6 h-6 text-fg-muted-token shrink-0 mt-0.5" />
         <div>
           <h3 className="text-lg font-medium text-fg-token">Conta de recebimento</h3>
-          <p className="text-sm text-fg-muted-token">
-            Em qual conta do Mercado Pago o dinheiro dos pedidos desta loja cai.
-          </p>
         </div>
       </div>
 
@@ -291,13 +288,6 @@ export const RecebimentoSection: React.FC<RecebimentoSectionProps> = ({
                     {salvando ? 'Salvando...' : 'Salvar'}
                   </Button>
                 </div>
-                <p className="mt-1 text-xs text-fg-muted-token">
-                  Em mercadopago.com.br → Seu negócio → Configurações → Gestão e administração
-                  → Credenciais → <strong>Credenciais de produção</strong>. O token é guardado
-                  criptografado e nunca é exibido de volta. Atenção: pelo token colado o
-                  <strong> cartão pode não funcionar</strong>, porque a chave pública fica sendo
-                  a da plataforma — conectando pelo botão acima, as duas vêm juntas.
-                </p>
               </div>
             )}
           </div>

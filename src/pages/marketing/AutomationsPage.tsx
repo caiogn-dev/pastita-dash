@@ -215,7 +215,7 @@ export default function AutomationsPage() {
     return (
       <EmptyState
         titulo="Selecione uma loja"
-        descricao="As automações de e-mail são de cada loja. Escolha uma para ver e configurar."
+       
       />
     );
   }
@@ -276,7 +276,7 @@ export default function AutomationsPage() {
           <EmptyState
             icone={<BoltIcon className="h-12 w-12" />}
             titulo="Nenhuma automação configurada"
-            descricao="Crie automações para enviar e-mails sozinhos quando algo acontecer, como um pedido confirmado."
+           
             acao={
               <Button leftIcon={<PlusIcon className="h-5 w-5" />} onClick={() => setShowCreateModal(true)}>
                 Criar primeira automação

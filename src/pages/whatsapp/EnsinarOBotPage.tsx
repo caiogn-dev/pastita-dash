@@ -28,7 +28,7 @@ const ABAS = [
 export const EnsinarOBotPage: React.FC = () => (
   <PageShell
     titulo="Ensinar o bot"
-    descricao="Dê contexto à IA: o que ela não soube responder, o que a loja garante e as respostas certas para as dúvidas de sempre."
+   
   >
     <PageTabs abas={ABAS} ariaLabel="Ensinar o bot">
       {(aba) => (

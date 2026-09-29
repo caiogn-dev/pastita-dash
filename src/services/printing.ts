@@ -173,6 +173,11 @@ export interface LayoutDeEtiqueta {
     modo_midia?: 'gap' | 'continuo' | 'auto';
     /** Só em contínuo: passo entre linhas (altura + vão de linha) em mm. */
     passo?: number | null;
+    /** Medidas do rolo. Com as duas margens, a 1ª coluna começa na esquerda e o rolo é a soma. */
+    margem_esquerda?: number | null;
+    margem_direita?: number | null;
+    /** Vão entre uma linha de etiquetas e a próxima. */
+    vao_linhas?: number | null;
   };
   elementos: ElementoDoLayout[];
 }

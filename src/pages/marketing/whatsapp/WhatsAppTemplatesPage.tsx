@@ -82,7 +82,7 @@ const WhatsAppTemplatesPage: React.FC = () => {
     <PageShell
       trilha={[{ rotulo: 'Campanhas', href: '/marketing' }, { rotulo: 'Modelos' }]}
       titulo="Modelos de mensagem"
-      descricao="Mensagens prontas para o WhatsApp. Escolha uma, preencha os campos e veja como o cliente recebe."
+     
       filtros={
         <PeriodChips<Categoria>
           options={opcoes}
@@ -162,7 +162,7 @@ const WhatsAppTemplatesPage: React.FC = () => {
               <EmptyState
                 icone={<ChatBubbleLeftRightIcon className="h-10 w-10" />}
                 titulo="Escolha um modelo"
-                descricao="Clique num modelo da lista para ver como ele chega no WhatsApp do cliente."
+               
               />
             </div>
           )}

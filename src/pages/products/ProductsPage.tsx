@@ -322,7 +322,7 @@ export const ProductsPage: React.FC = () => {
         <EmptyState
           variante="ativacao"
           titulo="Seu cardápio ainda está vazio"
-          descricao="Suba uma planilha e cadastre tudo de uma vez, ou comece por um produto."
+         
           beneficios={[
             { titulo: 'Cardápio inteiro de uma vez', descricao: 'Uma planilha com nome, preço e categoria.' },
             { titulo: 'Você confere antes', descricao: 'Vê o que entra e o que ficou de fora antes de gravar.' },

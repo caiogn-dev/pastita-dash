@@ -563,10 +563,6 @@ const FidelidadePage: React.FC = () => {
                         </SecaoDoPrograma>
 
                         <SecaoDoPrograma titulo="O que ele recebe">
-                          <p className="text-caption text-fg-muted-token">
-                            1 item grátis quando o cartão fecha. Aparece sozinho
-                            no carrinho do próximo pedido e o cartão recomeça do zero.
-                          </p>
                         </SecaoDoPrograma>
 
                         <SecaoDoPrograma

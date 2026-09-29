@@ -545,11 +545,6 @@ const AnalyticsPage: React.FC = () => {
       {matriz.length > 0 && (
         <Card className="p-4">
           <h2 className="text-lg font-semibold text-fg-token mb-1">O que fazer com o cardápio</h2>
-          <p className="text-sm text-fg-muted-token mb-4">
-            Cada item comparado com a MEDIANA do cardápio em duas medidas: quanto sai e
-            quanto fatura. Mediana e não média — um prato caro puxaria a média e jogaria
-            metade do cardápio para o lado fraco.
-          </p>
           <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-4">
             {(Object.keys(QUADRANTES) as Quadrante[]).map((chave: Quadrante) => {
               const q = QUADRANTES[chave];

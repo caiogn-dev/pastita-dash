@@ -110,7 +110,7 @@ export const ColaboradoresPage: React.FC = () => {
   return (
     <PageShell
       titulo="Colaboradores"
-      descricao="Quem pode entrar no painel desta loja e até onde vai. O colaborador entra com o celular e a senha que você definir."
+     
     >
       <Card className="superficie p-4 sm:p-5">
         <form onSubmit={convidar} className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">

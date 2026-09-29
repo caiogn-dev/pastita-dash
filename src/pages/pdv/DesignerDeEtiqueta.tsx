@@ -23,9 +23,9 @@ import {
   imprimirGradeDeCalibracao, listPrintAgents, previewDeEtiquetas, salvarCalibracao, salvarLayout,
 } from '../../services/printing';
 import {
-  Alca, ETIQUETA_DE_EXEMPLO, Historico, ajustarPapelAoBloco, blocoMm, duplicarElemento, editarElemento, encaixar,
+  Alca, ETIQUETA_DE_EXEMPLO, Historico, ajustarPapelAoBloco, blocoMm, comPapel, duplicarElemento, editarElemento, encaixar,
   encaixarNasGuias, guiasDoLayout, margemEsquerda, moverCamada, moverElemento, nomeDoElemento, novoElemento,
-  problemaDoLayout, redimensionarPorAlca, removerElemento, textoDeExemplo,
+  problemaDoLayout, redimensionarPorAlca, removerElemento, temMargensMedidas, textoDeExemplo,
 } from './editorDeEtiqueta';
 
 const PX_POR_MM_REAL = 96 / 25.4;
@@ -276,7 +276,7 @@ const DesignerDeEtiqueta: React.FC = () => {
 
   const patch = (p: Partial<ElementoDoLayout>) => { if (elemento) aplicar(editarElemento(layout, elemento.id, p)); };
   const setEtiqueta = (p: Partial<LayoutDeEtiqueta['etiqueta']>) => aplicar({ ...layout, etiqueta: { ...layout.etiqueta, ...p } });
-  const setPapel = (p: Partial<LayoutDeEtiqueta['papel']>) => aplicar({ ...layout, papel: { ...layout.papel, ...p } });
+  const setPapel = (p: Partial<LayoutDeEtiqueta['papel']>) => aplicar(comPapel(layout, p));
   const adicionar = (tipo: TipoDeElemento, extra: Partial<ElementoDoLayout> = {}) => {
     const l = novoElemento(layout, tipo);
     const novo = l.elementos[l.elementos.length - 1];
@@ -328,6 +328,7 @@ const DesignerDeEtiqueta: React.FC = () => {
   };
 
   const larguraPapel = px(layout.papel.largura); const alturaPapel = px(layout.etiqueta.altura);
+  const alturaVao = px(layout.papel.vao_linhas ?? 0);
 
   return (
     <PageShell
@@ -443,13 +444,13 @@ const DesignerDeEtiqueta: React.FC = () => {
 
           <div ref={mesaRef} className="superficie overflow-auto bg-surface-2 p-4" style={{ maxHeight: '66vh' }} data-testid="des-mesa"
             onPointerDown={(e) => { if (e.target === e.currentTarget) setSelecionado(null); }}>
-            <div className="inline-grid" style={{ gridTemplateColumns: `${REGUA}px ${larguraPapel}px`, gridTemplateRows: `${REGUA}px ${alturaPapel}px` }}>
+            <div className="inline-grid" style={{ gridTemplateColumns: `${REGUA}px ${larguraPapel}px`, gridTemplateRows: `${REGUA}px ${alturaPapel + alturaVao}px` }}>
               <div />
               <Regua mm={layout.papel.largura} escala={escala} eixo="x" />
-              <Regua mm={layout.etiqueta.altura} escala={escala} eixo="y" />
+              <Regua mm={layout.etiqueta.altura + (layout.papel.vao_linhas ?? 0)} escala={escala} eixo="y" />
               <div
                 className="relative select-none shadow-repouso"
-                style={{ width: larguraPapel, height: alturaPapel, background: '#fff', color: '#111' }}
+                style={{ width: larguraPapel, height: alturaPapel + alturaVao, background: alturaVao ? `linear-gradient(#fff, #fff) 0 0 / 100% ${alturaPapel}px no-repeat, repeating-linear-gradient(45deg, rgba(0,0,0,.08) 0 3px, transparent 3px 8px)` : '#fff', color: '#111' }}
                 data-testid="des-papel"
                 onPointerDown={(e) => { if (e.target === e.currentTarget) setSelecionado(null); }}
               >
@@ -532,13 +533,18 @@ const DesignerDeEtiqueta: React.FC = () => {
             <NumberField rotulo="Largura" valor={layout.etiqueta.largura} min={5} max={300} step={0.5} sufixo="mm" onMudar={(v) => setEtiqueta({ largura: v })} data-testid="lay-larg" />
             <NumberField rotulo="Altura" valor={layout.etiqueta.altura} min={5} max={300} step={0.5} sufixo="mm" onMudar={(v) => setEtiqueta({ altura: v })} data-testid="lay-alt" />
             <NumberField rotulo="Colunas" valor={layout.papel.colunas} min={1} max={12} step={1} onMudar={(v) => setPapel({ colunas: Math.round(v) })} data-testid="lay-cols" />
-            <NumberField rotulo="Vão" valor={layout.papel.espaco} min={0} max={50} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ espaco: v })} data-testid="lay-vao" />
-            <NumberField rotulo="Rolo" valor={layout.papel.largura} min={5} max={400} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ largura: v })} data-testid="lay-papel" />
+            <NumberField rotulo="Vão entre colunas" valor={layout.papel.espaco} min={0} max={50} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ espaco: v })} data-testid="lay-vao" />
+            <NumberField rotulo="Vão entre linhas" valor={layout.papel.vao_linhas ?? 0} min={0} max={100} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ vao_linhas: v })} data-testid="lay-vao-linhas" />
+            <NumberField rotulo="Margem esquerda" valor={layout.papel.margem_esquerda ?? 0} min={0} max={200} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ margem_esquerda: v })} data-testid="lay-margem-esq" />
+            <NumberField rotulo="Margem direita" valor={layout.papel.margem_direita ?? 0} min={0} max={200} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ margem_direita: v })} data-testid="lay-margem-dir" />
+            {temMargensMedidas(layout)
+              ? <p className="text-xs tabular-nums text-fg-muted-token">Rolo {layout.papel.largura} mm</p>
+              : <NumberField rotulo="Rolo" valor={layout.papel.largura} min={5} max={400} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ largura: v })} data-testid="lay-papel" />}
             <Select rotulo="Tipo de rolo" opcoes={MODOS_DE_MIDIA} valor={layout.papel.modo_midia ?? 'gap'} onMudar={(v) => setPapel({ modo_midia: v as LayoutDeEtiqueta['papel']['modo_midia'] })} data-testid="lay-modo" />
             {layout.papel.modo_midia === 'continuo' && (
               <NumberField rotulo="Passo" valor={layout.papel.passo ?? layout.etiqueta.altura} min={layout.etiqueta.altura} max={400} step={0.5} sufixo="mm" onMudar={(v) => setPapel({ passo: v })} data-testid="lay-passo" />
             )}
-            {Math.abs(layout.papel.largura - blocoMm(layout)) > 0.01 && (
+            {!temMargensMedidas(layout) && Math.abs(layout.papel.largura - blocoMm(layout)) > 0.01 && (
               <button type="button" className="text-xs text-brand underline" onClick={() => aplicar(ajustarPapelAoBloco(layout))}>Rolo = {blocoMm(layout)} mm</button>
             )}
           </div>

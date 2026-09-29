@@ -46,9 +46,6 @@ export const ModalCobrancaPix: React.FC<ModalCobrancaPixProps> = ({
     <Modal isOpen={cobrancas !== null} onClose={onFechar}>
       <ModalHeader title="Cobrança PIX" />
       <ModalBody>
-        <p className="mb-4 text-sm text-fg-muted-token">
-          Mostre o QR pro cliente pagar. O status atualiza sozinho quando o PIX cair.
-        </p>
 
         <div className="space-y-5" data-testid="pdv-pix-charges">
           {(cobrancas ?? []).map((c) => (

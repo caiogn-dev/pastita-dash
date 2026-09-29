@@ -65,11 +65,6 @@ export const AcrescimoDoValeSection: React.FC<AcrescimoDoValeSectionProps> = ({
         <ReceiptPercentIcon className="w-6 h-6 text-fg-muted-token shrink-0 mt-0.5" />
         <div>
           <h3 className="text-lg font-medium text-fg-token">Acréscimo para pagar com vale</h3>
-          <p className="text-sm text-fg-muted-token">
-            O cliente que escolhe vale-refeição ou vale-alimentação paga este
-            percentual a mais. Vale para todas as bandeiras, inclusive a paga
-            por QR Code. Deixe 0 para não cobrar.
-          </p>
         </div>
       </div>
 

@@ -55,11 +55,6 @@ export const TempoDePreparoSection: React.FC<TempoDePreparoSectionProps> = ({
         <ClockIcon className="w-6 h-6 text-fg-muted-token shrink-0 mt-0.5" />
         <div>
           <h3 className="text-lg font-medium text-fg-token">Tempo de preparo</h3>
-          <p className="text-sm text-fg-muted-token">
-            Quanto um pedido leva da cozinha até ficar pronto. O quadro de
-            pedidos mostra &quot;pronto às&quot; e marca ATRASADO quando passar.
-            Deixe 0 para não usar previsão.
-          </p>
         </div>
       </div>
 

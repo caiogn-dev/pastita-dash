@@ -59,7 +59,7 @@ export const RecuperadorWhatsAppSecao: React.FC = () => {
   };
 
   return (
-    <Secao titulo="Recuperador no WhatsApp" descricao="O que sai sozinho para quem falou com o bot e não fechou. Só dentro das 24 h, nunca em atendimento humano, nunca para quem pediu para parar.">
+    <Secao titulo="Recuperador no WhatsApp">
       <div className="grid gap-4">
         <label className="flex items-center gap-3 text-sm text-fg-token">
           <Switch ligado={cfg.carrinho.incluir_oferta} onMudar={(v) => void gravar({ ...cfg, carrinho: { incluir_oferta: v } })} rotulo="Lembrete de carrinho cita a promoção de hoje" desabilitado={salvando} />
@@ -84,7 +84,7 @@ export const RecuperadorWhatsAppSecao: React.FC = () => {
             rows={3}
             value={cfg.perguntou.texto}
             onChange={(e) => setCfg({ ...cfg, perguntou: { ...cfg.perguntou, texto: e.target.value } })}
-            hint="{nome} vira o primeiro nome; {oferta} vira “Hoje tem: …” quando houver promoção."
+           
             maxLength={600}
           />
         </div>

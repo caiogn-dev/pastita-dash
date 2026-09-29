@@ -65,9 +65,6 @@ export const PassoDosDestinatarios: React.FC<Props> = ({
     <div className="flex flex-col gap-5">
       <header>
         <h2 className="text-lg font-semibold text-fg-token">Escolha quem recebe</h2>
-        <p className="mt-1 text-body text-fg-muted-token">
-          Filtre sua base de clientes, importe uma lista ou digite os números.
-        </p>
       </header>
 
       <SeletorDeAudiencia

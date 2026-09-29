@@ -85,7 +85,7 @@ const ExpedicaoPage: React.FC = () => {
   return (
     <PageShell
       titulo="Expedição"
-      descricao="Bipe o código de barras da comanda: o pedido avança para pronto, saiu para entrega ou entregue."
+     
     >
       <form onSubmit={aoEnviar} className="max-w-xl" onClick={focar}>
         <label htmlFor="codigo-bipado" className="mb-2 flex items-center gap-2 text-sm font-medium text-fg-token">

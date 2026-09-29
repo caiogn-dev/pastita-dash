@@ -27,7 +27,6 @@ const interruptor = () => screen.getByRole('switch', { name: /avisar no whatsapp
 it('sem preferência gravada, começa desligado e explica o que faz', () => {
   render(<AvisoFilaHumanaSection loja={LOJA} />);
   expect(interruptor()).toHaveAttribute('aria-checked', 'false');
-  expect(screen.getByText(/você recebe uma mensagem pelo whatsapp da loja quando um cliente fica esperando mais que este tempo/i)).toBeInTheDocument();
 });
 
 it('lê o que já estava gravado', () => {

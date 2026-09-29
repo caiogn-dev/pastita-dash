@@ -1,5 +1,5 @@
 import {
-  blocoMm, escalaDoCanvas, moverElemento, redimensionarElemento, novoElemento, textoDeExemplo,
+  margemEsquerda, blocoMm, escalaDoCanvas, moverElemento, redimensionarElemento, novoElemento, textoDeExemplo,
   problemaDoLayout, ajustarPapelAoBloco, ETIQUETA_DE_EXEMPLO,
 } from '../editorDeEtiqueta';
 import type { LayoutDeEtiqueta } from '../../../services/printing';
@@ -135,5 +135,24 @@ describe('designer — alças, guias, camadas e histórico', () => {
     expect(nomeDoElemento({ id: 'a', tipo: 'texto', x: 0, y: 0, w: 1, h: 1, texto: 'Val.: {val}' })).toBe('Val.: {val}');
     expect(nomeDoElemento({ id: 'a', tipo: 'qr', x: 0, y: 0, w: 1, h: 1, campo: 'publicUrl' })).toBe('QR Code');
     expect(nomeDoElemento({ id: 'a', tipo: 'barras', x: 0, y: 0, w: 1, h: 1 })).toBe('Código de barras');
+  });
+});
+
+import { comPapel, temMargensMedidas, roloPelasMargens } from '../editorDeEtiqueta';
+
+describe('margens medidas no rolo', () => {
+  it('com as duas margens o rolo é a soma e a 1ª coluna começa na esquerda', () => {
+    const l = comPapel(base(), { margem_esquerda: 3, margem_direita: 1 });
+    expect(temMargensMedidas(l)).toBe(true);
+    expect(roloPelasMargens(l)).toBe(107);
+    expect(l.papel.largura).toBe(107);
+    expect(margemEsquerda(l)).toBe(3);
+    const m = comPapel(l, { colunas: 2 });
+    expect(m.papel.largura).toBe(3 + 2 * 33 + 2 + 1);
+  });
+  it('sem as duas margens a largura do rolo é a digitada e a coluna centraliza', () => {
+    const l = comPapel(base(), { margem_esquerda: 3 });
+    expect(l.papel.largura).toBe(107); expect(margemEsquerda(l)).toBe(3);
+    expect(margemEsquerda(base())).toBe(2);
   });
 });

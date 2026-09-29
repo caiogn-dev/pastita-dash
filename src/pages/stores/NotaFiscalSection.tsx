@@ -114,12 +114,6 @@ export const NotaFiscalSection: React.FC<NotaFiscalSectionProps> = ({ storeId })
         <DocumentTextIcon className="w-5 h-5 text-fg-muted-token" />
         <h2 className="text-lg font-semibold text-fg-token">Nota fiscal</h2>
       </div>
-      <p className="text-sm text-fg-muted-token mt-1">
-        Com a emissão ligada, cada pedido ganha os botões de emitir nota: NFC-e para consumidor
-        final e NF-e quando o cliente é empresa. Antes de ativar em produção você precisa de: CNPJ
-        com inscrição estadual, credenciamento na SEFAZ do seu estado, certificado digital A1 e
-        conta no provedor.
-      </p>
 
       <label className="flex items-center gap-3 text-sm text-fg-token cursor-pointer mt-5">
         <input
@@ -165,9 +159,6 @@ export const NotaFiscalSection: React.FC<NotaFiscalSectionProps> = ({ storeId })
             placeholder="TO"
             className={CAMPO}
           />
-          <p className="text-xs text-fg-muted-token mt-1">
-            Usada na NF-e: cliente de outro estado muda o CFOP para 6102.
-          </p>
         </div>
         <div>
           <label className="text-sm font-medium text-fg-muted-token">

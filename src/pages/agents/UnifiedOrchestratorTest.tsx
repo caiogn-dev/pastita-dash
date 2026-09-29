@@ -306,10 +306,6 @@ export const UnifiedOrchestratorTest: React.FC = () => {
               <h3 className="text-xl font-medium text-fg-token mb-2">
                 Teste o Orquestrador Unificado
               </h3>
-              <p className="text-fg-muted-token max-w-md mb-6">
-                Envie uma mensagem para ver o LLM em ação com templates Jasper, 
-                AutoMessages, Handlers e respostas diretas.
-              </p>
               <div className="flex flex-wrap gap-2 justify-center">
                 {['Oi', 'Cardápio', 'Ver carrinho', 'Status do pedido'].map((msg) => (
                   <button

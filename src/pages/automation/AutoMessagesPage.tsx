@@ -262,7 +262,7 @@ const AutoMessagesPage: React.FC = () => {
         { rotulo: 'Mensagens automáticas' },
       ]}
       titulo="Mensagens automáticas"
-      descricao="O que o WhatsApp responde sozinho em cada momento do pedido."
+     
       acoes={
         <Button
           leftIcon={<PlusIcon className="h-5 w-5" />}

@@ -84,11 +84,6 @@ export const ZonasDePrecoFixoCard: React.FC<ZonasDePrecoFixoCardProps> = ({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-fg-token">Endereços com preço combinado</h2>
-          <p className="mt-1 max-w-2xl text-sm text-fg-muted-token">
-            As faixas acima resolvem a cidade; aqui ficam as exceções. Quando o endereço do
-            cliente bate com uma destas zonas, o valor abaixo substitui (ou complementa) a
-            taxa por quilômetro.
-          </p>
         </div>
         <Button variant="secondary" leftIcon={<PlusIcon className="h-4 w-4" />} onClick={adicionar}>
           Adicionar zona
@@ -99,11 +94,6 @@ export const ZonasDePrecoFixoCard: React.FC<ZonasDePrecoFixoCardProps> = ({
         <div className="mt-5 rounded-xl border border-dashed border-border-token p-6 text-center">
           <MapPinIcon className="mx-auto mb-2 h-7 w-7 text-fg-muted-token" />
           <p className="text-sm font-semibold text-fg-token">Nenhuma zona cadastrada</p>
-          <p className="mx-auto mt-1 max-w-md text-sm text-fg-muted-token">
-            Todo pedido usa a taxa por quilômetro. Cadastre uma zona quando um condomínio
-            ou bairro precisar de um valor combinado — por exemplo, quando a conta por km
-            ficaria cara demais para um lugar que você atende sempre.
-          </p>
         </div>
       ) : (
         <div className="mt-5 space-y-4">

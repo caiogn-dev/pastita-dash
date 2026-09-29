@@ -324,9 +324,6 @@ export const AccountDetailPage: React.FC = () => {
         size="sm"
       >
         <form onSubmit={handleRotateToken} className="space-y-4">
-          <p className="text-sm text-fg-muted-token">
-            Insira o novo token de acesso do WhatsApp Business API. O token atual será substituído.
-          </p>
           <Input
             label="Novo Token de Acesso"
             type="password"
