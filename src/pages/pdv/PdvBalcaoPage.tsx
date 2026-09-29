@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, Modal, ModalHeader, ModalBody, SearchInput, PageShell } from '../../components/ui';
+import { Card, Button, Input, Modal, ModalHeader, ModalBody, SearchInput, PageShell } from '../../components/ui';
 import { ModalCobrancaPix } from './ModalCobrancaPix';
 import { ComandaDoBalcao } from './ComandaDoBalcao';
 import { ModalVincularCodigo } from './ModalVincularCodigo';
@@ -11,6 +11,7 @@ import { ClienteDaVenda } from './ClienteDaVenda';
 import { BuscaManualDeProduto } from './BuscaManualDeProduto';
 import { Loading } from '../../components/common';
 import { useBarcodeScanner } from '../../hooks/useBarcodeScanner';
+import { GradeDeProdutos } from './GradeDeProdutos';
 import {
   getStores, getProducts, updateProduct, getCustomers,
   StoreProduct, StoreCustomer,
@@ -85,6 +86,8 @@ const PdvBalcaoPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ComandaItem[]>([]);
   const [payment, setPayment] = useState<PaymentChoice>('cash');
+  const [recebido, setRecebido] = useState('');
+  const buscaRef = useRef<HTMLDivElement>(null);
   const [printReceipt, setPrintReceipt] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -257,6 +260,15 @@ const PdvBalcaoPage: React.FC = () => {
   // Soma pelo preço VIGENTE: o PDV cobrava o valor de cadastro e ignorava a
   // promoção do dia — vender no balcão mais caro que no cardápio.
   const total = items.reduce((s, i) => s + precoVigenteDoProduto(i.product) * i.quantity, 0);
+  const valorRecebido = Number(recebido.replace(',', '.')) || 0;
+  const troco = payment === 'cash' && valorRecebido > 0 ? valorRecebido - total : null;
+  const naComanda = useMemo(() => Object.fromEntries(items.map((i) => [i.product.id, i.quantity])), [items]);
+  const produtosDaGrade = useMemo(() => catalog.map((c) => ({
+    id: c.product.id, nome: c.product.name, preco: precoVigenteDoProduto(c.product),
+    categoria: c.product.category_name || undefined, loja: storeCount > 1 ? c.storeName : undefined,
+    semEstoque: Boolean(c.product.track_stock) && Number(c.product.stock_quantity ?? 1) <= 0,
+  })), [catalog, storeCount]);
+  const addPorId = (id: string) => { const e = catalog.find((c) => c.product.id === id); if (e) { addEntry(e); beep(true); } };
 
   /** Itens agrupados por loja, na ordem em que cada loja apareceu na comanda. */
   const groups = useMemo(() => {
@@ -348,6 +360,7 @@ const PdvBalcaoPage: React.FC = () => {
         // estoque mudou no servidor → recarrega catálogo em background
         loadCatalog();
         setCustomer(null);
+        setRecebido('');
       }
     } finally {
       setSubmitting(false);
@@ -416,88 +429,101 @@ const PdvBalcaoPage: React.FC = () => {
     return base.slice(0, 8);
   }, [catalog, linkSearch]);
 
+  useEffect(() => {
+    const tecla = (e: KeyboardEvent) => {
+      if (e.key === 'F2') { e.preventDefault(); buscaRef.current?.querySelector('input')?.focus(); }
+      if (e.key === 'F9') { e.preventDefault(); document.querySelector<HTMLButtonElement>('[data-testid="pdv-finalizar"]')?.click(); }
+    };
+    window.addEventListener('keydown', tecla);
+    return () => window.removeEventListener('keydown', tecla);
+  }, []);
+
   if (loading) return <Loading />;
 
   return (
     <PageShell
       variante="quadro"
-      className="max-w-5xl mx-auto"
       titulo="PDV Balcão"
-      acoes={
-        // O TOTAL é a ação da tela: é o número que o operador lê em voz alta
-        // para o cliente. Fica no canto das ações, no mesmo lugar de sempre.
-        <div className="text-right">
-          <div className="text-sm opacity-70">{items.reduce((s, i) => s + i.quantity, 0)} itens</div>
-          <div className="text-3xl font-bold tabular-nums" data-testid="pdv-total">{formatCurrency(total)}</div>
-        </div>
-      }
       filtros={
-        <p className="text-sm opacity-70">
-          Bipe um produto com o leitor — não precisa clicar em nada antes.
-          {storeCount > 1 && ` Reconhece produtos das suas ${storeCount} lojas.`}
-        </p>
+        <span className="inline-flex items-center gap-2 text-xs text-fg-muted-token" title="Bipe a qualquer momento: não precisa clicar antes">
+          <span className="h-2 w-2 rounded-full bg-success-token" aria-hidden /> Leitor pronto
+          {storeCount > 1 && <span>· {storeCount} lojas</span>}
+          <span className="hidden sm:inline">· F2 buscar · F9 finalizar</span>
+        </span>
       }
     >
-
-      <Card className="p-4 sm:p-5">
-        <BuscaManualDeProduto
-          valor={manualSearch}
-          onBuscar={setManualSearch}
-          candidatos={manualMatches}
-          onEscolher={addManual}
-          totalDeLojas={storeCount}
-          formatarValor={formatCurrency}
-        />
-        <ComandaDoBalcao
-          grupos={groups}
-          vazia={items.length === 0}
-          onAlterarQuantidade={changeQty}
-          onRemover={removeItem}
-          formatarValor={formatCurrency}
-        />
-      </Card>
-
-      <Card className="p-4 sm:p-5">
-        <ClienteDaVenda
-          cliente={customer}
-          onVincular={() => setCustomerModal(true)}
-          onRemover={() => setCustomer(null)}
-        />
-        <div className="flex flex-wrap items-center gap-2 mb-4">
-          {(Object.keys(PAYMENT_LABELS) as PaymentChoice[]).map((key) => (
-            <Button
-              key={key}
-              variant={payment === key ? 'primary' : 'secondary'}
-              onClick={() => setPayment(key)}
-            >
-              {PAYMENT_LABELS[key]}
-            </Button>
-          ))}
-          <label className="flex items-center gap-1.5 text-sm ml-auto">
-            <input
-              type="checkbox"
-              checked={printReceipt}
-              onChange={(e) => setPrintReceipt(e.target.checked)}
-              data-testid="pdv-cupom"
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <Card className="p-4 sm:p-5 space-y-4">
+          <div ref={buscaRef}>
+            <BuscaManualDeProduto
+              valor={manualSearch}
+              onBuscar={setManualSearch}
+              candidatos={manualMatches}
+              onEscolher={addManual}
+              totalDeLojas={storeCount}
+              formatarValor={formatCurrency}
             />
-            Imprimir cupom
-          </label>
-          {groups.length > 1 && (
-            <span className="text-xs opacity-60 w-full text-right">
-              {groups.length} lojas na comanda → {groups.length} pedidos (um por loja)
-            </span>
+          </div>
+          {!manualSearch.trim() && (
+            <GradeDeProdutos produtos={produtosDaGrade} onEscolher={addPorId} formatarValor={formatCurrency} naComanda={naComanda} />
           )}
-        </div>
-        <Button
-          className="w-full"
-          size="lg"
-          disabled={items.length === 0 || submitting}
-          onClick={handleSubmit}
-          data-testid="pdv-finalizar"
-        >
-          {submitting ? 'Registrando…' : `Finalizar venda — ${formatCurrency(total)}`}
-        </Button>
-      </Card>
+        </Card>
+
+        <Card className="p-4 sm:p-5 space-y-4 lg:sticky lg:top-4">
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm text-fg-muted-token">{items.reduce((s, i) => s + i.quantity, 0)} itens</span>
+            <span className="text-3xl font-bold tabular-nums text-fg-token" data-testid="pdv-total">{formatCurrency(total)}</span>
+          </div>
+          <div className="max-h-[40vh] overflow-y-auto">
+            <ComandaDoBalcao
+              grupos={groups}
+              vazia={items.length === 0}
+              onAlterarQuantidade={changeQty}
+              onRemover={removeItem}
+              formatarValor={formatCurrency}
+            />
+          </div>
+          <ClienteDaVenda
+            cliente={customer}
+            onVincular={() => setCustomerModal(true)}
+            onRemover={() => setCustomer(null)}
+          />
+          <div className="grid grid-cols-4 gap-1.5">
+            {(Object.keys(PAYMENT_LABELS) as PaymentChoice[]).map((key) => (
+              <Button key={key} size="sm" variant={payment === key ? 'primary' : 'secondary'} onClick={() => setPayment(key)}>
+                {PAYMENT_LABELS[key]}
+              </Button>
+            ))}
+          </div>
+          {payment === 'cash' && items.length > 0 && (
+            <div className="flex items-end gap-3">
+              <Input label="Recebido" inputMode="decimal" value={recebido} onChange={(e) => setRecebido(e.target.value)} placeholder="0,00" data-testid="pdv-recebido" className="w-32" />
+              {troco !== null && (
+                <p className="pb-2 text-sm" data-testid="pdv-troco">
+                  {troco >= 0 ? <>Troco <strong className="text-lg tabular-nums text-fg-token">{formatCurrency(troco)}</strong></> : <span className="text-danger-token">Faltam {formatCurrency(-troco)}</span>}
+                </p>
+              )}
+            </div>
+          )}
+          <div className="flex items-center justify-between gap-2">
+            <label className="flex items-center gap-1.5 text-sm text-fg-muted-token">
+              <input type="checkbox" checked={printReceipt} onChange={(e) => setPrintReceipt(e.target.checked)} data-testid="pdv-cupom" />
+              Imprimir cupom
+            </label>
+            {groups.length > 1 && <span className="text-xs text-fg-muted-token">{groups.length} pedidos, um por loja</span>}
+          </div>
+          <Button
+            className="w-full"
+            size="lg"
+            disabled={items.length === 0 || submitting}
+            onClick={handleSubmit}
+            data-testid="pdv-finalizar"
+            title="F9"
+          >
+            {submitting ? 'Registrando…' : `Finalizar venda — ${formatCurrency(total)}`}
+          </Button>
+        </Card>
+      </div>
 
       <ModalVincularCodigo
         codigo={unknownCode}
@@ -515,10 +541,6 @@ const PdvBalcaoPage: React.FC = () => {
       <Modal isOpen={customerModal} onClose={() => setCustomerModal(false)}>
         <ModalHeader title="Vincular cliente" />
         <ModalBody>
-          <p className="text-sm mb-3 opacity-80">
-            Busque quem já comprou em qualquer uma das suas lojas, ou cadastre na hora.
-            A venda entra no histórico e no CRM da loja de cada produto.
-          </p>
           <SearchInput
             autoFocus
             placeholder="Buscar por nome ou telefone…"
@@ -531,7 +553,7 @@ const PdvBalcaoPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => pickCustomer(c)}
-                  className="w-full flex items-center justify-between gap-2 py-2.5 px-2 text-left hover:bg-black/5 dark:hover:bg-surface-2 rounded"
+                  className="w-full flex items-center justify-between gap-2 py-2.5 px-2 text-left hover:bg-surface-2 rounded"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-medium">{c.user_name || 'Sem nome'}</span>
@@ -548,22 +570,9 @@ const PdvBalcaoPage: React.FC = () => {
             )}
           </ul>
           <div className="mt-4 pt-4 border-t border-border-token space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide opacity-60">Cadastrar novo</p>
-            <input
-              className="w-full rounded border border-border-token bg-transparent px-3 py-2 text-sm"
-              placeholder="Nome"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              aria-label="Nome do cliente"
-            />
-            <input
-              className="w-full rounded border border-border-token bg-transparent px-3 py-2 text-sm"
-              placeholder="WhatsApp com DDD (ex.: 63992001122)"
-              value={newPhone}
-              onChange={(e) => setNewPhone(e.target.value)}
-              inputMode="tel"
-              aria-label="WhatsApp do cliente"
-            />
+            <p className="text-sm font-semibold text-fg-token">Cadastrar novo</p>
+            <Input placeholder="Nome" value={newName} onChange={(e) => setNewName(e.target.value)} aria-label="Nome do cliente" />
+            <Input placeholder="WhatsApp com DDD" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} inputMode="tel" aria-label="WhatsApp do cliente" />
             <Button className="w-full" onClick={saveNewCustomer}>Usar este cliente</Button>
           </div>
         </ModalBody>

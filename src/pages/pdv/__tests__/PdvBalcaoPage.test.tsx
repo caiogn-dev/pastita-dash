@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import PdvBalcaoPage from '../PdvBalcaoPage';
@@ -83,7 +83,7 @@ describe('PdvBalcaoPage', () => {
     await waitFor(() => expect(mockedGetProducts).toHaveBeenCalled());
 
     scan('2000042003501');
-    expect(await screen.findByText('Marmita P')).toBeInTheDocument();
+    expect(await within(await screen.findByTestId('pdv-comanda')).findByText('Marmita P')).toBeInTheDocument();
 
     // bipe repetido intencional: >300ms depois (dentro da janela é ignorado, anti-duplo)
     await act(() => new Promise((r) => setTimeout(r, 320)));
@@ -101,7 +101,7 @@ describe('PdvBalcaoPage', () => {
     scan('999888777');
     expect(await screen.findByText('Código não cadastrado')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByText('Suco'));
+    await userEvent.click(within(screen.getByRole('dialog')).getByText('Suco'));
     await waitFor(() => {
       expect(mockedUpdateProduct).toHaveBeenCalledWith('p2', { barcode: '999888777' });
     });
@@ -115,7 +115,7 @@ describe('PdvBalcaoPage', () => {
     await waitFor(() => expect(mockedGetProducts).toHaveBeenCalled());
 
     scan('2000042003501');
-    await screen.findByText('Marmita P');
+    await within(await screen.findByTestId('pdv-comanda')).findByText('Marmita P');
 
     await userEvent.click(screen.getByTestId('pdv-finalizar'));
     await waitFor(() => {
@@ -150,7 +150,7 @@ describe('PdvBalcaoPage', () => {
     await waitFor(() => expect(mockedGetProducts).toHaveBeenCalled());
 
     scan('2000042003501');
-    await screen.findByText('Marmita P');
+    await within(await screen.findByTestId('pdv-comanda')).findByText('Marmita P');
 
     await userEvent.click(screen.getByTestId('pdv-cupom'));
     await userEvent.click(screen.getByTestId('pdv-finalizar'));
@@ -168,14 +168,14 @@ describe('PdvBalcaoPage', () => {
     await waitFor(() => expect(mockedGetProducts).toHaveBeenCalled());
 
     scan('2000042003501'); // loja-1
-    await screen.findByText('Marmita P');
+    await within(await screen.findByTestId('pdv-comanda')).findByText('Marmita P');
     await act(() => new Promise((r) => setTimeout(r, 320)));
     scan('789200000002'); // loja-2
-    await screen.findByText('Salgadinho');
+    await within(screen.getByTestId('pdv-comanda')).findByText('Salgadinho');
 
     // agrupamento visível por loja
-    expect(screen.getByText('Loja Um')).toBeInTheDocument();
-    expect(screen.getByText('Loja Dois')).toBeInTheDocument();
+    expect(within(screen.getByTestId('pdv-comanda')).getByText('Loja Um')).toBeInTheDocument();
+    expect(within(screen.getByTestId('pdv-comanda')).getByText('Loja Dois')).toBeInTheDocument();
 
     await userEvent.click(screen.getByTestId('pdv-finalizar'));
     await waitFor(() => expect(mockedCreate).toHaveBeenCalledTimes(2));
@@ -199,7 +199,7 @@ describe('PdvBalcaoPage', () => {
     await waitFor(() => expect(mockedGetProducts).toHaveBeenCalled());
 
     scan('2000042003501');
-    await screen.findByText('Marmita P');
+    await within(await screen.findByTestId('pdv-comanda')).findByText('Marmita P');
 
     await userEvent.click(screen.getByText('Vincular cliente'));
     await userEvent.type(screen.getByPlaceholderText('Buscar por nome ou telefone…'), 'joão');
@@ -218,6 +218,23 @@ describe('PdvBalcaoPage', () => {
     });
   });
 
+  it('grade: um toque no produto adiciona, e dinheiro mostra o troco', async () => {
+    renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: 'Adicionar Suco' }));
+    await waitFor(() => expect(screen.getByTestId('pdv-total')).toHaveTextContent('8,00'));
+    await userEvent.type(screen.getByTestId('pdv-recebido'), '10');
+    expect(screen.getByTestId('pdv-troco')).toHaveTextContent('2,00');
+  });
+
+  it('F9 finaliza a venda', async () => {
+    mockedCreate.mockResolvedValue({ id: 'o1', total: 20 });
+    mockedMarkPaid.mockResolvedValue({});
+    renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: 'Adicionar Marmita P' }));
+    act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'F9', bubbles: true })); });
+    await waitFor(() => expect(mockedCreate).toHaveBeenCalled());
+  });
+
   it('venda PIX abre modal de cobrança com QR e não marca pago', async () => {
     mockedCreate.mockResolvedValue({
       id: 'o1', total: 20, order_number: 'PED1',
@@ -227,7 +244,7 @@ describe('PdvBalcaoPage', () => {
     await waitFor(() => expect(mockedGetProducts).toHaveBeenCalled());
 
     scan('2000042003501');
-    await screen.findByText('Marmita P');
+    await within(await screen.findByTestId('pdv-comanda')).findByText('Marmita P');
 
     await userEvent.click(screen.getByText('PIX'));
     await userEvent.click(screen.getByTestId('pdv-finalizar'));

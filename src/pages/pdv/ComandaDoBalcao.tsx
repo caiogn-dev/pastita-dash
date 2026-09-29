@@ -51,9 +51,9 @@ export const ComandaDoBalcao: React.FC<ComandaDoBalcaoProps> = ({
 }) => {
   if (vazia) {
     return (
-      <div className="py-14 text-center text-fg-muted-token">
-        <QrCodeIcon className="mx-auto mb-3 h-12 w-12" />
-        Comanda vazia — bipe o primeiro produto.
+      <div className="py-8 text-center text-sm text-fg-muted-token">
+        <QrCodeIcon className="mx-auto mb-2 h-8 w-8 opacity-60" />
+        Comanda vazia
       </div>
     );
   }
