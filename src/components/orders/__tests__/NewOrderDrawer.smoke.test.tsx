@@ -11,7 +11,7 @@ import { NewOrderDrawer } from '../NewOrderDrawer';
 test('renders step 1 (Cliente) with progress when open', () => {
   render(<NewOrderDrawer isOpen storeSlug="loja-1" storeId="uuid-1" onClose={() => {}} />);
   expect(screen.getByText(/Novo Pedido/i)).toBeInTheDocument();
-  expect(screen.getByText(/Passo 1 de 5/i)).toBeInTheDocument();
+  expect(screen.getByText(/Passo 1 de 4/i)).toBeInTheDocument();
   expect(screen.getByTestId('customer-search')).toBeInTheDocument();
 });
 

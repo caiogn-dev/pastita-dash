@@ -19,7 +19,7 @@ beforeEach(() => {
 
 test('starts on step 1 (Cliente) with progress and X', () => {
   render(<MobileNewOrderScreen />);
-  expect(screen.getByText(/Passo 1 de 5/i)).toBeInTheDocument();
+  expect(screen.getByText(/Passo 1 de 4/i)).toBeInTheDocument();
   expect(screen.getByTestId('customer-search')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /pr.ximo/i })).toBeDisabled(); // no customer yet
 });

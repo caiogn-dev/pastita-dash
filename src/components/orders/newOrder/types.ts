@@ -17,7 +17,12 @@ export const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   fiado: 'Fiado',
 };
 
-export const STEP_LABELS = ['Cliente', 'Entrega', 'Itens', 'Ajustes', 'Confirmar'];
+/**
+ * Desconto e acréscimo eram um passo inteiro que quase todo pedido pulava:
+ * um "Próximo" a mais por pedido. Hoje moram recolhidos na confirmação.
+ */
+export const STEP_LABELS = ['Cliente', 'Entrega', 'Itens', 'Confirmar'];
+export const ULTIMO_PASSO = STEP_LABELS.length - 1;
 
 export interface Customer extends CustomerSearchResult {
   phone_number_edited?: string;

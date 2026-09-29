@@ -6,6 +6,7 @@ import { getErrorMessage } from '../../../services/api';
 import type { Product } from '../../../services/products';
 import type { CustomerSearchResult, UserAddress, DiscountType, RouteQuote } from '../../../types/crm';
 import type { CartItem, PaymentMethod, Customer } from './types';
+import { ULTIMO_PASSO } from './types';
 import { parseCoords, type Coords } from './parseCoords';
 import { enderecoParaOPedido, rotuloDoEndereco, eSoUmPontoNoMapa } from './enderecoDoPedido';
 import { precoVigenteDoProduto } from '../../../utils/precoVigente';
@@ -94,7 +95,7 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     setObservacoes(r.observacoes);
   };
 
-  const next = () => setStep((s) => Math.min(4, s + 1));
+  const next = () => setStep((s) => Math.min(ULTIMO_PASSO, s + 1));
   const back = () => setStep((s) => Math.max(0, s - 1));
 
   // Link e coordenada não são endereço para quem lê a comanda. Troca o texto
@@ -157,8 +158,13 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     }
   };
 
+  // Tocar de novo no mesmo produto soma uma unidade: é o gesto do balcão.
   const addToCart = (product: Product) =>
-    setCart((prev) => (prev.some((c) => c.product.id === product.id) ? prev : [...prev, { product, quantity: 1 }]));
+    setCart((prev) =>
+      prev.some((c) => c.product.id === product.id)
+        ? prev.map((c) => (c.product.id === product.id ? { ...c, quantity: c.quantity + 1 } : c))
+        : [...prev, { product, quantity: 1 }],
+    );
   const changeQty = (productId: string, qty: number) =>
     setCart((prev) => prev.map((c) => (c.product.id === productId ? { ...c, quantity: qty } : c)));
   const removeFromCart = (productId: string) =>

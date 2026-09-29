@@ -38,12 +38,6 @@ export function StepCliente({
           selectedCustomer={customer}
         />
       </div>
-      {!customer && (
-        <p className="text-xs text-fg-muted-token">
-          Digite nome ou telefone para buscar. Se não encontrar, um novo cliente
-          será criado.
-        </p>
-      )}
       {isNewCustomer && (
         <div className="rounded-xl border border-border-token bg-warning-soft p-3 space-y-3">
           <p className="text-xs font-semibold text-warning-token ">

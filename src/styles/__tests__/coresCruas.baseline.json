@@ -13,7 +13,6 @@
   "components/onboarding/wizard/steps/StepLogo.tsx": 1,
   "components/onboarding/wizard/steps/StepProduct.tsx": 1,
   "components/orders/EditOrderDrawer.tsx": 2,
-  "components/orders/newOrder/steps/StepConfirmar.tsx": 2,
   "components/products/VariantsManager.tsx": 1,
   "components/theme/ThemeToggle.tsx": 1,
   "components/ui/StringListField.tsx": 1,

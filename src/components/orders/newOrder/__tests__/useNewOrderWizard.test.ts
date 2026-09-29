@@ -73,3 +73,16 @@ test('link do Maps calcula por coordenadas e o pedido vai geolocalizado (Aline)'
   expect(payload.delivery_address).toEqual({ lat: -10.21659, lng: -48.33439, raw_address: link });
   expect(payload.delivery_fee).toBe(9);
 });
+
+test('são 4 passos: next para na confirmação (índice 3)', () => {
+  const { result } = renderHook(() => useNewOrderWizard({ storeSlug: 'loja-1' }));
+  act(() => { for (let i = 0; i < 6; i++) result.current.next(); });
+  expect(result.current.step).toBe(3);
+});
+
+test('adicionar de novo o mesmo produto soma a quantidade', () => {
+  const { result } = renderHook(() => useNewOrderWizard({ storeSlug: 'loja-1' }));
+  act(() => { result.current.addToCart(PRODUCT); });
+  act(() => { result.current.addToCart(PRODUCT); });
+  expect(result.current.cart).toEqual([{ product: PRODUCT, quantity: 2 }]);
+});

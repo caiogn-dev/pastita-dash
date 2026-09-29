@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { PAYMENT_LABELS, fmt } from '../types';
 import type { CartItem, PaymentMethod } from '../types';
 import type { DiscountType, RouteQuote } from '../../../../types/crm';
 import { precoVigenteDoProduto } from '../../../../utils/precoVigente';
-import { Textarea } from '../../../ui';
+import { Input, Textarea } from '../../../ui';
 
-/** Step 5 — resumo + forma de pagamento (o submit vive no rodapé do container) */
+/** Último passo — resumo, ajustes recolhidos e pagamento (o submit vive no rodapé do container) */
 export function StepConfirmar({
   cart,
   deliveryMethod,
@@ -21,6 +22,13 @@ export function StepConfirmar({
   setSuppressNotifications,
   observacoes,
   setObservacoes,
+  setDiscountType,
+  setDiscountValue,
+  discountReason = '',
+  setDiscountReason,
+  setSurchargeValue,
+  surchargeReason = '',
+  setSurchargeReason,
 }: {
   cart: CartItem[];
   deliveryMethod: 'delivery' | 'pickup';
@@ -37,7 +45,19 @@ export function StepConfirmar({
   /** Sai impresso na comanda. Vem preenchido quando o pedido nasce da conversa. */
   observacoes?: string;
   setObservacoes?: (v: string) => void;
+  setDiscountType?: (v: DiscountType) => void;
+  setDiscountValue?: (v: string) => void;
+  discountReason?: string;
+  setDiscountReason?: (v: string) => void;
+  setSurchargeValue?: (v: string) => void;
+  surchargeReason?: string;
+  setSurchargeReason?: (v: string) => void;
 }) {
+  // Aberto de saída só quando já existe ajuste: quem não mexe não vê campo.
+  const [ajustesAbertos, setAjustesAbertos] = useState(
+    Boolean(parseFloat(discountValue) || parseFloat(surchargeValue)),
+  );
+  const podeAjustar = Boolean(setDiscountValue && setSurchargeValue);
   const subtotal = cart.reduce((s, c) => s + precoVigenteDoProduto(c.product) * c.quantity, 0);
   const deliveryFee = deliveryMethod === 'delivery' ? (routeQuote?.fee ?? 0) : 0;
   const surcharge = parseFloat(surchargeValue) || 0;
@@ -96,7 +116,7 @@ export function StepConfirmar({
         {discountAmount > 0 && (
           <div className="flex justify-between px-3 py-2 text-sm">
             <span className="text-fg-muted-token">Desconto</span>
-            <span className="text-emerald-600 dark:text-emerald-400">- {fmt(discountAmount)}</span>
+            <span className="text-success-token">- {fmt(discountAmount)}</span>
           </div>
         )}
         <div className="flex justify-between px-3 py-3 bg-surface-2">
@@ -106,6 +126,73 @@ export function StepConfirmar({
           </span>
         </div>
       </div>
+
+      {podeAjustar && (
+        <div className="rounded-xl border border-border-token">
+          <button
+            type="button"
+            onClick={() => setAjustesAbertos((v) => !v)}
+            aria-expanded={ajustesAbertos}
+            className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold text-fg-token"
+          >
+            Desconto ou acréscimo
+            <ChevronDownIcon className={`h-4 w-4 text-fg-muted-token transition-transform ${ajustesAbertos ? 'rotate-180' : ''}`} />
+          </button>
+          {ajustesAbertos && (
+            <div className="space-y-3 border-t border-border-token px-3 py-3">
+              <div className="flex gap-2">
+                {(['percent', 'fixed'] as DiscountType[]).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setDiscountType?.(t)}
+                    aria-pressed={discountType === t}
+                    className={`flex-1 py-1.5 rounded-xl text-sm font-semibold border transition-colors ${
+                      discountType === t
+                        ? 'bg-brand border-brand text-on-brand'
+                        : 'border-border-token text-fg-muted-token hover:bg-surface-2'
+                    }`}
+                  >
+                    {t === 'percent' ? '%' : 'R$'}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  label="Valor do desconto"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={discountValue}
+                  onChange={(e) => setDiscountValue?.(e.target.value)}
+                  placeholder={discountType === 'percent' ? '10' : '5,00'}
+                />
+                <Input
+                  label="Motivo"
+                  value={discountReason}
+                  onChange={(e) => setDiscountReason?.(e.target.value)}
+                />
+                <Input
+                  label="Acréscimo (R$)"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={surchargeValue}
+                  onChange={(e) => setSurchargeValue?.(e.target.value)}
+                  placeholder="2,50"
+                />
+                <Input
+                  label="Motivo do acréscimo"
+                  value={surchargeReason}
+                  onChange={(e) => setSurchargeReason?.(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Payment method */}
       <div>
@@ -136,8 +223,7 @@ export function StepConfirmar({
           rows={2}
           value={observacoes ?? ''}
           onChange={(e) => setObservacoes(e.target.value)}
-          hint="Sai na comanda da cozinha."
-          maxLength={500}
+                    maxLength={500}
         />
       )}
 
@@ -151,10 +237,7 @@ export function StepConfirmar({
         />
         <span>
           <span className="block text-sm font-semibold text-fg-token">
-            Não notificar o cliente
-          </span>
-          <span className="block text-xs text-fg-muted-token">
-            Nenhuma mensagem automática de status será enviada no WhatsApp (ex.: cliente no balcão).
+            Não avisar o cliente no WhatsApp
           </span>
         </span>
       </label>

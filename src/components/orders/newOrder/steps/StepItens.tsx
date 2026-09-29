@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { MagnifyingGlassIcon, PlusIcon, MinusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect } from 'react';
+import { PlusIcon, MinusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { SearchInput } from '../../../ui';
 import toast from 'react-hot-toast';
 import { productsService } from '../../../../services/products';
 import type { Product } from '../../../../services/products';
@@ -24,19 +25,29 @@ export function StepItens({
   const [search, setSearch] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
+  // Todas as páginas. Com uma página só de 40, a Ivoneth (58 ativos) tinha
+  // 18 produtos que nunca apareciam aqui, nem buscando pelo nome.
   useEffect(() => {
     if (!storeId) {
       setLoadingProducts(false);
       return;
     }
+    let vivo = true;
     setLoadingProducts(true);
-    productsService
-      .getProducts({ store: storeId, is_active: true, page_size: 40, ordering: 'name' })
-      .then((data) => setProducts(data.results || []))
-      .catch(() => { setProducts([]); toast.error('Erro ao carregar produtos'); })
-      .finally(() => setLoadingProducts(false));
+    (async () => {
+      const todos: Product[] = [];
+      for (let page = 1; page <= 20; page++) {
+        const data = await productsService.getProducts({ store: storeId, is_active: true, page, page_size: 200, ordering: 'name' });
+        todos.push(...(data.results || []));
+        if (!data.next) break;
+      }
+      return todos;
+    })()
+      .then((todos) => { if (vivo) setProducts(todos); })
+      .catch(() => { if (vivo) { setProducts([]); toast.error('Erro ao carregar produtos'); } })
+      .finally(() => { if (vivo) setLoadingProducts(false); });
+    return () => { vivo = false; };
   }, [storeId]);
 
   const filteredProducts = products.filter((p) => {
@@ -44,27 +55,17 @@ export function StepItens({
     return p.name.toLowerCase().includes(search.toLowerCase());
   });
 
-  const handleSearch = (q: string) => {
-    clearTimeout(debounceRef.current);
-    setSearch(q);
-  };
-
-  const cartProductIds = new Set(cart.map((c) => c.product.id));
+  const qtdNoCarrinho = new Map(cart.map((c) => [c.product.id, c.quantity]));
   const subtotal = cart.reduce((s, c) => s + precoVigenteDoProduto(c.product) * c.quantity, 0);
 
   return (
     <div className="space-y-3">
-      {/* Search */}
-      <div className="flex items-center gap-2 px-3 py-2 superficie">
-        <MagnifyingGlassIcon className="h-4 w-4 text-fg-muted-token flex-shrink-0" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => handleSearch(e.target.value)}
-          placeholder="Buscar produto..."
-          className="flex-1 bg-transparent text-sm text-fg-token placeholder:text-fg-muted-token outline-none"
-        />
-      </div>
+      <SearchInput
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Buscar produto..."
+        autoFocus
+      />
 
       {/* Product list */}
       {loadingProducts ? (
@@ -74,25 +75,28 @@ export function StepItens({
           {search ? 'Nenhum produto encontrado' : 'Nenhum produto disponível'}
         </p>
       ) : (
-        <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+        <div className="max-h-72 overflow-y-auto space-y-1 pr-1">
           {filteredProducts.map((product) => {
-            const inCart = cartProductIds.has(product.id);
+            const qtd = qtdNoCarrinho.get(product.id) ?? 0;
             return (
               <button
                 key={product.id}
                 type="button"
-                onClick={() => !inCart && onAdd(product)}
-                disabled={inCart}
-                className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl border text-sm transition-colors text-left ${
-                  inCart
-                    ? 'border-brand bg-brand-soft opacity-60 cursor-default'
-                    : 'border-border-token hover:bg-surface-2 text-fg-token'
+                aria-label={`Adicionar ${product.name}`}
+                onClick={() => (qtd > 0 ? onQtyChange(product.id, qtd + 1) : onAdd(product))}
+                className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl border text-sm transition-colors text-left text-fg-token ${
+                  qtd > 0 ? 'border-brand bg-brand-soft' : 'border-border-token hover:bg-surface-2'
                 }`}
               >
-                <span className="truncate font-medium">{product.name}</span>
-                <span className="flex-shrink-0 text-success-token font-semibold">
-                  {inCart ? 'Adicionado' : fmt(precoVigenteDoProduto(product))}
+                <span className="flex items-center gap-2 min-w-0">
+                  {qtd > 0 && (
+                    <span className="flex-shrink-0 min-w-6 h-6 px-1.5 rounded-full bg-brand text-on-brand text-xs font-bold flex items-center justify-center">
+                      {qtd}
+                    </span>
+                  )}
+                  <span className="truncate font-medium">{product.name}</span>
                 </span>
+                <span className="flex-shrink-0 font-semibold">{fmt(precoVigenteDoProduto(product))}</span>
               </button>
             );
           })}
@@ -115,7 +119,7 @@ export function StepItens({
                   {item.product.name}
                 </p>
                 <p className="text-xs text-fg-muted-token">
-                  {fmt(precoVigenteDoProduto(item.product))} × {item.quantity} ={''}
+                  {fmt(precoVigenteDoProduto(item.product))} × {item.quantity} ={' '}
                   <strong>{fmt(precoVigenteDoProduto(item.product) * item.quantity)}</strong>
                 </p>
               </div>

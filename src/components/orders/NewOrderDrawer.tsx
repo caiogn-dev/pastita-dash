@@ -1,11 +1,10 @@
 /**
- * NewOrderDrawer — PDV: criação manual de pedido em 5 passos
+ * NewOrderDrawer — PDV: criação manual de pedido em 4 passos
  *
  * Passo 1: Cliente (busca + seleção)
  * Passo 2: Entrega (delivery/pickup + endereço + cálculo de taxa)
  * Passo 3: Itens (busca de produto + carrinho)
- * Passo 4: Ajustes (desconto / acréscimo opcionais)
- * Passo 5: Confirmar (resumo + forma de pagamento + botão criar)
+ * Passo 4: Confirmar (resumo + desconto/acréscimo recolhidos + pagamento)
  *
  * NOTA BACKEND: O endpoint POST /stores/{slug}/orders/ é o usado pelo dashboard.
  * Os campos manual_discount_* e surcharge_* dependem das migrações da Fase 1.
@@ -18,7 +17,7 @@ import {
   ChevronLeftIcon,
 } from '@heroicons/react/24/outline';
 import type { CustomerSearchResult } from '../../types/crm';
-import { STEP_LABELS } from './newOrder/types';
+import { STEP_LABELS, ULTIMO_PASSO } from './newOrder/types';
 import { useNewOrderWizard } from './newOrder/useNewOrderWizard';
 import { NewOrderSteps } from './newOrder/NewOrderSteps';
 import type { RascunhoDePedido } from './newOrder/rascunhoDaConversa';
@@ -194,7 +193,7 @@ export const NewOrderDrawer: React.FC<NewOrderDrawerProps> = ({
             <ChevronLeftIcon className="h-4 w-4" />
             Voltar
           </button>
-          {wiz.step < 4 ? (
+          {wiz.step < ULTIMO_PASSO ? (
             <button
               type="button"
               onClick={wiz.next}

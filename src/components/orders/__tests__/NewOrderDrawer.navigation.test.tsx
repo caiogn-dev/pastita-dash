@@ -47,21 +47,21 @@ function renderAt(overrides: Partial<NewOrderWizard> = {}) {
 }
 
 describe('NewOrderDrawer — voltar na etapa de confirmação', () => {
-  test('etapa Confirmar (4) tem botão Voltar que chama wiz.back', () => {
-    const wiz = renderAt({ step: 4 });
+  test('etapa Confirmar (3) tem botão Voltar que chama wiz.back', () => {
+    const wiz = renderAt({ step: 3 });
     const voltar = screen.getByRole('button', { name: /voltar/i });
     fireEvent.click(voltar);
     expect(wiz.back).toHaveBeenCalled();
   });
 
-  test('etapa Confirmar (4) tem botão Criar Pedido que chama handleSubmit', () => {
-    const wiz = renderAt({ step: 4 });
+  test('etapa Confirmar (3) tem botão Criar Pedido que chama handleSubmit', () => {
+    const wiz = renderAt({ step: 3 });
     fireEvent.click(screen.getByRole('button', { name: /criar pedido/i }));
     expect(wiz.handleSubmit).toHaveBeenCalled();
   });
 
   test('durante o submit, Voltar e Criar Pedido ficam desabilitados', () => {
-    renderAt({ step: 4, submitting: true });
+    renderAt({ step: 3, submitting: true });
     expect(screen.getByRole('button', { name: /voltar/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /criando pedido/i })).toBeDisabled();
   });
@@ -69,7 +69,7 @@ describe('NewOrderDrawer — voltar na etapa de confirmação', () => {
 
 describe('NewOrderDrawer — barra de progresso navegável', () => {
   test('etapas anteriores são clicáveis e pulam direto (setStep)', () => {
-    const wiz = renderAt({ step: 4 });
+    const wiz = renderAt({ step: 3 });
     fireEvent.click(screen.getByRole('button', { name: /ir para itens/i }));
     expect(wiz.setStep).toHaveBeenCalledWith(2);
   });
@@ -82,7 +82,7 @@ describe('NewOrderDrawer — barra de progresso navegável', () => {
 
 describe('NewOrderDrawer — atalho "editar itens" no resumo', () => {
   test('resumo da confirmação tem link Editar que volta pra etapa Itens', () => {
-    const wiz = renderAt({ step: 4 });
+    const wiz = renderAt({ step: 3 });
     fireEvent.click(screen.getByRole('button', { name: /editar itens/i }));
     expect(wiz.setStep).toHaveBeenCalledWith(2);
   });

@@ -5,7 +5,7 @@ import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/2
 import { useRootStore } from '../../stores/rootStore';
 import { useNewOrderWizard } from '../../components/orders/newOrder/useNewOrderWizard';
 import { NewOrderSteps } from '../../components/orders/newOrder/NewOrderSteps';
-import { STEP_LABELS } from '../../components/orders/newOrder/types';
+import { STEP_LABELS, ULTIMO_PASSO } from '../../components/orders/newOrder/types';
 
 export const MobileNewOrderScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ export const MobileNewOrderScreen: React.FC = () => {
     return <div className="p-6 text-center text-fg-muted">Selecione uma loja para criar um pedido.</div>;
   }
 
-  const isLast = wiz.step === 4;
+  const isLast = wiz.step === ULTIMO_PASSO;
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col bg-bg-secondary text-fg-primary">
