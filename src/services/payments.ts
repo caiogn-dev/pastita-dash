@@ -15,10 +15,12 @@ import { Payment, PaymentGateway, PaginatedResponse } from '../types';
 const BASE_URL = '/stores/payments';
 const GATEWAYS_URL = `${BASE_URL}/gateways`;
 
-interface BandeiraDeVale {
+export interface BandeiraDeVale {
   value: string;
   label: string;
   logo?: string;
+  /** Qual conexão cobra a bandeira: 'pagarme', 'cielo'. Vazio = só por link. */
+  gateway?: string;
 }
 
 /**

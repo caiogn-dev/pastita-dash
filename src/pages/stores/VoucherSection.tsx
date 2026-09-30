@@ -2,13 +2,11 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { CreditCardIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 import { Card, Button, Input } from '../../components/ui';
-import { paymentsService, type DadosDoGateway } from '../../services/payments';
+import { paymentsService, type BandeiraDeVale, type DadosDoGateway } from '../../services/payments';
+import AleloNoVale from './AleloNoVale';
 import logger from '../../services/logger';
 
-interface Bandeira {
-  value: string;
-  label: string;
-}
+type Bandeira = BandeiraDeVale;
 
 interface GatewayDeVale {
   id: string;
@@ -47,7 +45,14 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
   const [jaTemSegredo, setJaTemSegredo] = useState(false);
   const [secreta, setSecreta] = useState('');
   const [publica, setPublica] = useState('');
-  const [catalogo, setCatalogo] = useState<Bandeira[]>([]);
+  // O catálogo inteiro vem numa resposta só; cada bandeira diz qual conexão a
+  // cobra. As do Pagar.me viram toggles aqui; as da Cielo vão para o bloco dela.
+  const [todas, setTodas] = useState<Bandeira[]>([]);
+  const catalogo = useMemo(
+    () => todas.filter((b) => !b.gateway || b.gateway === 'pagarme'),
+    [todas],
+  );
+  const daCielo = useMemo(() => todas.filter((b) => b.gateway === 'cielo'), [todas]);
   const [marcadas, setMarcadas] = useState<string[]>([]);
   // Liga/desliga o recebimento por vale SEM perder a configuracao. O lojista
   // que para de aceitar hoje precisa poder voltar amanha sem recadastrar.
@@ -59,7 +64,7 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
   useEffect(() => {
     let vivo = true;
     paymentsService.getVoucherBrands()
-      .then((r) => { if (vivo) setCatalogo(r?.brands || []); })
+      .then((r) => { if (vivo) setTodas(r?.brands || []); })
       .catch((erroCatalogo) => {
         logger.error('Erro ao carregar catálogo de bandeiras de vale:', erroCatalogo);
       });
@@ -261,6 +266,8 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
           {salvando ? 'Salvando...' : 'Salvar'}
         </Button>
       </div>
+
+      {daCielo.length > 0 && <AleloNoVale storeId={storeId} bandeiras={daCielo} />}
     </Card>
   );
 };
