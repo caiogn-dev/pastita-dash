@@ -147,7 +147,7 @@ describe('NotasFiscaisPage', () => {
   it('mostra para quem a nota já foi enviada', async () => {
     mocked.listarNotas.mockResolvedValue({
       habilitado: true, ambiente: 'producao', resumo: RESUMO,
-      notas: [{ ...NOTA, email_enviado_para: 'financeiro@pulveriza.com' }],
+      notas: [{ ...NOTA, email_enviado_para: 'financeiro@pulveriza.com', email_enviado_em: '2026-09-30T15:00:00Z' }],
     } as never);
     renderizar();
     expect((await screen.findAllByText(/financeiro@pulveriza\.com/)).length).toBeGreaterThan(0);
@@ -230,7 +230,7 @@ describe('NotasFiscaisPage', () => {
 
     it('com e-mail preenchido, a nota autorizada já sai para o destinatário', async () => {
       mocked.emitir.mockResolvedValue({
-        ...NOTA, id: 'n5', email_enviado_para: 'sinpefto@gmail.com', email_erro: '',
+        ...NOTA, id: 'n5', email_enviado_para: 'sinpefto@gmail.com', email_enviado_em: '2026-09-30T15:00:00Z', email_erro: '',
       } as never);
       const dialogo = await abrir();
       fireEvent.change(within(dialogo).getByLabelText('Número'), { target: { value: '2' } });
@@ -264,6 +264,19 @@ describe('NotasFiscaisPage', () => {
       fireEvent.change(within(dialogo).getByLabelText('E-mail'), { target: { value: 'sem-arroba' } });
       fireEvent.click(within(dialogo).getByRole('button', { name: 'Emitir NF-e' }));
       expect(within(dialogo).getByLabelText('E-mail')).toHaveAttribute('aria-invalid', 'true');
+      expect(mocked.emitir).not.toHaveBeenCalled();
+    });
+
+    it('nome com mais de 60 letras é barrado antes da SEFAZ recusar', async () => {
+      const dialogo = await abrir();
+      fireEvent.change(within(dialogo).getByLabelText('Número'), { target: { value: '2' } });
+      fireEvent.change(within(dialogo).getByLabelText('Bairro'), { target: { value: 'Plano Diretor Sul' } });
+      fireEvent.change(within(dialogo).getByLabelText('Nome ou razão social'), {
+        target: { value: 'Sindicato dos Servidores da Polícia Federal no Estado do Tocantins' },
+      });
+      fireEvent.click(within(dialogo).getByRole('button', { name: 'Emitir NF-e' }));
+      expect(within(dialogo).getByLabelText('Nome ou razão social')).toHaveAttribute('aria-invalid', 'true');
+      expect(within(dialogo).getByText(/Máx\. 60/)).toBeInTheDocument();
       expect(mocked.emitir).not.toHaveBeenCalled();
     });
 

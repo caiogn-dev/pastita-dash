@@ -118,6 +118,16 @@ export const NotasFiscaisPage: React.FC = () => {
 
   const recarregar = () => setTentativa((n) => n + 1);
 
+  // Nota na SEFAZ é consultada a cada busca da lista — e o e-mail guardado
+  // sai quando ela é autorizada. Com a tela aberta, a lista se atualiza
+  // sozinha enquanto houver nota processando.
+  const temNotaNaSefaz = (dados?.notas ?? []).some((n) => n.status === 'pending');
+  useEffect(() => {
+    if (!temNotaNaSefaz) return undefined;
+    const proxima = setTimeout(recarregar, 15_000);
+    return () => clearTimeout(proxima);
+  }, [temNotaNaSefaz, dados]);
+
   const fecharEmissao = () => {
     setEmissao(null);
     if (pedidoDaUrl) setParametros({}, { replace: true });
@@ -186,7 +196,7 @@ export const NotasFiscaisPage: React.FC = () => {
     }
     if (nota.status === 'authorized') {
       acoes.push({
-        rotulo: nota.email_enviado_para ? 'Enviar por e-mail de novo' : 'Enviar por e-mail',
+        rotulo: nota.email_enviado_em ? 'Enviar por e-mail de novo' : 'Enviar por e-mail',
         icone: <EnvelopeIcon className="h-4 w-4" />,
         onClick: () => abrirEnvio(nota),
       });
@@ -270,7 +280,7 @@ export const NotasFiscaisPage: React.FC = () => {
                 {nota.error_message}
               </span>
             )}
-            {nota.email_enviado_para && (
+            {nota.email_enviado_para && nota.email_enviado_em && (
               <span className="mt-1 flex min-w-0 items-center gap-1 text-xs text-fg-muted-token" title="Enviada por e-mail">
                 <EnvelopeIcon className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 <span className="truncate">{nota.email_enviado_para}</span>

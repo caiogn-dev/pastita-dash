@@ -42,6 +42,8 @@ const OBRIGATORIOS_DA_NFE: (keyof EnderecoFiscal)[] = [
 
 type Erros = Partial<Record<'documento' | 'nome' | 'email' | keyof EnderecoFiscal, string>>;
 
+const LIMITE_DA_SEFAZ = 60;
+
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const OPCOES_DE_MODELO = [
@@ -166,6 +168,13 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
       for (const campo of OBRIGATORIOS_DA_NFE) {
         if (!endereco[campo].trim()) faltas[campo] = 'Obrigatório';
       }
+      // O schema da NF-e corta em 60: acima disso a nota é recusada inteira
+      // (30/set, "Nome destinatario é muito longo"). Abreviar é decisão de
+      // quem emite, não do sistema.
+      if (nome.trim().length > LIMITE_DA_SEFAZ) faltas.nome = `Máx. ${LIMITE_DA_SEFAZ} (${nome.trim().length})`;
+      for (const campo of ['street', 'complement', 'neighborhood'] as const) {
+        if (endereco[campo].trim().length > LIMITE_DA_SEFAZ) faltas[campo] = `Máx. ${LIMITE_DA_SEFAZ}`;
+      }
       if (somenteDigitos(endereco.zip_code).length !== 8) faltas.zip_code = 'Inválido';
     }
     return faltas;
@@ -209,14 +218,16 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
         if (nota.email_erro) {
           toast.success(`${NOME_MODELO[modelo]} autorizada`);
           toast.error(`O e-mail não saiu: ${nota.email_erro}`);
-        } else if (nota.email_enviado_para) {
+        } else if (nota.email_enviado_em) {
           toast.success(`${NOME_MODELO[modelo]} autorizada e enviada para ${nota.email_enviado_para}`);
         } else {
           toast.success(`${NOME_MODELO[modelo]} autorizada`);
         }
         onFechar();
       } else if (nota.status === 'pending') {
-        toast(`${NOME_MODELO[modelo]} enviada, aguardando a SEFAZ`);
+        toast(nota.email_enviado_para
+          ? `${NOME_MODELO[modelo]} na SEFAZ; o e-mail sai quando for autorizada`
+          : `${NOME_MODELO[modelo]} enviada, aguardando a SEFAZ`);
         onFechar();
       } else {
         // A recusa fica na tela com o formulário aberto: o motivo costuma
