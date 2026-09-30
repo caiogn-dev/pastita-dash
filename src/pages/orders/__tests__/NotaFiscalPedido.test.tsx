@@ -6,7 +6,9 @@
  * backend — a SEFAZ rejeitaria a nota inteira e a venda ficaria sem cupom.
  */
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render as renderSemRota, screen, waitFor, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { MemoryRouter } from 'react-router-dom';
 import NotaFiscalPedido from '../NotaFiscalPedido';
 import { ordersService } from '../../../services';
 
@@ -25,6 +27,9 @@ jest.mock('react-hot-toast', () => ({
 }));
 
 const mocked = ordersService as jest.Mocked<typeof ordersService>;
+
+// O botão de NF-e é um link para a página de Notas: precisa de roteador.
+const render = (ui: React.ReactElement) => renderSemRota(<MemoryRouter>{ui}</MemoryRouter>);
 
 describe('NotaFiscalPedido', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -72,7 +77,7 @@ describe('NotaFiscalPedido', () => {
   it('barra CPF com dígito errado antes de chamar o backend', async () => {
     mocked.consultarNfce.mockResolvedValue({ habilitado: true, documentos: [] } as never);
     render(<NotaFiscalPedido orderId="1" storeSlug="loja" />);
-    const campo = await screen.findByPlaceholderText(/obrigatório na NF-e/i);
+    const campo = await screen.findByPlaceholderText(/CPF ou CNPJ/i);
     fireEvent.change(campo, { target: { value: '529.982.247-24' } });
     fireEvent.click(screen.getByText('Emitir NFC-e (consumidor)'));
     await waitFor(() => expect(mocked.emitirNfce).not.toHaveBeenCalled());
@@ -92,7 +97,7 @@ describe('NotaFiscalPedido', () => {
     mocked.consultarNfce.mockResolvedValue({ habilitado: true, documentos: [] } as never);
     mocked.emitirNfce.mockResolvedValue({ id: 'a', status: 'authorized', numero: '1' } as never);
     render(<NotaFiscalPedido orderId="1" storeSlug="loja" />);
-    const campo = await screen.findByPlaceholderText(/obrigatório na NF-e/i);
+    const campo = await screen.findByPlaceholderText(/CPF ou CNPJ/i);
     fireEvent.change(campo, { target: { value: '529.982.247-25' } });
     fireEvent.click(screen.getByText('Emitir NFC-e (consumidor)'));
     await waitFor(() =>
@@ -148,30 +153,20 @@ describe('NotaFiscalPedido', () => {
     expect(confirmar).not.toBeDisabled();
   });
 
-  it('só oferece NF-e depois que o cliente é identificado', async () => {
+  it('NF-e leva para a página de Notas, com o pedido e o CNPJ digitado', async () => {
+    // 30/set: a NF-e de um pedido de retirada travou pedindo número e bairro
+    // do destinatário, e este bloco só tinha o campo do CNPJ. O destinatário
+    // se preenche na página de Notas — o botão leva para lá, não emite às cegas.
     mocked.consultarNfce.mockResolvedValue({ habilitado: true, documentos: [] } as never);
     render(<NotaFiscalPedido orderId="1" storeSlug="loja" />);
-    const campo = await screen.findByPlaceholderText(/obrigatório na NF-e/i);
-    // sem documento: NF-e não aparece, e a tela diz o porquê
-    expect(screen.queryByText('Emitir NF-e (empresa)')).not.toBeInTheDocument();
-    expect(screen.getByText(/Informe o CNPJ do cliente/)).toBeInTheDocument();
+    const campo = await screen.findByPlaceholderText(/CPF ou CNPJ/i);
+    expect(screen.getByRole('link', { name: 'Emitir NF-e (empresa)' }))
+      .toHaveAttribute('href', '/stores/loja/notas-fiscais?pedido=1');
 
     fireEvent.change(campo, { target: { value: '11.222.333/0001-81' } });
-    expect(screen.getByText('Emitir NF-e (empresa)')).toBeInTheDocument();
-  });
-
-  it('emite NF-e com modelo 55 e o CNPJ digitado', async () => {
-    mocked.consultarNfce.mockResolvedValue({ habilitado: true, documentos: [] } as never);
-    mocked.emitirNfce.mockResolvedValue({ id: 'b', modelo: '55', status: 'authorized' } as never);
-    render(<NotaFiscalPedido orderId="1" storeSlug="loja" />);
-    const campo = await screen.findByPlaceholderText(/obrigatório na NF-e/i);
-    fireEvent.change(campo, { target: { value: '11.222.333/0001-81' } });
-    fireEvent.click(screen.getByText('Emitir NF-e (empresa)'));
-    await waitFor(() =>
-      expect(mocked.emitirNfce).toHaveBeenCalledWith(
-        '1', { modelo: '55', cpf: '11.222.333/0001-81' }, 'loja',
-      ),
-    );
+    expect(screen.getByRole('link', { name: 'Emitir NF-e (empresa)' }))
+      .toHaveAttribute('href', '/stores/loja/notas-fiscais?pedido=1&documento=11222333000181');
+    expect(mocked.emitirNfce).not.toHaveBeenCalled();
   });
 
   it('mostra NFC-e e NF-e do mesmo pedido lado a lado', async () => {

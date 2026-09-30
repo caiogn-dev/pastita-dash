@@ -97,6 +97,7 @@ const PrintSettingsPage = lazy(() => import('./pages/printing/PrintSettingsPage'
 const CashPage = lazy(() => import('./pages/cash/CashPage'));
 const PdvBalcaoPage = lazy(() => import('./pages/pdv/PdvBalcaoPage'));
 const EtiquetasPage = lazy(() => import('./pages/pdv/EtiquetasPage'));
+const NotasFiscaisPage = lazy(() => import('./pages/fiscal/NotasFiscaisPage'));
 const DesignerDeEtiqueta = lazy(() => import('./pages/pdv/DesignerDeEtiqueta'));
 const IngredientsPage = lazy(() => import('./pages/nutrition/IngredientsPage'));
 const KdsPage = lazy(() => import('./pages/kds/KdsPage'));
@@ -284,6 +285,7 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId/storefront" element={<PageBoundary><StorefrontPage /></PageBoundary>} />
         <Route path="stores/:storeId/delivery" element={<PageBoundary><DeliveryZonesPage /></PageBoundary>} />
         <Route path="stores/:storeId/printing" element={<PageBoundary><PrintSettingsPage /></PageBoundary>} />
+        <Route path="stores/:storeId/notas-fiscais" element={<PageBoundary><NotasFiscaisPage /></PageBoundary>} />
         <Route path="stores/:storeId/cash" element={<PageBoundary><CashPage /></PageBoundary>} />
         <Route path="stores/:storeId/pdv" element={<PageBoundary><PdvBalcaoPage /></PageBoundary>} />
         <Route path="stores/:storeId/etiquetas" element={<PageBoundary><EtiquetasPage /></PageBoundary>} />

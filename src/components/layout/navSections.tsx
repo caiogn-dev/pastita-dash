@@ -16,7 +16,7 @@ import {
   ArrowUpTrayIcon, UsersIcon, LightBulbIcon, RectangleStackIcon, HandRaisedIcon,
   ArrowPathIcon,
   ArrowPathRoundedSquareIcon, WrenchScrewdriverIcon, SignalIcon, ArrowTrendingUpIcon,
-  BellAlertIcon,
+  BellAlertIcon, CurrencyDollarIcon,
 } from '@heroicons/react/24/outline';
 
 export interface NavItem {
@@ -218,6 +218,17 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
         { name: 'Cozinha (KDS)',     href: storeHref('kds'),  icon: FireIcon },
         // Bipar o código de barras da comanda avança o pedido para a saída.
         { name: 'Expedição',         href: storeHref('expedicao'), icon: ArchiveBoxArrowDownIcon },
+      ],
+    },
+
+    {
+      // A nota fiscal só existia como botão dentro de cada pedido: não havia
+      // lista do que saiu, nem onde registrar para quem a nota é emitida.
+      grupo: 'Operação',
+      label: 'Financeiro',
+      icon: CurrencyDollarIcon,
+      items: [
+        { name: 'Notas fiscais', href: storeHref('notas-fiscais'), icon: DocumentTextIcon },
       ],
     },
 

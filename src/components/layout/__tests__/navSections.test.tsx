@@ -168,3 +168,11 @@ describe('Caixa só aparece para quem usa dinheiro vivo', () => {
     expect(temCaixa({ caixaEnabled: false })).toBe(false);
   });
 });
+
+it('Financeiro leva às Notas fiscais', () => {
+  // A nota só existia como botão dentro do pedido: sem lista, sem onde
+  // registrar o destinatário. Agora é destino, com URL.
+  expect(acha('Financeiro').items.map((i) => [i.name, i.href])).toEqual([
+    ['Notas fiscais', '/stores/loja-x/notas-fiscais'],
+  ]);
+});

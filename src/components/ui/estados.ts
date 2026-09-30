@@ -178,3 +178,17 @@ const MODO: Record<string, Estado> = {
 export function modoDeAtendimento(modo?: string | null): Estado {
   return MODO[(modo || 'auto').toLowerCase()] ?? { rotulo: modo || '—', tone: 'neutral' };
 }
+
+// ─── Nota fiscal ─────────────────────────────────────────────────────────────
+
+const NOTA: Record<string, Estado> = {
+  pending: { rotulo: 'Na SEFAZ', tone: 'info' },
+  authorized: { rotulo: 'Autorizada', tone: 'success' },
+  rejected: { rotulo: 'Rejeitada', tone: 'danger' },
+  error: { rotulo: 'Falhou', tone: 'danger' },
+  cancelled: { rotulo: 'Cancelada', tone: 'neutral' },
+};
+
+export function estadoDeNota(status?: string | null): Estado {
+  return NOTA[(status || '').toLowerCase()] ?? { rotulo: status || '—', tone: 'neutral' };
+}

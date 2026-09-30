@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Modal } from '../../components/common';
 import { DocumentTextIcon, ArrowTopRightOnSquareIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { ordersService, getErrorMessage } from '../../services';
 import type { NotaFiscal } from '../../services/orders';
 import logger from '../../services/logger';
+import { classificarDocumento, somenteDigitos } from '../../utils/documento';
 
 interface NotaFiscalPedidoProps {
   orderId: string;
@@ -25,46 +27,6 @@ const BOTAO =
 
 const CAMPO =
   'w-full rounded border border-border-token bg-surface px-3 py-2 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand';
-
-/** CPF/CNPJ só entra na nota se fechar o dígito verificador — número errado
- *  faz a SEFAZ recusar a nota inteira (rejeição 237). Validamos aqui, onde o
- *  operador ainda pode corrigir olhando pro cliente. */
-const somenteDigitos = (valor: string) => valor.replace(/\D/g, '');
-
-const cpfValido = (valor: string) => {
-  const cpf = somenteDigitos(valor);
-  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
-  const digito = (base: string, pesoInicial: number) => {
-    const soma = [...base].reduce((acc, d, i) => acc + Number(d) * (pesoInicial - i), 0);
-    const resto = soma % 11;
-    return resto < 2 ? '0' : String(11 - resto);
-  };
-  const d1 = digito(cpf.slice(0, 9), 10);
-  return cpf.slice(9) === d1 + digito(cpf.slice(0, 9) + d1, 11);
-};
-
-const cnpjValido = (valor: string) => {
-  const cnpj = somenteDigitos(valor);
-  if (cnpj.length !== 14 || /^(\d)\1{13}$/.test(cnpj)) return false;
-  const digito = (base: string) => {
-    const pesos = base.length === 12
-      ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-      : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-    const soma = [...base].reduce((acc, d, i) => acc + Number(d) * pesos[i], 0);
-    const resto = soma % 11;
-    return resto < 2 ? '0' : String(11 - resto);
-  };
-  const d1 = digito(cnpj.slice(0, 12));
-  return cnpj.slice(12) === d1 + digito(cnpj.slice(0, 12) + d1);
-};
-
-/** '' = documento imprestável; senão diz se é pessoa física ou empresa. */
-const classificarDocumento = (valor: string): 'cpf' | 'cnpj' | '' => {
-  const numero = somenteDigitos(valor);
-  if (cpfValido(numero)) return 'cpf';
-  if (cnpjValido(numero)) return 'cnpj';
-  return '';
-};
 
 const ROTULO_STATUS: Record<string, string> = {
   pending: 'Processando na SEFAZ',
@@ -130,11 +92,6 @@ export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, sto
       toast.error('CPF/CNPJ inválido — confira o número.');
       return;
     }
-    // NF-e não tem "consumidor não identificado": sem documento não existe.
-    if (modelo === '55' && !tipo) {
-      toast.error('NF-e exige o CPF ou CNPJ do destinatário.');
-      return;
-    }
     setEmitindo(modelo);
     try {
       const resultado = await ordersService.emitirNfce(
@@ -186,6 +143,9 @@ export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, sto
   if (!habilitado) return null;
 
   const tipoDigitado = classificarDocumento(documento);
+  const linkDaNfe = `/stores/${storeSlug ?? ''}/notas-fiscais?pedido=${orderId}${
+    tipoDigitado ? `&documento=${somenteDigitos(documento)}` : ''
+  }`;
   const jaEmitida = (modelo: '65' | '55') =>
     documentos.some(d => d.modelo === modelo && (d.status === 'authorized' || d.status === 'pending'));
 
@@ -207,7 +167,7 @@ export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, sto
               inputMode="numeric"
               value={documento}
               onChange={e => setDocumento(e.target.value)}
-              placeholder="Opcional na NFC-e, obrigatório na NF-e"
+              placeholder="CPF ou CNPJ (opcional)"
               className={`${CAMPO} mt-1`}
             />
           </label>
@@ -219,19 +179,13 @@ export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, sto
             </button>
           )}
 
-          {/* NF-e só se oferece quando faz sentido: cliente identificado.
-              Botão que só sabe dar erro é pior que botão ausente. */}
-          {!jaEmitida('55') && tipoDigitado !== '' && (
-            <button onClick={() => emitir('55')} disabled={emitindo !== null} className={BOTAO}>
+          {/* A NF-e precisa do destinatário inteiro (razão social, endereço
+              com número e bairro). Isso se preenche na página de Notas. */}
+          {!jaEmitida('55') && (
+            <Link to={linkDaNfe} className={BOTAO}>
               <DocumentTextIcon className="h-4 w-4" />
-              {emitindo === '55' ? 'Emitindo…' : 'Emitir NF-e (empresa)'}
-            </button>
-          )}
-          {!jaEmitida('55') && tipoDigitado === '' && (
-            <p className="text-xs text-fg-muted-token">
-              Informe o CNPJ do cliente para liberar a NF-e (modelo 55). Ela também exige o
-              endereço completo no pedido.
-            </p>
+              Emitir NF-e (empresa)
+            </Link>
           )}
         </div>
       )}
