@@ -407,7 +407,13 @@ export const ConversationsPage: React.FC = () => {
         <Button
           variant="secondary"
           onClick={() => void loadConversations(false)}
-          leftIcon={<ArrowPathIcon className={cn('h-4 w-4', refreshing && 'animate-spin')} />}
+          // `isLoading` mostra o spinner e desabilita o botão enquanto a busca
+          // está em voo. Sem isto, um refresh manual (que liga `isLoading`, não
+          // `refreshing`, e já não cai no `PageLoading` depois da 1ª carga)
+          // parecia não fazer nada e aceitava cliques repetidos que
+          // sobrepunham requisições.
+          isLoading={isLoading || refreshing}
+          leftIcon={<ArrowPathIcon className="h-4 w-4" />}
         >
           Atualizar
         </Button>

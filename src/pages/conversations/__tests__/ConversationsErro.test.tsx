@@ -13,6 +13,7 @@
  * garantimos o erro acionável (com "Tentar novamente") no lugar do vazio, e que
  * o caminho de sucesso continua mostrando as conversas reais.
  */
+import { StrictMode } from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
@@ -84,35 +85,31 @@ test('falha sem cache → erro acionável, nunca o vazio enganoso de "nenhuma co
 });
 
 test('rejeição de requisição obsoleta não sobrepõe o resultado da mais recente', async () => {
-  // Cenário de corrida (StrictMode monta duas vezes; polling e botão se
-  // sobrepõem): uma busca antiga ainda em voo rejeita DEPOIS que a mais recente
-  // já respondeu vazio (vazio legítimo). A rejeição obsoleta não pode ligar o
-  // estado de erro e apagar o vazio válido.
+  // Cenário de corrida: sob `React.StrictMode` (usado no `main.tsx`) o efeito de
+  // montagem dispara `loadConversations` DUAS vezes — o polling de 60s também
+  // sobrepõe buscas. A 1ª (obsoleta) fica em voo e rejeita DEPOIS que a 2ª (a
+  // mais recente) já respondeu vazio (vazio legítimo). A rejeição obsoleta não
+  // pode ligar o estado de erro e apagar o vazio válido.
   let rejeitarObsoleta: (e: unknown) => void = () => {};
   const obsoleta = new Promise((_, reject) => {
     rejeitarObsoleta = reject;
   });
   getUniversalMock
-    .mockResolvedValueOnce({ results: [], count: 0 }) // montagem: vazio legítimo → mostra a UI e o botão
-    .mockReturnValueOnce(obsoleta) // Atualizar #1 — fica em voo e rejeita depois (obsoleta)
-    .mockResolvedValueOnce({ results: [], count: 0 }); // Atualizar #2 — a mais recente
+    .mockReturnValueOnce(obsoleta) // 1ª montagem (StrictMode) — fica em voo e rejeita depois
+    .mockResolvedValueOnce({ results: [], count: 0 }); // 2ª montagem — a mais recente
 
   render(
-    <MemoryRouter>
-      <ConversationsPage />
-    </MemoryRouter>,
+    <StrictMode>
+      <MemoryRouter>
+        <ConversationsPage />
+      </MemoryRouter>
+    </StrictMode>,
   );
 
-  // Vazio legítimo da carga inicial (com o botão Atualizar disponível).
+  // A mais recente resolveu vazio → vazio legítimo.
   expect(await screen.findByText(/nenhuma conversa encontrada/i)).toBeInTheDocument();
 
-  // Duas atualizações rápidas: a #1 fica em voo (obsoleta); a #2 é a mais
-  // recente e resolve vazio.
-  fireEvent.click(screen.getByRole('button', { name: /atualizar/i }));
-  fireEvent.click(screen.getByRole('button', { name: /atualizar/i }));
-  await waitFor(() => expect(getUniversalMock).toHaveBeenCalledTimes(3));
-
-  // Agora a #1 (obsoleta) rejeita: NÃO pode virar "não foi possível carregar".
+  // Agora a 1ª (obsoleta) rejeita: NÃO pode virar "não foi possível carregar".
   await act(async () => {
     rejeitarObsoleta(new Error('500'));
     await Promise.resolve();
@@ -137,4 +134,40 @@ test('sucesso → renderiza as conversas, sem estado de erro', async () => {
   expect(
     screen.queryByText(/não foi possível carregar as conversas/i),
   ).not.toBeInTheDocument();
+});
+
+test('refresh manual expõe estado pendente: botão desabilita enquanto a busca está em voo', async () => {
+  // Regressão apontada na review (Codex, P2): depois da 1ª carga, o botão
+  // Atualizar liga `isLoading` (não `refreshing`) e já não cai no PageLoading,
+  // então sem feedback ele parecia não fazer nada e aceitava cliques repetidos.
+  // O botão precisa expor o estado pendente (spinner + desabilitado).
+  let resolverRefresh: (v: unknown) => void = () => {};
+  const refreshEmVoo = new Promise((resolve) => {
+    resolverRefresh = resolve;
+  });
+  getUniversalMock
+    .mockResolvedValueOnce({ results: [umaConversa()], count: 1 }) // 1ª carga
+    .mockReturnValueOnce(refreshEmVoo); // refresh manual — fica em voo
+
+  render(
+    <MemoryRouter>
+      <ConversationsPage />
+    </MemoryRouter>,
+  );
+
+  expect((await screen.findAllByText(/maria compradora/i)).length).toBeGreaterThan(0);
+
+  const botaoAtualizar = screen.getByRole('button', { name: /atualizar/i });
+  expect(botaoAtualizar).toBeEnabled();
+
+  // Dispara o refresh: enquanto em voo, o botão fica desabilitado (feedback).
+  fireEvent.click(botaoAtualizar);
+  await waitFor(() => expect(botaoAtualizar).toBeDisabled());
+
+  // Concluída a busca, volta a ficar clicável.
+  await act(async () => {
+    resolverRefresh({ results: [umaConversa()], count: 1 });
+    await Promise.resolve();
+  });
+  await waitFor(() => expect(botaoAtualizar).toBeEnabled());
 });
