@@ -14,6 +14,20 @@ interface GatewayDaCielo {
   configuration?: { voucher_brands?: string[]; sop_client_id?: string };
 }
 
+// Merchant ID e Client ID são GUIDs. Um ponto final colado na cópia (30/09)
+// fez a Cielo responder 500 no checkout sem dizer por quê.
+const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MERCHANT_KEY = /^[A-Za-z0-9]{40}$/;
+
+/** Primeira mensagem de campo que o backend devolveu, se houver. */
+function erroDoServidor(falha: unknown): string {
+  const dados = (falha as { response?: { data?: Record<string, unknown> } })?.response?.data;
+  if (!dados || typeof dados !== 'object') return '';
+  const primeiro = Object.values(dados)[0];
+  const texto = Array.isArray(primeiro) ? primeiro[0] : primeiro;
+  return typeof texto === 'string' ? texto : '';
+}
+
 interface AleloNoValeProps {
   storeId: string;
   /** As bandeiras que o backend diz que a Cielo cobra — hoje, só a Alelo. */
@@ -61,9 +75,24 @@ export const AleloNoVale: React.FC<AleloNoValeProps> = ({ storeId, bandeiras }) 
   const salvar = useCallback(async () => {
     setErro('');
     setSalvo(false);
-    const faltaSegredo = !jaTemSegredo && (!merchantKey || !clientSecret);
-    if (aceita && (!merchantId.trim() || !clientId.trim() || faltaSegredo)) {
+    const mid = merchantId.trim();
+    const cid = clientId.trim();
+    const chave = merchantKey.trim();
+    const faltaSegredo = !jaTemSegredo && (!chave || !clientSecret.trim());
+    if (aceita && (!mid || !cid || faltaSegredo)) {
       setErro('Preencha as quatro chaves da Cielo para receber com Alelo.');
+      return;
+    }
+    if (mid && !GUID.test(mid)) {
+      setErro('Merchant ID inválido: são 36 caracteres no formato xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.');
+      return;
+    }
+    if (chave && !MERCHANT_KEY.test(chave)) {
+      setErro('Merchant Key inválida: são 40 letras e números.');
+      return;
+    }
+    if (cid && !GUID.test(cid)) {
+      setErro('Client ID inválido: são 36 caracteres no formato xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.');
       return;
     }
 
@@ -73,17 +102,17 @@ export const AleloNoVale: React.FC<AleloNoValeProps> = ({ storeId, bandeiras }) 
         store: storeId,
         name: 'Cielo (Alelo)',
         gateway_type: 'cielo',
-        public_key: merchantId.trim(),
+        public_key: mid,
         is_enabled: aceita,
         is_sandbox: teste,
         configuration: {
           voucher_brands: bandeiras.map((b) => b.value),
-          sop_client_id: clientId.trim(),
+          sop_client_id: cid,
         },
       };
       // Segredo em branco = "não mexi nisso". O backend mantém o que já tem.
-      if (merchantKey) corpo.api_key = merchantKey;
-      if (clientSecret) corpo.api_secret = clientSecret;
+      if (chave) corpo.api_key = chave;
+      if (clientSecret.trim()) corpo.api_secret = clientSecret.trim();
 
       if (gatewayId) {
         await paymentsService.updateGateway(gatewayId, corpo);
@@ -97,7 +126,7 @@ export const AleloNoVale: React.FC<AleloNoValeProps> = ({ storeId, bandeiras }) 
       setSalvo(true);
     } catch (erroSalvar) {
       logger.error('Erro ao salvar a conexão da Cielo:', erroSalvar);
-      setErro('Não consegui salvar. Confira as chaves e tente de novo.');
+      setErro(erroDoServidor(erroSalvar) || 'Não consegui salvar. Confira as chaves e tente de novo.');
     } finally {
       setSalvando(false);
     }
