@@ -8,7 +8,7 @@
  * Instagram, esmeralda do WhatsApp e avatar com cor sorteada por nome: cor de
  * decoração, não de estado. Saíram.
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -23,7 +23,7 @@ import {
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
 
-import { PageLoading } from '../../components/common';
+import { EmptyState, PageLoading } from '../../components/common';
 import {
   Badge,
   Button,
@@ -44,6 +44,7 @@ import { conversationsService, getErrorMessage } from '../../services';
 import { getInitials } from '../../utils/avatar';
 import type { Conversation, ConversationNote, Message, UniversalConversation } from '../../types';
 import { cn } from '../../utils/cn';
+import { estadoDaLista } from '../../utils/estadoDaLista';
 
 type PlatformFilter = 'all' | 'whatsapp' | 'instagram' | 'messenger';
 type WhatsAppAction = 'markAsRead' | 'switchToHuman' | 'switchToAuto' | 'resolve' | 'close' | 'reopen';
@@ -96,7 +97,16 @@ export const ConversationsPage: React.FC = () => {
   const navigate = useNavigate();
   const [conversations, setConversations] = useState<UniversalConversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [erro, setErro] = useState(false);
+  // Uma busca já DEU CERTO alguma vez. É o que separa "vazio de verdade" de
+  // "vazio porque caiu" — sem isso a tela adivinha, e adivinhava errado.
+  const [carregouAlgumaVez, setCarregouAlgumaVez] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  // Sequência da busca em voo. O polling (60s) e o botão Atualizar podem
+  // sobrepor buscas; sob StrictMode a montagem dispara duas. Só a mais recente
+  // aplica seu resultado — sem isto, a rejeição de uma busca obsoleta ligaria
+  // `erro` depois de a mais nova já ter pintado a lista.
+  const requisicaoRef = useRef(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('all');
   const [selectedWhatsAppId, setSelectedWhatsAppId] = useState<string | null>(null);
@@ -158,21 +168,42 @@ export const ConversationsPage: React.FC = () => {
     );
   }, [conversations]);
 
+  // Quem decide entre carregando/falhou/vazio/lista é `estadoDaLista` — a mesma
+  // regra de todas as listas do painel. `quantidade` usa a lista completa (não a
+  // filtrada): filtro que não bate é 'vazio' legítimo da Tabela, não falha.
+  const estado = estadoDaLista({
+    temDados: carregouAlgumaVez,
+    buscando: isLoading,
+    falhou: erro,
+    quantidade: conversations.length,
+  });
+
   async function loadConversations(isBackgroundRefresh: boolean) {
+    const req = ++requisicaoRef.current;
     if (isBackgroundRefresh) {
       setRefreshing(true);
     } else {
       setIsLoading(true);
     }
+    setErro(false);
 
     try {
       const response = await conversationsService.getUniversalConversations();
+      if (req !== requisicaoRef.current) return; // busca superada por uma mais nova
       setConversations(response.results || []);
+      setCarregouAlgumaVez(true);
     } catch (error) {
+      if (req !== requisicaoRef.current) return; // rejeição obsoleta: ignora
+      // Sem isto, a falha deixava `conversations` em `[]` e a Tabela mostrava o
+      // vazio confiante "Nenhuma conversa encontrada" — dizendo ao lojista que
+      // não há conversa nenhuma quando, na verdade, a busca caiu.
+      setErro(true);
       toast.error(getErrorMessage(error));
     } finally {
-      setIsLoading(false);
-      setRefreshing(false);
+      if (req === requisicaoRef.current) {
+        setIsLoading(false);
+        setRefreshing(false);
+      }
     }
   }
 
@@ -289,7 +320,7 @@ export const ConversationsPage: React.FC = () => {
     }
   }
 
-  if (isLoading) {
+  if (estado === 'carregando') {
     return <PageLoading />;
   }
 
@@ -382,6 +413,19 @@ export const ConversationsPage: React.FC = () => {
         </Button>
       }
     >
+      {estado === 'falhou' ? (
+        // Falha sem dado em cache: erro acionável no lugar do vazio enganoso (e
+        // sem inventar zeros no KpiGrid). Com dado em cache (falha só ao
+        // atualizar), a lista abaixo segue mostrando as conversas e o `toast`
+        // avisa da falha. Quem decide é `estadoDaLista`.
+        <EmptyState
+          icon={<ChatBubbleLeftRightIcon className="h-12 w-12" />}
+          title="Não foi possível carregar as conversas"
+          description="A conexão falhou. Suas conversas continuam lá — tente de novo."
+          action={{ label: 'Tentar novamente', onClick: () => void loadConversations(false) }}
+        />
+      ) : (
+      <>
       <KpiGrid
         itens={[
           {
@@ -444,6 +488,8 @@ export const ConversationsPage: React.FC = () => {
           }}
         />
       </Secao>
+      </>
+      )}
 
       <Modal
         isOpen={Boolean(selectedWhatsAppId)}
