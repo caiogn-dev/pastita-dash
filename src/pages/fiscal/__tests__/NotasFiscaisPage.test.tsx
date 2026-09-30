@@ -9,7 +9,7 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import NotasFiscaisPage from '../NotasFiscaisPage';
 import { fiscalService } from '../../../services/fiscal';
@@ -89,6 +89,18 @@ describe('NotasFiscaisPage', () => {
     expect(screen.getAllByText(/IVO2609177724/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/51\.162\.926\/0002-03/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/1\.015,00/).length).toBeGreaterThan(0);
+  });
+
+  it('a loja é a da URL, não a selecionada no topo', async () => {
+    render(
+      <MemoryRouter initialEntries={['/stores/ivoneth/notas-fiscais']}>
+        <Routes>
+          <Route path="/stores/:storeId/notas-fiscais" element={<NotasFiscaisPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(mocked.listarNotas).toHaveBeenCalled());
+    expect(mocked.listarNotas.mock.calls[0][0]).toBe('ivoneth');
   });
 
   it('consulta que falha avisa — não vira "nenhuma nota emitida"', async () => {

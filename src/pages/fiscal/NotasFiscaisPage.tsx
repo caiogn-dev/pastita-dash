@@ -9,7 +9,7 @@
  * para quem a nota sai.
  */
 import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowDownTrayIcon, ArrowPathIcon, ArrowTopRightOnSquareIcon, Cog6ToothIcon,
   DocumentPlusIcon, EnvelopeIcon, XCircleIcon,
@@ -62,8 +62,12 @@ interface Emissao {
 }
 
 export const NotasFiscaisPage: React.FC = () => {
+  // A loja é a da URL. A selecionada no topo só vale quando a rota não diz:
+  // `/stores/ivoneth/notas-fiscais` mostrando as notas de OUTRA loja é como
+  // sai nota com o CNPJ errado.
+  const { storeId: lojaDaRota } = useParams<{ storeId?: string }>();
   const { storeSlug } = useStore();
-  const loja = storeSlug || '';
+  const loja = lojaDaRota || storeSlug || '';
   const [parametros, setParametros] = useSearchParams();
 
   const [dados, setDados] = useState<NotasDaLoja | null>(null);
