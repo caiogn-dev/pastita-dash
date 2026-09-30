@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  BuildingOffice2Icon, MagnifyingGlassIcon, ReceiptPercentIcon, ArrowsRightLeftIcon,
+  BuildingOffice2Icon, EnvelopeIcon, MagnifyingGlassIcon, ReceiptPercentIcon, ArrowsRightLeftIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 import {
-  Aviso, Button, ChoiceCards, Input, Modal, SearchInput, Select, SeloDeEstado, estadoDeNota,
+  Aviso, Button, ChoiceCards, Input, Modal, SearchInput, Select, SeloDeEstado, Switch, estadoDeNota,
 } from '../../components/ui';
 import { getErrorMessage } from '../../services/api';
 import {
@@ -40,7 +40,9 @@ const OBRIGATORIOS_DA_NFE: (keyof EnderecoFiscal)[] = [
   'zip_code', 'street', 'number', 'neighborhood', 'city', 'state',
 ];
 
-type Erros = Partial<Record<'documento' | 'nome' | keyof EnderecoFiscal, string>>;
+type Erros = Partial<Record<'documento' | 'nome' | 'email' | keyof EnderecoFiscal, string>>;
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const OPCOES_DE_MODELO = [
   { valor: '55' as ModeloDeNota, titulo: 'NF-e', descricao: 'Empresa', icone: BuildingOffice2Icon },
@@ -67,6 +69,8 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
   const [documento, setDocumento] = useState('');
   const [nome, setNome] = useState('');
   const [inscricao, setInscricao] = useState('');
+  const [email, setEmail] = useState('');
+  const [enviarEmail, setEnviarEmail] = useState(true);
   const [endereco, setEndereco] = useState<EnderecoFiscal>(ENDERECO_VAZIO);
 
   const [erros, setErros] = useState<Erros>({});
@@ -78,6 +82,7 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
     if (dados.documento !== undefined) setDocumento(formatarDocumento(dados.documento));
     if (dados.nome !== undefined) setNome(dados.nome);
     if (dados.inscricao_estadual !== undefined) setInscricao(dados.inscricao_estadual);
+    if (dados.email !== undefined) setEmail(dados.email);
     if (dados.endereco) setEndereco({ ...ENDERECO_VAZIO, ...dados.endereco });
     setErros({});
   };
@@ -98,7 +103,8 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
     setPedido(null);
     setBusca('');
     setRejeicao('');
-    preencher({ documento: '', nome: '', inscricao_estadual: '', endereco: ENDERECO_VAZIO });
+    preencher({ documento: '', nome: '', inscricao_estadual: '', email: '', endereco: ENDERECO_VAZIO });
+    setEnviarEmail(true);
     fiscalService.listarDestinatarios(loja).then(setSalvos).catch(() => setSalvos([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aberto, loja]);
@@ -124,6 +130,7 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
   }, [aberto, loja, busca, pedido, pedidoInicial]);
 
   const numero = somenteDigitos(documento);
+  const emailLimpo = email.trim().toLowerCase();
   const tipo = classificarDocumento(documento);
 
   const mudarEndereco = (campo: keyof EnderecoFiscal, valor: string) => {
@@ -135,7 +142,13 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
     setConsultando(true);
     try {
       const dados = await fiscalService.consultarCnpj(loja, numero);
-      preencher({ nome: dados.nome, endereco: dados.endereco });
+      // O e-mail da Receita costuma ser o do contador: só entra se o campo
+      // estiver vazio, nunca por cima do que o operador digitou.
+      preencher({
+        nome: dados.nome,
+        endereco: dados.endereco,
+        ...(email.trim() || !dados.email ? {} : { email: dados.email }),
+      });
     } catch (erro) {
       toast.error(getErrorMessage(erro));
     } finally {
@@ -146,6 +159,7 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
   const validar = (): Erros => {
     const faltas: Erros = {};
     if (numero && !tipo) faltas.documento = 'Inválido';
+    if (emailLimpo && !EMAIL.test(emailLimpo)) faltas.email = 'Inválido';
     if (modelo === '55') {
       if (!tipo) faltas.documento = numero ? 'Inválido' : 'Obrigatório';
       if (!nome.trim()) faltas.nome = 'Obrigatório';
@@ -168,6 +182,7 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
         documento: numero,
         nome: nome.trim() || pedido.customer_name,
         inscricao_estadual: somenteDigitos(inscricao),
+        ...(emailLimpo ? { email: emailLimpo } : {}),
         endereco: {
           street: endereco.street.trim(),
           number: endereco.number.trim(),
@@ -187,10 +202,18 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
         order_id: pedido.id,
         modelo,
         ...(destinatario ? { destinatario } : {}),
+        ...(destinatario && emailLimpo && enviarEmail ? { enviar_email: true } : {}),
       });
       onEmitida(nota);
       if (nota.status === 'authorized') {
-        toast.success(`${NOME_MODELO[modelo]} autorizada`);
+        if (nota.email_erro) {
+          toast.success(`${NOME_MODELO[modelo]} autorizada`);
+          toast.error(`O e-mail não saiu: ${nota.email_erro}`);
+        } else if (nota.email_enviado_para) {
+          toast.success(`${NOME_MODELO[modelo]} autorizada e enviada para ${nota.email_enviado_para}`);
+        } else {
+          toast.success(`${NOME_MODELO[modelo]} autorizada`);
+        }
         onFechar();
       } else if (nota.status === 'pending') {
         toast(`${NOME_MODELO[modelo]} enviada, aguardando a SEFAZ`);
@@ -345,6 +368,30 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
                     error={erros.nome}
                     aria-invalid={erros.nome ? true : undefined}
                   />
+                </div>
+                <div className="sm:col-span-4">
+                  <Input
+                    label="E-mail"
+                    type="email"
+                    inputMode="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setErros((atual) => ({ ...atual, email: undefined }));
+                    }}
+                    error={erros.email}
+                    aria-invalid={erros.email ? true : undefined}
+                  />
+                </div>
+                <div className="flex items-center gap-2 pb-2 text-sm text-fg-token sm:col-span-2 sm:self-end">
+                  <Switch
+                    rotulo="Enviar a nota por e-mail"
+                    ligado={enviarEmail && Boolean(emailLimpo)}
+                    onMudar={setEnviarEmail}
+                    desabilitado={!emailLimpo}
+                  />
+                  <EnvelopeIcon className="h-4 w-4 text-fg-muted-token" aria-hidden />
+                  Enviar a nota
                 </div>
                 <div className="sm:col-span-2">{campoDeEndereco('zip_code', 'CEP', { inputMode: 'numeric' })}</div>
                 <div className="sm:col-span-4">{campoDeEndereco('street', 'Rua')}</div>

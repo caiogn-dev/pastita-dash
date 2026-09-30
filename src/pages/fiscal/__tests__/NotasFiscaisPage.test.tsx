@@ -22,6 +22,7 @@ jest.mock('../../../services/fiscal', () => ({
     consultarCnpj: jest.fn(),
     emitir: jest.fn(),
     cancelar: jest.fn(),
+    enviarEmail: jest.fn(),
   },
 }));
 
@@ -114,6 +115,32 @@ describe('NotasFiscaisPage', () => {
     expect(await screen.findByText('Homologação')).toBeInTheDocument();
   });
 
+  it('nota autorizada vai por e-mail pela lista, com o endereço do cadastro preenchido', async () => {
+    mocked.listarNotas.mockResolvedValue({
+      habilitado: true, ambiente: 'producao', resumo: RESUMO,
+      notas: [{ ...NOTA, email_sugerido: 'financeiro@pulveriza.com', email_enviado_para: '' }],
+    } as never);
+    mocked.enviarEmail.mockResolvedValue({ ...NOTA, email_enviado_para: 'financeiro@pulveriza.com' } as never);
+    renderizar();
+    fireEvent.click((await screen.findAllByRole('button', { name: /Ações da nota do pedido IVO2609177724/ }))[0]);
+    fireEvent.click(await screen.findByRole('menuitem', { name: /Enviar por e-mail/ }));
+
+    const dialogo = await screen.findByRole('dialog');
+    expect(within(dialogo).getByLabelText('E-mail')).toHaveValue('financeiro@pulveriza.com');
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Enviar nota' }));
+    await waitFor(() =>
+      expect(mocked.enviarEmail).toHaveBeenCalledWith('loja', 'n1', 'financeiro@pulveriza.com'));
+  });
+
+  it('mostra para quem a nota já foi enviada', async () => {
+    mocked.listarNotas.mockResolvedValue({
+      habilitado: true, ambiente: 'producao', resumo: RESUMO,
+      notas: [{ ...NOTA, email_enviado_para: 'financeiro@pulveriza.com' }],
+    } as never);
+    renderizar();
+    expect((await screen.findAllByText(/financeiro@pulveriza\.com/)).length).toBeGreaterThan(0);
+  });
+
   describe('emitir', () => {
     const abrir = async () => {
       renderizar();
@@ -187,6 +214,45 @@ describe('NotasFiscaisPage', () => {
       fireEvent.change(within(dialogo).getByLabelText('Bairro'), { target: { value: 'Plano Diretor Sul' } });
       fireEvent.click(within(dialogo).getByRole('button', { name: 'Emitir NF-e' }));
       expect(await within(dialogo).findByRole('alert')).toHaveTextContent(/IE do destinatário/);
+    });
+
+    it('com e-mail preenchido, a nota autorizada já sai para o destinatário', async () => {
+      mocked.emitir.mockResolvedValue({
+        ...NOTA, id: 'n5', email_enviado_para: 'sinpefto@gmail.com', email_erro: '',
+      } as never);
+      const dialogo = await abrir();
+      fireEvent.change(within(dialogo).getByLabelText('Número'), { target: { value: '2' } });
+      fireEvent.change(within(dialogo).getByLabelText('Bairro'), { target: { value: 'Plano Diretor Sul' } });
+      fireEvent.change(within(dialogo).getByLabelText('E-mail'), { target: { value: ' Sinpefto@gmail.com ' } });
+      fireEvent.click(within(dialogo).getByRole('button', { name: 'Emitir NF-e' }));
+
+      await waitFor(() => expect(mocked.emitir).toHaveBeenCalledTimes(1));
+      const enviado = mocked.emitir.mock.calls[0][1];
+      expect(enviado.enviar_email).toBe(true);
+      expect(enviado.destinatario?.email).toBe('sinpefto@gmail.com');
+    });
+
+    it('desligar o envio emite a nota sem mandar e-mail', async () => {
+      mocked.emitir.mockResolvedValue({ ...NOTA, id: 'n6' } as never);
+      const dialogo = await abrir();
+      fireEvent.change(within(dialogo).getByLabelText('Número'), { target: { value: '2' } });
+      fireEvent.change(within(dialogo).getByLabelText('Bairro'), { target: { value: 'Plano Diretor Sul' } });
+      fireEvent.change(within(dialogo).getByLabelText('E-mail'), { target: { value: 'sinpefto@gmail.com' } });
+      fireEvent.click(within(dialogo).getByRole('switch', { name: 'Enviar a nota por e-mail' }));
+      fireEvent.click(within(dialogo).getByRole('button', { name: 'Emitir NF-e' }));
+
+      await waitFor(() => expect(mocked.emitir).toHaveBeenCalledTimes(1));
+      expect(mocked.emitir.mock.calls[0][1].enviar_email).toBeUndefined();
+    });
+
+    it('e-mail mal digitado marca o campo e não emite', async () => {
+      const dialogo = await abrir();
+      fireEvent.change(within(dialogo).getByLabelText('Número'), { target: { value: '2' } });
+      fireEvent.change(within(dialogo).getByLabelText('Bairro'), { target: { value: 'Plano Diretor Sul' } });
+      fireEvent.change(within(dialogo).getByLabelText('E-mail'), { target: { value: 'sem-arroba' } });
+      fireEvent.click(within(dialogo).getByRole('button', { name: 'Emitir NF-e' }));
+      expect(within(dialogo).getByLabelText('E-mail')).toHaveAttribute('aria-invalid', 'true');
+      expect(mocked.emitir).not.toHaveBeenCalled();
     });
 
     it('NFC-e sai sem destinatário', async () => {

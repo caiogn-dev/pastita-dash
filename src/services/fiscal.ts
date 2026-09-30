@@ -23,12 +23,13 @@ export interface DestinatarioDaNota {
   documento: string;
   nome: string;
   inscricao_estadual: string;
+  /** Para onde a nota vai depois de autorizada. */
+  email?: string;
   endereco: EnderecoFiscal;
 }
 
 export interface DestinatarioSalvo extends DestinatarioDaNota {
   id: string;
-  email?: string;
   telefone?: string;
   customer_id?: string | null;
 }
@@ -45,6 +46,13 @@ export interface NotaDaLoja {
   xml_url: string;
   error_message: string;
   created_at: string;
+  /** Último envio por e-mail; vazio = ainda não foi. */
+  email_enviado_para?: string;
+  email_enviado_em?: string | null;
+  /** E-mail do cadastro do destinatário, para o envio não começar em branco. */
+  email_sugerido?: string;
+  /** Só na resposta da emissão: a nota saiu, o e-mail não. */
+  email_erro?: string;
   pedido: { id: string; order_number: string; customer_name: string; total: string | number };
   destinatario: { documento: string; nome: string } | null;
 }
@@ -87,6 +95,8 @@ export interface PedidoDeEmissao {
   order_id: string;
   modelo: ModeloDeNota;
   destinatario?: DestinatarioDaNota;
+  /** Autorizada, já manda ao e-mail do destinatário. */
+  enviar_email?: boolean;
 }
 
 const base = (loja: string) => `/stores/${loja}/fiscal`;
@@ -110,6 +120,10 @@ export const fiscalService = {
   /** A SEFAZ pode levar mais que o tempo padrão das chamadas do painel. */
   emitir: async (loja: string, pedido: PedidoDeEmissao): Promise<NotaDaLoja> =>
     (await api.post<NotaDaLoja>(`${base(loja)}/notas/emitir/`, pedido, { timeout: 60_000 })).data,
+
+  /** E-mail em branco = usa o do cadastro do destinatário. */
+  enviarEmail: async (loja: string, id: string, email: string): Promise<NotaDaLoja> =>
+    (await api.post<NotaDaLoja>(`${base(loja)}/notas/${id}/enviar-email/`, { email }, { timeout: 60_000 })).data,
 
   cancelar: async (loja: string, id: string, justificativa: string): Promise<NotaDaLoja> =>
     (await api.post<NotaDaLoja>(`${base(loja)}/notas/${id}/cancelar/`, { justificativa })).data,

@@ -12,12 +12,12 @@ import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowDownTrayIcon, ArrowPathIcon, ArrowTopRightOnSquareIcon, Cog6ToothIcon,
-  DocumentPlusIcon, XCircleIcon,
+  DocumentPlusIcon, EnvelopeIcon, XCircleIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 import {
-  Button, EmptyState, FalhaAoCarregar, KpiGrid, Modal, PageShell, RowActions, SearchInput,
+  Button, EmptyState, FalhaAoCarregar, Input, KpiGrid, Modal, PageShell, RowActions, SearchInput,
   Select, SeloDeEstado, Tabela, Textarea, estadoDeNota,
   type ColunaDaTabela, type RowAction,
 } from '../../components/ui';
@@ -85,6 +85,9 @@ export const NotasFiscaisPage: React.FC = () => {
   const [cancelando, setCancelando] = useState<NotaDaLoja | null>(null);
   const [justificativa, setJustificativa] = useState('');
   const [enviandoCancelamento, setEnviandoCancelamento] = useState(false);
+  const [enviando, setEnviando] = useState<NotaDaLoja | null>(null);
+  const [emailDoEnvio, setEmailDoEnvio] = useState('');
+  const [mandandoEmail, setMandandoEmail] = useState(false);
 
   useEffect(() => {
     const espera = setTimeout(() => setQ(busca.trim()), 300);
@@ -132,6 +135,26 @@ export const NotasFiscaisPage: React.FC = () => {
     }
   };
 
+  const abrirEnvio = (nota: NotaDaLoja) => {
+    setEmailDoEnvio(nota.email_enviado_para || nota.email_sugerido || '');
+    setEnviando(nota);
+  };
+
+  const enviarPorEmail = async () => {
+    if (!enviando) return;
+    setMandandoEmail(true);
+    try {
+      const nota = await fiscalService.enviarEmail(loja, enviando.id, emailDoEnvio.trim());
+      toast.success(`Nota enviada para ${nota.email_enviado_para || emailDoEnvio.trim()}`);
+      setEnviando(null);
+      recarregar();
+    } catch (falha) {
+      toast.error(getErrorMessage(falha));
+    } finally {
+      setMandandoEmail(false);
+    }
+  };
+
   const notas = dados?.notas ?? [];
   const filtrando = Boolean(status || modelo || q);
   const estado = estadoDaLista({
@@ -155,6 +178,13 @@ export const NotasFiscaisPage: React.FC = () => {
         rotulo: 'Baixar XML',
         icone: <ArrowDownTrayIcon className="h-4 w-4" />,
         onClick: () => window.open(nota.xml_url, '_blank', 'noopener'),
+      });
+    }
+    if (nota.status === 'authorized') {
+      acoes.push({
+        rotulo: nota.email_enviado_para ? 'Enviar por e-mail de novo' : 'Enviar por e-mail',
+        icone: <EnvelopeIcon className="h-4 w-4" />,
+        onClick: () => abrirEnvio(nota),
       });
     }
     if (nota.status === 'rejected' || nota.status === 'error') {
@@ -234,6 +264,12 @@ export const NotasFiscaisPage: React.FC = () => {
             {nota.error_message && nota.status !== 'authorized' && (
               <span className="mt-1 block max-w-xs truncate text-xs text-danger-token" title={nota.error_message}>
                 {nota.error_message}
+              </span>
+            )}
+            {nota.email_enviado_para && (
+              <span className="mt-1 flex min-w-0 items-center gap-1 text-xs text-fg-muted-token" title="Enviada por e-mail">
+                <EnvelopeIcon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                <span className="truncate">{nota.email_enviado_para}</span>
               </span>
             )}
           </span>
@@ -358,6 +394,34 @@ export const NotasFiscaisPage: React.FC = () => {
         documentoInicial={emissao?.documento}
         onEmitida={recarregar}
       />
+
+      <Modal
+        open={enviando !== null}
+        onClose={() => setEnviando(null)}
+        title="Enviar nota por e-mail"
+        size="md"
+      >
+        <div className="space-y-4">
+          <Input
+            label="E-mail"
+            type="email"
+            inputMode="email"
+            value={emailDoEnvio}
+            onChange={(e) => setEmailDoEnvio(e.target.value)}
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setEnviando(null)}>Voltar</Button>
+            <Button
+              leftIcon={<EnvelopeIcon className="h-4 w-4" />}
+              onClick={enviarPorEmail}
+              isLoading={mandandoEmail}
+              disabled={!emailDoEnvio.trim()}
+            >
+              Enviar nota
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal
         open={cancelando !== null}
