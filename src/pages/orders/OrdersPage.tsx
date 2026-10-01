@@ -74,6 +74,7 @@ import { getStageStart, getAvgPrepMinutes, prazoDoAgendado, situacaoDoPreparo } 
 import { proximaAcaoDoPedido } from './proximaAcao';
 import { saldoDoPedido } from './saldoDoPedido';
 import { formatCurrency } from '../../utils/formatters';
+import { pagoNaEntrega } from '../../utils/rotulosDeEstado';
 
 // Next status for advance button
 /**
@@ -89,11 +90,11 @@ const getNextAction = (order: StoreOrder): { status: string; label: string } | n
   return acao ? { status: acao.status, label: acao.rotulo } : null;
 };
 
+// Recebe na entrega/retirada (dinheiro ou maquininha) e ainda não recebeu.
+// `money`, `pagar_na_retirada`, `pay_on_pickup` e `pix_on_delivery` saíram:
+// nenhum caminho do backend grava esses códigos.
 const needsPayment = (order: StoreOrder) =>
-  order.payment_status !== 'paid' &&
-  ['cash', 'money', 'dinheiro', 'pagar_na_retirada', 'pay_on_pickup', 'pix_on_delivery'].some(
-    m => (order.payment_method ?? '').toLowerCase().includes(m)
-  );
+  order.payment_status !== 'paid' && pagoNaEntrega(order.payment_method);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

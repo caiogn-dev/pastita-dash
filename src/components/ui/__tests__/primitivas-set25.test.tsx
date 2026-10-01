@@ -92,6 +92,10 @@ describe('estados', () => {
   it('pagamento e campanha mapeiam status para rótulo e tom, um lugar só', () => {
     expect(estadoDePagamento('paid')).toEqual({ rotulo: 'Pago', tone: 'success' });
     expect(estadoDePagamento('pending', 'cash')).toEqual({ rotulo: 'Dinheiro', tone: 'warning' });
+    // Maquininha na entrega também não é cobrança online parada: é pago em mãos.
+    expect(estadoDePagamento('pending', 'card_on_delivery')).toEqual({ rotulo: 'Cartão na maquininha', tone: 'warning' });
+    expect(estadoDePagamento('paid', 'card_on_delivery')).toEqual({ rotulo: 'Pago', tone: 'success' });
+    expect(estadoDePagamento('pending', 'pix')).toEqual({ rotulo: 'Pendente', tone: 'warning' });
     expect(estadoDePagamento('xyz').tone).toBe('neutral');
     expect(estadoDeCampanha('sent')).toEqual({ rotulo: 'Enviada', tone: 'success' });
     expect(estadoDeCampanha('scheduled').tone).toBe('info');

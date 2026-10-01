@@ -5,6 +5,7 @@
  */
 import { useRef, useCallback } from 'react';
 import { Order, OrderComboItem } from '../../types';
+import { rotuloDePagamento } from '../../utils/rotulosDeEstado';
 
 // Type alias for backwards compatibility
 type Pedido = Order;
@@ -126,16 +127,8 @@ export const useOrderPrint = () => {
 
     const getPaymentMethod = () => {
       const pedidoAny = pedido as unknown as Record<string, unknown>;
-      const method = (pedidoAny.payment_method as string) || 'pix';
-      const methods: Record<string, string> = {
-        pix: 'PIX',
-        credit_card: 'CREDITO',
-        debit_card: 'DEBITO',
-        cash: 'DINHEIRO',
-        card: 'CARTAO',
-        mercadopago: 'MERCADO PAGO',
-      };
-      return methods[method] || method.toUpperCase();
+      // Caixa alta da comanda, mas o MESMO nome do resto do painel.
+      return rotuloDePagamento(pedidoAny.payment_method as string).toUpperCase();
     };
 
     const getPaymentStatus = () => {

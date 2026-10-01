@@ -1,6 +1,7 @@
 // src/components/orders/newOrder/types.ts
 import type { Product } from '../../../services/products';
 import type { CustomerSearchResult } from '../../../types/crm';
+import { rotuloDePagamento } from '../../../utils/rotulosDeEstado';
 
 export interface CartItem {
   product: Product;
@@ -8,12 +9,19 @@ export interface CartItem {
   notes?: string;
 }
 
-export type PaymentMethod = 'pix' | 'cash' | 'credit_card' | 'fiado';
+/**
+ * Pedido lançado pelo atendente: ou sai cobrança PIX, ou o cliente paga em
+ * mãos na entrega/retirada (dinheiro ou maquininha). O antigo botão "Cartão"
+ * mandava `credit_card` — o caixa lia crédito recebido num pedido que ainda
+ * ia ser pago na maquininha. `fiado` é só do painel: vai como `cash` + nota.
+ */
+export type PaymentMethod = 'pix' | 'cash' | 'card_on_delivery' | 'fiado';
 
+/** Ordem das chaves = ordem dos botões. Nomes reais vêm do mapa único. */
 export const PAYMENT_LABELS: Record<PaymentMethod, string> = {
-  pix: 'PIX',
-  cash: 'Dinheiro',
-  credit_card: 'Cartão',
+  pix: rotuloDePagamento('pix'),
+  cash: rotuloDePagamento('cash'),
+  card_on_delivery: rotuloDePagamento('card_on_delivery'),
   fiado: 'Fiado',
 };
 

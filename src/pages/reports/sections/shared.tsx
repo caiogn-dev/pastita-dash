@@ -3,6 +3,7 @@ import React from 'react';
 import { ArrowDownTrayIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { Card } from '../../../components/ui';
 import { toCsv, downloadCsv } from '../../../utils/csv';
+import { rotuloDePagamento } from '../../../utils/rotulosDeEstado';
 import { Loading } from '../../../components/common';
 
 // A lista ranqueada mudou de casa para `components/ui` — é o formato
@@ -14,13 +15,15 @@ export { formatCurrency as formatBRL } from '../../../utils/formatters';
 
 // Rótulos pt-BR dos valores crus que a API devolve (payment_method,
 // delivery_method etc.). Sempre passar por aqui antes de exibir.
-const PAYMENT_LABELS: Record<string, string> = {
-  pix: 'PIX',
-  cash: 'Dinheiro',
-  card: 'Cartão',
-  credit_card: 'Cartão de crédito',
-  debit_card: 'Cartão de débito',
+// A forma de pagamento usa o mapa único do painel; o gateway (quem processou)
+// é outro domínio e tem o seu.
+const GATEWAY_LABELS: Record<string, string> = {
   mercadopago: 'Mercado Pago',
+  pagarme: 'Pagar.me',
+  cielo: 'Cielo',
+  pagseguro: 'PagSeguro',
+  stripe: 'Stripe',
+  pix: 'PIX',
   nao_informado: 'Não informado',
 };
 const DELIVERY_LABELS: Record<string, string> = {
@@ -30,7 +33,8 @@ const DELIVERY_LABELS: Record<string, string> = {
   nao_informado: 'Não informado',
 };
 
-export const paymentLabel = (v: unknown) => PAYMENT_LABELS[String(v)] || String(v);
+export const paymentLabel = (v: unknown) => rotuloDePagamento(v == null ? '' : String(v));
+export const gatewayLabel = (v: unknown) => GATEWAY_LABELS[String(v)] || String(v);
 export const deliveryLabel = (v: unknown) => DELIVERY_LABELS[String(v)] || String(v);
 
 export const Spinner: React.FC = () => (

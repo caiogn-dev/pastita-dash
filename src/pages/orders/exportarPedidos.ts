@@ -13,7 +13,7 @@
 import type { StoreOrder } from '../../services/storesApi';
 import {
   STATUS_LABELS as STATUS,
-  PAYMENT_METHOD_LABELS as PAGAMENTO,
+  rotuloDePagamento,
 } from '../../utils/rotulosDeEstado';
 
 
@@ -74,7 +74,7 @@ export function pedidosParaCsv(pedidos: StoreOrder[]): string {
       texto(p.customer_phone),
       campo(qtd),
       texto(p.source ?? ''),
-      texto(PAGAMENTO[p.payment_method] ?? p.payment_method ?? ''),
+      texto(p.payment_method ? rotuloDePagamento(p.payment_method) : ''),
       campo(p.payment_status === 'paid' ? 'Sim' : 'Não'),
       texto(STATUS[p.status] ?? p.status),
       campo(moeda(p.discount)),

@@ -37,31 +37,67 @@ export const PAYMENT_STATUS_LABELS: Record<string, string> = {
 };
 
 /**
- * COMO o cliente pagou. Precisa cobrir o vocabulário inteiro do backend.
+ * COMO o cliente pagou — UM nome por forma, o mesmo do backend
+ * (server2 `apps/stores/formas_de_pagamento.py` → `ROTULOS`).
  *
- * Tinha 5 dos 8 métodos de `StorePayment.PaymentMethod`, e o pedido pago no
- * cartão pelo link aparecia como "other" — o fallback `|| order.payment_method`
- * imprimia o slug cru sem nada quebrar. `rotulosDeEstado.test.ts` agora é a
- * catraca também aqui.
+ * Cada tela tinha o seu dicionário: o mesmo débito era "Débito", "DEBITO",
+ * "Débito (maquininha)" ou "Cartão de débito" conforme a tela, e o vale saía
+ * cru ("voucher") no detalhe, no histórico e nos relatórios. Agora toda tela
+ * passa por `rotuloDePagamento`; `rotulosDeEstado.test.ts` é a catraca.
  *
- * `other` e `link` são estados de TRANSIÇÃO, não métodos: a cobrança-link nasce
- * assim porque só o Checkout Pro sabe o que o cliente vai escolher, e o método
- * real é gravado de volta quando o gateway avisa. Por isso o rótulo diz o que
- * está acontecendo em vez de fingir uma forma de pagamento que ninguém escolheu.
+ * `card_on_delivery` (01/10) separa a maquininha do dinheiro: antes os dois
+ * eram `cash`, e o caixa esperava na gaveta o dinheiro que tinha ido para a
+ * maquininha.
+ *
+ * Fora do vocabulário do backend ficam só os códigos que o painel ainda lê em
+ * dado antigo (`boleto`, `wallet`) e o balde `nao_informado` dos relatórios.
  */
 export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   pix: 'PIX',
+  card: 'Cartão',
   credit_card: 'Cartão de crédito',
   debit_card: 'Cartão de débito',
   cash: 'Dinheiro',
-  card: 'Cartão',
-  boleto: 'Boleto',
-  bank_transfer: 'Transferência bancária',
-  wallet: 'Carteira digital',
-  other: 'Link de pagamento',
+  card_on_delivery: 'Cartão na maquininha',
+  voucher: 'Vale-refeição',
+  voucher_link: 'Vale-refeição (link)',
   link: 'Link de pagamento',
+  bank_transfer: 'Transferência',
+  other: 'Outro',
+  boleto: 'Boleto',
+  wallet: 'Carteira digital',
   nao_informado: 'Não informado',
 };
+
+/**
+ * Nome da forma de pagamento para a tela. Vazio vira "Não informado"; código
+ * desconhecido aparece como veio (igual ao backend) — melhor o slug do que
+ * esconder a informação.
+ */
+export function rotuloDePagamento(metodo?: string | null): string {
+  const valor = (metodo ?? '').trim();
+  if (!valor) return 'Não informado';
+  return PAYMENT_METHOD_LABELS[valor] ?? valor;
+}
+
+/**
+ * Pagas em mãos na entrega/retirada: o pedido nasce pendente e liquida ao
+ * entregar — não é cobrança online parada. Espelha `PAGOS_NA_ENTREGA` do
+ * backend. `dinheiro` é o apelido que o checkout normaliza para `cash`.
+ */
+export const PAGOS_NA_ENTREGA: ReadonlySet<string> = new Set(['cash', 'card_on_delivery', 'dinheiro']);
+
+export function pagoNaEntrega(metodo?: string | null): boolean {
+  return PAGOS_NA_ENTREGA.has((metodo ?? '').trim().toLowerCase());
+}
+
+/** O que o PDV de balcão oferece: o cliente está na loja, cartão é crédito ou débito. */
+export const FORMAS_DO_BALCAO = ['cash', 'pix', 'credit_card', 'debit_card'] as const;
+
+/** Formas no filtro do histórico de pedidos — as que os pedidos de fato gravam. */
+export const FORMAS_NO_FILTRO = [
+  'pix', 'cash', 'card_on_delivery', 'credit_card', 'debit_card', 'card', 'voucher', 'voucher_link',
+] as const;
 
 /**
  * Status de uma COBRANÇA (StorePayment) — vocabulário próprio, não o do pedido.

@@ -78,7 +78,7 @@ export interface NewOrderPayload {
     quantity: number;
     notes?: string;
   }>;
-  payment_method: 'pix' | 'cash' | 'credit_card' | 'fiado';
+  payment_method: 'pix' | 'cash' | 'card_on_delivery' | 'credit_card' | 'fiado';
   notes?: string;
   created_by_staff?: boolean;
   // Adjustments (backend pending)

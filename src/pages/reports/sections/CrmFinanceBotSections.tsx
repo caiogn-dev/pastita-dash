@@ -9,7 +9,7 @@ import type {
 } from '../../../services/reports';
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
 import { Link } from 'react-router-dom';
-import { SectionCard, EmptyNote, RankedList, ExportCsvButton, formatBRL, paymentLabel } from './shared';
+import { SectionCard, EmptyNote, RankedList, ExportCsvButton, formatBRL, paymentLabel, gatewayLabel } from './shared';
 import { urlDeClienteBuscado } from '../../customers/buscaPelaUrl';
 import { useStore } from '../../../hooks/useStore';
 
@@ -285,7 +285,7 @@ export const FinanceSection: React.FC<{ range: DateRange; enabled: boolean }> = 
             <RankedList
               medals={false}
               items={(fin.data?.by_gateway ?? []).map((r) => ({
-                label: paymentLabel(r.gateway),
+                label: gatewayLabel(r.gateway),
                 sub: `${r.count} pagamentos`,
                 value: Number(r.net),
                 valueLabel: formatBRL(Number(r.net)),

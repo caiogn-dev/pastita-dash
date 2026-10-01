@@ -10,6 +10,7 @@
  * lê os dois — não recalcula regra de dinheiro no navegador.
  */
 import { formatCurrency } from '../../utils/formatters';
+import { rotuloDePagamento } from '../../utils/rotulosDeEstado';
 
 interface PedidoComSaldo {
   status?: string | null;
@@ -62,10 +63,5 @@ export function podeRegistrarPagamento(pedido: PedidoComSaldo): boolean {
  * campo `payment_method` já teve 6 dialetos; não inventar o sétimo.
  */
 export const FORMAS_DE_REGISTRO: { valor: string; rotulo: string }[] = [
-  { valor: 'cash', rotulo: 'Dinheiro' },
-  { valor: 'debit_card', rotulo: 'Débito (maquininha)' },
-  { valor: 'credit_card', rotulo: 'Crédito (maquininha)' },
-  { valor: 'pix', rotulo: 'PIX direto' },
-  { valor: 'voucher', rotulo: 'Vale-refeição' },
-  { valor: 'other', rotulo: 'Outro' },
-];
+  'cash', 'debit_card', 'credit_card', 'pix', 'voucher', 'other',
+].map((valor) => ({ valor, rotulo: rotuloDePagamento(valor) }));
