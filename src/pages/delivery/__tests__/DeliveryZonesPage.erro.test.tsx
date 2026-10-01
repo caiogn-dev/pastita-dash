@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { DeliveryZonesPage } from '../DeliveryZonesPage';
 import { deliveryService } from '../../../services/delivery';
@@ -98,6 +98,41 @@ describe('DeliveryZonesPage — vazio enganoso nas faixas de entrega', () => {
     await waitFor(() => expect(screen.getAllByText('Centro').length).toBeGreaterThan(0));
     expect(screen.queryByText('Não foi possível carregar as faixas de entrega')).toBeNull();
     expect(mockedService.getZones).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejeição de uma busca superada NÃO vira erro sobre o vazio legítimo da mais nova', async () => {
+    // Trocar a busca com uma requisição em voo deixa as duas correndo. Sem
+    // guarda de sequência, a REJEIÇÃO da superada ligava `erroAoCarregar` DEPOIS
+    // de a mais recente já ter respondido vazio — trocando o vazio legítimo pelo
+    // alerta de falha. (Antes de surfarmos o erro, isso era invisível; agora não.)
+    let rejeitarSuperada: (e: unknown) => void = () => {};
+    const superada = new Promise((_, reject) => {
+      rejeitarSuperada = reject;
+    });
+    mockedService.getZones
+      .mockResolvedValueOnce(paginaDeZonas([zone])) // 1ª (montagem): abre a tela
+      .mockReturnValueOnce(superada as never) // 2ª: fica em voo e rejeita depois
+      .mockResolvedValueOnce(paginaDeZonas([])); // 3ª (a mais recente): vazio legítimo
+
+    renderPage();
+    await screen.findAllByText('Centro');
+
+    // Duas trocas de busca: a 2ª fica em voo, a 3ª é a mais recente.
+    const busca = screen.getByPlaceholderText(/buscar por nome/i);
+    fireEvent.change(busca, { target: { value: 'a' } });
+    fireEvent.change(busca, { target: { value: 'ab' } });
+
+    // A mais recente resolveu vazio → vazio legítimo.
+    expect(await screen.findByText('Nenhuma faixa cadastrada')).toBeInTheDocument();
+
+    // Agora a superada rejeita: não pode sobrepor o vazio com o erro de carga.
+    await act(async () => {
+      rejeitarSuperada(new Error('500'));
+      await Promise.resolve();
+    });
+
+    expect(screen.queryByText('Não foi possível carregar as faixas de entrega')).toBeNull();
+    expect(screen.getByText('Nenhuma faixa cadastrada')).toBeInTheDocument();
   });
 
   it('busca que DEU CERTO e veio vazia mantém o "Nenhuma faixa cadastrada"', async () => {

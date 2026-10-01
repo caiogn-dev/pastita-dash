@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import logger from '../../services/logger';
@@ -75,6 +75,10 @@ export const DeliveryZonesPage: React.FC = () => {
   const [erroAoCarregar, setErroAoCarregar] = useState(false);
 
   const [loading, setLoading] = useState(true);
+  // Sequência da busca de faixas: trocar `search`/`filterActive` recria o
+  // `loadData` e dispara outra busca com uma ainda em voo (e o StrictMode monta
+  // o efeito duas vezes). Só a mais recente pode escrever na tela.
+  const requisicaoRef = useRef(0);
   const [search, setSearch] = useState('');
   const [filterActive, setFilterActive] = useState<boolean | undefined>(undefined);
 
@@ -136,6 +140,7 @@ export const DeliveryZonesPage: React.FC = () => {
       return;
     }
 
+    const req = ++requisicaoRef.current;
     try {
       setLoading(true);
       setErroAoCarregar(false);
@@ -155,6 +160,7 @@ export const DeliveryZonesPage: React.FC = () => {
         getStore(storeId),
       ]);
 
+      if (req !== requisicaoRef.current) return; // busca superada por uma mais nova
       if (zonesRes.status === 'rejected') throw zonesRes.reason;
       setZones(zonesRes.value.results);
       if (statsRes.status === 'fulfilled') setStats(statsRes.value);
@@ -175,10 +181,11 @@ export const DeliveryZonesPage: React.FC = () => {
         setLocationError('Não foi possível carregar a localização desta loja.');
       }
     } catch (err) {
+      if (req !== requisicaoRef.current) return; // rejeição obsoleta: ignora
       logger.error('Error loading delivery zones:', err);
       setErroAoCarregar(true);
     } finally {
-      setLoading(false);
+      if (req === requisicaoRef.current) setLoading(false);
     }
   }, [search, filterActive, storeId]);
 
