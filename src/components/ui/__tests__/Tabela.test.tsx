@@ -111,6 +111,44 @@ describe('tabela do painel', () => {
     expect(screen.queryByText('Nenhum cupom ainda')).toBeNull();
   });
 
+  it('busca que FALHOU não vira "nenhum resultado" — é o vazio enganoso', () => {
+    // Com a lista em [] por causa de uma falha de rede, o "Nenhum cupom ainda"
+    // mente: diz que a loja não tem cupom quando foi a conexão que caiu. No
+    // lugar dele, um erro acionável com "Tentar novamente".
+    const onTentarDeNovo = jest.fn();
+    montar({
+      itens: [],
+      falhou: true,
+      falha: { titulo: 'Não foi possível carregar os cupons' },
+      onTentarDeNovo,
+      vazio: { titulo: 'Nenhum cupom ainda' },
+    });
+
+    expect(screen.queryByText('Nenhum cupom ainda')).toBeNull();
+    expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível carregar os cupons');
+
+    fireEvent.click(screen.getByRole('button', { name: /Tentar novamente/i }));
+    expect(onTentarDeNovo).toHaveBeenCalledTimes(1);
+  });
+
+  it('falha ao atualizar NÃO apaga a lista que já está na tela', () => {
+    // Dado em cache manda: se o refetch cai mas o cupom ainda está carregado,
+    // o dono continua lendo a lista — não leva um erro em tela cheia.
+    montar({ falhou: true, falha: { titulo: 'Não foi possível carregar os cupons' } });
+
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getAllByText('BEMVINDO10').length).toBeGreaterThan(0);
+  });
+
+  it('carregando ganha de falhou — o retry recarrega sem piscar o erro', () => {
+    // O "Tentar novamente" põe a busca de volta em voo: enquanto ela corre, é
+    // esqueleto, não o erro que acabou de sair da tela.
+    montar({ itens: [], carregando: true, falhou: true, falha: { titulo: 'Falhou' } });
+
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText('Falhou')).toBeNull();
+  });
+
   it('a paginação é a mesma do resto do painel', () => {
     montar({ paginacao: { pagina: 1, porPagina: 20, total: 35, onPagina: jest.fn() } });
 
