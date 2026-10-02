@@ -152,7 +152,7 @@ export const ordersService = {
       const { data } = await api.get<{
         street?: string; number?: string; neighborhood?: string;
         city?: string; state_code?: string; state?: string;
-      }>('/stores/maps/reverse-geocode/', { params: { lat, lng } });
+      }>('/maps/reverse-geocode/', { params: { lat, lng } });
       const uf = data.state_code || data.state || '';
       const inicio = [data.street, data.number].filter(Boolean).join(', ');
       const comBairro = [inicio, data.neighborhood].filter(Boolean).join(' — ');
