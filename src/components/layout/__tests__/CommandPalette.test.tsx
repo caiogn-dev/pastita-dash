@@ -70,7 +70,7 @@ describe('CommandPalette', () => {
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'relatorios' } });
     const achados = screen.getAllByRole('option', { name: /Relatórios/ });
     expect(achados.length).toBeGreaterThan(0);
-    expect(achados.some((o) => /Metas e Conquistas/.test(o.textContent ?? ''))).toBe(true);
+    expect(achados.some((o) => /Vendas/.test(o.textContent ?? ''))).toBe(true);
   });
 
   it('setas movem a seleção e Enter navega para ela', () => {

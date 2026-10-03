@@ -1,21 +1,18 @@
 import React from 'react';
 import {
   HomeIcon, DevicePhoneMobileIcon, ChatBubbleLeftRightIcon,
-  ShoppingCartIcon, CreditCardIcon, CpuChipIcon, Cog6ToothIcon,
-  BoltIcon, ChatBubbleBottomCenterTextIcon, AcademicCapIcon, FunnelIcon, SunIcon, UserGroupIcon, TagIcon, Squares2X2Icon, BuildingStorefrontIcon,
-  MegaphoneIcon, DocumentTextIcon, EnvelopeIcon,
-  ClockIcon, PresentationChartLineIcon, SparklesIcon,
-  StarIcon, RectangleGroupIcon,
-  QrCodeIcon, GiftIcon, LinkIcon, TrophyIcon,
-  BeakerIcon,
+  ShoppingCartIcon, CreditCardIcon, Cog6ToothIcon,
+  ChatBubbleBottomCenterTextIcon, AcademicCapIcon, SunIcon, UserGroupIcon, TagIcon, Squares2X2Icon, BuildingStorefrontIcon,
+  MegaphoneIcon, DocumentTextIcon, ClockIcon, PresentationChartLineIcon, StarIcon, RectangleGroupIcon,
+  QrCodeIcon, GiftIcon, LinkIcon, BeakerIcon,
   // Um ícone por destino. Antes CreditCardIcon aparecia em três itens,
   // ClockIcon em três e TagIcon em dois: com o mesmo desenho repetido o
   // operador para de usar o ícone para se localizar e lê tudo de novo.
   ClipboardDocumentListIcon, PrinterIcon, BanknotesIcon, FireIcon, CubeIcon,
   TicketIcon, GlobeAltIcon, ChartBarIcon, ArchiveBoxArrowDownIcon,
-  ArrowUpTrayIcon, UsersIcon, LightBulbIcon, RectangleStackIcon, HandRaisedIcon,
+  ArrowUpTrayIcon, UsersIcon, HandRaisedIcon,
   ArrowPathIcon,
-  ArrowPathRoundedSquareIcon, WrenchScrewdriverIcon, SignalIcon, ArrowTrendingUpIcon,
+  ArrowTrendingUpIcon,
   BellAlertIcon, CurrencyDollarIcon,
 } from '@heroicons/react/24/outline';
 
@@ -120,14 +117,14 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
       // A oferta do dia sai sozinha, com o card do dia da semana.
       { name: 'Promoção do dia',     href: '/marketing/promocao-do-dia',    icon: SunIcon },
       { name: 'Campanha WhatsApp',   href: '/marketing/whatsapp',           icon: DevicePhoneMobileIcon },
-      { name: 'Campanha por e-mail', href: '/marketing/email/campaigns',    icon: EnvelopeIcon },
       // Promoção de comentário no Instagram: a loja responde no direct quem
       // comentar na publicação. Entra no menu junto das outras campanhas
       // porque é a mesma decisão do dono — "como eu chamo gente hoje?".
       { name: 'Promoção no Instagram', href: '/marketing/instagram',        icon: MegaphoneIcon },
-      // Recuperadas: existiam no código e não tinham caminho nenhum no menu.
-      { name: 'E-mails automáticos', href: '/marketing/automations',        icon: ArrowPathRoundedSquareIcon },
       { name: 'Modelos de mensagem', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
+      // Fora do menu em 03/10 (rotas de pé): 'Campanha por e-mail'
+      // (/marketing/email/campaigns) e 'E-mails automáticos'
+      // (/marketing/automations) — 4 chamadas cada em 16 dias de log.
       // 'Assinantes' (/marketing/subscribers) saiu do menu: o modelo Subscriber
       // está em 0 e nada o alimenta. O público real de campanha vive em
       // EmailRecipient (136) e StoreCustomer (100) — a tela ficaria vazia para
@@ -136,35 +133,10 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
     ],
   };
 
-  const automacao: NavSection = {
-    grupo: 'Crescimento',
-    label: 'Automação',
-    icon: SparklesIcon,
-    items: [
-      { name: 'Agentes de IA',        href: '/agents',               icon: CpuChipIcon, badge: 'Beta' },
-      { name: 'Respostas automáticas', href: '/automation/companies', icon: BoltIcon },
-      // Recuperada: 166 AutoMessage em produção e nenhum caminho no menu — ao
-      // contrário de flows/scheduled/logs (zerados), esta tela tem conteúdo
-      // real. 'Respostas automáticas' configura QUANDO o bot fala;
-      // 'Mensagens automáticas' é O QUE ele diz. São telas complementares, e
-      // faltava a segunda.
-      { name: 'Mensagens automáticas', href: '/automation/messages', icon: ChatBubbleLeftRightIcon },
-      // 'Fluxos do agente' (/automation/flows) e 'Agendamentos'
-      // (/automation/scheduled) saíram do menu. Levantamento de 19/08 contra o
-      // banco de produção: AgentFlow 0, FlowSession 0, FlowExecutionLog 0,
-      // ScheduledMessage 0 — nunca executaram uma vez. O agente de IA não roda
-      // em produção (as 14 AgentConversation têm 0 mensagens cada), então
-      // "fluxo do agente" oferece configurar algo que não está ligado.
-      // As rotas continuam de pé; voltam ao menu quando houver o que mostrar.
-      // Duas telas de log, uma delas permanentemente vazia: `AutomationLog`
-      // (/automation/logs) só é escrito em evento de carrinho, e o caminho
-      // real da mensagem não passa por lá. O `IntentLog` passou a registrar
-      // TODA mensagem — texto, intenção, handler, resposta, duração e também
-      // o silêncio —, então ele é o log. A rota antiga continua de pé para
-      // não virar link quebrado; fora do menu para não prometer o que não tem.
-      { name: 'Conversas da IA', href: '/automation/intents/stats', icon: SignalIcon, sectionHeader: 'Monitoramento' },
-    ],
-  };
+  // 'Automação' saiu do menu em 03/10 (rotas de pé): Agentes de IA (3
+  // chamadas em 16 dias de log), Respostas automáticas (4), Mensagens
+  // automáticas (8) e Conversas da IA (3). O agente de IA não roda em
+  // produção; o que o lojista usa do bot mora em Atendimento → Ensinar o bot.
 
   return [
     // ── Operação: o que se toca durante o expediente ──────────────────────
@@ -199,10 +171,8 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
         { name: 'Respostas rápidas', href: '/atendimento/respostas-rapidas', icon: ChatBubbleBottomCenterTextIcon },
         // Onde a IA falhou + fatos da loja + respostas ensinadas: o contexto do bot.
         { name: 'Ensinar o bot', href: '/atendimento/ensinar-o-bot', icon: AcademicCapIcon },
-        // Conversas → pedidos, e onde a venda parou: a régua do bot.
-        { name: 'Conversão do bot', href: '/atendimento/conversao-do-bot', icon: FunnelIcon },
-        { name: 'Sessões',      href: '/automation/sessions',                icon: RectangleStackIcon },
-        { name: 'Insights',     href: '/automation/conversation-insights',   icon: LightBulbIcon },
+        // Fora do menu em 03/10 (rotas de pé), por uso nos logs de 16 dias:
+        // Conversão do bot (3 chamadas), Sessões (2) e Insights (8).
       ],
     },
     {
@@ -275,10 +245,10 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
         { name: 'Vendas',             href: '/analytics/vendas',      icon: ArrowTrendingUpIcon },
         { name: 'Clientes',           href: '/analytics/clientes',    icon: UsersIcon },
         { name: 'Operação',           href: '/analytics/operacao',    icon: ClockIcon },
-        { name: 'Metas e Conquistas', href: '/conquistas',            icon: TrophyIcon },
+        // 'Metas e Conquistas' (/conquistas) fora do menu em 03/10: 2 chamadas em 16 dias.
       ],
     },
-    ...(automationEnabled ? [marketing, automacao] : []),
+    ...(automationEnabled ? [marketing] : []),
 
     // ── Ajustes ──────────────────────────────────────────────────────────
     {
@@ -295,10 +265,8 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
         // então nunca criou ninguém. Corrigido em 22/09 — agora convida-se
         // pelo celular.
         { name: 'Colaboradores', href: '/colaboradores', icon: UsersIcon },
-        // Recuperadas: diagnósticos que existiam sem rota — quando o WhatsApp
-        // cai, é aqui que se olha em vez de abrir o log do servidor.
-        { name: 'Diagnóstico do WhatsApp', href: '/whatsapp/diagnostics', icon: WrenchScrewdriverIcon, sectionHeader: 'Quando algo falha' },
-        { name: 'Diagnóstico do chat',     href: '/whatsapp/debug',       icon: ChatBubbleLeftRightIcon },
+        // Os diagnósticos (/whatsapp/diagnostics, /whatsapp/debug) saíram do
+        // menu em 03/10: são ferramenta de suporte, não produto do lojista.
       ],
     },
   ];

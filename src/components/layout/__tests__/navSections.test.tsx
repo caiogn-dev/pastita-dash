@@ -56,28 +56,13 @@ describe('agrupamento que o dono pediu', () => {
   });
 });
 
-describe('páginas recuperadas — existiam no código e não tinham caminho nenhum', () => {
-  const alcancavel = (href: string) =>
-    todosItens().some((i) => i.href === href) || secoes().some((s) => s.href === href);
-
-  it.each([
-    ['/marketing/automations', 'e-mails automáticos por evento'],
-    // '/marketing/subscribers' e '/automation/flows' foram REMOVIDOS desta
-    // lista em 19/08. Eles entraram aqui por um critério de superfície ("a
-    // página existe e não tem caminho no menu"), que estava certo na época.
-    // O critério novo é de conteúdo: medido contra o banco de produção, os
-    // dois nunca tiveram um registro sequer. Dar caminho de menu para tela
-    // que só sabe mostrar vazio é pior do que não ter caminho.
-    // Ver 'menu não promete tela que nunca teve dado', no fim do arquivo.
-    ['/whatsapp/diagnostics', 'diagnóstico do webhook'],
-    ['/whatsapp/debug', 'diagnóstico do chat'],
-  ])('%s (%s) tem caminho no menu', (href) => {
-    expect(alcancavel(href)).toBe(true);
-  });
-});
+// 'Páginas recuperadas' (e-mails automáticos, diagnósticos) ganharam item de
+// menu em 19/08 pelo critério de conteúdo ("a tela tem dado"). Em 03/10 o
+// critério passou a ser USO MEDIDO nos logs do nginx, e elas saíram do menu
+// com as rotas de pé. Ver navSections.enxuto.test.ts.
 
 describe('atendimento deixa de ser um item solto', () => {
-  it('junta conversas, fila humana, avisos automáticos, sessões e insights', () => {
+  it('junta conversas, fila humana, avisos automáticos, respostas rápidas e ensinar o bot', () => {
     const at = acha('Atendimento');
     expect(at.items.map((i) => i.href)).toEqual([
       '/inbox/whatsapp',
@@ -85,9 +70,6 @@ describe('atendimento deixa de ser um item solto', () => {
       '/whatsapp/avisos',
       '/atendimento/respostas-rapidas',
       '/atendimento/ensinar-o-bot',
-      '/atendimento/conversao-do-bot',
-      '/automation/sessions',
-      '/automation/conversation-insights',
     ]);
   });
 
@@ -105,13 +87,12 @@ it('sem automação habilitada, Marketing e Automação somem — o resto fica',
   expect(labels).toEqual(expect.arrayContaining(['Início', 'Pedidos', 'Atendimento', 'Balcão', 'Cardápio']));
 });
 
-it('Configurações mantém Geral/Entrega/Storefront/Pagamentos, Colaboradores e Diagnóstico', () => {
+it('Configurações mantém Geral/Entrega/Storefront/Pagamentos e Colaboradores', () => {
   // Colaboradores entrou em 22/09: o CRUD de equipe existia desde junho sem
   // nenhuma tela, e sem item de menu uma tela nova não existe para o lojista.
   const cfg = acha('Configurações');
   expect(cfg.items.map((i) => i.name)).toEqual([
     'Geral', 'Entrega', 'Storefront', 'Pagamentos', 'Colaboradores',
-    'Diagnóstico do WhatsApp', 'Diagnóstico do chat',
   ]);
   expect(cfg.items[0].href).toBe('/stores/loja-x/settings');
 });
