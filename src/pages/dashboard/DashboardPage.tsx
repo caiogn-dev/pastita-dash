@@ -32,6 +32,7 @@ import {
   estadoDeSaude,
 } from '../../components/ui';
 import OnboardingChecklist from '../../components/onboarding/OnboardingChecklist';
+import { itensDeSaude, type AlertaDeSaude } from './alertasDeSaude';
 import OnboardingWizard from '../../components/onboarding/wizard/OnboardingWizard';
 import { buildWizardSteps } from '../../components/onboarding/wizard/buildWizardSteps';
 import { getChecklist, markWizardSeen } from '../../services/onboarding';
@@ -124,9 +125,11 @@ export const DashboardPage: React.FC = () => {
   // Onboarding wizard: auto-abre 1× no 1º login de loja incompleta (derivado
   // do checklist + flag wizard_seen do backend; markWizardSeen garante 1 vez só).
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [alertasDeSaude, setAlertasDeSaude] = useState<AlertaDeSaude[]>([]);
   useEffect(() => {
     if (!storeSlug) return;
     getChecklist(storeSlug).then((c) => {
+      setAlertasDeSaude(c.alertas ?? []);
       if (!c.all_done && !c.wizard_seen) {
         setWizardOpen(true);
         markWizardSeen(storeSlug).catch(() => {});
@@ -634,6 +637,7 @@ export const DashboardPage: React.FC = () => {
               recomendacao: 'falaram por último e ninguém respondeu',
               acao: { rotulo: 'Abrir inbox', onClick: () => navigate('/inbox/whatsapp') },
             },
+            ...itensDeSaude(alertasDeSaude, storeRoute, navigate),
           ].filter(Boolean) as React.ComponentProps<typeof InsightList>['itens']}
         />
       )}
