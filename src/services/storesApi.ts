@@ -1948,6 +1948,14 @@ export const createComboWithItems = async (
   }
 };
 
+/** Envia a foto do combo do computador (o JSON do combo não carrega arquivo). */
+export const uploadComboImage = async (id: string, arquivo: File): Promise<StoreCombo> => {
+  const dados = new FormData();
+  dados.append('image', arquivo);
+  const response = await api.patch(`${BASE_URL}/combos/${id}/`, dados);
+  return response.data;
+};
+
 export const updateComboWithItems = async (
   id: string,
   data: Partial<StoreComboPayload>

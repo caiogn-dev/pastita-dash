@@ -1,27 +1,19 @@
 /**
- * ComboList — Table/list view of combos
- *
- * Displays combos in a structured table format with:
- * - Name, Price, Groups Count, Status, Actions
- * - Fetch from API
- * - Filter by status
- * - Edit/Delete/Duplicate actions
+ * ComboList — combos como o lojista reconhece: foto, nome, preço e o que o
+ * cliente escolhe. Ligar/desligar no cardápio e destacar sem abrir o combo.
  */
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  PencilIcon,
-  TrashIcon,
-  EyeIcon,
-  EyeSlashIcon,
+  DocumentDuplicateIcon,
+  PhotoIcon,
   StarIcon,
-  MagnifyingGlassIcon,
-  ExclamationTriangleIcon,
+  TrashIcon,
+  EllipsisVerticalIcon,
 } from '@heroicons/react/24/outline';
-import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
-import { StoreCombo } from '../../services/storesApi';
-import { Badge } from '../ui';
+import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
+import { SearchInput, Switch } from '../ui';
+import type { StoreCombo } from '../../services/storesApi';
 import { formatCurrency } from '../../utils/formatters';
-
 
 export interface ComboListProps {
   combos: StoreCombo[];
@@ -33,187 +25,177 @@ export interface ComboListProps {
   onDuplicate?: (combo: StoreCombo) => void;
 }
 
-export const ComboList: React.FC<ComboListProps> = ({
-  combos,
-  loading: _loading = false,
-  onEdit,
-  onDelete,
-  onToggleActive,
-  onToggleFeatured,
-  onDuplicate: _onDuplicate,
-}) => {
-  const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+type Filtro = 'todos' | 'ativos' | 'fora';
 
-  const filtered = useMemo(() => {
-    let list = combos;
-    if (filterStatus === 'active') list = list.filter(c => c.is_active);
-    if (filterStatus === 'inactive') list = list.filter(c => !c.is_active);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(c => c.name.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q));
-    }
-    return list;
-  }, [combos, search, filterStatus]);
+const resumoDasEscolhas = (combo: StoreCombo): string => {
+  const grupos = combo.groups || [];
+  if (grupos.length === 0) return 'Sem escolhas';
+  const opcoes = grupos.reduce(
+    (soma, g) => soma + ((g.product_options?.length || 0) || (g.variant_limits?.length || 0)),
+    0,
+  );
+  const escolhas = grupos.length === 1 ? '1 escolha' : `${grupos.length} escolhas`;
+  return `${escolhas} · ${opcoes} ${opcoes === 1 ? 'opção' : 'opções'}`;
+};
 
-  if (combos.length === 0) {
-    return (
-      <div className="p-8 text-center rounded border border-border-token">
-        <ExclamationTriangleIcon className="w-12 h-12 mx-auto text-fg-muted-token mb-3" />
-        <h3 className="text-lg font-semibold text-fg-token mb-1">Nenhum combo encontrado</h3>
-        <p className="text-sm text-fg-muted-token">
-          Crie seu primeiro combo para oferecer kits de produtos aos seus clientes.
-        </p>
+const CartaoDoCombo: React.FC<{
+  combo: StoreCombo;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggleActive: () => void;
+  onToggleFeatured: () => void;
+  onDuplicate?: () => void;
+}> = ({ combo, onEdit, onDelete, onToggleActive, onToggleFeatured, onDuplicate }) => {
+  const [menuAberto, setMenuAberto] = useState(false);
+  const foto = combo.image_url || combo.image;
+
+  return (
+    <li className={`superficie relative flex flex-col overflow-hidden ${combo.is_active ? '' : 'opacity-70'}`}>
+      <button type="button" onClick={onEdit} className="text-left" aria-label={`Editar ${combo.name}`}>
+        <div className="aspect-[16/10] bg-surface-2">
+          {foto ? (
+            <img src={foto} alt="" className="h-full w-full object-cover" loading="lazy" />
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <PhotoIcon className="h-8 w-8 text-fg-muted-token" aria-hidden="true" />
+            </div>
+          )}
+        </div>
+        <div className="space-y-1 p-4 pb-2">
+          <p className="truncate font-semibold text-fg-token">{combo.name}</p>
+          <p className="text-sm">
+            {combo.dynamic_pricing && <span className="text-fg-muted-token">a partir de </span>}
+            <span className="font-semibold text-brand-ink">{formatCurrency(combo.price)}</span>
+            {combo.compare_at_price && Number(combo.compare_at_price) > Number(combo.price) && (
+              <span className="ml-2 text-fg-muted-token line-through">{formatCurrency(combo.compare_at_price)}</span>
+            )}
+          </p>
+          <p className="text-xs text-fg-muted-token">{resumoDasEscolhas(combo)}</p>
+        </div>
+      </button>
+
+      <div className="mt-auto flex items-center gap-2 px-4 pb-3 pt-1">
+        <Switch ligado={combo.is_active} onMudar={onToggleActive} rotulo={`${combo.name} no cardápio`} />
+        <span className="text-xs text-fg-muted-token">{combo.is_active ? 'No cardápio' : 'Fora'}</span>
+        <button
+          type="button"
+          onClick={onToggleFeatured}
+          aria-pressed={combo.featured}
+          aria-label={combo.featured ? `Tirar destaque de ${combo.name}` : `Destacar ${combo.name}`}
+          className="ml-auto rounded-lg p-1.5 text-fg-muted-token hover:bg-surface-2"
+        >
+          {combo.featured ? <StarSolidIcon className="h-5 w-5 text-warning-token" /> : <StarIcon className="h-5 w-5" />}
+        </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setMenuAberto(v => !v)}
+            aria-expanded={menuAberto}
+            aria-label={`Mais ações de ${combo.name}`}
+            className="rounded-lg p-1.5 text-fg-muted-token hover:bg-surface-2"
+          >
+            <EllipsisVerticalIcon className="h-5 w-5" />
+          </button>
+          {menuAberto && (
+            <div
+              role="menu"
+              className="superficie-alta absolute bottom-full right-0 z-10 mb-1 w-40 overflow-hidden py-1"
+              onMouseLeave={() => setMenuAberto(false)}
+            >
+              {onDuplicate && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => { setMenuAberto(false); onDuplicate(); }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-fg-token hover:bg-surface-2"
+                >
+                  <DocumentDuplicateIcon className="h-4 w-4" /> Duplicar
+                </button>
+              )}
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => { setMenuAberto(false); onDelete(); }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-danger-token hover:bg-danger-soft"
+              >
+                <TrashIcon className="h-4 w-4" /> Excluir
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    );
-  }
+    </li>
+  );
+};
+
+export const ComboList: React.FC<ComboListProps> = ({
+  combos, loading = false, onEdit, onDelete, onToggleActive, onToggleFeatured, onDuplicate,
+}) => {
+  const [busca, setBusca] = useState('');
+  const [filtro, setFiltro] = useState<Filtro>('todos');
+
+  const contagem = useMemo(() => ({
+    todos: combos.length,
+    ativos: combos.filter(c => c.is_active).length,
+    fora: combos.filter(c => !c.is_active).length,
+  }), [combos]);
+
+  const visiveis = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    return combos
+      .filter(c => (filtro === 'ativos' ? c.is_active : filtro === 'fora' ? !c.is_active : true))
+      .filter(c => !termo || c.name.toLowerCase().includes(termo) || c.description?.toLowerCase().includes(termo))
+      .sort((a, b) => Number(b.is_active) - Number(a.is_active) || Number(b.featured) - Number(a.featured));
+  }, [combos, busca, filtro]);
+
+  const FILTROS: { id: Filtro; rotulo: string }[] = [
+    { id: 'todos', rotulo: 'Todos' },
+    { id: 'ativos', rotulo: 'No cardápio' },
+    { id: 'fora', rotulo: 'Fora' },
+  ];
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-        <div className="relative flex-1">
-          <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted-token" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar combos..."
-            className="w-full pl-9 pr-3 py-2 text-sm rounded border border-border-token bg-surface text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
-          />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-[220px] flex-1">
+          <SearchInput value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar combos" />
         </div>
-        <div className="flex gap-2">
-          {(['all', 'active', 'inactive'] as const).map(f => (
+        <div className="flex gap-2" role="tablist" aria-label="Filtro">
+          {FILTROS.map(f => (
             <button
-              key={f}
-              onClick={() => setFilterStatus(f)}
-              className={`px-3 py-2 text-sm rounded border transition-colors ${
-                filterStatus === f
-                  ? 'bg-brand text-white border-brand'
-                  : 'bg-surface text-fg-muted-token border-border-token hover:bg-surface-2'
+              key={f.id}
+              type="button"
+              role="tab"
+              aria-selected={filtro === f.id}
+              onClick={() => setFiltro(f.id)}
+              className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                filtro === f.id ? 'border-brand bg-brand text-on-brand' : 'border-border-token text-fg-muted-token hover:bg-surface-2'
               }`}
             >
-              {f === 'all' ? 'Todos' : f === 'active' ? 'Ativos' : 'Inativos'}
+              {f.rotulo} <span className="opacity-70">{contagem[f.id]}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Table */}
-      {filtered.length === 0 ? (
-        <div className="p-8 text-center rounded border border-border-token border-dashed">
-          <p className="text-sm text-fg-muted-token">
-            Nenhum combo encontrado com os filtros selecionados
-          </p>
-        </div>
+      {visiveis.length === 0 ? (
+        <p className="py-16 text-center text-sm text-fg-muted-token">
+          {loading ? 'Carregando…' : busca ? 'Nenhum combo encontrado' : 'Nenhum combo ainda'}
+        </p>
       ) : (
-        <div className="overflow-x-auto rounded border border-border-token">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-surface-2 border-b border-border-token">
-                <th className="text-left px-6 py-3 text-sm font-semibold text-fg-token">
-                  Nome
-                </th>
-                <th className="text-right px-6 py-3 text-sm font-semibold text-fg-token">
-                  Preço
-                </th>
-                <th className="text-center px-6 py-3 text-sm font-semibold text-fg-token">
-                  Produtos
-                </th>
-                <th className="text-center px-6 py-3 text-sm font-semibold text-fg-token">
-                  Status
-                </th>
-                <th className="text-right px-6 py-3 text-sm font-semibold text-fg-token">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((combo, idx) => (
-                <tr
-                  key={combo.id}
-                  className={`border-b border-border-token ${
-                    idx % 2 === 0 ? 'bg-surface' : 'bg-surface-2'
-                  } hover:bg-surface-2 transition-colors`}
-                >
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="font-medium text-fg-token">{combo.name}</p>
-                      {combo.description && (
-                        <p className="text-xs text-fg-muted-token line-clamp-1">
-                          {combo.description}
-                        </p>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div>
-                      <p className="font-semibold text-fg-token">{formatCurrency(combo.price)}</p>
-                      {combo.compare_at_price && Number(combo.compare_at_price) > combo.price && (
-                        <p className="text-xs text-fg-muted-token line-through">{formatCurrency(combo.compare_at_price)}</p>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <Badge tone="neutral">{combo.groups?.length ?? 0}</Badge>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      {combo.is_active ? (
-                        <Badge tone="success">Ativo</Badge>
-                      ) : (
-                        <Badge tone="neutral">Inativo</Badge>
-                      )}
-                      {combo.featured && (
-                        <StarIconSolid className="w-4 h-4 text-yellow-500" title="Destaque" />
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => onToggleActive(combo)}
-                        title={combo.is_active ? 'Desativar' : 'Ativar'}
-                        className={`p-1.5 rounded transition-colors hover:bg-surface-2 ${
-                          combo.is_active ? 'text-brand-ink' : 'text-fg-muted-token'
-                        }`}
-                      >
-                        {combo.is_active ? (
-                          <EyeIcon className="w-4 h-4" />
-                        ) : (
-                          <EyeSlashIcon className="w-4 h-4" />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => onToggleFeatured(combo)}
-                        title={combo.featured ? 'Remover destaque' : 'Destacar'}
-                        className={`p-1.5 rounded transition-colors hover:bg-surface-2 ${
-                          combo.featured ? 'text-yellow-500' : 'text-fg-muted-token'
-                        }`}
-                      >
-                        <StarIcon className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => onEdit(combo)}
-                        className="p-1.5 rounded text-fg-muted-token hover:text-fg-token hover:bg-surface-2 transition-colors"
-                        title="Editar"
-                      >
-                        <PencilIcon className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => onDelete(combo)}
-                        className="p-1.5 rounded text-[var(--danger)] hover:bg-danger-soft transition-colors"
-                        title="Excluir"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Combos">
+          {visiveis.map(combo => (
+            <CartaoDoCombo
+              key={combo.id}
+              combo={combo}
+              onEdit={() => onEdit(combo)}
+              onDelete={() => onDelete(combo)}
+              onToggleActive={() => onToggleActive(combo)}
+              onToggleFeatured={() => onToggleFeatured(combo)}
+              onDuplicate={onDuplicate ? () => onDuplicate(combo) : undefined}
+            />
+          ))}
+        </ul>
       )}
     </div>
   );

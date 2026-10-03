@@ -5,15 +5,15 @@
  * - /stores/{store_slug}/combos/new
  * - /stores/{store_slug}/combos/{combo_id}/edit
  *
- * Integrates ComboForm component and handles API calls
+ * Usa o ComboEditor (tela única com prévia) e envia a foto depois de salvar.
  */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeftIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, PageShell } from '../../../components/ui';
+import { Button, PageShell } from '../../../components/ui';
 import { Loading } from '../../../components/common';
-import ComboForm from '../../../components/Combos/ComboForm';
+import { ComboEditor } from '../../../components/Combos/editor/ComboEditor';
 import { useStore } from '../../../hooks';
 import storesApi, {
   StoreCombo,
@@ -22,6 +22,7 @@ import storesApi, {
   getCombo,
   createComboWithItems,
   updateComboWithItems,
+  uploadComboImage,
 } from '../../../services/storesApi';
 import logger from '../../../services/logger';
 
@@ -49,6 +50,10 @@ export const ComboFormPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
 
   const isEditing = !!comboId;
+  // "Duplicar" na lista abre /combos/new?de=<id>: o combo de origem vira o
+  // ponto de partida de um combo NOVO.
+  const [params] = useSearchParams();
+  const origemId = !comboId ? params.get('de') : null;
 
   const loadData = useCallback(async () => {
     if (!storeId) {
@@ -60,11 +65,11 @@ export const ComboFormPage: React.FC = () => {
       setLoading(true);
       const [productsRes, comboRes] = await Promise.all([
         storesApi.getProducts({ store: storeId, status: 'active', page_size: 200 }),
-        comboId ? getCombo(comboId) : Promise.resolve(null),
+        comboId ? getCombo(comboId) : origemId ? getCombo(origemId) : Promise.resolve(null),
       ]);
 
       setProducts(productsRes.results || []);
-      setCombo(comboRes || null);
+      setCombo(comboRes ? (origemId ? { ...comboRes, name: `${comboRes.name} (cópia)` } : comboRes) : null);
     } catch (err) {
       logger.error('Error loading data:', err);
       toast.error('Erro ao carregar dados');
@@ -72,26 +77,33 @@ export const ComboFormPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [storeId, storeSlug, comboId, navigate]);
+  }, [storeId, storeSlug, comboId, origemId, navigate]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  const handleSubmit = async (data: StoreComboPayload) => {
+  const handleSubmit = async (data: StoreComboPayload, foto?: File) => {
     setSaving(true);
     try {
-      if (isEditing && comboId) {
-        await updateComboWithItems(comboId, data);
-        toast.success('Combo atualizado com sucesso!');
-      } else {
-        await createComboWithItems(data);
-        toast.success('Combo criado com sucesso!');
+      const salvo = isEditing && comboId
+        ? await updateComboWithItems(comboId, data)
+        : await createComboWithItems(data);
+      // A foto vai depois, num segundo pedido: o combo precisa existir para
+      // receber o arquivo, e o JSON dos grupos não carrega arquivo.
+      if (foto && salvo?.id) {
+        try {
+          await uploadComboImage(salvo.id, foto);
+        } catch (err) {
+          logger.error('Error uploading combo image:', err);
+          toast.error('Combo salvo, mas a foto não subiu');
+        }
       }
+      toast.success(isEditing ? 'Combo salvo' : 'Combo criado');
       navigate(`/stores/${storeSlug || storeId}/combos`);
     } catch (err) {
       logger.error('Error saving combo:', err);
-      toast.error('Erro ao salvar combo');
+      toast.error('Não foi possível salvar o combo');
     } finally {
       setSaving(false);
     }
@@ -128,22 +140,22 @@ export const ComboFormPage: React.FC = () => {
         { rotulo: 'Combos', href: `/stores/${storeSlug}/combos` },
         { rotulo: isEditing ? 'Editar' : 'Novo combo' },
       ]}
-      titulo={isEditing ? `Editar combo — ${combo?.name}` : 'Novo combo'}
+      titulo={isEditing ? combo?.name || 'Combo' : 'Novo combo'}
       acoes={
         <Button variant="outline" onClick={() => navigate(-1)} leftIcon={<ArrowLeftIcon className="h-4 w-4" />}>
           Voltar
         </Button>
       }
     >
-      <Card className="p-6">
-        <ComboForm
-          combo={combo}
-          storeId={storeId}
-          products={products}
-          onSubmit={handleSubmit}
-          isLoading={saving}
-        />
-      </Card>
+      <ComboEditor
+        combo={combo}
+        storeId={storeId}
+        produtos={products}
+        salvando={saving}
+        editando={isEditing}
+        onSalvar={handleSubmit}
+        onCancelar={() => navigate(`/stores/${storeSlug || storeId}/combos`)}
+      />
     </PageShell>
   );
 };

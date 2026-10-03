@@ -1,7 +1,5 @@
-export { ComboForm } from './ComboForm';
 export { ComboList } from './ComboList';
-export { ComboModal } from './ComboModal';
+export { ComboEditor } from './editor/ComboEditor';
 
-export type { ComboFormProps } from './ComboForm';
 export type { ComboListProps } from './ComboList';
-export type { ComboModalProps } from './ComboModal';
+export type { ComboEditorProps } from './editor/ComboEditor';

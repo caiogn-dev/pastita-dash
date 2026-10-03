@@ -16,13 +16,17 @@ const INVALID_BRAND_SHADE = /\bbrand-(?:50|100|200|300|700|800|900)\b/;
 const DEAD_DARK_VAR = /var\(--dark-/;
 
 function comboSources(): Array<{ file: string; content: string }> {
-  return fs
-    .readdirSync(COMBOS_DIR)
-    .filter((f) => f.endsWith('.tsx'))
-    .map((f) => ({
-      file: f,
-      content: fs.readFileSync(path.join(COMBOS_DIR, f), 'utf8'),
-    }));
+  // Inclui o editor (subpasta editor/): ele substituiu o formulário de 3 abas.
+  const pastas = [COMBOS_DIR, path.join(COMBOS_DIR, 'editor')];
+  return pastas.flatMap((dir) =>
+    fs
+      .readdirSync(dir)
+      .filter((f) => f.endsWith('.tsx'))
+      .map((f) => ({
+        file: path.relative(COMBOS_DIR, path.join(dir, f)),
+        content: fs.readFileSync(path.join(dir, f), 'utf8'),
+      })),
+  );
 }
 
 describe('Combos — classes de cor devem resolver para tokens reais', () => {

@@ -16,11 +16,10 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   PlusIcon,
-  ArrowPathIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, StatCard, PageShell } from '../../../components/ui';
+import { Button, PageShell } from '../../../components/ui';
 import { Modal, Loading } from '../../../components/common';
 import ComboList from '../../../components/Combos/ComboList';
 import { useStore } from '../../../hooks';
@@ -137,9 +136,6 @@ export const ComboListPage: React.FC = () => {
       titulo="Combos"
       acoes={
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={loadData} title="Atualizar">
-            <ArrowPathIcon className="w-5 h-5" />
-          </Button>
           <Button
             variant="primary"
             leftIcon={<PlusIcon className="w-5 h-5" />}
@@ -151,55 +147,26 @@ export const ComboListPage: React.FC = () => {
       }
     >
 
-      {/* Stats */}
-      {combos.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {([
-            { label: 'Total', value: combos.length, tone: 'default' as const },
-            {
-              label: 'Ativos',
-              value: combos.filter(c => c.is_active).length,
-              tone: 'brand' as const,
-            },
-            {
-              label: 'Destaques',
-              value: combos.filter(c => c.featured).length,
-              tone: 'warning' as const,
-            },
-            {
-              label: 'Com produtos',
-              value: combos.filter(c => (c.groups?.length ?? 0) > 0).length,
-              tone: 'brand' as const,
-            },
-          ]).map(s => (
-            <StatCard key={s.label} label={s.label} value={s.value} tone={s.tone} />
-          ))}
-        </div>
-      )}
-
-      {/* List */}
-      <Card className="p-6">
-        <ComboList
-          combos={combos}
-          loading={loading}
-          onEdit={combo => navigate(`/stores/${storeSlug}/combos/${combo.id}/edit`)}
-          onDelete={setDeletingCombo}
-          onToggleActive={handleToggleActive}
-          onToggleFeatured={handleToggleFeatured}
-        />
-      </Card>
+      <ComboList
+        combos={combos}
+        loading={loading}
+        onEdit={combo => navigate(`/stores/${storeSlug}/combos/${combo.id}/edit`)}
+        onDuplicate={combo => navigate(`/stores/${storeSlug}/combos/new?de=${combo.id}`)}
+        onDelete={setDeletingCombo}
+        onToggleActive={handleToggleActive}
+        onToggleFeatured={handleToggleFeatured}
+      />
 
       {/* Delete Confirmation */}
       <Modal
         isOpen={!!deletingCombo}
         onClose={() => setDeletingCombo(null)}
-        title="Excluir Combo"
+        title="Excluir combo"
       >
         <div className="space-y-4">
-          <p className="text-fg-muted-token">
-            Tem certeza que deseja excluir o combo <strong>{deletingCombo?.name}</strong>?
+          <p className="text-fg-token">
+            Excluir <strong>{deletingCombo?.name}</strong>? Não dá para desfazer.
           </p>
-          <p className="text-sm text-[var(--danger)]">Esta ação não pode ser desfeita.</p>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setDeletingCombo(null)}>
               Cancelar
