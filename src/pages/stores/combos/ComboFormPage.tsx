@@ -33,9 +33,11 @@ export const ComboFormPage: React.FC = () => {
 
   const storeId = useMemo(() => {
     if (!routeStoreId) return contextStoreId || null;
-    // Support both store ID and store slug in the route
+    // A loja da URL manda. Antes, sem achar a loja na conta, a página caía na
+    // loja do topo e mostrava os combos dela sob a URL de outra: abrir
+    // /stores/agriao…/combos listava os combos da Cê (03/10).
     const match = stores.find(s => s.id === routeStoreId || s.slug === routeStoreId);
-    return match?.id || contextStoreId || null;
+    return match?.id || null;
   }, [routeStoreId, contextStoreId, stores]);
 
   // Get store slug for navigation
@@ -108,6 +110,16 @@ export const ComboFormPage: React.FC = () => {
       setSaving(false);
     }
   };
+
+  if (routeStoreId && !storeId) {
+    if (stores.length === 0) return <Loading />;
+    return (
+      <div className="p-6 text-center">
+        <h2 className="mb-2 text-xl font-semibold text-fg-token">Loja não encontrada nesta conta</h2>
+        <Button onClick={() => navigate('/stores')}>Ver lojas</Button>
+      </div>
+    );
+  }
 
   if (!storeId) {
     return (

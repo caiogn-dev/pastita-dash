@@ -52,7 +52,7 @@ const CartaoDoCombo: React.FC<{
   return (
     <li className={`superficie relative flex flex-col overflow-hidden ${combo.is_active ? '' : 'opacity-70'}`}>
       <button type="button" onClick={onEdit} className="text-left" aria-label={`Editar ${combo.name}`}>
-        <div className="aspect-[16/10] bg-surface-2">
+        <div className="h-36 bg-surface-2">
           {foto ? (
             <img src={foto} alt="" className="h-full w-full object-cover" loading="lazy" />
           ) : (
