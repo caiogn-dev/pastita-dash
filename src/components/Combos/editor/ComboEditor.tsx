@@ -106,7 +106,7 @@ export const ComboEditor: React.FC<ComboEditorProps> = ({
   const fotoMostrada = fotoLocal || r.fotoUrl;
 
   return (
-    <div className="pb-24">
+    <div>
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-8">
           {/* Identidade */}
@@ -309,8 +309,8 @@ export const ComboEditor: React.FC<ComboEditorProps> = ({
       </div>
 
       {/* Barra de salvar */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border-token bg-surface/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
+      <div className="sticky bottom-0 z-30 -mx-4 mt-8 border-t border-border-token bg-surface sm:-mx-6">
+        <div className="flex items-center gap-3 px-4 py-3 sm:px-6">
           <label className="flex items-center gap-2 text-sm text-fg-token">
             <Switch ligado={r.ativo} onMudar={v => mudar('ativo', v)} rotulo="No cardápio" />
             No cardápio

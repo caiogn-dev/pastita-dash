@@ -17,7 +17,6 @@ const MAX_OPCOES_NA_PREVIA = 4;
 export const PreviaDoCombo: React.FC<Props> = ({ rascunho, produtos, fotoLocal }) => {
   const foto = fotoLocal || rascunho.fotoUrl;
   const aPartirDe = precoAPartirDe(rascunho);
-  const temEscolha = rascunho.grupos.some(g => g.minimo !== g.maximo || g.opcoes.length > 1);
 
   return (
     <div className="overflow-hidden rounded-3xl border border-border-token bg-surface shadow-sm" data-testid="previa-do-combo">
@@ -36,7 +35,7 @@ export const PreviaDoCombo: React.FC<Props> = ({ rascunho, produtos, fotoLocal }
             {rascunho.nome || 'Nome do combo'}
           </p>
           <p className="mt-1 flex items-baseline gap-2">
-            {(rascunho.precoPelaSoma || temEscolha) && aPartirDe > 0 && (
+            {rascunho.precoPelaSoma && aPartirDe > 0 && (
               <span className="text-xs text-fg-muted-token">a partir de</span>
             )}
             <span className="text-xl font-bold text-brand-ink">{formatCurrency(aPartirDe)}</span>
