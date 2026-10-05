@@ -147,7 +147,16 @@ const stringifyApiErrorValue = (value: unknown): string | null => {
 
 export const getErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
-    const data = error.response?.data;
+    if (!error.response) {
+      return 'Sem conexão com o servidor. Confira a internet e tente de novo.';
+    }
+    const data = error.response.data;
+    // 502/503/504 de deploy: o nginx responde uma página HTML, que virava o
+    // texto do toast. JSON com mensagem do backend (um 500 tratado) segue valendo.
+    const corpoSemMensagem = !data || typeof data === 'string';
+    if (error.response.status >= 500 && corpoSemMensagem) {
+      return 'Servidor indisponível no momento. Tente de novo em instantes.';
+    }
     return (
       stringifyApiErrorValue(data?.error) ||
       stringifyApiErrorValue(data?.message) ||
