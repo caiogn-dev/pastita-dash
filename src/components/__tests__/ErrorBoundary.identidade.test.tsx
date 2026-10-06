@@ -43,3 +43,13 @@ describe('tela de erro', () => {
     restaurar();
   });
 });
+
+describe('tela de erro é do lojista, não do programador', () => {
+  it('não mostra mensagem técnica nem pilha de componentes', () => {
+    const restaurar = silenciarConsole();
+    render(<ErrorBoundary><Explode /></ErrorBoundary>);
+    expect(screen.queryByText(/falha de teste/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/detalhes técnicos/i)).not.toBeInTheDocument();
+    restaurar();
+  });
+});
