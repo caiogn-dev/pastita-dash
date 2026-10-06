@@ -267,3 +267,19 @@ describe('OrderDetailPage — de onde veio o desconto', () => {
     expect(screen.queryByText(/pedido deste cliente/i)).not.toBeInTheDocument();
   });
 });
+
+/** Dono (06/10): pedido entregue pode ser cancelado — o cashback dele é estornado. */
+describe('OrderDetailPage — cancelar pedido entregue', () => {
+  it.each(['delivered', 'completed'])('mostra "Cancelar pedido" para %s', async (status) => {
+    mockGetOrder.mockResolvedValue({ ...baseOrder, status, payment_status: 'paid' });
+    render(<OrderDetailPage />);
+    expect(await screen.findByRole('button', { name: 'Cancelar pedido' })).toBeInTheDocument();
+  });
+
+  it('pedido já cancelado não mostra', async () => {
+    mockGetOrder.mockResolvedValue({ ...baseOrder, status: 'cancelled' });
+    render(<OrderDetailPage />);
+    await screen.findByRole('button', { name: /Fidelidade/ });
+    expect(screen.queryByRole('button', { name: 'Cancelar pedido' })).not.toBeInTheDocument();
+  });
+});

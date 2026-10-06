@@ -1139,7 +1139,9 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               Fidelidade
             </button>
 
-            {!isCancelled && !isCompleted && (
+            {/* Entregue também se cancela (dono, 06/10): o backend estorna o
+                cashback gerado e não devolve estoque. */}
+            {!isCancelled && (
               <button
                 onClick={() => setShowCancelModal(true)}
                 className="rounded-lg px-3 py-2 text-xs font-medium text-[var(--danger)] transition hover:bg-[var(--danger-soft)]"
