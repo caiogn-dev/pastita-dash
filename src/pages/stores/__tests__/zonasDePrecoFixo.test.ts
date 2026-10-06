@@ -149,3 +149,20 @@ describe('regras da região', () => {
     expect(z.so_pagamento_antecipado).toBeUndefined();
   });
 });
+
+/** Luzimangues (06/10): o Google chama de "Porto Nacional"; só a distância separa. */
+describe('limite de distância da zona', () => {
+  it('vai e volta como número', () => {
+    const z = zonaParaMetadata({ nome: 'Luzimangues', taxa: '30', palavras: 'porto nacional', ateKm: '30' });
+    expect(z.ate_km).toBe(30);
+    expect(zonasDoMetadata([z])[0].ateKm).toBe('30');
+  });
+
+  it('vazio não grava', () => {
+    expect(zonaParaMetadata({ nome: 'X', taxa: '10', ateKm: '' }).ate_km).toBeUndefined();
+  });
+
+  it('negativo não salva', () => {
+    expect(validarZona({ nome: 'X', taxa: '10', ateKm: '-3' })).toBeTruthy();
+  });
+});

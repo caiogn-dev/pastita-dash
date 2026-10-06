@@ -31,6 +31,7 @@ export interface ZonaNoFormulario {
   diaSeguinte?: boolean;
   diasSemEntrega?: number[];
   soAntecipado?: boolean;
+  ateKm?: string;
 }
 
 export interface ZonaNoMetadata {
@@ -44,6 +45,7 @@ export interface ZonaNoMetadata {
   entrega_dia_seguinte?: boolean;
   dias_sem_entrega?: number[];
   so_pagamento_antecipado?: boolean;
+  ate_km?: number;
 }
 
 /**
@@ -65,6 +67,11 @@ export function validarZona(z: ZonaNoFormulario): string | null {
   if (!z.nome?.trim()) return 'Dê um nome à zona — ele também é usado para reconhecer o endereço.';
 
   const modo = z.modo ?? 'fixo';
+
+  if ((z.ateKm ?? '').trim()) {
+    const km = numero(z.ateKm);
+    if (!Number.isFinite(km) || km <= 0) return 'Distância máxima inválida.';
+  }
 
   if (modo === 'acrescimo') {
     const extra = numero(z.acrescimo);
@@ -101,6 +108,10 @@ export function zonaParaMetadata(z: ZonaNoFormulario): ZonaNoMetadata {
 
   const base: ZonaNoMetadata = { name: z.nome.trim() };
   if (palavras.length) base.keywords = palavras;
+  // Luzimangues (06/10): o Google chama o distrito de "Porto Nacional"; só a
+  // distância da loja o separa da cidade de Porto.
+  const ateKm = numero(z.ateKm);
+  if (Number.isFinite(ateKm) && ateKm > 0) base.ate_km = ateKm;
 
   if ((z.modo ?? 'fixo') === 'acrescimo') {
     base.surcharge_on_km = true;
@@ -139,5 +150,6 @@ export function zonasDoMetadata(bruto: unknown): ZonaNoFormulario[] {
       diaSeguinte: Boolean(z.entrega_dia_seguinte),
       diasSemEntrega: (z.dias_sem_entrega ?? []).map(Number),
       soAntecipado: Boolean(z.so_pagamento_antecipado),
+      ateKm: z.ate_km != null ? String(z.ate_km) : '',
     }));
 }

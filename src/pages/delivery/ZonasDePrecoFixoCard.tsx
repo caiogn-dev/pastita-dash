@@ -223,6 +223,19 @@ export const ZonasDePrecoFixoCard: React.FC<ZonasDePrecoFixoCardProps> = ({
 
                   <div className="flex flex-wrap items-end gap-3">
                     <div className="w-[140px]">
+                      <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-fg-muted-token" htmlFor={`zona-ate-km-${i}`}>
+                        Até (km da loja)
+                      </label>
+                      <input
+                        id={`zona-ate-km-${i}`}
+                        className={inputCls}
+                        inputMode="decimal"
+                        placeholder="—"
+                        value={z.ateKm ?? ''}
+                        onChange={(e) => mudarRegra(i, { ateKm: e.target.value })}
+                      />
+                    </div>
+                    <div className="w-[140px]">
                       <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-fg-muted-token" htmlFor={`zona-minimo-${i}`}>
                         Pedido mínimo (R$)
                       </label>
