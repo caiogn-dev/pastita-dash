@@ -10,6 +10,7 @@ const motivo = (codigo: string, extra: Record<string, unknown> = {}) => ({
 
 describe('rotuloDoMotivo', () => {
   it.each([
+    ['reclamacao', 'Reclamação do pedido'],
     ['pediu_atendente', 'Cliente pediu atendente'],
     ['bot_nao_entendeu', 'O bot não entendeu o cliente'],
     ['eco_do_celular', 'Alguém respondeu pelo WhatsApp do celular'],
