@@ -1140,6 +1140,8 @@ export const getOrders = async (params?: {
   ordering?: string;
   page?: number;
   page_size?: number;
+  /** 1 = só o que o quadro mostra: em aberto de qualquer dia + entregues de hoje. */
+  quadro?: 1;
   /** YYYY-MM-DD, pela data de ENTRADA do pedido, no fuso da loja. */
   date_from?: string;
   date_to?: string;

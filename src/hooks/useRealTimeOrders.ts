@@ -234,7 +234,7 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
     // de novo — antes gerava `.../api/v1/stores/x/orders//api/v1/stores/x/orders/`.
     try {
       const response = await fetch(
-        `${apiUrl}/stores/${selectedStoreId}/orders/`,
+        `${apiUrl}/stores/${selectedStoreId}/orders/?quadro=1`,
         {
           headers: {
             Authorization: `Token ${authToken}`,

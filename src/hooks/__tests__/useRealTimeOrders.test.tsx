@@ -174,6 +174,6 @@ describe('pedido novo busca só ele', () => {
       .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [pedido('x')] }) });
     await disparar('order.created', { type: 'order.created', order_id: 'x' });
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-    expect(fetchMock.mock.calls[1][0]).toBe('http://api/api/v1/stores/s1/orders/');
+    expect(fetchMock.mock.calls[1][0]).toBe('http://api/api/v1/stores/s1/orders/?quadro=1');
   });
 });

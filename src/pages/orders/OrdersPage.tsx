@@ -721,7 +721,9 @@ export const OrdersPage: React.FC = () => {
     try {
       if (force) setRefreshing(true);
       else setLoading(true);
-      const response = await getOrders({ store: storeQuery });
+      // Só o que o quadro mostra (em aberto + entregues de hoje): era a lista
+      // dos 500 mais recentes, ~570 KB por abertura.
+      const response = await getOrders({ store: storeQuery, quadro: 1 });
       const { setOrders } = useRootStore.getState();
       setOrders(storeQuery, response.results);
       setLastSync(new Date());
