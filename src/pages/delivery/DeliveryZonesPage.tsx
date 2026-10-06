@@ -23,11 +23,11 @@ import {
   StoreLocation,
 } from '../../services/delivery';
 import { useStore } from '../../hooks';
-import { ZonasDePrecoFixoCard } from './ZonasDePrecoFixoCard';
+import { ZonasDePrecoFixoCard, type CategoriaDaLoja } from './ZonasDePrecoFixoCard';
 import { FormulaDeEntregaCard } from './FormulaDeEntregaCard';
 import { FreteGratisCard } from './FreteGratisCard';
 import { anelDaPromo, lerPromo } from './freteGratis';
-import { getStore, updateStore } from '../../services/storesApi';
+import { getCategories, getStore, updateStore } from '../../services/storesApi';
 import { formatCurrency } from '../../utils/formatters';
 
 const formatKm = (value?: number | string | null) => {
@@ -182,6 +182,19 @@ export const DeliveryZonesPage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Categorias para as regras de região (o que vai a Paraíso/Porto).
+  const [categoriasDaLoja, setCategoriasDaLoja] = useState<CategoriaDaLoja[]>([]);
+  useEffect(() => {
+    if (!storeId) return;
+    let vivo = true;
+    getCategories(storeId)
+      .then((r) => {
+        if (vivo) setCategoriasDaLoja((r.results ?? []).map((c) => ({ id: String(c.id), name: c.name })));
+      })
+      .catch(() => { /* sem categorias o cartão só não mostra o filtro */ });
+    return () => { vivo = false; };
+  }, [storeId]);
 
   // Update form data when store changes
   useEffect(() => {
@@ -485,6 +498,7 @@ export const DeliveryZonesPage: React.FC = () => {
         <ZonasDePrecoFixoCard
           key={storeId}
           metadataAtual={storeMetadata}
+          categorias={categoriasDaLoja}
           onSalvar={async (fixedPriceZones) => {
             const atual = storeMetadata ?? {};
             const novo = { ...atual, fixed_price_zones: fixedPriceZones };

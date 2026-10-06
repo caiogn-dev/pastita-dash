@@ -26,10 +26,27 @@ import {
   type ZonaNoFormulario,
 } from '../stores/zonasDePrecoFixo';
 
+export interface CategoriaDaLoja {
+  id: string;
+  name: string;
+}
+
 export interface ZonasDePrecoFixoCardProps {
   metadataAtual: Record<string, unknown> | undefined;
   onSalvar: (fixedPriceZones: unknown[]) => Promise<void>;
+  /** Para escolher o que vai a cada região (Agrião: salada não viaja 60 km). */
+  categorias?: CategoriaDaLoja[];
 }
+
+// weekday do Python: 0 = segunda … 6 = domingo.
+const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+
+const alternar = <T,>(lista: T[] | undefined, item: T): T[] =>
+  (lista ?? []).includes(item) ? (lista ?? []).filter((x) => x !== item) : [...(lista ?? []), item];
+
+const chipCls =
+  'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border-token ' +
+  'px-2.5 py-1.5 text-sm text-fg-token has-[:checked]:border-brand has-[:checked]:bg-surface-2';
 
 const inputCls =
   'w-full superficie px-3 py-2 text-sm text-fg-token ' +
@@ -38,6 +55,7 @@ const inputCls =
 export const ZonasDePrecoFixoCard: React.FC<ZonasDePrecoFixoCardProps> = ({
   metadataAtual,
   onSalvar,
+  categorias = [],
 }) => {
   const [zonas, setZonas] = useState<ZonaNoFormulario[]>(
     () => zonasDoMetadata(metadataAtual?.fixed_price_zones)
@@ -46,6 +64,10 @@ export const ZonasDePrecoFixoCard: React.FC<ZonasDePrecoFixoCardProps> = ({
 
   const mudar = (i: number, campo: keyof ZonaNoFormulario, valor: string) => {
     setZonas((atual) => atual.map((z, idx) => (idx === i ? { ...z, [campo]: valor } : z)));
+  };
+
+  const mudarRegra = (i: number, patch: Partial<ZonaNoFormulario>) => {
+    setZonas((atual) => atual.map((z, idx) => (idx === i ? { ...z, ...patch } : z)));
   };
 
   const adicionar = () =>
@@ -174,6 +196,84 @@ export const ZonasDePrecoFixoCard: React.FC<ZonasDePrecoFixoCardProps> = ({
                   o lugar de outro jeito, adicione essa forma aqui.
                 </p>
               </div>
+
+              {(z.modo ?? 'fixo') === 'fixo' && (
+                <fieldset className="mt-4 space-y-3 border-t border-border-token pt-3">
+                  <legend className="sr-only">Regras da região {z.nome}</legend>
+
+                  {categorias.length > 0 && (
+                    <div>
+                      <p className="mb-1 text-xs font-bold uppercase tracking-widest text-fg-muted-token">
+                        Categorias entregues {(z.categorias ?? []).length === 0 && '· todas'}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {categorias.map((c) => (
+                          <label key={c.id} className={chipCls}>
+                            <input
+                              type="checkbox"
+                              checked={(z.categorias ?? []).includes(c.id)}
+                              onChange={() => mudarRegra(i, { categorias: alternar(z.categorias, c.id) })}
+                            />
+                            {c.name}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="w-[140px]">
+                      <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-fg-muted-token" htmlFor={`zona-minimo-${i}`}>
+                        Pedido mínimo (R$)
+                      </label>
+                      <input
+                        id={`zona-minimo-${i}`}
+                        className={inputCls}
+                        inputMode="decimal"
+                        placeholder="—"
+                        value={z.pedidoMinimo ?? ''}
+                        onChange={(e) => mudarRegra(i, { pedidoMinimo: e.target.value })}
+                      />
+                    </div>
+                    <label className={chipCls}>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(z.diaSeguinte)}
+                        onChange={(e) => mudarRegra(i, { diaSeguinte: e.target.checked })}
+                      />
+                      Entrega no dia seguinte
+                    </label>
+                    <label className={chipCls}>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(z.soAntecipado)}
+                        onChange={(e) => mudarRegra(i, { soAntecipado: e.target.checked })}
+                      />
+                      Só pagamento antecipado
+                    </label>
+                  </div>
+
+                  {z.diaSeguinte && (
+                    <div>
+                      <p className="mb-1 text-xs font-bold uppercase tracking-widest text-fg-muted-token">
+                        Não sai
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {DIAS.map((dia, d) => (
+                          <label key={dia} className={chipCls}>
+                            <input
+                              type="checkbox"
+                              checked={(z.diasSemEntrega ?? []).includes(d)}
+                              onChange={() => mudarRegra(i, { diasSemEntrega: alternar(z.diasSemEntrega, d) })}
+                            />
+                            {dia}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </fieldset>
+              )}
             </div>
           ))}
         </div>
