@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUpDown, Plus, Search } from 'lucide-react';
+import { ArrowUpDown, Megaphone, Percent, Plus, Search } from 'lucide-react';
 import { PeriodChips } from '../../../components/ui';
 import type { EstadoDoProduto } from '../numerosDoCardapio';
 
@@ -59,8 +59,28 @@ export const AcoesDoCardapio: React.FC<{
   reorderMode: boolean;
   onReorderCategories: () => void;
   onAddCategory: () => void;
-}> = ({ reorderMode, onReorderCategories, onAddCategory }) => (
+  onReajustarPrecos?: () => void;
+  onInformativos?: () => void;
+}> = ({ reorderMode, onReorderCategories, onAddCategory, onReajustarPrecos, onInformativos }) => (
   <div className="flex flex-wrap items-center gap-2">
+    {/* Informativos não ganhou item no menu (trava de 38 destinos, 03/10):
+        o aviso aparece no cardápio, então a porta de entrada é daqui. */}
+    {onInformativos && (
+      <button
+        className="flex items-center gap-1 rounded border border-[var(--border)] px-3 py-2 text-fg-token"
+        onClick={onInformativos}
+      >
+        <Megaphone size={16} /> Avisos no cardápio
+      </button>
+    )}
+    {onReajustarPrecos && (
+      <button
+        className="flex items-center gap-1 rounded border border-[var(--border)] px-3 py-2 text-fg-token"
+        onClick={onReajustarPrecos}
+      >
+        <Percent size={16} /> Reajustar preços
+      </button>
+    )}
     <button
       className={`flex items-center gap-1 rounded px-3 py-2 ${reorderMode ? 'bg-emerald-600 text-white' : 'bg-primary-token text-white'}`}
       onClick={onReorderCategories}

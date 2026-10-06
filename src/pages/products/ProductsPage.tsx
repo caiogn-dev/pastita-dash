@@ -30,6 +30,8 @@ import { AcoesDoCardapio, ProductsToolbar } from './components/ProductsToolbar';
 import { CategorySection } from './components/CategorySection';
 import { AddCategoryModal } from './components/AddCategoryModal';
 import { MontadorModal, type ConfigMontador } from './components/MontadorModal';
+import { ReajusteDePrecoModal } from './components/ReajusteDePrecoModal';
+import { reajusteDePrecoService } from '../../services/reajusteDePreco';
 import { ProductFormModal } from './ProductFormModal';
 import { useConfirm } from '../../hooks/useConfirm';
 import { useNavigate } from 'react-router-dom';
@@ -54,6 +56,8 @@ export const ProductsPage: React.FC = () => {
   const [collapsed, setCollapsed] = useState<Set<string | null>>(new Set());
   const [reorderMode, setReorderMode] = useState(false);
   const [addCatOpen, setAddCatOpen] = useState(false);
+  const [reajusteAberto, setReajusteAberto] = useState(false);
+  const [podeDesfazerReajuste, setPodeDesfazerReajuste] = useState(false);
   const [addCatSaving, setAddCatSaving] = useState(false);
   const [modalProduct, setModalProduct] = useState<
     Product | null | { category?: string | null; [key: string]: unknown } | undefined
@@ -310,6 +314,8 @@ export const ProductsPage: React.FC = () => {
           reorderMode={reorderMode}
           onReorderCategories={() => setReorderMode((v) => !v)}
           onAddCategory={() => setAddCatOpen(true)}
+          onReajustarPrecos={() => setReajusteAberto(true)}
+          onInformativos={() => navegar('/marketing/informativos')}
         />
       }
       filtros={
@@ -393,6 +399,29 @@ export const ProductsPage: React.FC = () => {
       />
 
       {ConfirmDialog}
+      {podeDesfazerReajuste && (
+        <div role="status" className="mb-4 flex items-center justify-between gap-3 rounded border border-[var(--border)] px-4 py-2 text-sm">
+          <span className="text-fg-token">Reajuste de preços aplicado.</span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              try {
+                const r = await reajusteDePrecoService.desfazer(String(sid));
+                setPodeDesfazerReajuste(false);
+                toast.success(r.mantidos.length
+                  ? `Desfeito. ${r.mantidos.length} item(ns) editado(s) depois ficaram como estão.`
+                  : 'Reajuste desfeito.');
+                await productsQuery.refetch();
+              } catch {
+                toast.error('Não consegui desfazer o reajuste.');
+              }
+            }}
+          >
+            Desfazer
+          </Button>
+        </div>
+      )}
       <TrilhoDeSecoes
         rotulo="Categorias"
         itens={itensDoTrilho}
@@ -468,6 +497,19 @@ export const ProductsPage: React.FC = () => {
         </SortableContext>
       </DndContext>
         </>
+      )}
+      {reajusteAberto && sid && (
+        <ReajusteDePrecoModal
+          isOpen
+          loja={sid}
+          produtos={products}
+          categorias={categories}
+          onClose={() => setReajusteAberto(false)}
+          onAplicado={() => {
+            setPodeDesfazerReajuste(true);
+            void productsQuery.refetch();
+          }}
+        />
       )}
       <AddCategoryModal
         isOpen={addCatOpen}

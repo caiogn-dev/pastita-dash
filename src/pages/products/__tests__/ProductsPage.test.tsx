@@ -35,6 +35,15 @@ jest.mock('../../../hooks/useStore', () => ({
   default: () => ({ storeId: 'store-1' }),
 }));
 
+jest.mock('../../../services/reajusteDePreco', () => ({
+  __esModule: true,
+  reajusteDePrecoService: { reajustar: jest.fn(), desfazer: jest.fn() },
+}));
+jest.mock('../components/ReajusteDePrecoModal', () => ({
+  __esModule: true,
+  ReajusteDePrecoModal: () => null,
+}));
+
 jest.mock('../ProductFormModal', () => ({
   __esModule: true,
   ProductFormModal: () => null,
