@@ -51,6 +51,7 @@ import { useAvaliacoesDaLoja } from '../../hooks/queries/useAvaliacoesDaLoja';
 import { CarrinhosAbandonadosCard } from '../../components/dashboard/CarrinhosAbandonadosCard';
 import { leituraDeAvaliacoes } from './leituraDeAvaliacoes';
 import { formatCurrency } from '../../utils/formatters';
+import { proximaAcaoDoPedido } from '../orders/proximaAcao';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -69,12 +70,6 @@ const PIPELINE = [
   { key: 'delivered',        label: 'Entregues' },
 ];
 
-const NEXT_ACTION: Record<string, { label: string; next: string }> = {
-  pending:          { label: 'Confirmar',       next: 'confirmed' },
-  confirmed:        { label: 'Iniciar preparo',  next: 'preparing' },
-  preparing:        { label: 'Despachar',        next: 'out_for_delivery' },
-  out_for_delivery: { label: 'Entregue',         next: 'delivered' },
-};
 
 /** Área do alerta da saúde do sistema → para onde ele leva. */
 function destinoDoAlerta(area: string, storeRoute: string): string {
@@ -531,7 +526,9 @@ export const DashboardPage: React.FC = () => {
                 cabecalho: 'Ação rápida',
                 alinhamento: 'direita',
                 render: (o) => {
-                  const action = NEXT_ACTION[o.status];
+                  // Regra única (proximaAcao): retirada vai para "Pronto p/ Retirada",
+                  // não para "Saiu para entrega".
+                  const action = proximaAcaoDoPedido(o as unknown as Order);
                   if (!action) return null;
                   return (
                     <Button
@@ -540,11 +537,11 @@ export const DashboardPage: React.FC = () => {
                       // arrastar o dono para o modal junto.
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleAdvance(o.id, action.next);
+                        handleAdvance(o.id, action.status);
                       }}
                       isLoading={advancing === o.id}
                     >
-                      {action.label}
+                      {action.rotulo}
                     </Button>
                   );
                 },

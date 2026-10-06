@@ -6,17 +6,13 @@ import { useRootStore, resolveStoreKey } from '../../stores/rootStore';
 import { useRealTimeOrders } from '../../hooks/useRealTimeOrders';
 import { updateOrderStatus, getOrders } from '../../services/storesApi';
 import type { StoreOrder } from '../../services/storesApi';
-import { KDS_COLUMNS, groupKdsOrders } from './kdsColumns';
+import { KDS_COLUMNS, groupKdsOrders, proximoPassoDoKds } from './kdsColumns';
+import { getErrorMessage } from '../../services/api';
 import { getStageStart } from '../orders/orderSla';
 import { Skeleton } from '../../components/ui';
 
 const EMPTY_ORDERS: StoreOrder[] = [];
 
-const NEXT_STATUS: Record<string, { status: string; label: string }> = {
-  todo: { status: 'preparing', label: 'Iniciar preparo' },
-  preparing: { status: 'ready', label: 'Pronto!' },
-  ready: { status: 'out_for_delivery', label: 'Saiu / Entregue' },
-};
 
 /**
  * Estilo por coluna — tokens do tema (Dark Luxe):
@@ -94,7 +90,7 @@ const KdsPage: React.FC = () => {
   const grouped = useMemo(() => groupKdsOrders(storeOrders), [storeOrders]);
 
   const handleAdvance = useCallback(async (order: StoreOrder, columnId: string) => {
-    const next = NEXT_STATUS[columnId];
+    const next = proximoPassoDoKds(columnId, order.delivery_method);
     if (!next || advancing) return;
     setAdvancing(order.id);
     try {
@@ -105,8 +101,9 @@ const KdsPage: React.FC = () => {
       setOrders(storeId as string, current.map((o: StoreOrder) =>
         o.id === order.id ? { ...o, status: next.status } : o,
       ));
-    } catch {
-      toast.error('Erro ao atualizar pedido');
+    } catch (err) {
+      // O motivo do servidor (ex.: PIX não confirmado) é o que o cozinheiro precisa ler.
+      toast.error(getErrorMessage(err) || 'Erro ao atualizar pedido');
     } finally {
       setAdvancing(null);
     }
@@ -237,7 +234,7 @@ const KdsPage: React.FC = () => {
                             COLUMN_STYLES[col.id]?.button ?? 'bg-brand text-white hover:bg-brand-hover',
                           ].join(' ')}
                         >
-                          {NEXT_STATUS[col.id].label}
+                          {proximoPassoDoKds(col.id, order.delivery_method)?.label}
                         </button>
                       </article>
                     );
