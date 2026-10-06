@@ -37,3 +37,19 @@ it('cardápio vazio não quebra', () => {
     cadastrados: 0, ativos: 0, pausados: 0, semEstoque: 0,
   });
 });
+
+describe('filtrarPorEstado — os filtros rápidos usam a MESMA régua dos cards', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { filtrarPorEstado } = require('../numerosDoCardapio') as typeof import('../numerosDoCardapio');
+  const P = [
+    { id: 'no-ar', status: 'active', track_stock: false, stock_quantity: 0 },
+    { id: 'pausado', status: 'inactive', track_stock: false },
+    { id: 'zerado', status: 'active', track_stock: true, stock_quantity: 0 },
+  ];
+  const ids = (estado: Parameters<typeof filtrarPorEstado>[1]) => filtrarPorEstado(P, estado).map((p) => p.id);
+
+  it('todos', () => expect(ids('todos')).toEqual(['no-ar', 'pausado', 'zerado']));
+  it('no ar', () => expect(ids('no_ar')).toEqual(['no-ar', 'zerado']));
+  it('pausados', () => expect(ids('pausados')).toEqual(['pausado']));
+  it('sem estoque só conta quem controla estoque', () => expect(ids('sem_estoque')).toEqual(['zerado']));
+});

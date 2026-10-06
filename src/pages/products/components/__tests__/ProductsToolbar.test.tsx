@@ -21,9 +21,8 @@ describe('filtros do cardápio', () => {
       <ProductsToolbar
         search=""
         onSearch={onSearch}
-        categoryFilter=""
-        categories={[]}
-        onCategoryFilter={jest.fn()}
+        estado="todos"
+        onEstado={jest.fn()}
       />,
     );
 
@@ -34,23 +33,13 @@ describe('filtros do cardápio', () => {
     expect(onSearch).toHaveBeenCalledWith('arroz');
   });
 
-  it('filtra por categoria', () => {
-    const onCategoryFilter = jest.fn();
-    render(
-      <ProductsToolbar
-        search=""
-        onSearch={jest.fn()}
-        categoryFilter=""
-        categories={[{ id: 'c1', name: 'Saladas' } as never]}
-        onCategoryFilter={onCategoryFilter}
-      />,
-    );
-
-    fireEvent.change(screen.getByDisplayValue(/todas as categorias/i), {
-      target: { value: 'c1' },
-    });
-
-    expect(onCategoryFilter).toHaveBeenCalledWith('c1');
+  // 06/10: o seletor de categoria saiu (filtrava; o dono queria navegar —
+  // isso é o trilho de categorias da página). O filtro agora é pelo estado.
+  it('filtra pelo estado do produto', () => {
+    const onEstado = jest.fn();
+    render(<ProductsToolbar search="" onSearch={jest.fn()} estado="todos" onEstado={onEstado} />);
+    fireEvent.click(screen.getByRole('tab', { name: /pausados/i }));
+    expect(onEstado).toHaveBeenCalledWith('pausados');
   });
 
   it('busca e filtro têm nome acessível (PR #160)', () => {
@@ -58,14 +47,13 @@ describe('filtros do cardápio', () => {
       <ProductsToolbar
         search=""
         onSearch={jest.fn()}
-        categoryFilter=""
-        categories={[]}
-        onCategoryFilter={jest.fn()}
+        estado="todos"
+        onEstado={jest.fn()}
       />,
     );
 
     expect(screen.getByRole('searchbox', { name: /buscar produto/i })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: /categoria/i })).toBeInTheDocument();
+    expect(screen.getByRole('tablist', { name: /filtrar por estado/i })).toBeInTheDocument();
   });
 
   it('não carrega mais botão de ação nenhum', () => {
@@ -75,9 +63,8 @@ describe('filtros do cardápio', () => {
       <ProductsToolbar
         search=""
         onSearch={jest.fn()}
-        categoryFilter=""
-        categories={[]}
-        onCategoryFilter={jest.fn()}
+        estado="todos"
+        onEstado={jest.fn()}
       />,
     );
 

@@ -121,6 +121,16 @@ export const StatCard: React.FC<StatCardProps> = ({
   return (
     <Card
       onClick={onClick}
+      // Card clicável era só uma div com onClick: sem teclado e mudo para o
+      // leitor de tela (06/10, cards do Cardápio que filtram a lista).
+      {...(clickable ? {
+        role: 'button',
+        tabIndex: 0,
+        'aria-label': label,
+        onKeyDown: (e: React.KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); }
+        },
+      } : {})}
       className={cn(
         'p-4 transition-colors',
         clickable && 'cursor-pointer hover:bg-surface-2',

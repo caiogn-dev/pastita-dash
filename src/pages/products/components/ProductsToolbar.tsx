@@ -1,22 +1,30 @@
 import React from 'react';
 import { ArrowUpDown, Plus, Search } from 'lucide-react';
-import type { StoreCategory } from '../../../services/storesApi';
+import { PeriodChips } from '../../../components/ui';
+import type { EstadoDoProduto } from '../numerosDoCardapio';
 
-/** Só FILTRO: o que muda a lista que você vê, não o que existe. */
+/**
+ * Só FILTRO: o que muda a lista que você vê, não o que existe.
+ *
+ * O seletor "Todas as categorias" saiu (06/10): ele FILTRAVA, e o que o dono
+ * queria era NAVEGAR — isso agora é o trilho de categorias, fixo no topo.
+ * Ficam a busca e os filtros rápidos pelo estado do produto.
+ */
 interface Props {
   search: string;
   onSearch: (v: string) => void;
-  categoryFilter: string;
-  categories: StoreCategory[];
-  onCategoryFilter: (v: string) => void;
+  estado: EstadoDoProduto;
+  onEstado: (v: EstadoDoProduto) => void;
 }
-export const ProductsToolbar: React.FC<Props> = ({
-  search,
-  onSearch,
-  categoryFilter,
-  categories,
-  onCategoryFilter,
-}) => (
+
+const ESTADOS: { value: EstadoDoProduto; label: string }[] = [
+  { value: 'todos', label: 'Todos' },
+  { value: 'no_ar', label: 'No ar' },
+  { value: 'pausados', label: 'Pausados' },
+  { value: 'sem_estoque', label: 'Sem estoque' },
+];
+
+export const ProductsToolbar: React.FC<Props> = ({ search, onSearch, estado, onEstado }) => (
   <div className="flex flex-wrap items-center gap-2">
     <div className="relative flex-1 min-w-[200px]">
       <Search
@@ -32,19 +40,7 @@ export const ProductsToolbar: React.FC<Props> = ({
         onChange={(e) => onSearch(e.target.value)}
       />
     </div>
-    <select
-      className="rounded border px-3 py-2"
-      aria-label="Filtrar por categoria"
-      value={categoryFilter}
-      onChange={(e) => onCategoryFilter(e.target.value)}
-    >
-      <option value="">Todas as categorias</option>
-      {categories.map((c) => (
-        <option key={c.id} value={c.id}>
-          {c.name}
-        </option>
-      ))}
-    </select>
+    <PeriodChips options={ESTADOS} value={estado} onChange={onEstado} ariaLabel="Filtrar por estado" />
   </div>
 );
 
