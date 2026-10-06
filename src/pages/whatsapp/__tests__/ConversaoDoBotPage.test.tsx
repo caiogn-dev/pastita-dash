@@ -2,7 +2,7 @@
  * Conversão do bot: os números do funil e a lista de onde a venda parou.
  */
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -77,5 +77,40 @@ describe('motivoDeAtendente', () => {
     expect(motivoDeAtendente('Synced from conversation mode switch')).toBe('Trocado para humano no painel');
     expect(motivoDeAtendente('')).toBe('Sem motivo registrado');
     expect(motivoDeAtendente('Cliente pediu')).toBe('Cliente pediu');
+  });
+});
+
+// 06/10, pergunta do dono: "como vemos a evolução? como vemos mudança?".
+describe('evolução: período anterior e o que foi ensinado', () => {
+  const COM_COMPARATIVO = {
+    ...DADOS,
+    dias: 7,
+    comparativo: {
+      atual: { conversas: 58, pedidos: 9, taxa: 15.5, para_atendente: 20 },
+      anterior: { conversas: 53, pedidos: 4, taxa: 7.5, para_atendente: 31 },
+    },
+    marcos: [{ quando: '2026-10-03T14:00:00Z', tipo: 'ensino', texto: 'vocês entregam na região sul?' }],
+  };
+
+  it('mostra a conversão de antes e de agora, em pontos', async () => {
+    buscar.mockResolvedValue(COM_COMPARATIVO);
+    renderizar();
+    const secao = await screen.findByRole('region', { name: /comparado aos 7 dias anteriores/i });
+    expect(within(secao).getByText('7,5% → 15,5%')).toBeInTheDocument();
+    expect(within(secao).getByText('+8,0 pontos')).toBeInTheDocument();
+    expect(within(secao).getByText('31 → 20')).toBeInTheDocument();
+  });
+
+  it('lista o que foi ensinado no período, com a data', async () => {
+    buscar.mockResolvedValue(COM_COMPARATIVO);
+    renderizar();
+    expect(await screen.findByText('vocês entregam na região sul?')).toBeInTheDocument();
+    expect(screen.getByText('03/10')).toBeInTheDocument();
+  });
+
+  it('sem comparativo (backend antigo) a tela continua igual', async () => {
+    renderizar();
+    expect(await screen.findByText('10 (5.4%)')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: /comparado aos/i })).not.toBeInTheDocument();
   });
 });
