@@ -18,7 +18,7 @@
  *
  * Este componente é DESKTOP. No celular quem manda é a MobileShell.
  */
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDownIcon, ChevronDoubleLeftIcon } from '@heroicons/react/24/outline';
 
@@ -192,6 +192,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
   const espiada = recolhido && espiando;
 
   /**
+   * O item da página fica À VISTA dentro da lista que rola.
+   *
+   * Abrir o grupo sozinho não bastava: medido a 1280×720, em /colaboradores
+   * o item ativo nascia em y=727 com a lista terminando em 665 — o menu dizia
+   * "você está aqui" num lugar que ninguém via. Só rola quando o item está
+   * fora, e só quando a página ou o grupo dela mudam: abrir OUTRO grupo não
+   * puxa a lista de volta.
+   */
+  const listaRef = useRef<HTMLUListElement>(null);
+  const grupoDaPaginaAberto = !!dono && aberto === dono;
+  useEffect(() => {
+    const lista = listaRef.current;
+    const item = lista?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!lista || !item) return;
+    const l = lista.getBoundingClientRect();
+    const i = item.getBoundingClientRect();
+    const folga = 8;
+    if (i.bottom > l.bottom) lista.scrollTop += i.bottom - l.bottom + folga;
+    else if (i.top < l.top) lista.scrollTop -= l.top - i.top + folga;
+  }, [alvo, estreita, grupoDaPaginaAberto]);
+
+  /**
    * O MIOLO espera a largura chegar. A coluna cresce em 300ms, mas os rótulos
    * entravam no DOM no primeiro frame: "CARDAPIDEX" tem 129px e o container
    * ainda tinha 7 — o `truncate` cortava e o dono lia "CA" a cada passar de
@@ -308,7 +330,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
         <StoreSelector variante="coluna" estreito={miolo} />
       </div>
 
-      <ul className="flex-1 space-y-0.5 overflow-y-auto px-2 pb-4">
+      <ul ref={listaRef} className="flex-1 space-y-0.5 overflow-y-auto px-2 pb-4">
         {sections.map((secao, indice) => {
           const Icone = secao.icon;
           const temFilhos = secao.items.length > 0;
