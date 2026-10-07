@@ -169,7 +169,7 @@ export const TrialBanner: FC = () => {
       </p>
       <Link
         to="/plano"
-        className="flex-shrink-0 rounded bg-brand px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-brand-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-1"
+        className="flex-shrink-0 rounded bg-brand px-3 py-1 text-xs font-semibold text-on-brand transition-colors hover:bg-brand-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-1"
       >
         Ver planos
       </Link>

@@ -18,7 +18,7 @@
  *
  * Este componente é DESKTOP. No celular quem manda é a MobileShell.
  */
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDownIcon, ChevronDoubleLeftIcon } from '@heroicons/react/24/outline';
 
@@ -70,9 +70,26 @@ function ativo(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function secaoAtiva(pathname: string, secao: NavSection): boolean {
-  if (secao.href && ativo(pathname, secao.href)) return true;
-  return secao.items.some((i) => ativo(pathname, i.href));
+/**
+ * O destino que a página atual É — o casamento mais longo, como na trilha.
+ *
+ * Prefixo sozinho marcava dois itens quando um destino é prefixo de outro:
+ * em /marketing/whatsapp/templates, "Campanha WhatsApp" (/marketing/whatsapp)
+ * e "Modelos de mensagem" ficavam ambos com `aria-current`.
+ */
+function destinoAtivo(pathname: string, sections: NavSection[]): string | null {
+  let melhor: string | null = null;
+  for (const s of sections) {
+    for (const href of [s.href, ...s.items.map((i) => i.href)]) {
+      if (href && ativo(pathname, href) && (!melhor || href.length > melhor.length)) melhor = href;
+    }
+  }
+  return melhor;
+}
+
+function secaoAtiva(alvo: string | null, secao: NavSection): boolean {
+  if (!alvo) return false;
+  return secao.href === alvo || secao.items.some((i) => i.href === alvo);
 }
 
 /**
@@ -158,15 +175,43 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
 
   // O grupo da rota atual abre sozinho a cada navegação. Sem isso, entrar em
   // /combos por link direto deixa o menu mostrando outra coisa.
+  //
+  // A dependência é o NOME do dono, não o array: `sections` é recriado a cada
+  // mudança do contador de não lidas, e o efeito rodava de novo a cada
+  // mensagem que chegava — fechando o grupo que o operador tinha acabado de
+  // abrir e reabrindo o da página.
+  const alvo = destinoAtivo(pathname, sections);
+  const dono = sections.find((s) => s.items.length > 0 && secaoAtiva(alvo, s))?.label;
   useEffect(() => {
-    const dono = sections.find((s) => s.items.length > 0 && secaoAtiva(pathname, s));
-    if (dono) setAberto(dono.label);
-  }, [pathname, sections]);
+    if (dono) setAberto(dono);
+  }, [pathname, dono]);
 
   // O modo ícone é a PREFERÊNCIA; `estreita` é o que a tela mostra agora.
   // Enquanto o ponteiro (ou o foco) está na coluna, ela mostra tudo.
   const estreita = recolhido && !espiando;
   const espiada = recolhido && espiando;
+
+  /**
+   * O item da página fica À VISTA dentro da lista que rola.
+   *
+   * Abrir o grupo sozinho não bastava: medido a 1280×720, em /colaboradores
+   * o item ativo nascia em y=727 com a lista terminando em 665 — o menu dizia
+   * "você está aqui" num lugar que ninguém via. Só rola quando o item está
+   * fora, e só quando a página ou o grupo dela mudam: abrir OUTRO grupo não
+   * puxa a lista de volta.
+   */
+  const listaRef = useRef<HTMLUListElement>(null);
+  const grupoDaPaginaAberto = !!dono && aberto === dono;
+  useEffect(() => {
+    const lista = listaRef.current;
+    const item = lista?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!lista || !item) return;
+    const l = lista.getBoundingClientRect();
+    const i = item.getBoundingClientRect();
+    const folga = 8;
+    if (i.bottom > l.bottom) lista.scrollTop += i.bottom - l.bottom + folga;
+    else if (i.top < l.top) lista.scrollTop -= l.top - i.top + folga;
+  }, [alvo, estreita, grupoDaPaginaAberto]);
 
   /**
    * O MIOLO espera a largura chegar. A coluna cresce em 300ms, mas os rótulos
@@ -217,7 +262,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
       // `h-full`: o invólucro acompanha a casca. Ele tinha a altura do
       // CONTEÚDO (695px) enquanto a página tinha 4490 — e `sticky` só gruda
       // enquanto o pai está em vista, então a navegação sumia ao rolar.
-      className={cn('relative h-full shrink-0', recolhido ? 'w-[72px]' : 'w-64', className)}
+      //
+      // A largura do invólucro ANIMA junto com a da coluna (mesma duração e
+      // curva). Saltando de uma vez, recolher jogava a navbar e a página para
+      // x=72 enquanto a coluna ainda levava 240ms encolhendo — elas pintavam
+      // por cima dela; e fixar aberto pulava o conteúdo da barra 184px para
+      // a direita antes de deslizar de volta.
+      className={cn(
+        'relative h-full shrink-0 transition-[width] duration-300 motion-reduce:transition-none',
+        recolhido ? 'w-[72px]' : 'w-64',
+        className,
+      )}
+      style={{ transitionTimingFunction: 'var(--desliza)' }}
       onMouseEnter={() => setEspiando(true)}
       onMouseLeave={() => setEspiando(false)}
       // Quem navega por Tab não tem ponteiro: sem isto o teclado ficaria preso
@@ -235,7 +291,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
         'coluna-lateral flex h-full flex-col border-r border-border-token bg-surface',
         // A largura anima com a MESMA curva elástica do indicador ativo:
         // recolher e expandir é movimento de matéria, não corte de frame.
-        'transition-[width] duration-300',
+        // Movimento reduzido: a largura troca sem deslizar, como o rótulo
+        // (`.entra-com-a-coluna` já respeita a preferência no index.css).
+        'transition-[width] duration-300 motion-reduce:transition-none',
         largura,
         // A coluna TRANSBORDA do invólucro de 72px (nada corta) e sobe de
         // camada. Continua `sticky`, não `absolute`: absoluto se ancoraria no
@@ -252,7 +310,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
         // navegador IGNORA o z-index, e a navbar (sticky de verdade) pintava
         // por cima dos 56px do topo da coluna — a marca virava "CA" e o resto
         // sumia atrás da barra.
-        espiada && 'relative z-50 shadow-2xl'
+        // A camada vale SEMPRE, não só na espiada: no quadro em que a espiada
+        // termina (mouse sai, ou "Fixar aberto") a coluna ainda está larga e
+        // encolhendo/assentando, e sem camada a navbar pintava por cima do
+        // topo dela durante a animação. Overlays da página (z-50+) vêm depois
+        // no DOM ou em portal, e continuam acima.
+        'relative z-50',
+        espiada && 'shadow-2xl'
       )}
       style={{ transitionTimingFunction: 'var(--desliza)' }}
     >
@@ -285,12 +349,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
         <StoreSelector variante="coluna" estreito={miolo} />
       </div>
 
-      <ul className="flex-1 space-y-0.5 overflow-y-auto px-2 pb-4">
+      <ul ref={listaRef} className="flex-1 space-y-0.5 overflow-y-auto px-2 pb-4">
         {sections.map((secao, indice) => {
           const Icone = secao.icon;
           const temFilhos = secao.items.length > 0;
-          const estaAtiva = secaoAtiva(pathname, secao);
-          const estaAberta = aberto === secao.label;
+          const estaAtiva = secaoAtiva(alvo, secao);
+          // Estreita, nenhum grupo se desenha aberto: os filhos viravam uma
+          // pilha de ícones sem rótulo sob a seção, em toda página (o efeito
+          // da rota reabre o grupo a cada navegação). `aberto` é preservado e
+          // o grupo volta na espiada.
+          const estaAberta = aberto === secao.label && !estreita;
           // Cabeçalho do bloco só na PRIMEIRA seção dele. Onze seções numa
           // lista corrida obrigam a ler tudo para achar uma; o bloco diz de
           // longe se aquilo é coisa de hoje, de catálogo, de crescer ou de
@@ -301,8 +369,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
           // não é destino ocupava quatro linhas e ninguém clicava. O traço
           // fino separa igual, e separa nos DOIS estados — recolhida, ele é a
           // única pista de que ali muda de assunto.
+          // O respiro é PADDING do <li>, e o traço é um filho. Com `my-2` no
+          // próprio <li>, o `space-y-0.5` da lista (seletor mais específico)
+          // reescrevia as margens para 2px/0: o traço colava na seção de
+          // cima e na de baixo — só o primeiro, sem irmão anterior, ficava
+          // com os 8px pedidos.
           const cabecalhoDoGrupo = primeiraDoGrupo ? (
-            <li aria-hidden className="mx-auto my-2 h-px w-6 bg-border-token" />
+            <li aria-hidden className="py-2">
+              <div className="mx-auto h-px w-6 bg-border-token" />
+            </li>
           ) : null;
 
           // Seção sem filhos é um link direto — não vira botão de acordeão.
@@ -317,10 +392,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                   title={miolo ? secao.label : undefined}
                   className={cn(
                     'relative flex items-center gap-2.5 rounded-md py-2 text-body font-medium',
-                    'transition-[padding] duration-300',
-                    'transition-[padding] duration-300',
-                  'transition-[padding] duration-300',
-            miolo ? 'justify-center px-0' : 'px-2.5',
+                    miolo ? 'justify-center px-0' : 'px-2.5',
                     'transition-colors duration-200',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                     estaAtiva
@@ -424,7 +496,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                 <ul className={cn('mt-0.5 space-y-0.5', !miolo && 'ml-4 border-l border-border-token pl-2')}>
                   {secao.items.map((item) => {
                     const ItemIcone = item.icon;
-                    const itemAtivo = ativo(pathname, item.href);
+                    const itemAtivo = item.href === alvo;
                     return (
                       // O nome, não o href: enquanto a loja ainda não
                       // carregou, `storeHref` devolve `/stores` para vários

@@ -42,8 +42,16 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <AvisoDeNovaVersao />
           <Toaster
             position="top-right"
+            // Tokens, não zinc: o zinc frio destoava da superfície quente do
+            // painel no escuro, e no claro o toast caía no branco da lib.
+            // `style` e não classe: o CSS da lib é injetado em runtime e
+            // empataria em especificidade com a classe.
             toastOptions={{
-              className: 'dark:bg-zinc-900 dark:text-white dark:border dark:border-zinc-800',
+              style: {
+                background: 'var(--surface)',
+                color: 'var(--fg)',
+                border: '1px solid var(--border)',
+              },
             }}
           />
         </BrowserRouter>

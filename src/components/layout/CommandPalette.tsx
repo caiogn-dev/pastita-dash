@@ -74,11 +74,20 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   // Abrir sempre começa do zero: a paleta é para um salto, não para retomar
   // uma busca antiga que já não tem contexto.
+  //
+  // Fechar devolve o foco a quem abriu (o botão "Ir para…" ou o que estava
+  // focado no Ctrl+K). Sem isso o foco caía no <body> e a tabulação
+  // recomeçava do topo da página.
+  const anteriorRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (aberto) {
+      anteriorRef.current = document.activeElement as HTMLElement | null;
       setTermo('');
       setCursor(0);
       campoRef.current?.focus();
+    } else if (anteriorRef.current) {
+      anteriorRef.current.focus?.();
+      anteriorRef.current = null;
     }
   }, [aberto]);
 
@@ -99,7 +108,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       onFechar();
       return;
     }
-    if (!resultados.length) return;
+    // Setas e Enter só valem a partir do campo: num resultado focado por Tab,
+    // Enter é o clique DELE, não o do item sob o cursor.
+    if (!resultados.length || e.target !== campoRef.current) return;
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -125,6 +136,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         aria-modal="true"
         aria-label="Ir para"
         onClick={(e) => e.stopPropagation()}
+        // No diálogo, não só no campo: um clique na lista tira o foco do
+        // campo, e Esc/setas deixavam de responder.
+        onKeyDown={aoTeclar}
         className="w-full max-w-xl overflow-hidden superficie shadow-2xl"
       >
         <div className="flex items-center gap-2.5 border-b border-border-token px-4">
@@ -138,7 +152,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             placeholder="Ir para… (pedidos, cupons, fidelidade)"
             value={termo}
             onChange={(e) => setTermo(e.target.value)}
-            onKeyDown={aoTeclar}
             className="flex-1 border-0 focus:ring-0 bg-transparent py-3.5 text-lead text-fg-token outline-none placeholder:text-fg-muted-token"
           />
           <kbd className="rounded border border-border-token px-1.5 py-0.5 text-badge text-fg-muted-token">

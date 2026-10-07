@@ -184,7 +184,7 @@ function NavBtn({ section }: { section: NavSection }) {
         <section.icon className="w-4 h-4 flex-shrink-0" />
         {section.label}
         {section.badge && (
-          <span className="text-badge bg-red-500 text-white px-1 py-0.5 rounded-full font-bold leading-none min-w-[16px] text-center">
+          <span className="text-badge bg-brand text-on-brand px-1 py-0.5 rounded-full font-bold leading-none min-w-[16px] text-center">
             {section.badge}
           </span>
         )}
@@ -307,6 +307,25 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
+  // Gaveta aberta: o foco entra nela e Esc fecha. Sem isto o foco ficava no
+  // hambúrguer, ATRÁS do véu, e o teclado não alcançava nem fechava o menu.
+  // Ao fechar, o foco volta ao hambúrguer (o nó focado foi desmontado).
+  const hamburguerRef = useRef<HTMLButtonElement>(null);
+  const fecharGavetaRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!mobileOpen) return;
+    fecharGavetaRef.current?.focus();
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false);
+    };
+    document.addEventListener('keydown', aoTeclar);
+    return () => {
+      document.removeEventListener('keydown', aoTeclar);
+      const foco = document.activeElement;
+      if (!foco || foco === document.body) hamburguerRef.current?.focus();
+    };
+  }, [mobileOpen]);
+
   const { containerRef, measureRef, visibleCount } = useOverflowNav(sections.length);
   const visibleSections = sections.slice(0, visibleCount);
   const hiddenSections = sections.slice(visibleCount);
@@ -331,12 +350,14 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
         // Aplicado AQUI, no próprio elemento sticky: envolvê-lo num div justo
         // quebraria a fixação, porque sticky não gruda além do pai.
         // `max-lg:!pl-0` porque no celular não existe coluna.
-        className="sticky top-0 z-40 border-b border-chrome-border text-chrome-fg backdrop-blur-xl transition-[padding] duration-300 max-lg:!pl-0"
+        className="sticky top-0 z-40 border-b border-chrome-border text-chrome-fg backdrop-blur-xl transition-[padding] duration-300 motion-reduce:transition-none max-lg:!pl-0"
         style={{
           // Recuo que acompanha a coluna lateral espiada.
           paddingLeft: 'var(--recuo-da-navbar, 0px)',
-          // Mesma curva da coluna: as duas leem como um movimento só.
-          transitionTimingFunction: 'var(--mola)',
+          // Mesma curva da coluna: as duas leem como um movimento só. `--mola`
+          // passava do ponto (202px num alvo de 184) e o conteúdo da barra
+          // escorregava por baixo da coluna ao recolher.
+          transitionTimingFunction: 'var(--desliza)',
           // Gradiente vertical sutil em vez de cor chapada: dá espessura à
           // barra sem sombra pesada, e funciona nos dois temas porque as duas
           // pontas são token.
@@ -375,7 +396,7 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
                 pedidos ao vivo), não do navegador. Solto no meio da barra, não
                 dizia de quê. */}
             <span
-              className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${wsConnected ? 'bg-emerald-500' : 'bg-amber-400'}`}
+              className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${wsConnected ? 'bg-success-token' : 'bg-warning-token'}`}
               title={wsConnected ? 'Recebendo pedidos ao vivo' : 'Sem conexão ao vivo — atualize a página'}
               role="img"
               aria-label={wsConnected ? 'Recebendo pedidos ao vivo' : 'Sem conexão ao vivo'}
@@ -460,6 +481,8 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
             <AccountMenu />
 
             <button
+              ref={hamburguerRef}
+              aria-expanded={mobileOpen}
               onClick={() => setMobileOpen(true)}
               className="hidden max-lg:block p-1.5 text-chrome-muted hover:text-chrome-fg hover:bg-chrome-hover rounded-lg transition-colors"
               aria-label="Abrir menu de navegação"
@@ -474,10 +497,15 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
       {mobileOpen && (
         <>
           <div className="fixed inset-0 bg-black/60 z-40 hidden max-lg:block" onClick={() => setMobileOpen(false)} />
-          <div className="fixed top-0 left-0 bottom-0 w-72 bg-surface z-50 hidden max-lg:flex flex-col shadow-2xl">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu de navegação"
+            className="fixed top-0 left-0 bottom-0 w-72 bg-surface z-50 hidden max-lg:flex flex-col shadow-2xl"
+          >
             <div className="flex items-center justify-between px-4 h-12 bg-chrome text-chrome-fg border-b border-chrome-border flex-shrink-0">
               <span className="font-bold text-sm text-chrome-fg">{brandInfo.name}</span>
-              <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-chrome-hover text-chrome-muted hover:text-chrome-fg" aria-label="Fechar menu de navegação">
+              <button ref={fecharGavetaRef} onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-chrome-hover text-chrome-muted hover:text-chrome-fg" aria-label="Fechar menu de navegação">
                 <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
