@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   PlusIcon,
   PlayIcon,
@@ -16,13 +16,18 @@ import { agentFlowService, AgentFlow } from '../../services/automation';
 import { useStore, useConfirm } from '../../hooks';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { PageShell, KpiGrid } from '../../components/ui';
+import { PageShell, KpiGrid, FalhaAoCarregar } from '../../components/ui';
+import { estadoDaLista } from '../../utils/estadoDaLista';
 
 export const AgentFlowsPage: React.FC = () => {
   const { storeId } = useStore();
   const [_ConfirmDialog, confirm] = useConfirm();
   const [flows, setFlows] = useState<AgentFlow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(false);
+  // Separa "vazio de verdade" (busca deu certo e veio zero) de "vazio porque a
+  // busca caiu". Sem isto a tela adivinha e volta o vazio enganoso.
+  const [carregouAlgumaVez, setCarregouAlgumaVez] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingFlow, setEditingFlow] = useState<AgentFlow | null>(null);
   const [formData, setFormData] = useState({
@@ -34,17 +39,45 @@ export const AgentFlowsPage: React.FC = () => {
     flow_json: '{}',
   });
 
+  // O botão Atualizar e o duplo disparo do StrictMode sobrepõem buscas; cada
+  // `loadFlows` captura a sua sequência e só a mais recente aplica resultado,
+  // erro e fim do loading. Rejeição obsoleta não liga `erro` sobre o vazio
+  // legítimo da mais nova.
+  const requisicaoRef = useRef(0);
+
+  // Troca de loja: o cache (`flows`/`carregouAlgumaVez`) é da loja ANTERIOR.
+  // Zera em render, antes de `estadoDaLista`, para a nova carga cair em
+  // 'carregando' em vez de 'lista' — sem isto a tela mostraria os fluxos da
+  // loja anterior (com editar/ativar/excluir) sob a loja recém-selecionada, e
+  // os manteria indefinidamente se a busca falhasse. Regra multi-tenant.
+  const storeAnteriorRef = useRef(storeId);
+  if (storeAnteriorRef.current !== storeId) {
+    storeAnteriorRef.current = storeId;
+    setFlows([]);
+    setCarregouAlgumaVez(false);
+    setErro(false);
+  }
+
   const loadFlows = useCallback(async () => {
+    const req = ++requisicaoRef.current;
     setLoading(true);
+    setErro(false);
     try {
       const params: Record<string, string> = {};
       if (storeId) params.store_id = storeId;
       const res = await agentFlowService.list(params);
+      if (req !== requisicaoRef.current) return; // busca superada por uma mais nova
       setFlows(res.results);
+      setCarregouAlgumaVez(true);
     } catch {
+      if (req !== requisicaoRef.current) return; // rejeição obsoleta: ignora
+      // Sem isto, a falha deixava `flows` em `[]` e a tela mostrava os KPIs
+      // zerados e "Nenhum flow criado" — dizendo ao lojista que ele não tem
+      // automação quando, na verdade, a busca caiu.
+      setErro(true);
       toast.error('Erro ao carregar flows');
     } finally {
-      setLoading(false);
+      if (req === requisicaoRef.current) setLoading(false);
     }
   }, [storeId]);
 
@@ -121,7 +154,16 @@ export const AgentFlowsPage: React.FC = () => {
     }
   };
 
-  if (loading) return <Loading />;
+  // A mesma regra de todas as listas do painel (`estadoDaLista`): a falha sem
+  // cache vira erro acionável, não o vazio/zeros enganoso.
+  const estado = estadoDaLista({
+    temDados: carregouAlgumaVez,
+    buscando: loading,
+    falhou: erro,
+    quantidade: flows.length,
+  });
+
+  if (estado === 'carregando') return <Loading />;
 
   return (
     <PageShell
@@ -139,6 +181,8 @@ export const AgentFlowsPage: React.FC = () => {
       }
     >
 
+      {/* Na falha sem cache os KPIs seriam zeros enganosos ("Fluxos: 0") — omite. */}
+      {estado !== 'falhou' && (
       <KpiGrid
         itens={[
           {
@@ -170,9 +214,19 @@ export const AgentFlowsPage: React.FC = () => {
           },
         ]}
       />
+      )}
 
       {/* Flows List */}
-      {flows.length === 0 ? (
+      {estado === 'falhou' ? (
+        // Falha sem dado em cache: erro acionável no lugar do vazio enganoso.
+        // Com dado em cache (falha só ao atualizar), `estadoDaLista` devolve
+        // 'lista' e a grade abaixo segue mostrando os fluxos + o `toast` avisa.
+        <FalhaAoCarregar
+          titulo="Não foi possível carregar os fluxos"
+          descricao="A conexão falhou. Isto não quer dizer que você não tem automação — tente de novo."
+          onTentarDeNovo={loadFlows}
+        />
+      ) : flows.length === 0 ? (
         <Card className="p-12 text-center">
           <CpuChipIcon className="w-16 h-16 mx-auto text-fg-muted-token opacity-50 mb-4" />
           <p className="text-lg font-medium text-fg-token mb-2">Nenhum flow criado</p>
