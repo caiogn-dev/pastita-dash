@@ -134,6 +134,36 @@ it('Instagram conectado mostra o @ da loja', async () => {
   expect(within(cartao).getByText('Funcionando')).toBeInTheDocument();
 });
 
+it('Instagram fora do ar não vira "não conectado" — mostra erro acionável', async () => {
+  // A busca do WhatsApp funciona; a do Instagram cai. Antes, o `erro` só olhava
+  // o WhatsApp: a coluna do Instagram caía no vazio confiante "Ainda não
+  // conectado" e convidava a religar um canal cujo estado é DESCONHECIDO.
+  listAccounts.mockRejectedValueOnce(new Error('rede caiu'));
+
+  renderizar();
+
+  // Espera a tela terminar de carregar (o cartão do WhatsApp aparece).
+  await screen.findByRole('heading', { name: 'WhatsApp' });
+  // O aviso de falha aparece…
+  expect(screen.getByText(/não conseguimos carregar suas conexões/i)).toBeInTheDocument();
+  // …e a tela NÃO afirma que o Instagram está desconectado.
+  expect(screen.queryByRole('button', { name: /entrar com o instagram/i })).not.toBeInTheDocument();
+  expect(screen.queryByText(/ainda não conectado/i)).not.toBeInTheDocument();
+});
+
+it('"Tentar de novo" refaz a busca do Instagram que havia caído', async () => {
+  listAccounts
+    .mockRejectedValueOnce(new Error('rede caiu'))
+    .mockResolvedValueOnce([{ id: 'ig1', name: 'Cê Saladas', handle: 'cesaladas', isActive: true }]);
+
+  renderizar();
+
+  fireEvent.click(await screen.findByRole('button', { name: /tentar de novo/i }));
+
+  expect(await screen.findByText('@cesaladas')).toBeInTheDocument();
+  expect(screen.queryByText(/não conseguimos carregar suas conexões/i)).not.toBeInTheDocument();
+});
+
 it('desconectar pede confirmação e só pausa (as conversas ficam)', async () => {
   renderizar();
   fireEvent.click(await screen.findByRole('button', { name: 'Desconectar' }));
