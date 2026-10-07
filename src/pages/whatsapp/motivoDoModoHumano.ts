@@ -10,6 +10,7 @@ import { haQuanto } from './tempoDeEspera';
 
 const TEXTO: Record<string, string> = {
   reclamacao: 'Reclamação do pedido',
+  travou_no_pedido: 'Travou no pedido',
   pediu_atendente: 'Cliente pediu atendente',
   bot_nao_entendeu: 'O bot não entendeu o cliente',
   eco_do_celular: 'Alguém respondeu pelo WhatsApp do celular',
