@@ -269,7 +269,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
       // por cima dela; e fixar aberto pulava o conteúdo da barra 184px para
       // a direita antes de deslizar de volta.
       className={cn(
-        'relative h-full shrink-0 transition-[width] duration-300',
+        'relative h-full shrink-0 transition-[width] duration-300 motion-reduce:transition-none',
         recolhido ? 'w-[72px]' : 'w-64',
         className,
       )}
@@ -291,7 +291,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
         'coluna-lateral flex h-full flex-col border-r border-border-token bg-surface',
         // A largura anima com a MESMA curva elástica do indicador ativo:
         // recolher e expandir é movimento de matéria, não corte de frame.
-        'transition-[width] duration-300',
+        // Movimento reduzido: a largura troca sem deslizar, como o rótulo
+        // (`.entra-com-a-coluna` já respeita a preferência no index.css).
+        'transition-[width] duration-300 motion-reduce:transition-none',
         largura,
         // A coluna TRANSBORDA do invólucro de 72px (nada corta) e sobe de
         // camada. Continua `sticky`, não `absolute`: absoluto se ancoraria no

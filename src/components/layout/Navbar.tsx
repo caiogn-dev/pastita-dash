@@ -350,7 +350,7 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
         // Aplicado AQUI, no próprio elemento sticky: envolvê-lo num div justo
         // quebraria a fixação, porque sticky não gruda além do pai.
         // `max-lg:!pl-0` porque no celular não existe coluna.
-        className="sticky top-0 z-40 border-b border-chrome-border text-chrome-fg backdrop-blur-xl transition-[padding] duration-300 max-lg:!pl-0"
+        className="sticky top-0 z-40 border-b border-chrome-border text-chrome-fg backdrop-blur-xl transition-[padding] duration-300 motion-reduce:transition-none max-lg:!pl-0"
         style={{
           // Recuo que acompanha a coluna lateral espiada.
           paddingLeft: 'var(--recuo-da-navbar, 0px)',
