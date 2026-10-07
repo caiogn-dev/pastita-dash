@@ -328,8 +328,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
           // não é destino ocupava quatro linhas e ninguém clicava. O traço
           // fino separa igual, e separa nos DOIS estados — recolhida, ele é a
           // única pista de que ali muda de assunto.
+          // O respiro é PADDING do <li>, e o traço é um filho. Com `my-2` no
+          // próprio <li>, o `space-y-0.5` da lista (seletor mais específico)
+          // reescrevia as margens para 2px/0: o traço colava na seção de
+          // cima e na de baixo — só o primeiro, sem irmão anterior, ficava
+          // com os 8px pedidos.
           const cabecalhoDoGrupo = primeiraDoGrupo ? (
-            <li aria-hidden className="mx-auto my-2 h-px w-6 bg-border-token" />
+            <li aria-hidden className="py-2">
+              <div className="mx-auto h-px w-6 bg-border-token" />
+            </li>
           ) : null;
 
           // Seção sem filhos é um link direto — não vira botão de acordeão.
@@ -344,10 +351,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                   title={miolo ? secao.label : undefined}
                   className={cn(
                     'relative flex items-center gap-2.5 rounded-md py-2 text-body font-medium',
-                    'transition-[padding] duration-300',
-                    'transition-[padding] duration-300',
-                  'transition-[padding] duration-300',
-            miolo ? 'justify-center px-0' : 'px-2.5',
+                    miolo ? 'justify-center px-0' : 'px-2.5',
                     'transition-colors duration-200',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                     estaAtiva
