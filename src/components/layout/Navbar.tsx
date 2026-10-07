@@ -184,7 +184,7 @@ function NavBtn({ section }: { section: NavSection }) {
         <section.icon className="w-4 h-4 flex-shrink-0" />
         {section.label}
         {section.badge && (
-          <span className="text-badge bg-red-500 text-white px-1 py-0.5 rounded-full font-bold leading-none min-w-[16px] text-center">
+          <span className="text-badge bg-brand text-on-brand px-1 py-0.5 rounded-full font-bold leading-none min-w-[16px] text-center">
             {section.badge}
           </span>
         )}
@@ -396,7 +396,7 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
                 pedidos ao vivo), não do navegador. Solto no meio da barra, não
                 dizia de quê. */}
             <span
-              className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${wsConnected ? 'bg-emerald-500' : 'bg-amber-400'}`}
+              className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${wsConnected ? 'bg-success-token' : 'bg-warning-token'}`}
               title={wsConnected ? 'Recebendo pedidos ao vivo' : 'Sem conexão ao vivo — atualize a página'}
               role="img"
               aria-label={wsConnected ? 'Recebendo pedidos ao vivo' : 'Sem conexão ao vivo'}

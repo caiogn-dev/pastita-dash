@@ -53,7 +53,7 @@ const Casca: React.FC<{
         className="pointer-events-none fixed inset-0"
         style={{
           background:
-            'radial-gradient(circle at top right, rgba(201, 162, 75, 0.08), transparent 55%)',
+            'radial-gradient(circle at top right, color-mix(in srgb, var(--brand) 8%, transparent), transparent 55%)',
         }}
       />
       {/* `h-full`: a coluna ocupa a casca inteira. Ela NÃO cresce com o
