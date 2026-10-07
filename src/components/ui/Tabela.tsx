@@ -2,6 +2,7 @@ import React from 'react';
 
 import { cn } from '../../utils/cn';
 import { EmptyState } from './EmptyState';
+import { FalhaAoCarregar } from './FalhaAoCarregar';
 import { Paginacao, PaginacaoProps } from './Paginacao';
 import { linhaClicavel } from './RowActions';
 import { TableSkeleton } from './skeleton';
@@ -37,6 +38,17 @@ export interface TabelaProps<T> {
   classeDaLinha?: (item: T) => string;
   carregando?: boolean;
   vazio?: { titulo: string; descricao?: string; icone?: React.ReactNode; acao?: React.ReactNode };
+  /**
+   * A última busca falhou. Com a lista vazia, a tabela mostra um erro acionável
+   * no lugar do `vazio` — senão o "nenhum resultado" vira o VAZIO ENGANOSO: diz
+   * ao lojista que a loja não tem o dado quando foi a conexão que caiu. Com
+   * itens em cache, a falha de um refetch não apaga o que ele já está lendo.
+   */
+  falhou?: boolean;
+  /** Texto do erro mostrado quando `falhou` e a lista está vazia. */
+  falha?: { titulo: string; descricao?: string };
+  /** Presente = botão "Tentar novamente" no estado de falha. */
+  onTentarDeNovo?: () => void;
   paginacao?: Omit<PaginacaoProps, 'className'>;
   className?: string;
 }
@@ -63,11 +75,27 @@ export function Tabela<T>({
   classeDaLinha,
   carregando = false,
   vazio,
+  falhou = false,
+  falha,
+  onTentarDeNovo,
   paginacao,
   className,
 }: TabelaProps<T>) {
   if (carregando && itens.length === 0) {
     return <TableSkeleton rows={5} columns={colunas.length} />;
+  }
+
+  // Falhou e sem nada em cache: erro acionável, nunca o "vazio" confiante.
+  // Vem antes do vazio e depois do carregando — a mesma ordem de `estadoDaLista`:
+  // o retry põe a busca de volta em voo, e aí é esqueleto, não o erro que saiu.
+  if (falhou && itens.length === 0) {
+    return (
+      <FalhaAoCarregar
+        titulo={falha?.titulo ?? 'Não foi possível carregar a lista'}
+        descricao={falha?.descricao}
+        onTentarDeNovo={onTentarDeNovo}
+      />
+    );
   }
 
   // Vazio só quando a resposta já chegou: piscar "nenhum resultado" durante o

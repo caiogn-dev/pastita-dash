@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import logger from '../../services/logger';
@@ -69,9 +69,16 @@ export const DeliveryZonesPage: React.FC = () => {
   // apagaria coordenadas, fidelidade e configuração de entrega.
   const [storeMetadata, setStoreMetadata] = useState<Record<string, unknown> | undefined>();
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [_error, setError] = useState<string | null>(null);
+  // Falha ao CARREGAR as faixas — some da tela no retry. Separada do erro de
+  // salvar (que vai por toast): se fosse a mesma, um save que cai apagaria as
+  // faixas já carregadas e trocaria "não salvou" por "não carregou".
+  const [erroAoCarregar, setErroAoCarregar] = useState(false);
 
   const [loading, setLoading] = useState(true);
+  // Sequência da busca de faixas: trocar `search`/`filterActive` recria o
+  // `loadData` e dispara outra busca com uma ainda em voo (e o StrictMode monta
+  // o efeito duas vezes). Só a mais recente pode escrever na tela.
+  const requisicaoRef = useRef(0);
   const [search, setSearch] = useState('');
   const [filterActive, setFilterActive] = useState<boolean | undefined>(undefined);
 
@@ -133,9 +140,10 @@ export const DeliveryZonesPage: React.FC = () => {
       return;
     }
 
+    const req = ++requisicaoRef.current;
     try {
       setLoading(true);
-      setError(null);
+      setErroAoCarregar(false);
       // allSettled e não all: a localização falhar não pode apagar as faixas
       // da tela. Elas são o conteúdo principal, e continuam valendo para o
       // cálculo de frete mesmo sem mapa.
@@ -152,6 +160,7 @@ export const DeliveryZonesPage: React.FC = () => {
         getStore(storeId),
       ]);
 
+      if (req !== requisicaoRef.current) return; // busca superada por uma mais nova
       if (zonesRes.status === 'rejected') throw zonesRes.reason;
       setZones(zonesRes.value.results);
       if (statsRes.status === 'fulfilled') setStats(statsRes.value);
@@ -172,10 +181,11 @@ export const DeliveryZonesPage: React.FC = () => {
         setLocationError('Não foi possível carregar a localização desta loja.');
       }
     } catch (err) {
+      if (req !== requisicaoRef.current) return; // rejeição obsoleta: ignora
       logger.error('Error loading delivery zones:', err);
-      setError('Erro ao carregar zonas de entrega');
+      setErroAoCarregar(true);
     } finally {
-      setLoading(false);
+      if (req === requisicaoRef.current) setLoading(false);
     }
   }, [search, filterActive, storeId]);
 
@@ -231,14 +241,13 @@ export const DeliveryZonesPage: React.FC = () => {
 
   const handleSave = async () => {
     if (!storeId) {
-      setError('Selecione uma loja antes de criar uma zona de entrega');
+      toast.error('Selecione uma loja antes de criar uma zona de entrega');
       return;
     }
 
     try {
       setSaving(true);
-      setError(null);
-      
+
       if (editingZone) {
         const payload: UpdateDeliveryZone = {
           ...formData,
@@ -259,7 +268,7 @@ export const DeliveryZonesPage: React.FC = () => {
       loadData();
     } catch (err) {
       logger.error('Error saving delivery zone:', err);
-      setError('Erro ao salvar zona de entrega');
+      toast.error('Erro ao salvar zona de entrega');
     } finally {
       setSaving(false);
     }
@@ -549,6 +558,12 @@ export const DeliveryZonesPage: React.FC = () => {
         rotuloDaLinha={(z) => `Editar faixa ${z.name}`}
         onAbrir={(z) => handleOpenModal(z)}
         carregando={loading}
+        falhou={erroAoCarregar}
+        falha={{
+          titulo: 'Não foi possível carregar as faixas de entrega',
+          descricao: 'As faixas calculam o frete sozinho — elas podem continuar lá. Tente de novo.',
+        }}
+        onTentarDeNovo={loadData}
         vazio={{
           titulo: 'Nenhuma faixa cadastrada',
           descricao: 'Cadastre faixas de quilometragem para o frete ser calculado sozinho.',
