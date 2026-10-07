@@ -70,9 +70,26 @@ function ativo(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function secaoAtiva(pathname: string, secao: NavSection): boolean {
-  if (secao.href && ativo(pathname, secao.href)) return true;
-  return secao.items.some((i) => ativo(pathname, i.href));
+/**
+ * O destino que a página atual É — o casamento mais longo, como na trilha.
+ *
+ * Prefixo sozinho marcava dois itens quando um destino é prefixo de outro:
+ * em /marketing/whatsapp/templates, "Campanha WhatsApp" (/marketing/whatsapp)
+ * e "Modelos de mensagem" ficavam ambos com `aria-current`.
+ */
+function destinoAtivo(pathname: string, sections: NavSection[]): string | null {
+  let melhor: string | null = null;
+  for (const s of sections) {
+    for (const href of [s.href, ...s.items.map((i) => i.href)]) {
+      if (href && ativo(pathname, href) && (!melhor || href.length > melhor.length)) melhor = href;
+    }
+  }
+  return melhor;
+}
+
+function secaoAtiva(alvo: string | null, secao: NavSection): boolean {
+  if (!alvo) return false;
+  return secao.href === alvo || secao.items.some((i) => i.href === alvo);
 }
 
 /**
@@ -163,7 +180,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
   // mudança do contador de não lidas, e o efeito rodava de novo a cada
   // mensagem que chegava — fechando o grupo que o operador tinha acabado de
   // abrir e reabrindo o da página.
-  const dono = sections.find((s) => s.items.length > 0 && secaoAtiva(pathname, s))?.label;
+  const alvo = destinoAtivo(pathname, sections);
+  const dono = sections.find((s) => s.items.length > 0 && secaoAtiva(alvo, s))?.label;
   useEffect(() => {
     if (dono) setAberto(dono);
   }, [pathname, dono]);
@@ -294,7 +312,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
         {sections.map((secao, indice) => {
           const Icone = secao.icon;
           const temFilhos = secao.items.length > 0;
-          const estaAtiva = secaoAtiva(pathname, secao);
+          const estaAtiva = secaoAtiva(alvo, secao);
           const estaAberta = aberto === secao.label;
           // Cabeçalho do bloco só na PRIMEIRA seção dele. Onze seções numa
           // lista corrida obrigam a ler tudo para achar uma; o bloco diz de
@@ -429,7 +447,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                 <ul className={cn('mt-0.5 space-y-0.5', !miolo && 'ml-4 border-l border-border-token pl-2')}>
                   {secao.items.map((item) => {
                     const ItemIcone = item.icon;
-                    const itemAtivo = ativo(pathname, item.href);
+                    const itemAtivo = item.href === alvo;
                     return (
                       // O nome, não o href: enquanto a loja ainda não
                       // carregou, `storeHref` devolve `/stores` para vários
