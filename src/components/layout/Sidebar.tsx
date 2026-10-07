@@ -158,10 +158,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
 
   // O grupo da rota atual abre sozinho a cada navegação. Sem isso, entrar em
   // /combos por link direto deixa o menu mostrando outra coisa.
+  //
+  // A dependência é o NOME do dono, não o array: `sections` é recriado a cada
+  // mudança do contador de não lidas, e o efeito rodava de novo a cada
+  // mensagem que chegava — fechando o grupo que o operador tinha acabado de
+  // abrir e reabrindo o da página.
+  const dono = sections.find((s) => s.items.length > 0 && secaoAtiva(pathname, s))?.label;
   useEffect(() => {
-    const dono = sections.find((s) => s.items.length > 0 && secaoAtiva(pathname, s));
-    if (dono) setAberto(dono.label);
-  }, [pathname, sections]);
+    if (dono) setAberto(dono);
+  }, [pathname, dono]);
 
   // O modo ícone é a PREFERÊNCIA; `estreita` é o que a tela mostra agora.
   // Enquanto o ponteiro (ou o foco) está na coluna, ela mostra tudo.
