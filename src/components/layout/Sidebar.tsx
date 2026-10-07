@@ -313,7 +313,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
           const Icone = secao.icon;
           const temFilhos = secao.items.length > 0;
           const estaAtiva = secaoAtiva(alvo, secao);
-          const estaAberta = aberto === secao.label;
+          // Estreita, nenhum grupo se desenha aberto: os filhos viravam uma
+          // pilha de ícones sem rótulo sob a seção, em toda página (o efeito
+          // da rota reabre o grupo a cada navegação). `aberto` é preservado e
+          // o grupo volta na espiada.
+          const estaAberta = aberto === secao.label && !estreita;
           // Cabeçalho do bloco só na PRIMEIRA seção dele. Onze seções numa
           // lista corrida obrigam a ler tudo para achar uma; o bloco diz de
           // longe se aquilo é coisa de hoje, de catálogo, de crescer ou de
