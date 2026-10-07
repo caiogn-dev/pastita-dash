@@ -25,7 +25,11 @@ const zDe = (texto: string, marcador: RegExp): number => {
 };
 
 describe('camadas do shell', () => {
-  const zSidebarEspiada = () => zDe(layout('Sidebar.tsx'), /espiada &&/);
+  // A camada da coluna vale SEMPRE (não só na espiada): no quadro em que a
+  // espiada termina a coluna ainda está larga e animando, e sem camada a
+  // navbar pintava por cima do topo dela.
+  const MARCA_DA_CAMADA = /'relative z-\d+',/;
+  const zSidebarEspiada = () => zDe(layout('Sidebar.tsx'), MARCA_DA_CAMADA);
   const zNavbar = () => zDe(layout('Navbar.tsx'), /sticky top-0 z-\d+ border-b/);
 
   it('a coluna espiada pinta ACIMA da navbar', () => {
@@ -47,7 +51,7 @@ describe('camadas do shell', () => {
    * comparava dois números e nenhum dos dois valia.
    */
   it('a camada só existe se o elemento estiver posicionado', () => {
-    const linha = layout('Sidebar.tsx').split('\n').find((l) => /espiada &&/.test(l))!;
+    const linha = layout('Sidebar.tsx').split('\n').find((l) => MARCA_DA_CAMADA.test(l))!;
     expect(linha).toMatch(/\b(relative|sticky|absolute|fixed)\b/);
   });
 

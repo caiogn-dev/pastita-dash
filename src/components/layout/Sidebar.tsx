@@ -262,7 +262,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
       // `h-full`: o invólucro acompanha a casca. Ele tinha a altura do
       // CONTEÚDO (695px) enquanto a página tinha 4490 — e `sticky` só gruda
       // enquanto o pai está em vista, então a navegação sumia ao rolar.
-      className={cn('relative h-full shrink-0', recolhido ? 'w-[72px]' : 'w-64', className)}
+      //
+      // A largura do invólucro ANIMA junto com a da coluna (mesma duração e
+      // curva). Saltando de uma vez, recolher jogava a navbar e a página para
+      // x=72 enquanto a coluna ainda levava 240ms encolhendo — elas pintavam
+      // por cima dela; e fixar aberto pulava o conteúdo da barra 184px para
+      // a direita antes de deslizar de volta.
+      className={cn(
+        'relative h-full shrink-0 transition-[width] duration-300',
+        recolhido ? 'w-[72px]' : 'w-64',
+        className,
+      )}
+      style={{ transitionTimingFunction: 'var(--desliza)' }}
       onMouseEnter={() => setEspiando(true)}
       onMouseLeave={() => setEspiando(false)}
       // Quem navega por Tab não tem ponteiro: sem isto o teclado ficaria preso
@@ -297,7 +308,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
         // navegador IGNORA o z-index, e a navbar (sticky de verdade) pintava
         // por cima dos 56px do topo da coluna — a marca virava "CA" e o resto
         // sumia atrás da barra.
-        espiada && 'relative z-50 shadow-2xl'
+        // A camada vale SEMPRE, não só na espiada: no quadro em que a espiada
+        // termina (mouse sai, ou "Fixar aberto") a coluna ainda está larga e
+        // encolhendo/assentando, e sem camada a navbar pintava por cima do
+        // topo dela durante a animação. Overlays da página (z-50+) vêm depois
+        // no DOM ou em portal, e continuam acima.
+        'relative z-50',
+        espiada && 'shadow-2xl'
       )}
       style={{ transitionTimingFunction: 'var(--desliza)' }}
     >

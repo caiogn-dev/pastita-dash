@@ -55,7 +55,9 @@ describe('recolher com o ponteiro em cima — o gesto real', () => {
     fireEvent.mouseEnter(nav);
     fireEvent.click(screen.getByRole('button', { name: /recolher menu/i }));
 
-    expect(nav.className).not.toMatch(/z-50/);
+    // A sombra é a marca da coluna FLUTUANDO (espiada). A camada (z-50)
+    // agora vale sempre — ver camadasDoShell — então não serve de sinal.
+    expect(nav.className).not.toMatch(/shadow-2xl/);
     expect(nav.className).toMatch(/w-\[72px\]/);
   });
 
