@@ -307,6 +307,25 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
+  // Gaveta aberta: o foco entra nela e Esc fecha. Sem isto o foco ficava no
+  // hambúrguer, ATRÁS do véu, e o teclado não alcançava nem fechava o menu.
+  // Ao fechar, o foco volta ao hambúrguer (o nó focado foi desmontado).
+  const hamburguerRef = useRef<HTMLButtonElement>(null);
+  const fecharGavetaRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!mobileOpen) return;
+    fecharGavetaRef.current?.focus();
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false);
+    };
+    document.addEventListener('keydown', aoTeclar);
+    return () => {
+      document.removeEventListener('keydown', aoTeclar);
+      const foco = document.activeElement;
+      if (!foco || foco === document.body) hamburguerRef.current?.focus();
+    };
+  }, [mobileOpen]);
+
   const { containerRef, measureRef, visibleCount } = useOverflowNav(sections.length);
   const visibleSections = sections.slice(0, visibleCount);
   const hiddenSections = sections.slice(visibleCount);
@@ -462,6 +481,8 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
             <AccountMenu />
 
             <button
+              ref={hamburguerRef}
+              aria-expanded={mobileOpen}
               onClick={() => setMobileOpen(true)}
               className="hidden max-lg:block p-1.5 text-chrome-muted hover:text-chrome-fg hover:bg-chrome-hover rounded-lg transition-colors"
               aria-label="Abrir menu de navegação"
@@ -476,10 +497,15 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
       {mobileOpen && (
         <>
           <div className="fixed inset-0 bg-black/60 z-40 hidden max-lg:block" onClick={() => setMobileOpen(false)} />
-          <div className="fixed top-0 left-0 bottom-0 w-72 bg-surface z-50 hidden max-lg:flex flex-col shadow-2xl">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu de navegação"
+            className="fixed top-0 left-0 bottom-0 w-72 bg-surface z-50 hidden max-lg:flex flex-col shadow-2xl"
+          >
             <div className="flex items-center justify-between px-4 h-12 bg-chrome text-chrome-fg border-b border-chrome-border flex-shrink-0">
               <span className="font-bold text-sm text-chrome-fg">{brandInfo.name}</span>
-              <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-chrome-hover text-chrome-muted hover:text-chrome-fg" aria-label="Fechar menu de navegação">
+              <button ref={fecharGavetaRef} onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-chrome-hover text-chrome-muted hover:text-chrome-fg" aria-label="Fechar menu de navegação">
                 <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
