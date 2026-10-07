@@ -45,6 +45,19 @@ export const AgentFlowsPage: React.FC = () => {
   // legítimo da mais nova.
   const requisicaoRef = useRef(0);
 
+  // Troca de loja: o cache (`flows`/`carregouAlgumaVez`) é da loja ANTERIOR.
+  // Zera em render, antes de `estadoDaLista`, para a nova carga cair em
+  // 'carregando' em vez de 'lista' — sem isto a tela mostraria os fluxos da
+  // loja anterior (com editar/ativar/excluir) sob a loja recém-selecionada, e
+  // os manteria indefinidamente se a busca falhasse. Regra multi-tenant.
+  const storeAnteriorRef = useRef(storeId);
+  if (storeAnteriorRef.current !== storeId) {
+    storeAnteriorRef.current = storeId;
+    setFlows([]);
+    setCarregouAlgumaVez(false);
+    setErro(false);
+  }
+
   const loadFlows = useCallback(async () => {
     const req = ++requisicaoRef.current;
     setLoading(true);

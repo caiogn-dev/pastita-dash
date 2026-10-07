@@ -13,7 +13,7 @@
  * (com "Tentar novamente") no lugar do vazio e dos zeros, e que o caminho de
  * sucesso e o vazio legítimo seguem intactos.
  */
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 
@@ -33,8 +33,10 @@ jest.mock('react-hot-toast', () => ({
   default: { error: jest.fn(), success: jest.fn() },
 }));
 
+// A loja selecionada é mutável para simular a troca de loja do operador.
+let mockStoreId = 'store-1';
 jest.mock('../../../hooks', () => ({
-  useStore: () => ({ storeId: 'store-1' }),
+  useStore: () => ({ storeId: mockStoreId }),
   useConfirm: () => [null, jest.fn()],
 }));
 
@@ -57,6 +59,7 @@ const umFluxo = () => ({
 
 beforeEach(() => {
   listMock.mockReset();
+  mockStoreId = 'store-1';
 });
 
 test('falha sem cache → erro acionável, nunca o vazio/zeros enganoso de "nenhum flow criado"', async () => {
@@ -116,6 +119,48 @@ test('busca que DEU CERTO e veio vazia mantém o "Nenhum flow criado" legítimo'
   expect(
     screen.queryByText(/não foi possível carregar os fluxos/i),
   ).not.toBeInTheDocument();
+});
+
+test('trocar de loja não vaza os fluxos da loja anterior (nem na nova carga, nem se ela falhar)', async () => {
+  // Loja 1 carrega e mostra o seu fluxo.
+  listMock.mockResolvedValueOnce({ results: [umFluxo()], count: 1 });
+  const { rerender } = render(
+    <MemoryRouter>
+      <AgentFlowsPage />
+    </MemoryRouter>,
+  );
+  expect(await screen.findByText('Boas-vindas')).toBeInTheDocument();
+
+  // Operador troca para a loja 2; a busca da loja 2 fica pendente.
+  let rejeitarLoja2: (e: unknown) => void = () => {};
+  listMock.mockReturnValueOnce(
+    new Promise((_, rej) => {
+      rejeitarLoja2 = rej;
+    }),
+  );
+  mockStoreId = 'store-2';
+  rerender(
+    <MemoryRouter>
+      <AgentFlowsPage />
+    </MemoryRouter>,
+  );
+
+  // Durante a carga da loja 2, o fluxo da loja 1 NÃO pode seguir na tela
+  // (com editar/ativar/excluir) sob a loja recém-selecionada.
+  await waitFor(() =>
+    expect(screen.queryByText('Boas-vindas')).not.toBeInTheDocument(),
+  );
+
+  // E se a busca da loja 2 falhar, continua sem o fluxo da loja 1 — erro
+  // acionável, nunca o cache da outra loja mantido indefinidamente.
+  await act(async () => {
+    rejeitarLoja2(new Error('500'));
+    await Promise.resolve();
+  });
+  expect(
+    await screen.findByText(/não foi possível carregar os fluxos/i),
+  ).toBeInTheDocument();
+  expect(screen.queryByText('Boas-vindas')).not.toBeInTheDocument();
 });
 
 test('sucesso → renderiza os fluxos, sem estado de erro', async () => {
