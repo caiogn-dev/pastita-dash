@@ -41,30 +41,12 @@ import { Button, Modal, PageLoading } from '../../components/common';
 import { OrderDeliveryModal } from '../../components/OrderDeliveryModal';
 import { ordersService, paymentsService, getErrorMessage } from '../../services';
 import NotaFiscalPedido from './NotaFiscalPedido';
-import { Order, Payment, OrderComboItem, ComboSelectedItem } from '../../types';
+import { Order, Payment, OrderComboItem } from '../../types';
+import { linhasDasEscolhas } from '../../utils/escolhasDoCombo';
 
-// Linhas de seleção de combo (ex.: "Escolha sua salada: 1x Tilápia Suprema")
-// a partir do snapshot salvo no pedido (display_data.groups ou selected_variants_data).
-const comboSelectionLines = (combo: OrderComboItem | undefined): string[] => {
-  if (!combo) return [];
-  const fromGroups = (combo.display_data?.groups || []).flatMap((g) =>
-    (g.items || []).map((it: ComboSelectedItem) => {
-      const name = it.variant_name || it.product_name || '';
-      if (!name) return '';
-      const qty = it.quantity && it.quantity > 1 ? `${it.quantity}x ` : '';
-      return g.group_name ? `${g.group_name} ${qty}${name}` : `${qty}${name}`;
-    }).filter(Boolean)
-  );
-  if (fromGroups.length) return fromGroups;
-  return (combo.selected_variants_data || [])
-    .map((it) => {
-      const name = it.variant_name || it.product_name || '';
-      if (!name) return '';
-      const qty = it.quantity && it.quantity > 1 ? `${it.quantity}x ` : '';
-      return it.group_name ? `${it.group_name} ${qty}${name}` : `${qty}${name}`;
-    })
-    .filter(Boolean);
-};
+// Linhas de seleção de combo: um sabor por linha, repetidos somados
+// ("2x Assadinho"). Regra única em utils/escolhasDoCombo.
+const comboSelectionLines = (combo: OrderComboItem | undefined): string[] => linhasDasEscolhas(combo);
 
 // Helper para parsear endereço (string JSON ou objeto)
 const parseAddress = (addr: string | Record<string, unknown> | undefined): Record<string, string> => {

@@ -10,6 +10,7 @@ import { KDS_COLUMNS, groupKdsOrders, proximoPassoDoKds } from './kdsColumns';
 import { getErrorMessage } from '../../services/api';
 import { getStageStart } from '../orders/orderSla';
 import { Skeleton } from '../../components/ui';
+import { linhasDasEscolhas } from '../../utils/escolhasDoCombo';
 
 const EMPTY_ORDERS: StoreOrder[] = [];
 
@@ -197,18 +198,21 @@ const KdsPage: React.FC = () => {
                             const combo = (order.combo_items || []).find(
                               (c) => c.order_item === item.id,
                             );
-                            const comboPicks = combo?.selected_variants_data || [];
+                            const comboPicks = linhasDasEscolhas(combo);
                             return (
                               <li key={item.id} className="text-lg leading-snug text-fg-token">
                                 <span className="font-bold">{item.quantity}×</span>{' '}
                                 {item.product_name}
                                 {item.variant_name ? ` (${item.variant_name})` : ''}
-                                {comboPicks.map((sv, i) => (
-                                  <span key={i} className="block text-base pl-6 text-success-token">
-                                    {(sv.quantity ?? 1)}× {sv.product_name || sv.variant_name}
-                                    {sv.group_name ? ` — ${sv.group_name}` : ''}
-                                  </span>
-                                ))}
+                                {comboPicks.length > 0 && (
+                                  <ul className="pl-6 text-base text-success-token">
+                                    {comboPicks.map((linha, i) => (
+                                      <li key={i} className={linha.endsWith(':') ? 'font-semibold text-fg-muted-token' : 'whitespace-pre'}>
+                                        {linha}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
                                 {item.notes && (
                                   <p className="text-sm font-semibold text-warning-token pl-6">
                                     Obs.: {item.notes}

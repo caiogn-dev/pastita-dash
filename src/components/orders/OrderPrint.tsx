@@ -6,6 +6,7 @@
 import { useRef, useCallback } from 'react';
 import { Order, OrderComboItem } from '../../types';
 import { rotuloDePagamento } from '../../utils/rotulosDeEstado';
+import { linhasDasEscolhas } from '../../utils/escolhasDoCombo';
 
 // Type alias for backwards compatibility
 type Pedido = Order;
@@ -193,9 +194,7 @@ export const useOrderPrint = () => {
         : [];
       // Sabores/saladas escolhidos no combo, ligados a esta linha
       const combo = comboByOrderItem.get(item.id);
-      const comboLines = (combo?.selected_variants_data || [])
-        .map((sv) => `${sv.quantity ?? 1}x ${sv.product_name || sv.variant_name || ''}`.trim())
-        .filter((l) => l && !l.endsWith('x'));
+      const comboLines = linhasDasEscolhas(combo);
       const detailLines = [
         variantName,
         ...comboLines,
@@ -228,7 +227,9 @@ export const useOrderPrint = () => {
       `;
     }).join('') || '';
 
-    const comboItemsHtml = pedido.combo_items?.map((combo) => {
+    // Combo ligado a uma linha já saiu no item acima (com as escolhas); aqui
+    // só os avulsos — senão o combo imprimia duas vezes.
+    const comboItemsHtml = pedido.combo_items?.filter((combo) => !combo.order_item).map((combo) => {
       const customizationLines = Array.isArray(combo.customizations?.ingredients)
         ? formatIngredients(combo.customizations.ingredients)
         : [];
@@ -241,6 +242,7 @@ export const useOrderPrint = () => {
             ${hidePrices ? '' : `<span class="preco">${formatMoney(combo.subtotal)}</span>`}
           </div>
           <div class="det">[COMBO]</div>
+          ${renderDetailLines(linhasDasEscolhas(combo))}
           ${customizationLines.length ? renderDetailLines(customizationLines) : ''}
           ${combo.notes ? `<div class="obs-item">${escapeHtml(combo.notes)}</div>` : ''}
         </div>

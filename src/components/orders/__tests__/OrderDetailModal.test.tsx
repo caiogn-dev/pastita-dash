@@ -254,6 +254,6 @@ describe('OrderDetailModal — seleções de combo por item', () => {
       ],
     } as unknown as Order);
     renderAt('/stores/loja-1/orders?pedido=o1');
-    expect(await screen.findByText(/Sabor 2x Quatro Queijos/)).toBeInTheDocument();
+    expect(await screen.findByText(/^2x Quatro Queijos$/)).toBeInTheDocument();
   });
 });
