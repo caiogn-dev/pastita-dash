@@ -90,6 +90,13 @@ export class RealtimeConnection {
   // Backoff extra acumulado quando o backend responde 429 (rate limit).
   private pollBackoffMs = 0;
   private pollMaxBackoffMs = 120000;
+  // Em polling, de quanto em quanto tempo uma sonda tenta voltar ao WebSocket.
+  // Sem isto uma falha de deploy deixava o painel em polling até recarregar a
+  // página (45 mil polls/semana medidos em 05/10).
+  private sondaIntervaloMs = 60000;
+  private sondaTimeoutMs = 10000;
+  private sondaTimer: number | null = null;
+  private sonda: WebSocket | null = null;
   
   // Estado
   private status: ConnectionStatus = 'disconnected';
@@ -335,31 +342,109 @@ export class RealtimeConnection {
         // onConnectSuccess is triggered when server sends connection_established
       };
 
-      this.ws.onmessage = (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          if (data.type === 'connection_established') {
-            this.onConnectSuccess();
-            this.startPingInterval();
-            return;
-          }
-          this.handleMessage(data);
-        } catch (err) {
-          console.error('[Realtime] WebSocket parse error:', err);
-        }
-      };
-      
-      this.ws.onclose = (e) => {
-        this.onConnectError(new Error(`WebSocket closed: ${e.code} ${e.reason}`));
-      };
-      
-      this.ws.onerror = (e) => {
-        console.error('[Realtime] WebSocket error:', e);
-        this.onConnectError(new Error('WebSocket error'));
-      };
+      this.ligarWebSocket(this.ws);
     } catch (err) {
       console.error('[Realtime] WebSocket connection error:', err);
       this.onConnectError(err as Error);
+    }
+  }
+
+  /** Handlers do WebSocket principal (conexão nova ou sonda promovida). */
+  private ligarWebSocket(ws: WebSocket): void {
+    ws.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.type === 'connection_established') {
+          this.onConnectSuccess();
+          this.startPingInterval();
+          return;
+        }
+        this.handleMessage(data);
+      } catch (err) {
+        console.error('[Realtime] WebSocket parse error:', err);
+      }
+    };
+
+    ws.onclose = (e) => {
+      this.onConnectError(new Error(`WebSocket closed: ${e.code} ${e.reason}`));
+    };
+
+    ws.onerror = (e) => {
+      console.error('[Realtime] WebSocket error:', e);
+      this.onConnectError(new Error('WebSocket error'));
+    };
+  }
+
+  /** Em polling: agenda a próxima tentativa silenciosa de voltar ao WebSocket. */
+  private agendarSonda(): void {
+    if (this.sondaTimer || this.transport !== 'polling') return;
+    if (!this.fallbackOrder.includes('websocket') || !isTransportSupported('websocket')) return;
+    this.sondaTimer = window.setTimeout(() => {
+      this.sondaTimer = null;
+      this.sondarWebSocket();
+    }, this.sondaIntervaloMs);
+  }
+
+  /**
+   * Abre um WebSocket de teste sem mexer no polling. Só quando o servidor
+   * confirma (`connection_established`) o polling para e a sonda vira a
+   * conexão principal — assim nenhum pedido cai no intervalo da troca.
+   * Falha da sonda é silenciosa: não notifica erro nem muda o status.
+   */
+  private sondarWebSocket(): void {
+    if (this.transport !== 'polling' || this.status === 'disconnected') return;
+
+    let sonda: WebSocket;
+    try {
+      sonda = new WebSocket(this.buildUrl('websocket'));
+    } catch {
+      this.agendarSonda();
+      return;
+    }
+    this.sonda = sonda;
+
+    const desistir = () => {
+      window.clearTimeout(limite);
+      this.descartarSonda();
+      this.agendarSonda();
+    };
+    const limite = window.setTimeout(desistir, this.sondaTimeoutMs);
+
+    sonda.onopen = () => {
+      if (this.token) sonda.send(JSON.stringify({ type: 'auth', token: this.token }));
+    };
+    sonda.onmessage = (e) => {
+      let data: { type?: string } | null = null;
+      try { data = JSON.parse(e.data); } catch { return; }
+      if (data?.type !== 'connection_established') return;
+      window.clearTimeout(limite);
+      this.promoverSonda(sonda);
+    };
+    sonda.onclose = desistir;
+    sonda.onerror = desistir;
+  }
+
+  private promoverSonda(sonda: WebSocket): void {
+    this.sonda = null;
+    this.cleanupTransport();          // para o polling
+    this.transport = 'websocket';
+    this.currentFallbackIndex = Math.max(0, this.fallbackOrder.indexOf('websocket'));
+    this.ws = sonda;
+    this.ligarWebSocket(sonda);
+    this.onConnectSuccess();
+    this.startPingInterval();
+  }
+
+  private descartarSonda(): void {
+    const sonda = this.sonda;
+    this.sonda = null;
+    if (!sonda) return;
+    sonda.onopen = null;
+    sonda.onmessage = null;
+    sonda.onclose = null;
+    sonda.onerror = null;
+    if (sonda.readyState === WebSocket.OPEN || sonda.readyState === WebSocket.CONNECTING) {
+      sonda.close();
     }
   }
 
@@ -428,6 +513,7 @@ export class RealtimeConnection {
   private connectPolling(): void {
     this.pollingController = new AbortController();
     this.doPoll();
+    this.agendarSonda();
   }
 
   /**
@@ -615,9 +701,9 @@ export class RealtimeConnection {
    * Retorna o host WebSocket
    */
   private getWSHost(): string {
-    let wsHost: string | undefined = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_WS_HOST : undefined;
+    let wsHost: string | undefined = import.meta.env?.VITE_WS_HOST;
     if (!wsHost) {
-      const apiUrl: string = typeof import.meta !== 'undefined' ? (import.meta.env?.VITE_API_URL || '') : '';
+      const apiUrl: string = import.meta.env?.VITE_API_URL || '';
       if (apiUrl) {
         try {
           wsHost = new URL(apiUrl).host;
@@ -832,6 +918,13 @@ export class RealtimeConnection {
       this.pollingController = null;
     }
 
+    // Limpar sonda de volta ao WebSocket
+    if (this.sondaTimer) {
+      window.clearTimeout(this.sondaTimer);
+      this.sondaTimer = null;
+    }
+    this.descartarSonda();
+
     // Limpar ping
     if (this.pingTimer) {
       window.clearInterval(this.pingTimer);
@@ -877,9 +970,9 @@ export function setGlobalConnection(connection: RealtimeConnection | null): void
  * Hook helper para obter URL WebSocket (backwards compatibility)
  */
 export function getWebSocketUrl(path: string): string {
-  let wsHost: string | undefined = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_WS_HOST : undefined;
+  let wsHost: string | undefined = import.meta.env?.VITE_WS_HOST;
   if (!wsHost) {
-    const apiUrl: string = typeof import.meta !== 'undefined' ? (import.meta.env?.VITE_API_URL || '') : '';
+    const apiUrl: string = import.meta.env?.VITE_API_URL || '';
     if (apiUrl) {
       try {
         wsHost = new URL(apiUrl).host;

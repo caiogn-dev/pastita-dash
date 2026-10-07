@@ -32,6 +32,7 @@ jest.mock('../../../services/delivery', () => ({
 jest.mock('../../../services/storesApi', () => ({
   getStore: jest.fn().mockResolvedValue({ id: 'store-1', metadata: {} }),
   updateStore: jest.fn().mockResolvedValue({}),
+  getCategories: jest.fn().mockResolvedValue({ results: [] }),
 }));
 
 jest.mock('../../../hooks', () => ({

@@ -1,3 +1,4 @@
+import { rotuloDePagamento } from '../../../utils/rotulosDeEstado';
 import { saldoDoPedido, podeRegistrarPagamento, FORMAS_DE_REGISTRO } from '../saldoDoPedido';
 
 const normaliza = (s: string) => s.replace(/\s/g, ' ');
@@ -44,5 +45,11 @@ describe('FORMAS_DE_REGISTRO', () => {
   it('só slugs canônicos (sem os dialetos card/link/rótulo)', () => {
     const valores = FORMAS_DE_REGISTRO.map((f) => f.valor);
     expect(valores).toEqual(['cash', 'debit_card', 'credit_card', 'pix', 'voucher', 'other']);
+  });
+
+  it('o nome de cada forma é o do mapa único — não um dialeto próprio', () => {
+    for (const f of FORMAS_DE_REGISTRO) {
+      expect(f.rotulo).toBe(rotuloDePagamento(f.valor));
+    }
   });
 });

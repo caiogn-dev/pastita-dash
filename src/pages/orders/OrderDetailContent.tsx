@@ -98,8 +98,8 @@ import { textoDoTroco } from './trocoDoPedido';
 import {
   STATUS_LABELS,
   PAYMENT_STATUS_LABELS,
-  PAYMENT_METHOD_LABELS,
   PAYMENT_RECORD_STATUS_LABELS,
+  rotuloDePagamento,
 } from '../../utils/rotulosDeEstado';
 import { formatCurrency, formatPhone, formatPhoneForWhatsApp } from '../../utils/formatters';
 
@@ -532,7 +532,6 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
   const statusColors = STATUS_COLORS[order.status.toLowerCase()] || STATUS_COLORS.pending;
   const paymentStatus = order.payment_status || 'pending';
   const paymentStatusLabel = PAYMENT_STATUS_LABELS;
-  const paymentMethodLabel = PAYMENT_METHOD_LABELS;
 
   const paymentLink = order.pix_ticket_url || order.payment_url || order.payment_link || order.init_point || null;
   const hasPaymentBalance = order.amount_due !== undefined && order.amount_due !== null;
@@ -881,7 +880,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               )}
 
               <p className="mt-2 text-sm text-fg-muted-token">
-                {paymentMethodLabel[order.payment_method || ''] || order.payment_method || 'Forma não informada'}
+                {rotuloDePagamento(order.payment_method)}
               </p>
               {textoDoTroco(order.change_for, order.change_due) ? (
                 <p className="mt-1 text-sm font-semibold text-fg-token" data-testid="troco-do-pedido">
@@ -1026,7 +1025,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                   {cobrancasVivas.map((payment) => (
                     <li key={payment.id} className="flex items-center justify-between gap-2">
                       <span className="min-w-0 truncate text-fg-muted-token">
-                        {PAYMENT_METHOD_LABELS[payment.payment_method] ?? payment.payment_method}
+                        {rotuloDePagamento(payment.payment_method)}
                         {' · '}
                         {/* Vocabulário da COBRANÇA, não do pedido: aqui o
                             dinheiro fica `completed`, o pedido fica `paid`. */}
@@ -1061,7 +1060,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                     {cobrancasMortas.map((payment) => (
                       <li key={payment.id} className="flex items-center justify-between gap-2 text-fg-muted-token">
                         <span className="min-w-0 truncate">
-                          {PAYMENT_METHOD_LABELS[payment.payment_method] ?? payment.payment_method}
+                          {rotuloDePagamento(payment.payment_method)}
                           {' · '}
                           {PAYMENT_RECORD_STATUS_LABELS[payment.status] ?? payment.status}
                         </span>
@@ -1140,7 +1139,9 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               Fidelidade
             </button>
 
-            {!isCancelled && !isCompleted && (
+            {/* Entregue também se cancela (dono, 06/10): o backend estorna o
+                cashback gerado e não devolve estoque. */}
+            {!isCancelled && (
               <button
                 onClick={() => setShowCancelModal(true)}
                 className="rounded-lg px-3 py-2 text-xs font-medium text-[var(--danger)] transition hover:bg-[var(--danger-soft)]"

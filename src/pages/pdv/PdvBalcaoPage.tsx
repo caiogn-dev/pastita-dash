@@ -21,16 +21,10 @@ import type { Order } from '../../types';
 import { copyToClipboard } from '../../utils/clipboard';
 import { precoVigenteDoProduto } from '../../utils/precoVigente';
 import { formatCurrency } from '../../utils/formatters';
+import { FORMAS_DO_BALCAO, rotuloDePagamento } from '../../utils/rotulosDeEstado';
 
 
-type PaymentChoice = 'cash' | 'pix' | 'credit_card' | 'debit_card';
-
-const PAYMENT_LABELS: Record<PaymentChoice, string> = {
-  cash: 'Dinheiro',
-  pix: 'PIX',
-  credit_card: 'Crédito',
-  debit_card: 'Débito',
-};
+type PaymentChoice = (typeof FORMAS_DO_BALCAO)[number];
 
 /** Produto anotado com a loja dona — o balcão vende itens de todas as lojas do usuário. */
 interface CatalogEntry {
@@ -488,10 +482,17 @@ const PdvBalcaoPage: React.FC = () => {
             onVincular={() => setCustomerModal(true)}
             onRemover={() => setCustomer(null)}
           />
-          <div className="grid grid-cols-4 gap-1.5">
-            {(Object.keys(PAYMENT_LABELS) as PaymentChoice[]).map((key) => (
-              <Button key={key} size="sm" variant={payment === key ? 'primary' : 'secondary'} onClick={() => setPayment(key)}>
-                {PAYMENT_LABELS[key]}
+          {/* Nomes por extenso ("Cartão de débito") não cabem em 4 colunas no painel lateral. */}
+          <div role="group" aria-label="Forma de pagamento" className="grid grid-cols-2 gap-1.5">
+            {FORMAS_DO_BALCAO.map((key) => (
+              <Button
+                key={key}
+                size="sm"
+                variant={payment === key ? 'primary' : 'secondary'}
+                aria-pressed={payment === key}
+                onClick={() => setPayment(key)}
+              >
+                {rotuloDePagamento(key)}
               </Button>
             ))}
           </div>

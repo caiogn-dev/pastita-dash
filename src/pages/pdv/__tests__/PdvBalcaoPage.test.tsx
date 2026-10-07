@@ -235,6 +235,24 @@ describe('PdvBalcaoPage', () => {
     await waitFor(() => expect(mockedCreate).toHaveBeenCalled());
   });
 
+  it('formas do balcão com o nome único: Dinheiro, PIX, Cartão de crédito, Cartão de débito', async () => {
+    mockedCreate.mockResolvedValue({ id: 'o1', total: 20 });
+    mockedMarkPaid.mockResolvedValue({});
+    renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: 'Adicionar Marmita P' }));
+    for (const nome of ['Dinheiro', 'PIX', 'Cartão de crédito', 'Cartão de débito']) {
+      expect(screen.getByRole('button', { name: nome })).toBeInTheDocument();
+    }
+    expect(screen.queryByRole('button', { name: 'Débito' })).not.toBeInTheDocument();
+    const debito = screen.getByRole('button', { name: 'Cartão de débito' });
+    await userEvent.click(debito);
+    expect(debito).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(screen.getByTestId('pdv-finalizar'));
+    await waitFor(() => expect(mockedCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ payment_method: 'debit_card' }),
+    ));
+  });
+
   it('venda PIX abre modal de cobrança com QR e não marca pago', async () => {
     mockedCreate.mockResolvedValue({
       id: 'o1', total: 20, order_number: 'PED1',

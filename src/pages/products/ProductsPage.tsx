@@ -10,11 +10,12 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import * as storesApi from '../../services/storesApi';
 import type { StoreCategory, StoreProductType } from '../../services/storesApi';
 import type { Product } from '../../services/products';
-import { Button, EmptyState, InsightList, KpiGrid, PageShell } from '../../components/ui';
+import { Button, EmptyState, InsightList, KpiGrid, PageShell, TrilhoDeSecoes } from '../../components/ui';
 import { Loading } from '../../components/common';
 import { estadoDoCardapio } from './estadoDoCardapio';
 import { insightsDeCardapio } from './insightsDeCardapio';
-import { numerosDoCardapio } from './numerosDoCardapio';
+import { filtrarPorEstado, numerosDoCardapio, type EstadoDoProduto } from './numerosDoCardapio';
+import { useSecaoVisivel } from '../../hooks/useSecaoVisivel';
 import { useStore } from '../../hooks/useStore';
 // react-hot-toast e NÃO useToast: aquele hook guarda os toasts num useState
 // local e devolve o array para o componente renderizar — mas o ToastProvider
@@ -29,6 +30,8 @@ import { AcoesDoCardapio, ProductsToolbar } from './components/ProductsToolbar';
 import { CategorySection } from './components/CategorySection';
 import { AddCategoryModal } from './components/AddCategoryModal';
 import { MontadorModal, type ConfigMontador } from './components/MontadorModal';
+import { ReajusteDePrecoModal } from './components/ReajusteDePrecoModal';
+import { reajusteDePrecoService } from '../../services/reajusteDePreco';
 import { ProductFormModal } from './ProductFormModal';
 import { useConfirm } from '../../hooks/useConfirm';
 import { useNavigate } from 'react-router-dom';
@@ -49,10 +52,12 @@ export const ProductsPage: React.FC = () => {
   const [productTypes, setProductTypes] = useState<StoreProductType[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
+  const [estadoFiltro, setEstadoFiltro] = useState<EstadoDoProduto>('todos');
   const [collapsed, setCollapsed] = useState<Set<string | null>>(new Set());
   const [reorderMode, setReorderMode] = useState(false);
   const [addCatOpen, setAddCatOpen] = useState(false);
+  const [reajusteAberto, setReajusteAberto] = useState(false);
+  const [podeDesfazerReajuste, setPodeDesfazerReajuste] = useState(false);
   const [addCatSaving, setAddCatSaving] = useState(false);
   const [modalProduct, setModalProduct] = useState<
     Product | null | { category?: string | null; [key: string]: unknown } | undefined
@@ -104,12 +109,30 @@ export const ProductsPage: React.FC = () => {
 
   const groups = useMemo(() => {
     const term = search.trim().toLowerCase();
-    const filtered = products.filter((p) =>
-      (!categoryFilter || p.category === categoryFilter) &&
-      (!term || p.name.toLowerCase().includes(term))
-    );
+    const filtered = filtrarPorEstado(products as never[], estadoFiltro).filter((p: Product) =>
+      !term || p.name.toLowerCase().includes(term)
+    ) as Product[];
     return groupProducts(filtered, categories);
-  }, [products, categories, search, categoryFilter]);
+  }, [products, categories, search, estadoFiltro]);
+
+  // Trilho de categorias (06/10): navegar, não filtrar. Cada categoria tem um
+  // id na página; o chip rola até ela e o trilho marca a que está na tela.
+  const PREFIXO_SECAO = 'categoria-';
+  const idDaSecao = (id: string | null) => id ?? 'sem-categoria';
+  const itensDoTrilho = useMemo(
+    () => groups
+      .filter((g) => g.products.length > 0 || g.id)
+      .map((g) => ({ id: idDaSecao(g.id), rotulo: g.name, contador: g.products.length })),
+    [groups],
+  );
+  const secaoNaTela = useSecaoVisivel(itensDoTrilho.map((i) => i.id), PREFIXO_SECAO);
+  const irParaCategoria = (id: string) => {
+    const grupo = groups.find((g) => idDaSecao(g.id) === id);
+    if (grupo && collapsed.has(grupo.id)) {
+      setCollapsed((s) => { const n = new Set(s); n.delete(grupo.id); return n; });
+    }
+    document.getElementById(`${PREFIXO_SECAO}${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   // Lista achatada na ORDEM exibida (categoria + sort_order) — usada pelas setas ‹ › do modal
   const flatProducts = useMemo(() => groups.flatMap((g) => g.products), [groups]);
@@ -250,12 +273,14 @@ export const ProductsPage: React.FC = () => {
   const indicadores = useMemo(() => [
     {
       label: 'Produtos cadastrados',
+      onClick: () => setEstadoFiltro('todos'),
       value: numeros.cadastrados,
       definicao: 'Tudo que existe no cardápio, no ar ou não.',
       icone: <CubeIcon className="h-5 w-5" />,
     },
     {
       label: 'No ar agora',
+      onClick: () => setEstadoFiltro('no_ar'),
       value: numeros.ativos,
       definicao: 'O cliente vê e consegue pedir.',
       tone: 'success' as const,
@@ -263,6 +288,7 @@ export const ProductsPage: React.FC = () => {
     },
     {
       label: 'Pausados',
+      onClick: () => setEstadoFiltro('pausados'),
       value: numeros.pausados,
       definicao: 'Cadastrados e fora do cardápio — ninguém vê.',
       tone: numeros.pausados > 0 ? ('warning' as const) : undefined,
@@ -270,6 +296,7 @@ export const ProductsPage: React.FC = () => {
     },
     {
       label: 'Sem estoque',
+      onClick: () => setEstadoFiltro('sem_estoque'),
       value: numeros.semEstoque,
       definicao: 'Controlam estoque e estão zerados. Ainda aparecem para o cliente.',
       tone: numeros.semEstoque > 0 ? ('danger' as const) : undefined,
@@ -287,15 +314,16 @@ export const ProductsPage: React.FC = () => {
           reorderMode={reorderMode}
           onReorderCategories={() => setReorderMode((v) => !v)}
           onAddCategory={() => setAddCatOpen(true)}
+          onReajustarPrecos={() => setReajusteAberto(true)}
+          onInformativos={() => navegar('/marketing/informativos')}
         />
       }
       filtros={
         <ProductsToolbar
           search={search}
           onSearch={setSearch}
-          categoryFilter={categoryFilter}
-          categories={categories}
-          onCategoryFilter={setCategoryFilter}
+          estado={estadoFiltro}
+          onEstado={setEstadoFiltro}
         />
       }
     >
@@ -371,11 +399,40 @@ export const ProductsPage: React.FC = () => {
       />
 
       {ConfirmDialog}
+      {podeDesfazerReajuste && (
+        <div role="status" className="mb-4 flex items-center justify-between gap-3 rounded border border-[var(--border)] px-4 py-2 text-sm">
+          <span className="text-fg-token">Reajuste de preços aplicado.</span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              try {
+                const r = await reajusteDePrecoService.desfazer(String(sid));
+                setPodeDesfazerReajuste(false);
+                toast.success(r.mantidos.length
+                  ? `Desfeito. ${r.mantidos.length} item(ns) editado(s) depois ficaram como estão.`
+                  : 'Reajuste desfeito.');
+                await productsQuery.refetch();
+              } catch {
+                toast.error('Não consegui desfazer o reajuste.');
+              }
+            }}
+          >
+            Desfazer
+          </Button>
+        </div>
+      )}
+      <TrilhoDeSecoes
+        rotulo="Categorias"
+        itens={itensDoTrilho}
+        ativo={secaoNaTela}
+        onEscolher={irParaCategoria}
+      />
       <DndContext sensors={sensors} onDragEnd={onDragEnd}>
         <SortableContext items={categoryIds} strategy={verticalListSortingStrategy}>
         {groups.map((g) => (
+          <div key={String(g.id)} id={`${PREFIXO_SECAO}${idDaSecao(g.id)}`} className="scroll-mt-16">
           <CategorySection
-            key={String(g.id)}
             group={g}
             collapsed={collapsed.has(g.id)}
             rowHandlers={rowHandlers}
@@ -435,10 +492,24 @@ export const ProductsPage: React.FC = () => {
             }}
             onAddItem={(catId) => setModalProduct({ category: catId })}
           />
+          </div>
         ))}
         </SortableContext>
       </DndContext>
         </>
+      )}
+      {reajusteAberto && sid && (
+        <ReajusteDePrecoModal
+          isOpen
+          loja={sid}
+          produtos={products}
+          categorias={categories}
+          onClose={() => setReajusteAberto(false)}
+          onAplicado={() => {
+            setPodeDesfazerReajuste(true);
+            void productsQuery.refetch();
+          }}
+        />
       )}
       <AddCategoryModal
         isOpen={addCatOpen}

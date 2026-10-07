@@ -1,5 +1,6 @@
 import React, { ReactNode, Component, ErrorInfo, Suspense } from 'react';
 import { FullPageLoading } from './common';
+import { reportarErro } from '../services/reportarErro';
 
 interface Props {
   children: ReactNode;
@@ -35,6 +36,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught:', error, errorInfo);
+    // O detalhe vai para o GlitchTip; a tela do lojista fica só com o que ele pode fazer.
+    reportarErro(error, 'render', errorInfo.componentStack || '');
     this.setState({ errorInfo });
   }
 
@@ -62,25 +65,6 @@ export class ErrorBoundary extends Component<Props, State> {
             <p className="mb-4 text-center text-fg-muted-token">
               Tivemos um problema inesperado. Nada do seu trabalho foi perdido.
             </p>
-
-            {this.state.error && (
-              <div className="bg-danger-soft border border-red-200 rounded p-3 mb-4">
-                <p className="text-sm text-red-700 font-mono break-words">
-                  {this.state.error.message}
-                </p>
-              </div>
-            )}
-
-            {this.state.errorInfo && (
-              <details className="mb-4">
-                <summary className="cursor-pointer text-sm text-fg-muted-token">
-                  Detalhes técnicos
-                </summary>
-                <pre className="mt-2 max-h-32 overflow-auto rounded bg-bg-token p-2 text-xs text-fg-muted-token">
-                  {this.state.errorInfo.componentStack}
-                </pre>
-              </details>
-            )}
 
             <button
               onClick={this.handleRetry}

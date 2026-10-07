@@ -20,6 +20,7 @@ import VariantsManager from '../../components/products/VariantsManager';
 // no preço — inclusive nos testes do formulário.
 const ReceitaDoProduto = lazy(() => import('../nutrition/ReceitaDoProduto'));
 import DescriptionEditor from './DescriptionEditor';
+import { SelosDoProduto, lerSelos, gravarSelos, sugestoesDeSelos } from './SelosDoProduto';
 import storesApi, {
   StoreProduct as Product,
   StoreProductInput as ProductInput,
@@ -110,6 +111,12 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
   }, [currentId, flatProducts, editingProduct]);
 
   const idx = flatProducts.findIndex((p) => p.id === currentId);
+
+  // Os selos que a loja já usa ("Bistrô", "Dia a dia") viram sugestão.
+  const sugestoesDaLoja = useMemo(
+    () => sugestoesDeSelos(flatProducts.flatMap((p) => lerSelos(p.attributes as Record<string, unknown> | undefined))),
+    [flatProducts],
+  );
   const goto = (d: number) => {
     const n = flatProducts[idx + d];
     if (n) setCurrentId(n.id);
@@ -622,6 +629,12 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   </select>
                 </div>
               </div>
+
+              <SelosDoProduto
+                value={lerSelos(formData.attributes)}
+                onChange={(selos) => setFormData((prev) => ({ ...prev, attributes: gravarSelos(prev.attributes, selos) }))}
+                sugestoes={sugestoesDaLoja}
+              />
 
               {selectedProductType && selectedProductType.custom_fields.length > 0 && (
                 <div className="border-t pt-4 mt-4">

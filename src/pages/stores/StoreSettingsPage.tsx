@@ -34,6 +34,7 @@ import TempoDePreparoSection from './TempoDePreparoSection';
 import NotaFiscalSection from './NotaFiscalSection';
 import CaixaDinheiroSection from './CaixaDinheiroSection';
 import AvisoFilaHumanaSection from './AvisoFilaHumanaSection';
+import { LocalizacaoNoGoogle } from './LocalizacaoNoGoogle';
 
 const DAYS = [
   { key: 'monday',    label: 'Segunda' },
@@ -467,6 +468,27 @@ export const StoreSettingsPage: React.FC = () => {
                   className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
+              {effectiveStoreId && (
+                <LocalizacaoNoGoogle
+                  storeSlug={effectiveStoreId}
+                  onEscolher={({ lat, lng, endereco }) => setStoreForm({
+                    ...storeForm,
+                    latitude: String(lat),
+                    longitude: String(lng),
+                    address: storeForm.address || endereco || '',
+                  })}
+                />
+              )}
+              {storeForm.latitude && storeForm.longitude && (
+                <a
+                  href={`https://www.google.com/maps?q=${storeForm.latitude},${storeForm.longitude}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-brand-ink hover:underline"
+                >
+                  <MapPinIcon className="h-4 w-4" /> Ver no mapa
+                </a>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-fg-muted-token">Latitude</label>

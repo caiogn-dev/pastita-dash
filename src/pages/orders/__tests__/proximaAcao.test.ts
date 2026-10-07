@@ -76,3 +76,28 @@ describe('proximaAcaoDoPedido', () => {
     expect(proximaAcaoDoPedido(pedido('preparing'))?.status).toBe('out_for_delivery');
   });
 });
+
+describe('uma regra só', () => {
+  // O Início tinha a própria tabela ("preparing → Despachar → out_for_delivery")
+  // e mandava retirada para "Saiu para entrega" (06/10). Cópia diverge: catraca.
+  it('nenhuma tela declara a própria tabela de próximo status', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const fs = require('fs') as typeof import('fs');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const path = require('path') as typeof import('path');
+    const raiz = path.resolve(__dirname, '../../..');
+    const suspeitos: string[] = [];
+    const varrer = (dir: string) => {
+      for (const nome of fs.readdirSync(dir)) {
+        const caminho = path.join(dir, nome);
+        if (nome === '__tests__' || nome === 'node_modules') continue;
+        if (fs.statSync(caminho).isDirectory()) { varrer(caminho); continue; }
+        if (!/\.tsx?$/.test(nome)) continue;
+        const texto = fs.readFileSync(caminho, 'utf8');
+        if (/preparing:\s*\{[^}]*next:\s*'out_for_delivery'/.test(texto)) suspeitos.push(path.relative(raiz, caminho));
+      }
+    };
+    varrer(raiz);
+    expect(suspeitos).toEqual([]);
+  });
+});

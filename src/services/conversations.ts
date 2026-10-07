@@ -3,6 +3,7 @@ import { Conversation, ConversationNote, PaginatedResponse, Message, UniversalCo
 
 /** Por que a conversa saiu do bot — o backend manda o código, a tela traduz. */
 export type CodigoDoMotivo =
+  | 'reclamacao'
   | 'pediu_atendente'
   | 'bot_nao_entendeu'
   | 'eco_do_celular'

@@ -14,6 +14,7 @@ import { useAuthStore } from '../stores/authStore';
 import { createWebSocket, clearWebSocketInstance } from '../services/websocket';
 import { useNotificationSound } from './useNotificationSound';
 import { applyOrderEventToOrders, type OrderRealtimeEvent, ehCompraDeCarteira, textoDaCompraDeCarteira, EVENTO_COMPRA_DE_CARTEIRA } from './orderRealtimeEvents';
+import type { StoreOrder } from '../services/storesApi';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/formatters';
 
@@ -122,8 +123,8 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
           window.dispatchEvent(new CustomEvent(EVENTO_COMPRA_DE_CARTEIRA));
           return;
         }
-        // Pedido novo: o payload do evento não traz items — precisa refetch
-        refreshOrdersFromAPI();
+        // Pedido novo: o payload do evento não traz items — busca só ele.
+        trazerPedido((event as OrderRealtimeEvent).order_id);
         // Bipe do balcão. O alerta inteiro (2 ondas de 4 tons, repetição a cada
         // 4s, auto-stop em 30s) existia e nunca era disparado: o board montava o
         // hook com o retorno prefixado `_` — o que também calava o lint — e
@@ -191,10 +192,33 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
     const current = orders[selectedStoreId] || [];
     const next = applyOrderEventToOrders(current, event);
     if (next === null) {
-      refreshOrdersFromAPI();
+      trazerPedido(event.order_id);
       return;
     }
     setOrders(selectedStoreId, next);
+  };
+
+  // Um pedido só (~3 KB) em vez da lista inteira (500 por página, ~500 KB): cada
+  // pedido novo refazia a lista — 141 vezes e 73 MB em 7 dias (medido 06/10).
+  // Se a busca falhar, a lista inteira continua sendo a rede de segurança.
+  const trazerPedido = async (orderId?: string | null) => {
+    if (!selectedStoreId || !authToken) return;
+    if (!orderId) {
+      refreshOrdersFromAPI();
+      return;
+    }
+    try {
+      const response = await fetch(`${apiUrl}/stores/orders/${orderId}/`, {
+        headers: { Authorization: `Token ${authToken}` },
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const pedido = (await response.json()) as StoreOrder;
+      const { orders, setOrders } = useRootStore.getState();
+      const atuais = orders[selectedStoreId] || [];
+      setOrders(selectedStoreId, [pedido, ...atuais.filter((o) => o.id !== pedido.id)]);
+    } catch {
+      refreshOrdersFromAPI();
+    }
   };
 
   const refreshOrdersFromAPI = async () => {
@@ -210,7 +234,7 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
     // de novo — antes gerava `.../api/v1/stores/x/orders//api/v1/stores/x/orders/`.
     try {
       const response = await fetch(
-        `${apiUrl}/stores/${selectedStoreId}/orders/`,
+        `${apiUrl}/stores/${selectedStoreId}/orders/?quadro=1`,
         {
           headers: {
             Authorization: `Token ${authToken}`,

@@ -132,3 +132,48 @@ it('não toca em atualização de pedido — só na criação', async () => {
 
   expect(mockPlayNotificationSound).not.toHaveBeenCalled();
 });
+
+// Cada pedido novo baixava a LISTA INTEIRA (`/stores/<id>/orders/`, 500 por
+// página, ~500 KB) — 141 vezes em 7 dias, 73 MB. O evento traz o id: basta
+// buscar aquele pedido (~3 KB) e pôr no topo.
+describe('pedido novo busca só ele', () => {
+  const pedido = (id: string) => ({ id, status: 'pending', updated_at: '2026-10-06T12:00:00Z' });
+  let fetchMock: jest.Mock;
+
+  beforeEach(() => {
+    fetchMock = jest.fn();
+    (globalThis as unknown as { fetch: unknown }).fetch = fetchMock;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    useRootStore.setState({ orders: { s1: [pedido('antigo')] as any } });
+  });
+
+  const disparar = async (evento: string, payload: unknown) => {
+    renderHook(() => useRealTimeOrders(config));
+    await waitFor(() => expect(mockWs.subscribe).toHaveBeenCalled());
+    mockWs.subscribe.mock.calls.find(([e]) => e === evento)![1](payload);
+  };
+
+  it('order.created pede /stores/orders/<id>/ e põe no topo', async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => pedido('novo') });
+    await disparar('order.created', { type: 'order.created', order_id: 'novo' });
+    await waitFor(() => expect(useRootStore.getState().orders.s1.map((o: { id: string }) => o.id)).toEqual(['novo', 'antigo']));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe('http://api/api/v1/stores/orders/novo/');
+  });
+
+  it('atualização de pedido fora da lista também busca só ele', async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => pedido('fora') });
+    await disparar('order.updated', { type: 'order.updated', order_id: 'fora', status: 'confirmed' });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(fetchMock.mock.calls[0][0]).toBe('http://api/api/v1/stores/orders/fora/');
+  });
+
+  it('se buscar o pedido falha, cai no refetch da lista', async () => {
+    fetchMock
+      .mockResolvedValueOnce({ ok: false, json: async () => ({}) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [pedido('x')] }) });
+    await disparar('order.created', { type: 'order.created', order_id: 'x' });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(fetchMock.mock.calls[1][0]).toBe('http://api/api/v1/stores/s1/orders/?quadro=1');
+  });
+});

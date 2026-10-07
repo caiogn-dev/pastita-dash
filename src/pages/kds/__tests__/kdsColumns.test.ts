@@ -40,3 +40,23 @@ describe('kdsColumns', () => {
     expect(grouped.preparing.map((o) => o.id)).toEqual(['velho', 'novo']);
   });
 });
+
+describe('próximo passo do KDS', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { proximoPassoDoKds } = require('../kdsColumns') as typeof import('../kdsColumns');
+
+  it('cozinha: a iniciar → em preparo → pronto', () => {
+    expect(proximoPassoDoKds('todo', 'delivery')).toEqual({ status: 'preparing', label: 'Iniciar preparo' });
+    expect(proximoPassoDoKds('preparing', 'delivery')).toEqual({ status: 'ready', label: 'Pronto!' });
+  });
+
+  it('entrega pronta sai para entrega', () => {
+    expect(proximoPassoDoKds('ready', 'delivery')).toEqual({ status: 'out_for_delivery', label: 'Saiu p/ Entrega' });
+  });
+
+  it('retirada pronta é retirada, não "saiu para entrega"', () => {
+    // 3 de 44 retiradas da Cê passaram por "saiu" e o cliente recebia "🛵 Saiu para entrega".
+    expect(proximoPassoDoKds('ready', 'pickup')).toEqual({ status: 'delivered', label: 'Retirado' });
+    expect(proximoPassoDoKds('ready', 'digital')).toEqual({ status: 'delivered', label: 'Retirado' });
+  });
+});

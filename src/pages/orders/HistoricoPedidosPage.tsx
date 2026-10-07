@@ -48,7 +48,8 @@ import {
 import { baixarCsv, pedidosParaCsv } from './exportarPedidos';
 import {
   STATUS_LABELS as STATUS_LABEL,
-  PAYMENT_METHOD_LABELS as PAGAMENTO_LABEL,
+  FORMAS_NO_FILTRO,
+  rotuloDePagamento,
 } from '../../utils/rotulosDeEstado';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -298,9 +299,9 @@ export const HistoricoPedidosPage: React.FC = () => {
               vazio="Qualquer pagamento"
               valor={pagamento}
               onMudar={(v) => mudar('pagamento', v)}
-              opcoes={['pix', 'cash', 'credit_card', 'debit_card'].map((valor) => ({
+              opcoes={FORMAS_NO_FILTRO.map((valor) => ({
                 valor,
-                rotulo: PAGAMENTO_LABEL[valor],
+                rotulo: rotuloDePagamento(valor),
               }))}
             />
 
@@ -374,7 +375,7 @@ export const HistoricoPedidosPage: React.FC = () => {
             {resumo.por_pagamento.map((q) => (
               <div key={q.chave}>
                 <p className="text-sm text-fg-muted-token">
-                  {PAGAMENTO_LABEL[q.chave] ?? q.chave}
+                  {rotuloDePagamento(q.chave)}
                 </p>
                 <p className="text-lg font-bold text-fg-token leading-tight">
                   {formatCurrency(q.total)}
@@ -515,7 +516,7 @@ export const HistoricoPedidosPage: React.FC = () => {
                 cabecalho: 'Pagamento',
                 classe: 'max-md:hidden',
                 render: (p) =>
-                  `${PAGAMENTO_LABEL[p.payment_method] ?? p.payment_method ?? '—'}${
+                  `${rotuloDePagamento(p.payment_method)}${
                     p.payment_status === 'paid' ? '' : ' (não pago)'
                   }`,
               },

@@ -105,6 +105,17 @@ export interface ConversaoDoBot {
   motivos_de_atendente: { motivo: string; vezes: number }[];
   serie: { dia: string; conversas: number; pedidos: number }[];
   perdidas: ConversaPerdida[];
+  /** Mesma janela × período anterior (backend de 06/10 em diante). */
+  comparativo?: { atual: TotaisDoPeriodo; anterior: TotaisDoPeriodo };
+  /** O que foi ensinado/aprovado no período. */
+  marcos?: { quando: string; tipo: 'ensino'; texto: string }[];
+}
+
+export interface TotaisDoPeriodo {
+  conversas: number;
+  pedidos: number;
+  taxa: number;
+  para_atendente: number;
 }
 
 export const conversaoDoBotService = {
@@ -130,5 +141,20 @@ export const conhecimentoService = {
   },
   async apagar(store: string, id: string): Promise<void> {
     await api.delete(`/agents/conhecimento/${id}/`, { params: { store } });
+  },
+  /** O que o atendimento aprendeu de conversas que venderam — aguardando aprovação. */
+  async listarSugestoes(store: string): Promise<Conhecimento[]> {
+    const { data } = await api.get<Conhecimento[] | { results?: Conhecimento[] }>(
+      '/agents/conhecimento/', { params: { store, sugestoes: 1 } },
+    );
+    if (Array.isArray(data)) return data;
+    return Array.isArray(data?.results) ? data.results : [];
+  },
+  /** Aprovada, a sugestão entra no que a IA usa. Resposta editada é opcional. */
+  async aprovar(store: string, id: string, resposta?: string): Promise<Conhecimento> {
+    const { data } = await api.post<Conhecimento>(
+      `/agents/conhecimento/${id}/aprovar/`, resposta ? { example_response: resposta } : {}, { params: { store } },
+    );
+    return data;
   },
 };

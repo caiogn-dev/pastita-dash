@@ -14,6 +14,8 @@ export { Skeleton, TableSkeleton, CardSkeleton, StatsSkeleton } from './skeleton
 export { Dropdown, DropdownButton } from './dropdown';
 export { Toast, ToastContainer } from './toast';
 export { PeriodChips, PERIODOS_PADRAO } from './PeriodChips';
+export { TrilhoDeSecoes } from './TrilhoDeSecoes';
+export type { ItemDoTrilho, TrilhoDeSecoesProps } from './TrilhoDeSecoes';
 export type { PeriodChipsProps, PeriodOption } from './PeriodChips';
 
 // Chassi de página — o cabeçalho, os indicadores, os insights e o vazio de

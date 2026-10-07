@@ -52,6 +52,11 @@ export function motivoDeAtendente(bruto: string): string {
   return m || 'Sem motivo registrado';
 }
 
+const pct = (n: number) => `${n.toFixed(1).replace('.', ',')}%`;
+const pontos = (n: number) => `${n > 0 ? '+' : ''}${n.toFixed(1).replace('.', ',')} pontos`;
+const variacao = (agora: number, antes: number) => (antes ? ((agora - antes) / antes) * 100 : null);
+const diaMes = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+
 const quando = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-BR', {
   day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
 }) : '—');
@@ -121,6 +126,10 @@ export const ConversaoDoBotPage: React.FC = () => {
               {
                 label: 'Conversas',
                 value: d.conversas,
+                comparativo: d.comparativo ? {
+                  variacaoPct: variacao(d.comparativo.atual.conversas, d.comparativo.anterior.conversas),
+                  rotulo: `vs ${d.dias} dias anteriores`,
+                } : undefined,
                 definicao: 'Clientes que mandaram mensagem no período.',
                 serie: d.serie.map((p) => p.conversas),
               },
@@ -129,6 +138,10 @@ export const ConversaoDoBotPage: React.FC = () => {
                 value: `${d.pedidos} (${d.taxa}%)`,
                 definicao: `Pedidos feitos pelo WhatsApp. ${formatCurrency(Number(d.receita))} pagos.`,
                 tone: d.taxa >= 20 ? 'success' : d.taxa >= 10 ? 'warning' : 'danger',
+                comparativo: d.comparativo ? {
+                  variacaoPct: variacao(d.comparativo.atual.pedidos, d.comparativo.anterior.pedidos),
+                  rotulo: `vs ${d.dias} dias anteriores`,
+                } : undefined,
                 serie: d.serie.map((p) => p.pedidos),
               },
               {
@@ -151,6 +164,54 @@ export const ConversaoDoBotPage: React.FC = () => {
               },
             ]}
           />
+
+          {d.comparativo && (
+            <Secao titulo={`Comparado aos ${d.dias} dias anteriores`}>
+              <dl className="grid gap-3 sm:grid-cols-3">
+                {[
+                  {
+                    rotulo: 'Conversão',
+                    valor: `${pct(d.comparativo.anterior.taxa)} → ${pct(d.comparativo.atual.taxa)}`,
+                    detalhe: pontos(d.comparativo.atual.taxa - d.comparativo.anterior.taxa),
+                    bom: d.comparativo.atual.taxa >= d.comparativo.anterior.taxa,
+                  },
+                  {
+                    rotulo: 'Pedidos pelo bot',
+                    valor: `${d.comparativo.anterior.pedidos} → ${d.comparativo.atual.pedidos}`,
+                    detalhe: '',
+                    bom: d.comparativo.atual.pedidos >= d.comparativo.anterior.pedidos,
+                  },
+                  {
+                    rotulo: 'Foram para atendente',
+                    valor: `${d.comparativo.anterior.para_atendente} → ${d.comparativo.atual.para_atendente}`,
+                    detalhe: '',
+                    bom: d.comparativo.atual.para_atendente <= d.comparativo.anterior.para_atendente,
+                  },
+                ].map((linha) => (
+                  <div key={linha.rotulo} className="superficie p-3">
+                    <dt className="text-xs text-fg-muted-token">{linha.rotulo}</dt>
+                    <dd className={linha.bom ? 'text-lg font-semibold text-success-token' : 'text-lg font-semibold text-danger-token'}>
+                      {linha.valor}
+                    </dd>
+                    {linha.detalhe && <dd className="text-xs text-fg-muted-token">{linha.detalhe}</dd>}
+                  </div>
+                ))}
+              </dl>
+            </Secao>
+          )}
+
+          {d.marcos && d.marcos.length > 0 && (
+            <Secao titulo="O que você ensinou" contador={d.marcos.length}>
+              <ul className="divide-y divide-[var(--border)]">
+                {d.marcos.map((m) => (
+                  <li key={`${m.quando}-${m.texto}`} className="flex items-baseline gap-3 py-2 text-sm">
+                    <time className="w-12 shrink-0 text-fg-muted-token" dateTime={m.quando}>{diaMes(m.quando)}</time>
+                    <span className="text-fg-token">{m.texto}</span>
+                  </li>
+                ))}
+              </ul>
+            </Secao>
+          )}
 
           <Secao titulo="Por que foram para atendente" descricao="O motivo que o sistema registrou em cada transferência.">
             {d.motivos_de_atendente.length === 0 ? (

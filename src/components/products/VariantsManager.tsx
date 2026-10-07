@@ -2,7 +2,7 @@
  * VariantsManager — CRUD de variantes de um produto (sabores, tamanhos etc.).
  *
  * Usado na aba "Variantes" do modal de produto. Variantes são pré-requisito
- * para montar combos (ComboForm usa product.variants para os limites).
+ * para montar combos (o editor de combos usa product.variants nas escolhas de sabor ou tamanho).
  * Multi-tenant: o backend valida acesso à loja via IsStoreOwnerOrStaff.
  */
 import React, { useState, useEffect, useCallback } from 'react';

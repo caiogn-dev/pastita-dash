@@ -11,12 +11,16 @@ import './index.css'
 // arrasta a árvore inteira (incl. recharts) para o chunk de entrada.
 import { setAuthToken } from './services/api'
 import { getAuthToken } from './services/tokenStorage'
+import { vigiarErrosDaJanela } from './services/reportarErro'
 
 // Pre-hydrate axios Authorization header from persisted zustand storage
 const preloadedToken = getAuthToken();
 if (preloadedToken) {
   setAuthToken(preloadedToken);
 }
+
+// Erro fora do React (script solto, promise sem catch) também chega no GlitchTip.
+vigiarErrosDaJanela();
 
 // Após um deploy, chunks lazy do build anterior somem do servidor e o app
 // aberto quebra com "Failed to fetch dynamically imported module".

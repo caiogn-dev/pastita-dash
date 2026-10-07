@@ -39,7 +39,7 @@ it('valor padrão é o que falta e a forma padrão é dinheiro', async () => {
 it('escolhe a maquininha e manda o valor digitado com vírgula', async () => {
   mockRegistrar.mockResolvedValue({ order: pedido });
   render(<RegistrarPagamentoModal isOpen order={pedido} onClose={jest.fn()} onRegistrado={jest.fn()} />);
-  fireEvent.click(screen.getByRole('radio', { name: 'Débito (maquininha)' }));
+  fireEvent.click(screen.getByRole('radio', { name: 'Cartão de débito' }));
   fireEvent.change(screen.getByLabelText('Valor recebido'), { target: { value: '20,50' } });
   fireEvent.click(screen.getByRole('button', { name: 'Registrar pagamento' }));
   await waitFor(() => expect(mockRegistrar).toHaveBeenCalled());

@@ -148,6 +148,8 @@ export interface OnboardingChecklist {
   total: number;
   all_done: boolean;
   wizard_seen?: boolean;
+  /** O que hoje impede a loja de vender (ver pages/dashboard/alertasDeSaude). */
+  alertas?: Array<{ key: string; quantidade: number }>;
 }
 
 export async function getChecklist(storeSlug: string): Promise<OnboardingChecklist> {

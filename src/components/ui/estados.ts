@@ -3,6 +3,7 @@
  * seu mapa, com paletas diferentes para o mesmo "pago".
  */
 import type { BadgeTone } from './Badge';
+import { pagoNaEntrega, rotuloDePagamento } from '../../utils/rotulosDeEstado';
 
 export interface Estado { rotulo: string; tone: BadgeTone }
 
@@ -19,8 +20,12 @@ const PAGAMENTO: Record<string, Estado> = {
 
 export function estadoDePagamento(status?: string | null, metodo?: string | null): Estado {
   const chave = (status || 'pending').toLowerCase();
-  const dinheiro = ['cash', 'dinheiro'].includes((metodo || '').toLowerCase());
-  if (dinheiro && chave === 'pending') return { rotulo: 'Dinheiro', tone: 'warning' };
+  // Pago em mãos (dinheiro ou maquininha) pendente não é cobrança parada:
+  // mostra COMO vai ser pago, para o entregador saber o que levar.
+  if (chave === 'pending' && pagoNaEntrega(metodo)) {
+    const em = (metodo || '').trim().toLowerCase();
+    return { rotulo: rotuloDePagamento(em === 'dinheiro' ? 'cash' : em), tone: 'warning' };
+  }
   return PAGAMENTO[chave] ?? { rotulo: status || '—', tone: 'neutral' };
 }
 

@@ -428,7 +428,7 @@ export interface CreateOrder {
   surcharge?: number;
   adjustment_reason?: string;
   items: Array<{ product_id: string; quantity: number; options?: Record<string, unknown> }>;
-  payment_method?: 'pix' | 'cash' | 'credit_card' | 'debit_card';
+  payment_method?: 'pix' | 'cash' | 'card_on_delivery' | 'credit_card' | 'debit_card';
   notes?: string;
   scheduled_date?: string;
   scheduled_time?: string;

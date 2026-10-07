@@ -59,3 +59,15 @@ describe('OrderPrint — troco', () => {
     expect(html).not.toMatch(/TROCO/);
   });
 });
+
+describe('OrderPrint — forma de pagamento com o nome único', () => {
+  it.each([
+    ['card_on_delivery', 'CARTÃO NA MAQUININHA'],
+    ['voucher', 'VALE-REFEIÇÃO'],
+    ['debit_card', 'CARTÃO DE DÉBITO'],
+    ['cash', 'DINHEIRO'],
+  ])('%s sai como %s', (metodo, impresso) => {
+    const html = capturarComanda({ ...base, payment_method: metodo });
+    expect(html).toContain(impresso);
+  });
+});

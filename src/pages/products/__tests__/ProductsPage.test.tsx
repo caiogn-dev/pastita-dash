@@ -35,6 +35,15 @@ jest.mock('../../../hooks/useStore', () => ({
   default: () => ({ storeId: 'store-1' }),
 }));
 
+jest.mock('../../../services/reajusteDePreco', () => ({
+  __esModule: true,
+  reajusteDePrecoService: { reajustar: jest.fn(), desfazer: jest.fn() },
+}));
+jest.mock('../components/ReajusteDePrecoModal', () => ({
+  __esModule: true,
+  ReajusteDePrecoModal: () => null,
+}));
+
 jest.mock('../ProductFormModal', () => ({
   __esModule: true,
   ProductFormModal: () => null,
@@ -136,5 +145,53 @@ describe('cardápio: falha na busca de produtos sem cache', () => {
       ],
     });
     await waitFor(() => expect(screen.getByText('Arroz')).toBeInTheDocument());
+  });
+});
+
+describe('navegação do cardápio (06/10)', () => {
+  beforeEach(() => {
+    (storesApi.getCategories as any).mockResolvedValue([
+      { id: 'a', name: 'Almoço', sort_order: 1, is_active: true },
+      { id: 'b', name: 'Bebidas', sort_order: 2, is_active: true },
+    ]);
+    (storesApi.getProducts as any).mockResolvedValue({
+      results: [
+        { id: 'p1', name: 'Arroz', price: 6.8, track_stock: false, status: 'active', category: 'a', sort_order: 0 },
+        { id: 'p2', name: 'Suco', price: 8, track_stock: true, stock_quantity: 0, status: 'active', category: 'b', sort_order: 0 },
+        { id: 'p3', name: 'Refri', price: 6, track_stock: false, status: 'inactive', category: 'b', sort_order: 1 },
+      ],
+    });
+    Element.prototype.scrollIntoView = jest.fn();
+  });
+
+  test('trilho de categorias com contagem; tocar rola até a categoria', async () => {
+    renderPage();
+    const trilho = await screen.findByRole('navigation', { name: /categorias/i });
+    const bebidas = await waitFor(() => {
+      const b = Array.from(trilho.querySelectorAll('button')).find((x) => /Bebidas/.test(x.textContent || ''));
+      if (!b) throw new Error('sem chip');
+      return b;
+    });
+    expect(bebidas.textContent).toMatch(/2/);
+    fireEvent.click(bebidas);
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+  });
+
+  test('filtro rápido "Pausados" mostra só o pausado', async () => {
+    renderPage();
+    await screen.findByText('Arroz');
+    fireEvent.click(screen.getByRole('tab', { name: /pausados/i }));
+    await waitFor(() => expect(screen.queryByText('Arroz')).not.toBeInTheDocument());
+    expect(screen.getByText('Refri')).toBeInTheDocument();
+    // "Suco" ainda aparece no bloco "O que pede atenção" (sem estoque) — fora da lista.
+  });
+
+  test('o card "Sem estoque" aplica o mesmo filtro', async () => {
+    renderPage();
+    await screen.findByText('Arroz');
+    fireEvent.click(screen.getByRole('button', { name: /sem estoque/i }));
+    await waitFor(() => expect(screen.queryByText('Arroz')).not.toBeInTheDocument());
+    // Na lista E no bloco "O que pede atenção".
+    expect(screen.getAllByText('Suco').length).toBeGreaterThanOrEqual(2);
   });
 });

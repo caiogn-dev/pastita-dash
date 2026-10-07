@@ -17,6 +17,10 @@ import {
   PRINT_JOB_STATUS_LABELS,
   ACCOUNT_STATUS_LABELS,
   EMAIL_RECIPIENT_STATUS_LABELS,
+  rotuloDePagamento,
+  pagoNaEntrega,
+  FORMAS_DO_BALCAO,
+  FORMAS_NO_FILTRO,
 } from '../rotulosDeEstado';
 
 // Copiados de StoreOrder.OrderStatus / PaymentStatus (server2).
@@ -89,7 +93,7 @@ const METODOS_DO_BACKEND = [
   // Dialetos que o campo texto-livre StoreOrder.payment_method carrega em
   // produção e que o painel precisa saber ler enquanto existirem pedidos
   // antigos no banco.
-  'card', 'link',
+  'card', 'link', 'card_on_delivery', 'voucher', 'voucher_link',
 ];
 
 describe('rótulos de método de pagamento', () => {
@@ -104,5 +108,77 @@ describe('rótulos de método de pagamento', () => {
     for (const rotulo of Object.values(PAYMENT_METHOD_LABELS)) {
       expect(rotulo.trim().length).toBeGreaterThan(0);
     }
+  });
+});
+
+/**
+ * UM nome por forma de pagamento, igual ao do backend
+ * (server2 apps/stores/formas_de_pagamento.py → ROTULOS).
+ *
+ * Cada tela tinha o seu dicionário: o mesmo débito era "Débito", "DEBITO",
+ * "Débito (maquininha)" e "Cartão de débito" dependendo de onde o dono olhava,
+ * e o vale saía cru ("voucher") no detalhe do pedido, no histórico e nos
+ * relatórios. Esta tabela é a catraca: o nome muda aqui ou em lugar nenhum.
+ */
+const VOCABULARIO_DO_BACKEND: Array<[string, string]> = [
+  ['pix', 'PIX'],
+  ['card', 'Cartão'],
+  ['credit_card', 'Cartão de crédito'],
+  ['debit_card', 'Cartão de débito'],
+  ['cash', 'Dinheiro'],
+  ['card_on_delivery', 'Cartão na maquininha'],
+  ['voucher', 'Vale-refeição'],
+  ['voucher_link', 'Vale-refeição (link)'],
+  ['link', 'Link de pagamento'],
+  ['bank_transfer', 'Transferência'],
+  ['other', 'Outro'],
+];
+
+describe('rotuloDePagamento — vocabulário único', () => {
+  it.each(VOCABULARIO_DO_BACKEND)('%s → %s', (metodo, rotulo) => {
+    expect(rotuloDePagamento(metodo)).toBe(rotulo);
+    expect(PAYMENT_METHOD_LABELS[metodo]).toBe(rotulo);
+  });
+
+  it.each([undefined, null, '', '   '])('vazio (%p) → "Não informado"', (vazio) => {
+    expect(rotuloDePagamento(vazio)).toBe('Não informado');
+  });
+
+  it('ignora espaço em volta do código', () => {
+    expect(rotuloDePagamento(' voucher ')).toBe('Vale-refeição');
+  });
+
+  it('código desconhecido aparece como veio, igual ao backend', () => {
+    // Melhor o slug do que esconder a informação atrás de "Outro".
+    expect(rotuloDePagamento('cripto')).toBe('cripto');
+  });
+});
+
+describe('pagoNaEntrega', () => {
+  it.each(['cash', 'card_on_delivery', 'CASH', ' card_on_delivery '])('%s é pago em mãos', (m) => {
+    expect(pagoNaEntrega(m)).toBe(true);
+  });
+
+  it.each(['pix', 'credit_card', 'debit_card', 'card', 'voucher', 'link', '', null, undefined])(
+    '%p não é pago na entrega',
+    (m) => {
+      expect(pagoNaEntrega(m)).toBe(false);
+    },
+  );
+});
+
+describe('listas de formas oferecidas', () => {
+  it('balcão (PDV): dinheiro, PIX, crédito e débito — na loja, sem maquininha "de entrega"', () => {
+    expect([...FORMAS_DO_BALCAO]).toEqual(['cash', 'pix', 'credit_card', 'debit_card']);
+  });
+
+  it('filtro do histórico cobre o cartão da maquininha e o vale', () => {
+    expect([...FORMAS_NO_FILTRO]).toEqual(expect.arrayContaining([
+      'pix', 'cash', 'card_on_delivery', 'credit_card', 'debit_card', 'card', 'voucher', 'voucher_link',
+    ]));
+  });
+
+  it.each([...FORMAS_DO_BALCAO, ...FORMAS_NO_FILTRO])('%s tem nome, não código', (m) => {
+    expect(rotuloDePagamento(m)).not.toBe(m);
   });
 });

@@ -200,8 +200,8 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
       const deliveryAddress = deliveryMethod !== 'delivery'
         ? undefined
         : enderecoParaOPedido({ selectedAddress, freeAddressText, routeCoords });
-      const apiPaymentMethod: 'pix' | 'cash' | 'credit_card' | 'debit_card' =
-        paymentMethod === 'fiado' ? 'cash' : (paymentMethod as 'pix' | 'cash' | 'credit_card');
+      const apiPaymentMethod: Exclude<PaymentMethod, 'fiado'> =
+        paymentMethod === 'fiado' ? 'cash' : paymentMethod;
       const isNewCustomer = customer.id === '';
       const customerPhone = isNewCustomer ? (customer.phone_number_edited || customer.phone_number) : customer.phone_number;
       const orderSubtotal = cart.reduce((s, c) => s + precoVigenteDoProduto(c.product) * c.quantity, 0);

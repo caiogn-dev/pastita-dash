@@ -94,3 +94,75 @@ describe('zonasDoMetadata', () => {
     expect(zonasDoMetadata('nada disso' as never)).toEqual([]);
   });
 });
+
+/**
+ * Regiões fora da cidade (06/10, Agrião): Porto Nacional R$ 25 e Paraíso R$ 30
+ * saem de Palmas no DIA SEGUINTE (domingo não sai), só com pagamento antecipado
+ * e só com as categorias que o lojista liberar. O backend lê esses campos da
+ * própria zona (`regioes_de_entrega.py`).
+ */
+describe('regras da região', () => {
+  const paraiso = {
+    nome: 'Paraíso do Tocantins', taxa: '30', palavras: 'paraiso do tocantins',
+    categorias: ['cat-congelados'], pedidoMinimo: '80', diaSeguinte: true,
+    diasSemEntrega: [6], soAntecipado: true,
+  };
+
+  it('vão para o metadata com os nomes que o backend lê', () => {
+    const z = zonaParaMetadata(paraiso);
+    expect(z).toMatchObject({
+      fee: 30, categorias: ['cat-congelados'], pedido_minimo: 80,
+      entrega_dia_seguinte: true, dias_sem_entrega: [6], so_pagamento_antecipado: true,
+    });
+  });
+
+  it('ida e volta não perde nada — salvar outra zona não apaga as regras desta', () => {
+    const volta = zonasDoMetadata([zonaParaMetadata(paraiso)])[0];
+    expect(volta).toMatchObject({
+      categorias: ['cat-congelados'], pedidoMinimo: '80', diaSeguinte: true,
+      diasSemEntrega: [6], soAntecipado: true,
+    });
+  });
+
+  it('zona de condomínio sem regras continua gravando só o que gravava', () => {
+    expect(zonaParaMetadata({ nome: 'Polinésia', taxa: '15' })).toEqual({ name: 'Polinésia', fee: 15 });
+  });
+
+  it('dias sem entrega só valem com entrega no dia seguinte', () => {
+    const z = zonaParaMetadata({ ...paraiso, diaSeguinte: false });
+    expect(z.entrega_dia_seguinte).toBeUndefined();
+    expect(z.dias_sem_entrega).toBeUndefined();
+  });
+
+  it('pedido mínimo inválido não salva', () => {
+    expect(validarZona({ ...paraiso, pedidoMinimo: '-10' })).toBeTruthy();
+    expect(validarZona({ ...paraiso, pedidoMinimo: 'abc' })).toBeTruthy();
+  });
+
+  it('bloquear os 7 dias deixa a região sem entrega nenhuma', () => {
+    expect(validarZona({ ...paraiso, diasSemEntrega: [0, 1, 2, 3, 4, 5, 6] })).toContain('dia');
+  });
+
+  it('zona de acréscimo não carrega regras de região (o backend as ignora)', () => {
+    const z = zonaParaMetadata({ ...paraiso, modo: 'acrescimo', acrescimo: '5' });
+    expect(z.categorias).toBeUndefined();
+    expect(z.so_pagamento_antecipado).toBeUndefined();
+  });
+});
+
+/** Luzimangues (06/10): o Google chama de "Porto Nacional"; só a distância separa. */
+describe('limite de distância da zona', () => {
+  it('vai e volta como número', () => {
+    const z = zonaParaMetadata({ nome: 'Luzimangues', taxa: '30', palavras: 'porto nacional', ateKm: '30' });
+    expect(z.ate_km).toBe(30);
+    expect(zonasDoMetadata([z])[0].ateKm).toBe('30');
+  });
+
+  it('vazio não grava', () => {
+    expect(zonaParaMetadata({ nome: 'X', taxa: '10', ateKm: '' }).ate_km).toBeUndefined();
+  });
+
+  it('negativo não salva', () => {
+    expect(validarZona({ nome: 'X', taxa: '10', ateKm: '-3' })).toBeTruthy();
+  });
+});

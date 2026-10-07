@@ -39,6 +39,7 @@ import { useOrderStats } from '../../hooks/queries/useOrderStats';
 import { usePaymentsOrders } from '../../hooks/queries/usePaymentsOrders';
 import { buildStorefrontUrl } from '../../utils/storefrontUrl';
 import { formatCurrency } from '../../utils/formatters';
+import { pagoNaEntrega, rotuloDePagamento } from '../../utils/rotulosDeEstado';
 
 // DRF default page size (apps/stores/api/views/order_views.py / settings PAGE_SIZE)
 const PAGE_SIZE = 20;
@@ -47,14 +48,16 @@ const PAGE_SIZE = 20;
 // único (`estadoDePagamento`): o mesmo "Pago" do quadro de pedidos, na mesma cor.
 const PAYMENT_STATUSES = ['pending', 'processing', 'paid', 'failed', 'refunded', 'partially_refunded'];
 
-// Payment method display names
-const PAYMENT_METHOD_LABELS: Record<string, { label: string; icon: React.ReactNode }> = {
-  pix: { label: 'PIX', icon: <QrCodeIcon className="w-4 h-4" /> },
-  credit_card: { label: 'Crédito', icon: <CreditCardIcon className="w-4 h-4" /> },
-  debit_card: { label: 'Débito', icon: <CreditCardIcon className="w-4 h-4" /> },
-  cash: { label: 'Dinheiro', icon: <BanknotesIcon className="w-4 h-4" /> },
-  card: { label: 'Cartão', icon: <CreditCardIcon className="w-4 h-4" /> },
-  mercadopago: { label: 'Mercado Pago', icon: <CurrencyDollarIcon className="w-4 h-4" /> },
+// Só o ÍCONE é desta tela; o nome vem do mapa único (`rotuloDePagamento`).
+const ICONE_DA_FORMA: Record<string, React.ReactNode> = {
+  pix: <QrCodeIcon className="w-4 h-4" />,
+  credit_card: <CreditCardIcon className="w-4 h-4" />,
+  debit_card: <CreditCardIcon className="w-4 h-4" />,
+  card: <CreditCardIcon className="w-4 h-4" />,
+  card_on_delivery: <CreditCardIcon className="w-4 h-4" />,
+  voucher: <CreditCardIcon className="w-4 h-4" />,
+  voucher_link: <CreditCardIcon className="w-4 h-4" />,
+  cash: <BanknotesIcon className="w-4 h-4" />,
 };
 
 export const PaymentsPage: React.FC = () => {
@@ -182,12 +185,13 @@ export const PaymentsPage: React.FC = () => {
       key: 'payment_method',
       header: 'Método',
       render: (order: Order) => {
-        const method = order.payment_method || 'pix';
-        const methodInfo = PAYMENT_METHOD_LABELS[method] || { label: method, icon: <CurrencyDollarIcon className="w-4 h-4" /> };
+        const method = order.payment_method || '';
         return (
           <span className="inline-flex items-center gap-1.5 text-sm text-fg-token">
-            <span className="text-fg-muted-token" aria-hidden>{methodInfo.icon}</span>
-            {methodInfo.label}
+            <span className="text-fg-muted-token" aria-hidden>
+              {ICONE_DA_FORMA[method] ?? <CurrencyDollarIcon className="w-4 h-4" />}
+            </span>
+            {rotuloDePagamento(method)}
           </span>
         );
       },
@@ -251,9 +255,9 @@ export const PaymentsPage: React.FC = () => {
           );
         }
         
-        // If payment method is cash, no link needed
-        if (payment_method === 'cash') {
-          return <span className="text-sm text-fg-muted-token">Dinheiro</span>;
+        // Pago em mãos (dinheiro ou maquininha): não há link a mandar.
+        if (pagoNaEntrega(payment_method)) {
+          return <span className="text-sm text-fg-muted-token">{rotuloDePagamento(payment_method)}</span>;
         }
         
         // No payment info yet

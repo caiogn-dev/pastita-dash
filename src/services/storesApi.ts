@@ -1140,6 +1140,8 @@ export const getOrders = async (params?: {
   ordering?: string;
   page?: number;
   page_size?: number;
+  /** 1 = só o que o quadro mostra: em aberto de qualquer dia + entregues de hoje. */
+  quadro?: 1;
   /** YYYY-MM-DD, pela data de ENTRADA do pedido, no fuso da loja. */
   date_from?: string;
   date_to?: string;
@@ -1946,6 +1948,14 @@ export const createComboWithItems = async (
     logger.error('Failed to create combo with items', error);
     throw error;
   }
+};
+
+/** Envia a foto do combo do computador (o JSON do combo não carrega arquivo). */
+export const uploadComboImage = async (id: string, arquivo: File): Promise<StoreCombo> => {
+  const dados = new FormData();
+  dados.append('image', arquivo);
+  const response = await api.patch(`${BASE_URL}/combos/${id}/`, dados);
+  return response.data;
 };
 
 export const updateComboWithItems = async (

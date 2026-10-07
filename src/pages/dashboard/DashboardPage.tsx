@@ -32,6 +32,7 @@ import {
   estadoDeSaude,
 } from '../../components/ui';
 import OnboardingChecklist from '../../components/onboarding/OnboardingChecklist';
+import { itensDeSaude, type AlertaDeSaude } from './alertasDeSaude';
 import OnboardingWizard from '../../components/onboarding/wizard/OnboardingWizard';
 import { buildWizardSteps } from '../../components/onboarding/wizard/buildWizardSteps';
 import { getChecklist, markWizardSeen } from '../../services/onboarding';
@@ -50,6 +51,7 @@ import { useAvaliacoesDaLoja } from '../../hooks/queries/useAvaliacoesDaLoja';
 import { CarrinhosAbandonadosCard } from '../../components/dashboard/CarrinhosAbandonadosCard';
 import { leituraDeAvaliacoes } from './leituraDeAvaliacoes';
 import { formatCurrency } from '../../utils/formatters';
+import { proximaAcaoDoPedido } from '../orders/proximaAcao';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -68,12 +70,6 @@ const PIPELINE = [
   { key: 'delivered',        label: 'Entregues' },
 ];
 
-const NEXT_ACTION: Record<string, { label: string; next: string }> = {
-  pending:          { label: 'Confirmar',       next: 'confirmed' },
-  confirmed:        { label: 'Iniciar preparo',  next: 'preparing' },
-  preparing:        { label: 'Despachar',        next: 'out_for_delivery' },
-  out_for_delivery: { label: 'Entregue',         next: 'delivered' },
-};
 
 /** Área do alerta da saúde do sistema → para onde ele leva. */
 function destinoDoAlerta(area: string, storeRoute: string): string {
@@ -124,9 +120,11 @@ export const DashboardPage: React.FC = () => {
   // Onboarding wizard: auto-abre 1× no 1º login de loja incompleta (derivado
   // do checklist + flag wizard_seen do backend; markWizardSeen garante 1 vez só).
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [alertasDeSaude, setAlertasDeSaude] = useState<AlertaDeSaude[]>([]);
   useEffect(() => {
     if (!storeSlug) return;
     getChecklist(storeSlug).then((c) => {
+      setAlertasDeSaude(c.alertas ?? []);
       if (!c.all_done && !c.wizard_seen) {
         setWizardOpen(true);
         markWizardSeen(storeSlug).catch(() => {});
@@ -528,7 +526,9 @@ export const DashboardPage: React.FC = () => {
                 cabecalho: 'Ação rápida',
                 alinhamento: 'direita',
                 render: (o) => {
-                  const action = NEXT_ACTION[o.status];
+                  // Regra única (proximaAcao): retirada vai para "Pronto p/ Retirada",
+                  // não para "Saiu para entrega".
+                  const action = proximaAcaoDoPedido(o as unknown as Order);
                   if (!action) return null;
                   return (
                     <Button
@@ -537,11 +537,11 @@ export const DashboardPage: React.FC = () => {
                       // arrastar o dono para o modal junto.
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleAdvance(o.id, action.next);
+                        handleAdvance(o.id, action.status);
                       }}
                       isLoading={advancing === o.id}
                     >
-                      {action.label}
+                      {action.rotulo}
                     </Button>
                   );
                 },
@@ -634,6 +634,7 @@ export const DashboardPage: React.FC = () => {
               recomendacao: 'falaram por último e ninguém respondeu',
               acao: { rotulo: 'Abrir inbox', onClick: () => navigate('/inbox/whatsapp') },
             },
+            ...itensDeSaude(alertasDeSaude, storeRoute, navigate),
           ].filter(Boolean) as React.ComponentProps<typeof InsightList>['itens']}
         />
       )}
