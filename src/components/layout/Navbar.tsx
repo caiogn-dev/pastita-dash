@@ -335,8 +335,10 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
         style={{
           // Recuo que acompanha a coluna lateral espiada.
           paddingLeft: 'var(--recuo-da-navbar, 0px)',
-          // Mesma curva da coluna: as duas leem como um movimento só.
-          transitionTimingFunction: 'var(--mola)',
+          // Mesma curva da coluna: as duas leem como um movimento só. `--mola`
+          // passava do ponto (202px num alvo de 184) e o conteúdo da barra
+          // escorregava por baixo da coluna ao recolher.
+          transitionTimingFunction: 'var(--desliza)',
           // Gradiente vertical sutil em vez de cor chapada: dá espessura à
           // barra sem sombra pesada, e funciona nos dois temas porque as duas
           // pontas são token.
