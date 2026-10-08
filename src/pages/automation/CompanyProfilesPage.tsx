@@ -1,5 +1,5 @@
 import { copyToClipboard } from '../../utils/clipboard';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useConfirm } from '../../hooks';
 import logger from '../../services/logger';
 import { Link } from 'react-router-dom';
@@ -18,30 +18,71 @@ import { companyProfileService, businessTypeLabels } from '../../services/automa
 import { CompanyProfile } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { toast } from 'react-hot-toast';
-import { PageShell } from '../../components/ui';
+import { PageShell, FalhaAoCarregar } from '../../components/ui';
+import { estadoDaLista } from '../../utils/estadoDaLista';
 
 const CompanyProfilesPage: React.FC = () => {
   const [ConfirmDialog, confirm] = useConfirm();
   const [profiles, setProfiles] = useState<CompanyProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(false);
+  // Uma busca já DEU CERTO alguma vez. É o que separa "vazio de verdade" de
+  // "vazio porque caiu" — sem isso a tela adivinha, e adivinhava errado.
+  const [carregouAlgumaVez, setCarregouAlgumaVez] = useState(false);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Sequência da busca em voo. A troca de página e o duplo disparo do
+  // `React.StrictMode` sobrepõem buscas; só a mais recente aplica resultado.
+  // Sem isto, a rejeição de uma busca obsoleta ligaria `erro` e apagaria o
+  // vazio/legítimo já pintado pela busca mais nova.
+  const requisicaoRef = useRef(0);
+  // A qual página pertencem os `profiles` em cache. Trocar de página é uma
+  // consulta NOVA: os dados da página anterior não valem como cache dela. Sem
+  // isto, uma falha ao paginar deixava a lista da página anterior na tela sob o
+  // indicador da nova página, sem o `FalhaAoCarregar` nem o "Tentar novamente"
+  // — o engano que esta fatia existe para impedir, agora disfarçado de dado.
+  const paginaEmCacheRef = useRef<number | null>(null);
+
+  const estado = estadoDaLista({
+    temDados: carregouAlgumaVez,
+    buscando: loading,
+    falhou: erro,
+    quantidade: profiles.length,
+  });
 
   useEffect(() => {
     loadProfiles();
   }, [page]);
 
   const loadProfiles = async () => {
+    const req = ++requisicaoRef.current;
+    // Mudou de página desde o último dado em cache: descarta o cache antigo para
+    // que uma falha na página nova mostre o erro, e não a lista da página velha.
+    // Refetch da MESMA página (ex.: após regenerar a API key) mantém o cache.
+    if (paginaEmCacheRef.current !== null && paginaEmCacheRef.current !== page) {
+      setProfiles([]);
+      setCarregouAlgumaVez(false);
+    }
     try {
       setLoading(true);
+      setErro(false);
       const response = await companyProfileService.list({ page, page_size: 20 });
+      if (req !== requisicaoRef.current) return; // busca superada por uma mais nova
       setProfiles(response.results);
       setTotalCount(response.count);
+      setCarregouAlgumaVez(true);
+      paginaEmCacheRef.current = page;
     } catch (error) {
+      if (req !== requisicaoRef.current) return; // rejeição obsoleta: ignora
+      // Sem isto, a falha deixava `profiles` em `[]` e a tela mostrava o vazio
+      // confiante "Nenhum perfil configurado", convidando a loja a recriar o
+      // primeiro perfil quando, na verdade, a busca caiu.
+      setErro(true);
       toast.error('Erro ao carregar perfis de empresa');
       logger.error('Failed to load company profiles', error);
     } finally {
-      setLoading(false);
+      if (req === requisicaoRef.current) setLoading(false);
     }
   };
 
@@ -109,7 +150,17 @@ const CompanyProfilesPage: React.FC = () => {
       </div>
 
       {/* Profiles Grid */}
-      {profiles.length === 0 ? (
+      {estado === 'falhou' ? (
+        // Falha sem dado em cache: erro acionável no lugar do vazio enganoso.
+        // Com dado em cache (falha só ao atualizar), a grade abaixo continua
+        // mostrando os perfis e o `toast` avisa da falha. Quem decide é
+        // `estadoDaLista` — a mesma regra de todas as listas do painel.
+        <FalhaAoCarregar
+          titulo="Não foi possível carregar os perfis"
+          descricao="A conexão falhou. Isto não quer dizer que você não tem automação — tente de novo."
+          onTentarDeNovo={loadProfiles}
+        />
+      ) : estado === 'vazio' ? (
         <div className="text-center py-16 bg-surface rounded-2xl border border-border-token">
           <BuildingOfficeIcon className="mx-auto h-14 w-14 text-fg-muted-token opacity-40 mb-4" />
           <h3 className="text-base font-semibold text-fg-token mb-1">Nenhum perfil configurado</h3>
