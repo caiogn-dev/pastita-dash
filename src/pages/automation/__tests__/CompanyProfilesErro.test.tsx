@@ -98,6 +98,35 @@ test('busca vazia legítima mantém o "nenhum perfil configurado"', async () => 
   ).not.toBeInTheDocument();
 });
 
+test('falha ao paginar não deixa a página anterior na tela como se fosse a nova', async () => {
+  // Trocar de página é uma consulta nova: os dados da página 1 não valem como
+  // cache da página 2. Sem resetar o latch de sucesso, uma falha ao avançar
+  // deixava a lista da página 1 na tela sob o indicador da página 2, sem o
+  // FalhaAoCarregar e sem o "Tentar novamente" — o vazio/erro enganoso de novo,
+  // agora disfarçado de dado real.
+  listMock
+    .mockResolvedValueOnce({ results: [umPerfil()], count: 25 }) // página 1 ok (há 2ª página)
+    .mockRejectedValueOnce(new Error('500')); // página 2 falha
+
+  render(
+    <MemoryRouter>
+      <CompanyProfilesPage />
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText('Loja da Maria')).toBeInTheDocument();
+
+  // Avança para a página 2, cuja busca vai falhar.
+  fireEvent.click(screen.getByRole('button', { name: /próximo/i }));
+
+  // A falha da página 2 mostra o erro acionável...
+  expect(
+    await screen.findByText(/não foi possível carregar os perfis/i),
+  ).toBeInTheDocument();
+  // ...e NÃO mantém a lista da página 1 como se fosse a página 2.
+  expect(screen.queryByText('Loja da Maria')).not.toBeInTheDocument();
+});
+
 test('sucesso → renderiza os perfis, sem estado de erro', async () => {
   listMock.mockResolvedValue({ results: [umPerfil()], count: 1 });
 

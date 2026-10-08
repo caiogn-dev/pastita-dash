@@ -37,6 +37,12 @@ const CompanyProfilesPage: React.FC = () => {
   // Sem isto, a rejeição de uma busca obsoleta ligaria `erro` e apagaria o
   // vazio/legítimo já pintado pela busca mais nova.
   const requisicaoRef = useRef(0);
+  // A qual página pertencem os `profiles` em cache. Trocar de página é uma
+  // consulta NOVA: os dados da página anterior não valem como cache dela. Sem
+  // isto, uma falha ao paginar deixava a lista da página anterior na tela sob o
+  // indicador da nova página, sem o `FalhaAoCarregar` nem o "Tentar novamente"
+  // — o engano que esta fatia existe para impedir, agora disfarçado de dado.
+  const paginaEmCacheRef = useRef<number | null>(null);
 
   const estado = estadoDaLista({
     temDados: carregouAlgumaVez,
@@ -51,6 +57,13 @@ const CompanyProfilesPage: React.FC = () => {
 
   const loadProfiles = async () => {
     const req = ++requisicaoRef.current;
+    // Mudou de página desde o último dado em cache: descarta o cache antigo para
+    // que uma falha na página nova mostre o erro, e não a lista da página velha.
+    // Refetch da MESMA página (ex.: após regenerar a API key) mantém o cache.
+    if (paginaEmCacheRef.current !== null && paginaEmCacheRef.current !== page) {
+      setProfiles([]);
+      setCarregouAlgumaVez(false);
+    }
     try {
       setLoading(true);
       setErro(false);
@@ -59,6 +72,7 @@ const CompanyProfilesPage: React.FC = () => {
       setProfiles(response.results);
       setTotalCount(response.count);
       setCarregouAlgumaVez(true);
+      paginaEmCacheRef.current = page;
     } catch (error) {
       if (req !== requisicaoRef.current) return; // rejeição obsoleta: ignora
       // Sem isto, a falha deixava `profiles` em `[]` e a tela mostrava o vazio
