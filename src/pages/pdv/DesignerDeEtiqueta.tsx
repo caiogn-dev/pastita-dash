@@ -552,6 +552,8 @@ const DesignerDeEtiqueta: React.FC = () => {
                   <Ferramenta rotulo="Alinhar à direita" ativo={elemento.alinhar === 'direita'} onClick={() => patch({ alinhar: 'direita' })}><Bars3BottomRightIcon className="w-4 h-4" /></Ferramenta>
                   <Separador />
                   <Ferramenta rotulo="Uma linha, encolhe até caber" ativo={elemento.ajuste === 'encolher'} onClick={() => patch({ ajuste: elemento.ajuste === 'encolher' ? 'quebrar' : 'encolher', linhas: elemento.ajuste === 'encolher' ? (elemento.linhas ?? 1) : 1 })} data-testid="fmt-encolher"><ArrowsPointingInIcon className="w-4 h-4" /></Ferramenta>
+                  <Ferramenta rotulo="Várias linhas, encolhe até o texto inteiro caber" ativo={elemento.ajuste === 'caber'} onClick={() => patch({ ajuste: elemento.ajuste === 'caber' ? 'quebrar' : 'caber', linhas: 0 })} data-testid="fmt-caber"><Squares2X2Icon className="w-4 h-4" /></Ferramenta>
+                  <Ferramenta rotulo="Maiúsculas" ativo={!!elemento.maiusculas} onClick={() => patch({ maiusculas: !elemento.maiusculas })} data-testid="fmt-maiusculas"><span className="text-xs font-bold leading-4">AA</span></Ferramenta>
                   <Ferramenta rotulo="Branco sobre preto" ativo={!!elemento.inverso} onClick={() => patch({ inverso: !elemento.inverso })} data-testid="fmt-inverso"><span className="rounded-sm bg-fg-token px-1 text-xs font-bold leading-4 text-surface">A</span></Ferramenta>
                   <Ferramenta rotulo="Girar 90°" dica={`Girar (${elemento.rotacao ?? 0}°)`} ativo={!!elemento.rotacao} onClick={girar} data-testid="fmt-girar"><ArrowPathIcon className="w-4 h-4" /></Ferramenta>
                   {elemento.ajuste !== 'encolher' && (
@@ -655,7 +657,7 @@ const DesignerDeEtiqueta: React.FC = () => {
                             style={{
                               left: px(el.x), top: px(el.y), width: w, height: h,
                               fontSize: el.tipo === 'texto' ? Math.max(4, px(el.tamanho || 2.5) * 0.85) : Math.max(8, px(2)),
-                              fontWeight: el.negrito ? 700 : 400,
+                              fontWeight: el.negrito ? 700 : 400, textTransform: el.maiusculas ? 'uppercase' : undefined,
                               whiteSpace: el.ajuste === 'encolher' ? 'nowrap' : 'normal',
                               textAlign: el.alinhar === 'centro' ? 'center' : el.alinhar === 'direita' ? 'right' : 'left',
                               fontFamily: CSS_FONTE[el.fonte ?? 'sans'],

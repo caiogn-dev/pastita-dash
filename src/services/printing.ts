@@ -162,7 +162,11 @@ export interface ElementoDoLayout {
   /** texto: família (Liberation no backend = métricas de Arial / Arial Narrow / Times / Courier). */
   fonte?: 'sans' | 'estreita' | 'serif' | 'mono';
   /** texto: quebrar em `linhas` (padrão) ou manter em uma linha encolhendo a letra até caber. */
-  ajuste?: 'quebrar' | 'encolher';
+  ajuste?: 'quebrar' | 'encolher' | 'caber';
+  /** texto: tudo em maiúsculas. */
+  maiusculas?: boolean;
+  /** texto: rótulo em negrito antes do texto, na mesma linha ("INGREDIENTES:"). */
+  prefixo?: string;
   /** texto: branco sobre fundo preto. */
   inverso?: boolean;
   /** texto: giro em graus. */
