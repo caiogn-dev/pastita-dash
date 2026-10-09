@@ -97,6 +97,7 @@ const PrintSettingsPage = lazy(() => import('./pages/printing/PrintSettingsPage'
 const CashPage = lazy(() => import('./pages/cash/CashPage'));
 const PdvBalcaoPage = lazy(() => import('./pages/pdv/PdvBalcaoPage'));
 const EtiquetasPage = lazy(() => import('./pages/pdv/EtiquetasPage'));
+const LotesPage = lazy(() => import('./pages/pdv/LotesPage'));
 const NotasFiscaisPage = lazy(() => import('./pages/fiscal/NotasFiscaisPage'));
 const DesignerDeEtiqueta = lazy(() => import('./pages/pdv/DesignerDeEtiqueta'));
 const IngredientsPage = lazy(() => import('./pages/nutrition/IngredientsPage'));
@@ -290,6 +291,7 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId/cash" element={<PageBoundary><CashPage /></PageBoundary>} />
         <Route path="stores/:storeId/pdv" element={<PageBoundary><PdvBalcaoPage /></PageBoundary>} />
         <Route path="stores/:storeId/etiquetas" element={<PageBoundary><EtiquetasPage /></PageBoundary>} />
+        <Route path="stores/:storeId/lotes" element={<PageBoundary><LotesPage /></PageBoundary>} />
         <Route path="stores/:storeId/etiquetas/desenho/:modelo" element={<PageBoundary><DesignerDeEtiqueta /></PageBoundary>} />
         <Route path="stores/:storeId/ingredientes" element={<PageBoundary><IngredientsPage /></PageBoundary>} />
         

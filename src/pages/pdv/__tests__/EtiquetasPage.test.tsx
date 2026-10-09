@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import EtiquetasPage from '../EtiquetasPage';
 import { getStores, getProducts, gerarCodigosInternos } from '../../../services/storesApi';
 import { printHtmlDocument } from '../../../utils/labelPrint';
-import { carregarLayouts, enviarEtiquetasParaAgente, listPrintAgents, salvarPreferenciasDeEtiqueta } from '../../../services/printing';
+import { carregarLayouts, enviarEtiquetasParaAgente, garantirLotes, listPrintAgents, salvarPreferenciasDeEtiqueta } from '../../../services/printing';
 
 jest.mock('../../../services/api', () => ({
   __esModule: true,
@@ -25,6 +25,7 @@ jest.mock('../../../services/printing', () => ({
   enviarEtiquetasParaAgente: jest.fn().mockResolvedValue({ data: { job: { id: 'j1' } } }),
   carregarLayouts: jest.fn().mockRejectedValue(new Error('backend antigo')),
   salvarPreferenciasDeEtiqueta: jest.fn().mockResolvedValue({ data: { preferencias: { validade_dias: 7 } } }),
+  garantirLotes: jest.fn().mockResolvedValue({ data: { lotes: { p1: { codigo: 'MAR-09102601', fabricacao: '2026-10-09', validade: '2027-01-07' } } } }),
 }));
 
 jest.mock('../../../utils/labelPrint', () => ({
@@ -296,6 +297,27 @@ describe('EtiquetasPage', () => {
       expect(body.etiquetas[0].val).toMatch(/\d{2}\/\d{2}\/\d{4}/);
       expect(body.etiquetas[0].manip).toMatch(/\d{2}\/\d{2}\/\d{4}/);
       expect(body.etiquetas[0].price).toBeTruthy();
+    });
+
+    it('com {lote} no desenho, o lote vem do servidor (um por prato no dia) e vai na etiqueta', async () => {
+      mockedListAgents.mockResolvedValue({ data: { results: [zebra] } });
+      const layout = { versao: 1, etiqueta: { largura: 33, altura: 22 }, papel: { largura: 107, colunas: 3, espaco: 2 },
+        elementos: [{ id: 'l', tipo: 'texto', x: 1, y: 1, w: 30, h: 9, texto: 'Lote: {lote}', tamanho: 2.6 }] };
+      (carregarLayouts as jest.Mock).mockResolvedValue({ data: {
+        validade: { layout, padrao: false }, 'nutricao-qr': { layout, padrao: true }, produto: { layout, padrao: true },
+        preferencias: { validade_dias: 90 },
+      } });
+      renderPage();
+      await screen.findByText('Marmita P');
+      await userEvent.click(screen.getByText('Validade (Elgin)'));
+      await userEvent.clear(screen.getByLabelText('Quantidade de etiquetas de Marmita P'));
+      await userEvent.type(screen.getByLabelText('Quantidade de etiquetas de Marmita P'), '3');
+      await userEvent.click(await screen.findByTestId('etq-enviar-remoto'));
+      await waitFor(() => expect(mockedEnviar).toHaveBeenCalledTimes(1));
+      expect(garantirLotes).toHaveBeenCalledWith('s1', 90, [{ produto: 'p1', quantidade: 3 }]);
+      const body = mockedEnviar.mock.calls[0][0];
+      expect(body.etiquetas).toHaveLength(3);
+      expect(body.etiquetas.every((e: { lote: string }) => e.lote === 'MAR-09102601')).toBe(true);
     });
 
     it('impressora compartilhada de OUTRA loja não troca o modelo: o desenho é o da loja do produto', async () => {

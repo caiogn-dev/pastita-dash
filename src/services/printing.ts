@@ -211,6 +211,18 @@ export const salvarPreferenciasDeEtiqueta = (storeUuid: string, preferencias: { 
 /** Deslocamento da IMPRESSORA (mm) e escurecimento — vive no agent, não no layout. */
 export interface Calibracao { desloc_x?: number; desloc_y?: number; escuro?: number }
 
+/** Lote de produção: um por prato por dia (EST-09102601). Garantido na hora de imprimir. */
+export interface LoteDoPrato { codigo: string; fabricacao: string; validade: string }
+export const garantirLotes = (storeUuid: string, validadeDias: number, itens: { produto: string; quantidade: number }[]) =>
+  api.post<{ lotes: Record<string, LoteDoPrato> }>('/stores/lotes/garantir/', { store: storeUuid, validade_dias: validadeDias, itens });
+
+export interface LoteDeProducao {
+  id: string; codigo: string; produto_nome: string; product: string | null;
+  fabricacao: string; validade: string; etiquetas: number; criado_em: string;
+}
+export const listarLotes = (params: { store: string; q?: string; de?: string; ate?: string; page?: number; page_size?: number }) =>
+  api.get<{ count: number; next: string | null; results: LoteDeProducao[] }>('/stores/lotes/', { params });
+
 export const carregarLayouts = (storeUuid: string) =>
   api.get<LayoutsDaLoja>('/stores/print-jobs/etiquetas/layouts/', { params: { store: storeUuid } });
 

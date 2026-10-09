@@ -19,11 +19,17 @@ import { ADICIONAL_ETIQUETA } from '../../services/billing';
 import { AdicionalBloqueado } from '../../components/billing/AdicionalBloqueado';
 import {
   enviarEtiquetasParaAgente, imprimeEtiquetas, listPrintAgents, PrintAgent,
-  carregarLayouts, LayoutsDaLoja, ModeloDesenhavel, MODELOS_DESENHAVEIS, previewDeEtiquetas, salvarPreferenciasDeEtiqueta,
+  carregarLayouts, garantirLotes, LayoutsDaLoja, ModeloDesenhavel, MODELOS_DESENHAVEIS, previewDeEtiquetas, salvarPreferenciasDeEtiqueta,
 } from '../../services/printing';
 import { NumField } from './NumField';
 
 const fmtDate = (d: Date) => d.toLocaleDateString('pt-BR');
+/** "EST-091026··": prefixo e dia do lote; a ordem do prato no dia vem do servidor. */
+const loteProvisorio = (nome: string, dia: Date) => {
+  const pref = nome.normalize('NFKD').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 3) || 'LOT';
+  const dd = String(dia.getDate()).padStart(2, '0'); const mm = String(dia.getMonth() + 1).padStart(2, '0');
+  return `${pref}-${dd}${mm}${String(dia.getFullYear()).slice(2)}··`;
+};
 const MM_PX = 96 / 25.4;
 
 type Template = 'produto' | 'validade' | 'nutricao' | 'nutricao-qr' | 'nutricao-a4';
@@ -444,14 +450,22 @@ const EtiquetasPage: React.FC = () => {
     try {
       let etiquetas: unknown[];
       if (layoutDaVez) {
-        // Layout desenhado: cada etiqueta leva tudo que se sabe do produto.
-        const precisaDeCodigo = template === 'produto' || layoutDaVez.layout.elementos.some((e) => e.tipo === 'barras');
-        const codes = precisaDeCodigo ? await garantirCodigos() : new Map<string, string>();
-        etiquetas = expandCopies((c) => dadosCompletos(c, codes.get(c.product.id)));
         if ((template === 'nutricao' || template === 'nutricao-qr' || template === 'nutricao-a4') && selected.some((c) => !profiles.get(c.product.id))) {
           toast.error('Alguns produtos selecionados ainda não têm perfil nutricional.');
           return;
         }
+        // Layout desenhado: cada etiqueta leva tudo que se sabe do produto.
+        const precisaDeCodigo = template === 'produto' || layoutDaVez.layout.elementos.some((e) => e.tipo === 'barras');
+        const codes = precisaDeCodigo ? await garantirCodigos() : new Map<string, string>();
+        // {lote} no desenho: o servidor dá um lote por prato por dia e guarda para rastrear.
+        const precisaDeLote = layoutDaVez.layout.elementos.some((e) => (e.texto ?? '').includes('{lote}'));
+        const lotes = new Map<string, string>();
+        if (precisaDeLote && uuidDaSelecao) {
+          const { data } = await garantirLotes(uuidDaSelecao, cfg.shelfDays,
+            selected.map((c) => ({ produto: c.product.id, quantidade: qty.get(c.product.id) ?? 0 })));
+          Object.entries(data.lotes).forEach(([id, l]) => lotes.set(id, l.codigo));
+        }
+        etiquetas = expandCopies((c) => ({ ...dadosCompletos(c, codes.get(c.product.id)), lote: lotes.get(c.product.id) ?? '' }));
       } else {
         etiquetas = template === 'produto'
           ? await (async () => { const codes = await garantirCodigos(); return expandCopies((c) => produtoLabel(c, codes.get(c.product.id))); })()
@@ -619,7 +633,8 @@ const EtiquetasPage: React.FC = () => {
   const [previaReal, setPreviaReal] = useState<{ png: string; largura: number; altura: number; chave: string } | null>(null);
   const amostraDaPrevia = useMemo(() => {
     if (!modeloDesenhavel) return null;
-    return selected[0] ? dadosCompletos(selected[0]) : null;
+    // Prévia: o número do lote só nasce ao imprimir (ordem do prato no dia).
+    return selected[0] ? { ...dadosCompletos(selected[0]), lote: loteProvisorio(selected[0].product.name, manip) } : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modeloDesenhavel, template, selected, cfg.shelfDays, profiles]);
   useEffect(() => {
@@ -666,6 +681,11 @@ const EtiquetasPage: React.FC = () => {
               <ArrowDownTrayIcon className="w-5 h-5" />
               Folha de códigos ({daFolha.length})
             </Button>
+            {(lojaDaSelecao ?? storeId) && (
+              <Button variant="secondary" onClick={() => navigate(`/stores/${lojaDaSelecao ?? storeId}/lotes`)} data-testid="etq-rastrear-lotes">
+                Rastrear lotes
+              </Button>
+            )}
           </div>
           {categoriasDisponiveis.length > 0 && (
             <div className="flex flex-wrap gap-1">
