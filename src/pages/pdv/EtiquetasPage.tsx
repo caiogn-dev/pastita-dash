@@ -8,8 +8,8 @@ import { Loading } from '../../components/common';
 import { getStores, getProducts, gerarCodigosInternos, StoreProduct } from '../../services/storesApi';
 import api, { normalizePaginatedResponse } from '../../services/api';
 import {
-  buildBarcodeCatalogDoc, buildNutritionDoc, buildNutritionQrDoc, buildProdutoDoc, buildValidadeDoc, printHtmlDocument, validadeMargin,
-  PRODUTO_DEFAULTS, VALIDADE_DEFAULTS, QR_DEFAULTS, ProdutoConfig, ValidadeConfig, LabelBorder,
+  buildBarcodeCatalogDoc, buildNutritionA4Doc, buildNutritionDoc, buildNutritionQrDoc, buildProdutoDoc, buildValidadeDoc, printHtmlDocument, validadeMargin,
+  PRODUTO_DEFAULTS, VALIDADE_DEFAULTS, QR_DEFAULTS, ProdutoConfig, ValidadeConfig, LabelBorder, TabelaDeclarada,
 } from '../../utils/labelPrint';
 import { precoVigenteDoProduto } from '../../utils/precoVigente';
 import { PageShell } from '../../components/ui';
@@ -26,13 +26,18 @@ import { NumField } from './NumField';
 const fmtDate = (d: Date) => d.toLocaleDateString('pt-BR');
 const MM_PX = 96 / 25.4;
 
-type Template = 'produto' | 'validade' | 'nutricao' | 'nutricao-qr';
+type Template = 'produto' | 'validade' | 'nutricao' | 'nutricao-qr' | 'nutricao-a4';
 
 interface NutritionProfile {
   product: string; serving_size_g: string; household_measure?: string;
   public_url?: string;
   ingredientes_declaracao?: string;
   porcoes_por_embalagem?: string | number | null;
+  /** Tabela pronta da loja, impressa como foi declarada. */
+  tabela_declarada?: {
+    porcoes_por_embalagem?: string; porcao?: string; coluna_porcao?: string;
+    linhas?: Record<string, string[]>; ingredientes?: string; declaracoes?: string[];
+  };
   calculation?: {
     per_100g?: Record<string, string | number | null>;
     /** Arredondados pela IN 75/2020 — é o que vai impresso. */
@@ -51,6 +56,7 @@ interface CatalogEntry {
   product: StoreProduct;
   storeSlug: string;
   storeName: string;
+  storeLogo?: string;
 }
 
 const PRODUTO_PRESETS = [
@@ -197,7 +203,7 @@ const EtiquetasPage: React.FC = () => {
   // Produto e validade são de todo mundo; só os modelos de nutrição são o
   // adicional Etiqueta ANVISA.
   const etiqueta = useAdicional(ADICIONAL_ETIQUETA);
-  const nutricaoBloqueada = (template === 'nutricao' || template === 'nutricao-qr')
+  const nutricaoBloqueada = (template === 'nutricao' || template === 'nutricao-qr' || template === 'nutricao-a4')
     && etiqueta.estado !== 'carregando' && !etiqueta.liberado;
 
   useEffect(() => {
@@ -214,12 +220,12 @@ const EtiquetasPage: React.FC = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      let stores: { slug: string; name: string }[] = [];
+      let stores: { slug: string; name: string; logo?: string }[] = [];
       try {
         const res = await getStores();
         stores = (res.results || [])
           .filter((s) => s.status === 'active')
-          .map((s) => ({ slug: s.slug, name: s.name }));
+          .map((s) => ({ slug: s.slug, name: s.name, logo: s.logo_url || s.logo || undefined }));
       } catch { /* opera só com a loja da rota */ }
       if (storeId && !stores.some((s) => s.slug === storeId)) {
         stores.push({ slug: storeId, name: storeId });
@@ -229,7 +235,7 @@ const EtiquetasPage: React.FC = () => {
         let page = 1;
         for (;;) {
           const res = await getProducts({ store: s.slug, status: 'active', page, page_size: 200 });
-          all.push(...res.results.map((product) => ({ product, storeSlug: s.slug, storeName: s.name })));
+          all.push(...res.results.map((product) => ({ product, storeSlug: s.slug, storeName: s.name, storeLogo: s.logo })));
           if (!res.next) break;
           page += 1;
         }
@@ -313,6 +319,15 @@ const EtiquetasPage: React.FC = () => {
     (c) => Array.from({ length: qty.get(c.product.id) ?? 0 }, () => make(c)),
   );
 
+  const tabelaDeclarada = (profile: NutritionProfile): TabelaDeclarada | undefined => {
+    const t = profile.tabela_declarada;
+    if (!t?.linhas || Object.keys(t.linhas).length === 0) return undefined;
+    return {
+      porcoesPorEmbalagem: t.porcoes_por_embalagem, porcao: t.porcao, colunaPorcao: t.coluna_porcao,
+      linhas: t.linhas, declaracoes: t.declaracoes ?? [],
+    };
+  };
+
   /** Mesmo objeto para o navegador e para o envio remoto (o backend vira ZPL). */
   const montarEtiquetasNutricionais = () => expandCopies((c) => {
     const profile = profiles.get(c.product.id);
@@ -340,6 +355,7 @@ const EtiquetasPage: React.FC = () => {
     return {
       name: c.product.name, servingG: Number(profile.serving_size_g || 100), householdMeasure: profile.household_measure,
       per100g, perServing, allergens, frontOfPack, publicUrl, servingsPerContainer, ingredients: profile.ingredientes_declaracao || undefined,
+      declarada: tabelaDeclarada(profile), storeName: c.storeName, logoUrl: c.storeLogo,
     };
   }).filter((row): row is NonNullable<typeof row> => Boolean(row));
 
@@ -401,7 +417,7 @@ const EtiquetasPage: React.FC = () => {
   const modeloDesenhavel = (MODELOS_DESENHAVEIS as string[]).includes(template) ? (template as ModeloDesenhavel) : null;
   const layoutDaVez = modeloDesenhavel && uuidDaSelecao ? layouts.get(uuidDaSelecao)?.[modeloDesenhavel] ?? null : null;
   const agenteDaVez = agentesDaSelecao.find((a) => a.id === agenteEscolhido);
-  const envioRemotoDisponivel = !nutricaoBloqueada
+  const envioRemotoDisponivel = !nutricaoBloqueada && template !== 'nutricao-a4'
     && (lojaDaSelecao ? agentesDaSelecao.length > 0 : agentes.size > 0);
   useEffect(() => {
     let lembrado = '';
@@ -428,7 +444,7 @@ const EtiquetasPage: React.FC = () => {
         const precisaDeCodigo = template === 'produto' || layoutDaVez.layout.elementos.some((e) => e.tipo === 'barras');
         const codes = precisaDeCodigo ? await garantirCodigos() : new Map<string, string>();
         etiquetas = expandCopies((c) => dadosCompletos(c, codes.get(c.product.id)));
-        if ((template === 'nutricao' || template === 'nutricao-qr') && selected.some((c) => !profiles.get(c.product.id))) {
+        if ((template === 'nutricao' || template === 'nutricao-qr' || template === 'nutricao-a4') && selected.some((c) => !profiles.get(c.product.id))) {
           toast.error('Alguns produtos selecionados ainda não têm perfil nutricional.');
           return;
         }
@@ -444,7 +460,7 @@ const EtiquetasPage: React.FC = () => {
       await enviarEtiquetasParaAgente({
         store: selected[0].product.store,
         agent: agent.id,
-        modelo: template,
+        modelo: template as Exclude<Template, 'nutricao-a4'>,
         etiquetas,
         config: template === 'validade' ? { ...cfg.validade } : template === 'produto' ? { ...cfg.produto } : template === 'nutricao-qr' ? { ...cfg.qr } : {},
         ...(layoutDaVez ? { motor: 'bitmap' as const, layout: layoutDaVez.layout } : {}),
@@ -491,13 +507,14 @@ const EtiquetasPage: React.FC = () => {
     try {
       const newCodes = template === 'produto' ? await garantirCodigos() : new Map<string, string>();
       const nutritionCopies = montarEtiquetasNutricionais();
-      if ((template === 'nutricao' || template === 'nutricao-qr') && nutritionCopies.length !== totalLabels) {
+      if ((template === 'nutricao' || template === 'nutricao-qr' || template === 'nutricao-a4') && nutritionCopies.length !== totalLabels) {
         toast.error('Alguns produtos selecionados ainda não têm perfil nutricional.');
         return;
       }
       const doc = template === 'produto'
         ? buildProdutoDoc(expandCopies((c) => produtoLabel(c, newCodes.get(c.product.id))), cfg.produto)
         : template === 'nutricao' ? buildNutritionDoc(nutritionCopies)
+          : template === 'nutricao-a4' ? buildNutritionA4Doc(nutritionCopies)
           : template === 'nutricao-qr' ? buildNutritionQrDoc(nutritionCopies, cfg.qr) : buildValidadeDoc(
           expandCopies((c) => ({ name: c.product.name, manip: fmtDate(manip), val: fmtDate(val) })),
           cfg.validade,
@@ -573,6 +590,12 @@ const EtiquetasPage: React.FC = () => {
       const sample = { name: selected[0]?.product.name || 'Prato de exemplo', servingG: 350, householdMeasure: '1 unidade', publicUrl:'https://backend.pastita.com.br/api/v1/nutrition/public/00000000-0000-0000-0000-000000000000/', per100g: { energy_kcal:128, carbohydrates_g:28.1,total_sugars_g:null,added_sugars_g:0,protein_g:8.5,total_fat_g:4.2,saturated_fat_g:1.1,trans_fat_g:0,fiber_g:3.2,sodium_mg:210 } };
       return { doc: buildNutritionDoc([sample]), w: 100 * MM_PX, h: 80 * MM_PX };
     }
+    if (template === 'nutricao-a4') {
+      const c = selected[0];
+      const perfil = c ? profiles.get(c.product.id) : undefined;
+      const sample = { name: c?.product.name || 'Prato de exemplo', servingG: Number(perfil?.serving_size_g || 330), per100g: {}, ingredients: perfil?.ingredientes_declaracao || undefined, declarada: perfil ? tabelaDeclarada(perfil) : undefined, storeName: c?.storeName, logoUrl: c?.storeLogo };
+      return { doc: buildNutritionA4Doc([sample]), w: 210 * MM_PX, h: 297 * MM_PX };
+    }
     if (template === 'nutricao-qr') {
       const sample = { name: selected[0]?.product.name || 'Prato de exemplo', servingG: 100, publicUrl:'https://backend.pastita.com.br/api/v1/nutrition/public/00000000-0000-0000-0000-000000000000/', per100g:{} };
       const q = cfg.qr;
@@ -617,6 +640,7 @@ const EtiquetasPage: React.FC = () => {
     { valor: 'validade' as Template, titulo: 'Validade (Elgin)', descricao: 'Manipulação e validade, em colunas no rolo.' },
     { valor: 'nutricao' as Template, titulo: 'Nutrição 100×80', descricao: 'Tabela ANVISA completa com QR Code.' },
     { valor: 'nutricao-qr' as Template, titulo: 'QR Nutrição 30×22', descricao: 'Para pote pequeno: o QR abre a tabela.' },
+    { valor: 'nutricao-a4' as Template, titulo: 'Tabela A4', descricao: 'Uma folha por prato, com logo da loja.' },
   ];
   const nomeDoModelo = MODELOS.find((m) => m.valor === template)?.titulo ?? template;
   const produtosSelecionados = selected.length;
@@ -759,6 +783,10 @@ const EtiquetasPage: React.FC = () => {
           ) : template === 'nutricao' ? (
             <section className="superficie p-3 text-sm space-y-1.5">
               <p className="font-semibold text-fg-token">Zebra, 100 × 80 mm</p>
+            </section>
+          ) : template === 'nutricao-a4' ? (
+            <section className="superficie p-3 text-sm space-y-1.5">
+              <p className="font-semibold text-fg-token">Folha A4</p>
             </section>
           ) : template === 'nutricao-qr' ? (
             <section className="space-y-3">

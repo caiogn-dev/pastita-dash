@@ -66,6 +66,20 @@ export interface NutritionLabelData {
    *  cortar. */
   perServing?: Record<string, number | null | undefined>;
   publicUrl?: string;
+  /** Tabela PRONTA da loja (laudo/nutricionista): sai como foi declarada,
+   *  texto por texto. Recalcular a porção diverge (209 × 3,3 = 689,7; o PDF diz 691). */
+  declarada?: TabelaDeclarada;
+  storeName?: string;
+  logoUrl?: string;
+}
+
+export interface TabelaDeclarada {
+  porcoesPorEmbalagem?: string;
+  porcao?: string;
+  colunaPorcao?: string;
+  /** campo → [100 g, porção, %VD] */
+  linhas: Record<string, string[]>;
+  declaracoes?: string[];
 }
 
 export interface ProdutoConfig {
@@ -313,6 +327,64 @@ const NUTRITION_ROWS = [
   ['fiber_g','Fibra alimentar','g',25], ['sodium_mg','Sódio','mg',2000],
 ] as const;
 
+const linhasDeclaradas = (t: TabelaDeclarada): string => NUTRITION_ROWS.map(([key, name, unit]) => {
+  const [cem = '', porcao = '', vd = ''] = t.linhas[key] ?? [];
+  const recuo = key === 'added_sugars_g' ? ' class="r2"' : ['total_sugars_g', 'saturated_fat_g', 'trans_fat_g'].includes(key) ? ' class="r1"' : '';
+  // Grafia da tabela do nutricionista: "Fibras alimentares", no plural.
+  const rotulo = key === 'fiber_g' ? 'Fibras alimentares' : name;
+  return `<tr><td${recuo}>${rotulo} (${unit})</td><td>${esc(cem)}</td><td>${esc(porcao)}</td><td>${esc(vd)}</td></tr>`;
+}).join('');
+
+const etiquetaDeclarada100x80 = (l: NutritionLabelData, t: TabelaDeclarada): string => `<section class="label"><div class="product">${esc(l.name)}</div><div class="title">INFORMAÇÃO NUTRICIONAL</div><div class="serving">Porções por embalagem: ${esc(t.porcoesPorEmbalagem ?? '')} &nbsp;|&nbsp; Porção: ${esc(t.porcao ?? `${l.servingG} g`)}</div><table><thead><tr><th></th><th>100 g</th><th>${esc(t.colunaPorcao ?? `${l.servingG} g`)}</th><th>%VD*</th></tr></thead><tbody>${linhasDeclaradas(t)}</tbody></table><div class="foot">*Percentual de valores diários fornecidos pela porção.</div><div class="after"><div>${l.ingredients ? `<div class="ingredients"><b>INGREDIENTES:</b> ${esc(l.ingredients)}</div>` : ''}${(t.declaracoes ?? []).map((d) => `<div class="ingredients allergens">${esc(d)}</div>`).join('')}</div>${l.publicUrl ? `<div class="qr">${qrSvg(l.publicUrl)}</div>` : ''}</div></section>`;
+
+/** Folha A4 por prato, no layout das tabelas que a loja recebe do nutricionista:
+ *  logo, nome do prato, quadro ANVISA, ingredientes, declarações e rodapé da marca. */
+export const buildNutritionA4Doc = (labels: NutritionLabelData[]): string => {
+  const css = `
+@page { size: A4; margin: 0; }
+.folha { width:210mm; height:297mm; padding:14mm 14mm 12mm; display:flex; flex-direction:column; break-after:page; }
+.folha:last-child { break-after:auto; }
+.logo { height:30mm; width:30mm; object-fit:contain; }
+.logo-vazio { height:30mm; }
+h1 { font-size:17pt; font-weight:700; text-align:center; margin:12mm 0 6mm; }
+.quadro { width:74mm; margin:0 auto; border:.35mm solid #000; padding:1.5mm 2mm 1.2mm; font-size:7pt; }
+.quadro .tit { font-size:9pt; font-weight:700; text-align:center; border-bottom:.35mm solid #000; padding-bottom:.8mm; }
+.quadro .porc { padding:1.2mm 0 1.4mm; line-height:1.25; border-bottom:1.4mm solid #000; }
+.quadro table { width:100%; border-collapse:collapse; }
+.quadro th { font-weight:700; text-align:center; border:.2mm solid #000; padding:.5mm .8mm; }
+.quadro th:first-child { border:none; border-bottom:.2mm solid #000; }
+.quadro td { border-bottom:.2mm solid #000; padding:.6mm .8mm; text-align:center; border-left:.2mm solid #000; }
+.quadro td:first-child { text-align:left; border-left:none; }
+.quadro td.r1 { padding-left:3mm; } .quadro td.r2 { padding-left:5.5mm; }
+.quadro .nota { font-size:5.2pt; padding-top:1mm; }
+.texto { width:102mm; margin:6mm auto 0; font-size:7pt; line-height:1.3; }
+.texto p { margin:0 0 3mm; } .texto .dec { font-weight:700; }
+.rodape { margin-top:auto; text-align:right; font-size:9pt; }
+.rodape .linha1 { padding-bottom:1.5mm; }
+.rodape .linha2 { border-top:.5mm solid #000; padding-top:1.5mm; font-size:11pt; }`;
+  const body = labels.map((l) => {
+    const t: TabelaDeclarada = l.declarada ?? {
+      porcoesPorEmbalagem: '', porcao: `${l.servingG} g`, colunaPorcao: `${l.servingG} g`,
+      linhas: Object.fromEntries(NUTRITION_ROWS.map(([key, , unit, vd]) => {
+        const base = l.per100g[key];
+        const serving = l.perServing ? (l.perServing[key] ?? null) : (base == null ? null : base * l.servingG / 100);
+        const fmt = (v: number | null | undefined) => (v == null ? '—' : v.toLocaleString('pt-BR', { maximumFractionDigits: unit === 'mg' ? 0 : 1 }));
+        return [key, [fmt(base), fmt(serving), vd && serving != null ? String(Math.round(serving / vd * 100)) : '']];
+      })),
+      declaracoes: l.allergens ? [l.allergens] : [],
+    };
+    const marca = (l.storeName ?? '').toUpperCase();
+    return `<section class="folha">${l.logoUrl ? `<img class="logo" src="${esc(l.logoUrl)}" alt="">` : '<div class="logo-vazio"></div>'}
+<h1>${esc(l.name)}</h1>
+<div class="quadro"><div class="tit">INFORMAÇÃO NUTRICIONAL</div><div class="porc">Porções por embalagem: ${esc(t.porcoesPorEmbalagem ?? '')}<br>Porção: ${esc(t.porcao ?? '')}</div>
+<table><thead><tr><th></th><th>100 g</th><th>${esc(t.colunaPorcao ?? '')}</th><th>%VD*</th></tr></thead><tbody>${linhasDeclaradas(t)}</tbody></table>
+<div class="nota">*Percentual de valores diários fornecidos pela porção.</div></div>
+<div class="texto">${l.ingredients ? `<p><b>INGREDIENTES:</b> ${esc(l.ingredients)}</p>` : ''}${(t.declaracoes ?? []).map((d) => `<p class="dec">${esc(d)}</p>`).join('')}</div>
+${marca ? `<div class="rodape"><div class="linha1">${esc(marca)}</div><div class="linha2">${esc(marca)}</div></div>` : ''}</section>`;
+  }).join('');
+  return wrapDoc('Tabelas nutricionais A4', css, body);
+};
+
 /** Etiqueta nutricional completa para a Zebra 100×80 mm. */
 export const buildNutritionDoc = (labels: NutritionLabelData[]): string => {
   const css = `
@@ -334,7 +406,7 @@ thead th { font-size:5.8pt; vertical-align:bottom; }
 .fop { display:flex; gap:2mm; margin-bottom:1mm; }
 .fop span { background:#000; color:#fff; font-weight:900; font-size:2.2mm; line-height:1.15; padding:1mm 1.5mm; text-transform:uppercase; text-align:center; }`;
   const fmt=(v:number|null|undefined,unit:string)=>v==null?'—':`${v.toLocaleString('pt-BR',{maximumFractionDigits:unit==='mg'?0:1})}`;
-  const body=labels.map(l=>{const servingFactor=l.servingG/100;return `<section class="label">${l.frontOfPack&&l.frontOfPack.length?`<div class="fop">${l.frontOfPack.map(t=>`<span>${esc(t)}</span>`).join('')}</div>`:''}<div class="product">${esc(l.name)}</div><div class="title">INFORMAÇÃO NUTRICIONAL</div><div class="serving">Porções por embalagem: — &nbsp;|&nbsp; Porção: ${l.servingG} g${l.householdMeasure?` (${esc(l.householdMeasure)})`:''}</div><table><thead><tr><th></th><th>100 g</th><th>${l.servingG} g</th><th>%VD*</th></tr></thead><tbody>${NUTRITION_ROWS.map(([key,name,unit,vd])=>{const base=l.per100g[key];const serving=l.perServing?(l.perServing[key]??null):(base==null?null:base*servingFactor);const pct=vd&&serving!=null?Math.round(serving/vd*100):null;return `<tr><td>${name} (${unit})</td><td>${fmt(base,unit)}</td><td>${fmt(serving,unit)}</td><td>${pct==null?'—':pct}</td></tr>`}).join('')}</tbody></table><div class="foot">*Percentual de valores diários fornecidos pela porção.</div><div class="after"><div>${l.ingredients?`<div class="ingredients"><b>INGREDIENTES:</b> ${esc(l.ingredients)}</div>`:''}${l.allergens?`<div class="ingredients allergens">${esc(l.allergens)}</div>`:''}</div>${l.publicUrl?`<div class="qr">${qrSvg(l.publicUrl)}</div>`:''}</div></section>`}).join('');
+  const body=labels.map(l=>{if(l.declarada)return etiquetaDeclarada100x80(l,l.declarada);const servingFactor=l.servingG/100;return `<section class="label">${l.frontOfPack&&l.frontOfPack.length?`<div class="fop">${l.frontOfPack.map(t=>`<span>${esc(t)}</span>`).join('')}</div>`:''}<div class="product">${esc(l.name)}</div><div class="title">INFORMAÇÃO NUTRICIONAL</div><div class="serving">Porções por embalagem: — &nbsp;|&nbsp; Porção: ${l.servingG} g${l.householdMeasure?` (${esc(l.householdMeasure)})`:''}</div><table><thead><tr><th></th><th>100 g</th><th>${l.servingG} g</th><th>%VD*</th></tr></thead><tbody>${NUTRITION_ROWS.map(([key,name,unit,vd])=>{const base=l.per100g[key];const serving=l.perServing?(l.perServing[key]??null):(base==null?null:base*servingFactor);const pct=vd&&serving!=null?Math.round(serving/vd*100):null;return `<tr><td>${name} (${unit})</td><td>${fmt(base,unit)}</td><td>${fmt(serving,unit)}</td><td>${pct==null?'—':pct}</td></tr>`}).join('')}</tbody></table><div class="foot">*Percentual de valores diários fornecidos pela porção.</div><div class="after"><div>${l.ingredients?`<div class="ingredients"><b>INGREDIENTES:</b> ${esc(l.ingredients)}</div>`:''}${l.allergens?`<div class="ingredients allergens">${esc(l.allergens)}</div>`:''}</div>${l.publicUrl?`<div class="qr">${qrSvg(l.publicUrl)}</div>`:''}</div></section>`}).join('');
   return wrapDoc('Etiquetas nutricionais 100×80',css,body);
 };
 
