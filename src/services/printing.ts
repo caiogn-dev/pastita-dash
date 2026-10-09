@@ -171,6 +171,8 @@ export interface ElementoDoLayout {
   mostrar_numero?: boolean;
   /** imagem: data URL (PNG/JPG em base64, máx. 200 KB). */
   imagem?: string;
+  /** tabela: 'laudo' = proporções do PDF do nutricionista (título pequeno, colunas estreitas). */
+  estilo?: 'padrao' | 'laudo';
   /** editor: não arrasta nem estica sem destravar. */
   bloqueado?: boolean;
 }

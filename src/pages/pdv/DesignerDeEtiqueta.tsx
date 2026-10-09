@@ -580,6 +580,10 @@ const DesignerDeEtiqueta: React.FC = () => {
                   <select aria-label="Fonte" className="controle h-8 px-2 text-sm" value={elemento.fonte ?? 'sans'} onChange={(e) => patch({ fonte: e.target.value as ElementoDoLayout['fonte'] })}>
                     {FONTES.map((f) => <option key={f.valor} value={f.valor}>{f.rotulo}</option>)}
                   </select>
+                  <select aria-label="Estilo do quadro" className="controle h-8 px-2 text-sm" value={elemento.estilo ?? 'padrao'} onChange={(e) => patch({ estilo: e.target.value as ElementoDoLayout['estilo'] })}>
+                    <option value="padrao">Padrão</option>
+                    <option value="laudo">Laudo</option>
+                  </select>
                   <Separador />
                 </>
               )}
