@@ -45,6 +45,10 @@ module.exports = {
     // o stub no meio da prosa e o arquivo deixa de compilar.
     '/src/services/(?!__tests__/).+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
     '/src/config/(?!__tests__/).+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
+    // A tela da cozinha (`KdsPage`) lê `import.meta.env` (base da API/WS) para o
+    // tempo real. Sem o transform, importar a página num teste quebra com
+    // "Cannot use 'import.meta' outside a module" — era o que a deixava intestável.
+    '/src/pages/kds/(?!__tests__/).+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
 };
