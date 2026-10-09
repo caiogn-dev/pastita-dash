@@ -298,6 +298,27 @@ describe('EtiquetasPage', () => {
       expect(body.etiquetas[0].price).toBeTruthy();
     });
 
+    it('impressora compartilhada de OUTRA loja não troca o modelo: o desenho é o da loja do produto', async () => {
+      // 09/10: a Zebra é da Cê (store 's-ce') e atende a Agrião. O painel pegava a loja
+      // pela dona da impressora e imprimia os pratos da Agrião no modelo da Cê.
+      mockedListAgents.mockResolvedValue({ data: { results: [{ ...zebra, store: 's-ce' }] } });
+      const layout = { versao: 1, etiqueta: { largura: 33, altura: 22 }, papel: { largura: 107, colunas: 3, espaco: 2 },
+        elementos: [{ id: 'nome', tipo: 'texto', x: 1, y: 1, w: 30, h: 9, texto: '{name}', tamanho: 2.6 }] };
+      (carregarLayouts as jest.Mock).mockResolvedValue({ data: {
+        validade: { layout, padrao: false }, 'nutricao-qr': { layout, padrao: true }, produto: { layout, padrao: true },
+      } });
+      renderPage();
+      await screen.findByText('Marmita P');
+      await userEvent.click(screen.getByText('Validade (Elgin)'));
+      await userEvent.clear(screen.getByLabelText('Quantidade de etiquetas de Marmita P'));
+      await userEvent.type(screen.getByLabelText('Quantidade de etiquetas de Marmita P'), '1');
+      await waitFor(() => expect(carregarLayouts).toHaveBeenCalled());
+      expect((carregarLayouts as jest.Mock).mock.calls.map((c) => c[0])).toEqual(['s1']);
+      await userEvent.click(await screen.findByTestId('etq-enviar-remoto'));
+      await waitFor(() => expect(mockedEnviar).toHaveBeenCalledTimes(1));
+      expect(mockedEnviar.mock.calls[0][0].store).toBe('s1');
+    });
+
     it('etiqueta de produto também vai para a impressora remota, gerando o código de quem não tem', async () => {
       mockedListAgents.mockResolvedValue({ data: { results: [zebra] } });
       renderPage();

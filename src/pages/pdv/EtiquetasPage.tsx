@@ -399,8 +399,10 @@ const EtiquetasPage: React.FC = () => {
     return null;
   }, [selected, storeId]);
   const agentesDaSelecao = lojaDaSelecao ? (agentes.get(lojaDaSelecao) ?? []) : [];
+  // A loja vem do PRODUTO. Pela dona da impressora não: a Zebra da Cê também
+  // atende a Agrião, e os pratos da Agrião saíam no modelo da Cê (09/10).
   const uuidDaSelecao = lojaDaSelecao
-    ? (agentesDaSelecao[0]?.store ?? catalog.find((c) => c.storeSlug === lojaDaSelecao)?.product.store ?? null)
+    ? (catalog.find((c) => c.storeSlug === lojaDaSelecao)?.product.store ?? agentesDaSelecao[0]?.store ?? null)
     : null;
   useEffect(() => {
     if (!uuidDaSelecao || layouts.has(uuidDaSelecao)) return;
