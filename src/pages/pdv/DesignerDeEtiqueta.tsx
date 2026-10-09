@@ -49,6 +49,7 @@ const CAMPOS_RAPIDOS: { rotulo: string; texto: string; tamanho: number; negrito:
   { rotulo: 'Validade', texto: 'Val.: {val}', tamanho: 2.8, negrito: true },
   { rotulo: 'Manipulação', texto: 'Manip.: {manip}', tamanho: 2.1, negrito: false },
   { rotulo: 'Preço', texto: '{price}', tamanho: 4, negrito: true },
+  { rotulo: 'Peso', texto: '{peso}', tamanho: 4, negrito: true },
 ];
 const FONTES = [
   { valor: 'sans', rotulo: 'Arial' }, { valor: 'estreita', rotulo: 'Arial estreita' },

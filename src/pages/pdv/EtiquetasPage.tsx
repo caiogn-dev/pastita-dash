@@ -382,6 +382,8 @@ const EtiquetasPage: React.FC = () => {
       publicUrl: profile.public_url,
       servingsPerContainer: profile.porcoes_por_embalagem != null && profile.porcoes_por_embalagem !== '' ? Number(profile.porcoes_por_embalagem) : undefined,
       ingredients: profile.ingredientes_declaracao || undefined,
+      // Layout desenhado: o servidor imprime a tabela do laudo e preenche {peso}.
+      declarada: tabelaDeclarada(profile),
     };
   };
   const dadosCompletos = (c: CatalogEntry, barcode?: string) => ({
