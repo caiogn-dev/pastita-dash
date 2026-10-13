@@ -50,6 +50,8 @@ jest.mock('../../../components/ui', () => ({
   ),
 }));
 
+// A seção de exibição tem teste próprio; aqui só não pode chamar a rede.
+jest.mock('../ExibicaoDoCardapioSection', () => ({ __esModule: true, default: () => null }));
 jest.mock('react-hot-toast', () => ({ toast: { error: jest.fn(), success: jest.fn() } }));
 
 const mockedApi = storesApi as jest.Mocked<typeof storesApi>;

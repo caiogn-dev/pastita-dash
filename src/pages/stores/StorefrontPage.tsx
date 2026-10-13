@@ -9,6 +9,7 @@ import { Card, Button, PageShell, PhonePreview } from '../../components/ui';
 import { PhotoIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 import { buscarTemplates, TEMPLATES_DE_EMERGENCIA, type TemplateDoCardapio } from './templatesDoCardapio';
 import BannersSection from './BannersSection';
+import ExibicaoDoCardapioSection from './ExibicaoDoCardapioSection';
 
 const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -72,6 +73,8 @@ export const StorefrontPage: React.FC = () => {
     null;
 
   const [saving, setSaving] = useState(false);
+  // Muda a cada save: remonta o iframe da prévia para mostrar o efeito na hora.
+  const [geracaoDaPrevia, setGeracaoDaPrevia] = useState(0);
   const [store, setStore] = useState<Store | null>(null);
   // Os templates vêm do backend. Começa no fallback para a tela nunca abrir
   // sem opção nenhuma — aparência vazia é pior que lista de emergência.
@@ -170,6 +173,7 @@ export const StorefrontPage: React.FC = () => {
         await updateStore(effectiveStoreId, form);
       }
       toast.success('Storefront salvo com sucesso!');
+      setGeracaoDaPrevia((g) => g + 1);
       clearLogo();
       clearBanner();
       await loadStore();
@@ -307,6 +311,8 @@ export const StorefrontPage: React.FC = () => {
         </div>
       </Card>
 
+      <ExibicaoDoCardapioSection loja={store.slug} onSalvo={() => setGeracaoDaPrevia((g) => g + 1)} />
+
       {/* Template */}
       <Card className="p-6 space-y-3">
         <h2 className="text-base font-semibold text-fg-token">Template</h2>
@@ -412,6 +418,7 @@ export const StorefrontPage: React.FC = () => {
 
         <aside className="xl:sticky xl:top-4 xl:self-start">
           <PhonePreview
+            key={geracaoDaPrevia}
             url={urlPreview || ''}
             titulo="Como o cliente vê"
             rodape={

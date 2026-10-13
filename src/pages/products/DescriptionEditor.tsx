@@ -12,6 +12,8 @@ interface DescriptionEditorProps {
   onChange: (value: string) => void;
   rows?: number;
   placeholder?: string;
+  /** Referência para o contador (o banco não limita; acima disso fica vermelho). */
+  limite?: number;
 }
 
 function InlineText({ text }: { text: string }) {
@@ -58,7 +60,7 @@ const MARKS: Array<{ id: string; label: ReactNode; title: string; mark: string }
   { id: 'strike', label: <s>S</s>, title: 'Riscado (~texto~)', mark: '~' },
 ];
 
-export default function DescriptionEditor({ value, onChange, rows = 5, placeholder }: DescriptionEditorProps) {
+export default function DescriptionEditor({ value, onChange, rows = 5, placeholder, limite = 1000 }: DescriptionEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showPreview, setShowPreview] = useState(true);
 
@@ -99,6 +101,7 @@ export default function DescriptionEditor({ value, onChange, rows = 5, placehold
             key={m.id}
             type="button"
             title={m.title}
+            aria-label={m.title}
             onClick={() => applyMark(m.mark)}
             className="w-8 h-8 flex items-center justify-center rounded border border-border-token bg-surface text-fg-token hover:bg-surface-2 text-sm"
           >
@@ -108,15 +111,21 @@ export default function DescriptionEditor({ value, onChange, rows = 5, placehold
         <button
           type="button"
           title="Lista (- item)"
+          aria-label="Lista (- item)"
           onClick={insertList}
           className="w-8 h-8 flex items-center justify-center rounded border border-border-token bg-surface text-fg-token hover:bg-surface-2 text-sm"
         >
           ≔
         </button>
+        <span
+          className={`ml-auto text-xs tabular-nums ${value.length > limite ? 'text-danger-token font-semibold' : 'text-fg-muted-token'}`}
+        >
+          {value.length}/{limite}
+        </span>
         <button
           type="button"
           onClick={() => setShowPreview((v) => !v)}
-          className="ml-auto text-xs text-fg-muted-token hover:text-fg-token underline"
+          className="ml-2 text-xs text-fg-muted-token hover:text-fg-token underline"
         >
           {showPreview ? 'Ocultar preview' : 'Mostrar preview'}
         </button>

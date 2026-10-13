@@ -61,3 +61,18 @@ describe('DescriptionEditor', () => {
     expect(screen.getByText('Rondelli').tagName).toBe('STRONG');
   });
 });
+
+describe('contador e botões nomeados (13/10, visto no Prefiro: "352/500")', () => {
+  it('mostra quantos caracteres já foram usados', () => {
+    render(<DescriptionEditor value="Purê leve" onChange={() => {}} />);
+    expect(screen.getByText('9/1000')).toBeInTheDocument();
+  });
+
+  it('botões de formatação têm nome acessível', () => {
+    render(<DescriptionEditor value="" onChange={() => {}} />);
+    expect(screen.getByRole('button', { name: /negrito/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /itálico/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /riscado/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /lista/i })).toBeInTheDocument();
+  });
+});
