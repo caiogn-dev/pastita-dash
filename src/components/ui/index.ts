@@ -35,7 +35,7 @@ export type { InsightListProps, InsightItem, InsightDirecao } from './InsightLis
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps, EmptyStateBeneficio } from './EmptyState';
 export { PhonePreview } from './PhonePreview';
-export type { PhonePreviewProps } from './PhonePreview';
+export type { PhonePreviewProps, Dispositivo } from './PhonePreview';
 export { RowActions, linhaClicavel } from './RowActions';
 export type { RowActionsProps, RowAction } from './RowActions';
 export { PageTabs } from './PageTabs';
@@ -81,3 +81,8 @@ export { Textarea } from './Textarea';
 export type { TextareaProps } from './Textarea';
 export { Aviso } from './Aviso';
 export type { AvisoProps, TomDoAviso } from './Aviso';
+// Storefront refeito (13/10): escolha com desenho do resultado e o salvar único da página.
+export { EscolhaVisual } from './EscolhaVisual';
+export type { EscolhaVisualProps, OpcaoVisual } from './EscolhaVisual';
+export { BarraDeAlteracoes } from './BarraDeAlteracoes';
+export type { BarraDeAlteracoesProps } from './BarraDeAlteracoes';

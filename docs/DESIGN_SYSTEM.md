@@ -46,7 +46,16 @@ PageShell (título, descrição em frase, ações à direita)
 Aviso, Button, Card, StatCard, KpiGrid, Input/SearchInput, NumberField, Select, Switch, ChoiceCards,
 FormStepper, FormSummary, FormChecklist, StringListField, Secao, PageShell, PageTabs, Tabela,
 Paginacao, RowActions, Badge, SeloDeEstado, Progresso, Verificacao, AcaoCard, EmptyState,
-Skeleton, Modal, Dropdown, Toast, Sparkline, RankedList, InsightList, PhonePreview, estados.
+Skeleton, Modal, Dropdown, Toast, Sparkline, RankedList, InsightList, PhonePreview, estados,
+EscolhaVisual, BarraDeAlteracoes.
+
+- **Aparência = `EscolhaVisual`, não `ChoiceCards`** (13/10). Escolha de como algo FICA (foto ao
+  lado, formato, logo redondo) mostra o resultado desenhado — com a foto/logo reais da loja quando
+  houver — e o nome curto embaixo. "Direita — Lista estilo iFood" em texto obriga a imaginar.
+- **Editor com prévia = rascunho ao vivo + `BarraDeAlteracoes`** (padrão do editor de tema da
+  Shopify). Cada mudança vai na hora para a `PhonePreview` (iframe real, `usePreviaAoVivo`), a
+  parte mexida acende na prévia, e UM salvar para a página inteira aparece só com alteração.
+  Nunca dois botões de salvar na mesma tela; nunca prévia que só muda depois de gravar.
 
 ## 5. Ordem de migração (pela contagem de cor crua)
 Pedidos (73) · Pagamentos (70) · Dashboard (47) · Clientes (39) · Automações (28) · Inbox do

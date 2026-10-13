@@ -45,3 +45,32 @@ describe('PhonePreview', () => {
     expect(screen.queryByText(/tempo real/i)).not.toBeInTheDocument();
   });
 });
+
+describe('PhonePreview — computador e canal ao vivo', () => {
+  it('entrega o iframe para quem vai conversar com ele', () => {
+    const registrar = jest.fn();
+    render(<PhonePreview url="https://x/preview/loja" titulo="P" iframeRef={registrar} />);
+    expect(registrar).toHaveBeenCalledWith(screen.getByTitle('P'));
+  });
+
+  it('alterna celular/computador sem recarregar a página', () => {
+    const onDispositivo = jest.fn();
+    const { rerender } = render(
+      <PhonePreview url="https://x" titulo="P" dispositivo="celular" onDispositivo={onDispositivo} />,
+    );
+    const antes = screen.getByTitle('P');
+    expect(screen.getByRole('button', { name: /celular/i })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: /computador/i }));
+    expect(onDispositivo).toHaveBeenCalledWith('computador');
+
+    rerender(<PhonePreview url="https://x" titulo="P" dispositivo="computador" onDispositivo={onDispositivo} />);
+    // Mesmo elemento: o rascunho que a prévia recebeu continua lá.
+    expect(screen.getByTitle('P')).toBe(antes);
+    expect(screen.getByTitle('P').style.width).toBe('1280px');
+  });
+
+  it('sem onDispositivo não mostra a troca', () => {
+    render(<PhonePreview url="https://x" titulo="P" />);
+    expect(screen.queryByRole('button', { name: /computador/i })).not.toBeInTheDocument();
+  });
+});

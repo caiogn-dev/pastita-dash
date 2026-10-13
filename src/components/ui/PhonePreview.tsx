@@ -18,9 +18,14 @@
  *
  * Recarregar troca a `key`, não o `src`: atribuir a mesma URL não refaz o
  * fetch, e o preview continuaria mostrando o estado anterior ao salvar.
+ *
+ * Celular/computador (13/10): a foto ao lado foi ao ar quebrada porque só se
+ * via a prévia em 390px — o defeito era da grade de 3 colunas do computador.
+ * No modo computador o iframe tem 1280px de verdade e é encolhido para caber;
+ * trocar de modo NÃO recria o iframe, então o rascunho ao vivo continua lá.
  */
-import React, { useState } from 'react';
-import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import React, { useEffect, useRef, useState } from 'react';
+import { ArrowPathIcon, ComputerDesktopIcon, DevicePhoneMobileIcon } from '@heroicons/react/24/outline';
 
 import { cn } from '../../utils/cn';
 
@@ -34,7 +39,22 @@ export interface PhonePreviewProps {
   /** Legenda sob a moldura (ex.: a própria URL pública). */
   rodape?: React.ReactNode;
   className?: string;
+  /** Recebe o elemento do iframe — para quem conversa com ele (prévia ao vivo). */
+  iframeRef?: (el: HTMLIFrameElement | null) => void;
+  dispositivo?: Dispositivo;
+  /** Com isto, aparece a troca celular/computador. */
+  onDispositivo?: (d: Dispositivo) => void;
 }
+
+export type Dispositivo = 'celular' | 'computador';
+
+const LARGURA_DO_COMPUTADOR = 1280;
+const ALTURA_DA_MOLDURA = 600;
+
+const DISPOSITIVOS: { valor: Dispositivo; rotulo: string; Icone: React.ComponentType<{ className?: string }> }[] = [
+  { valor: 'celular', rotulo: 'Celular', Icone: DevicePhoneMobileIcon },
+  { valor: 'computador', rotulo: 'Computador', Icone: ComputerDesktopIcon },
+];
 
 export const PhonePreview: React.FC<PhonePreviewProps> = ({
   url,
@@ -42,14 +62,50 @@ export const PhonePreview: React.FC<PhonePreviewProps> = ({
   aoVivo = false,
   rodape,
   className,
+  iframeRef,
+  dispositivo = 'celular',
+  onDispositivo,
 }) => {
   const [geracao, setGeracao] = useState(0);
+  const computador = dispositivo === 'computador';
+  // Escala do modo computador: 1280px de página dentro da largura da coluna.
+  const moldura = useRef<HTMLDivElement | null>(null);
+  const [escala, setEscala] = useState(0.3);
+  useEffect(() => {
+    const el = moldura.current;
+    if (!computador || !el || typeof ResizeObserver === 'undefined') return undefined;
+    const medir = () => setEscala(Math.min(1, el.clientWidth / LARGURA_DO_COMPUTADOR) || 0.3);
+    medir();
+    const ro = new ResizeObserver(medir);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [computador]);
 
   return (
     <div className={cn('flex flex-col items-center gap-3', className)}>
       <div className="flex w-full items-center justify-between gap-2">
         <p className="overline">{titulo}</p>
         <div className="flex items-center gap-2">
+          {onDispositivo && (
+            <div className="flex rounded-md border border-border-token p-0.5" role="group" aria-label="Tamanho da tela">
+              {DISPOSITIVOS.map(({ valor, rotulo, Icone }) => (
+                <button
+                  key={valor}
+                  type="button"
+                  aria-label={rotulo}
+                  title={rotulo}
+                  aria-pressed={dispositivo === valor}
+                  onClick={() => onDispositivo(valor)}
+                  className={cn(
+                    'rounded p-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                    dispositivo === valor ? 'bg-brand-soft text-brand-ink' : 'text-fg-muted-token hover:text-fg-token'
+                  )}
+                >
+                  <Icone className="h-4 w-4" />
+                </button>
+              ))}
+            </div>
+          )}
           {aoVivo && (
             <span className="flex items-center gap-1.5 text-caption text-fg-muted-token">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--success)]" aria-hidden />
@@ -70,13 +126,28 @@ export const PhonePreview: React.FC<PhonePreviewProps> = ({
 
       {/* Moldura: 390×760 é o iPhone de referência — a menor largura em que
           vale garantir que o conteúdo respira. */}
-      <div className="w-full max-w-[390px] overflow-hidden rounded-[2rem] border-8 border-fg-token/85 bg-surface shadow-xl">
+      <div
+        ref={moldura}
+        className={cn(
+          'w-full overflow-hidden bg-surface shadow-xl',
+          computador
+            ? 'rounded-lg border-4 border-fg-token/85'
+            : 'max-w-[390px] rounded-[2rem] border-8 border-fg-token/85'
+        )}
+        style={computador ? { height: ALTURA_DA_MOLDURA } : undefined}
+      >
         {url ? (
           <iframe
             key={geracao}
+            ref={iframeRef}
             src={url}
             title={titulo}
-            className="h-[600px] w-full border-0 bg-white"
+            className={cn('border-0 bg-white', computador ? 'origin-top-left' : 'h-[600px] w-full')}
+            style={computador ? {
+              width: `${LARGURA_DO_COMPUTADOR}px`,
+              height: `${Math.round(ALTURA_DA_MOLDURA / escala)}px`,
+              transform: `scale(${escala})`,
+            } : undefined}
             // A página pública é nossa, mas o iframe não precisa de nada além
             // de rodar e navegar — sem top-navigation, sem downloads.
             sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
@@ -110,7 +181,7 @@ export const PhonePreview: React.FC<PhonePreviewProps> = ({
         </p>
       )}
 
-      {rodape && <div className="w-full max-w-[390px] text-center">{rodape}</div>}
+      {rodape && <div className={cn('w-full text-center', !computador && 'max-w-[390px]')}>{rodape}</div>}
     </div>
   );
 };
