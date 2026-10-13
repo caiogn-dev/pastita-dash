@@ -81,8 +81,13 @@ export { Textarea } from './Textarea';
 export type { TextareaProps } from './Textarea';
 export { Aviso } from './Aviso';
 export type { AvisoProps, TomDoAviso } from './Aviso';
-// Storefront refeito (13/10): escolha com desenho do resultado e o salvar único da página.
-export { EscolhaVisual } from './EscolhaVisual';
-export type { EscolhaVisualProps, OpcaoVisual } from './EscolhaVisual';
+// Editor do Storefront (13/10): painel de propriedades (Figma/Framer/editor de
+// tema da Shopify) e o salvar único da página.
+export { Segmentado } from './Segmentado';
+export type { SegmentadoProps, OpcaoSegmentada } from './Segmentado';
+export { Deslizador } from './Deslizador';
+export type { DeslizadorProps } from './Deslizador';
+export { Propriedade } from './Propriedade';
+export type { PropriedadeProps } from './Propriedade';
 export { BarraDeAlteracoes } from './BarraDeAlteracoes';
 export type { BarraDeAlteracoesProps } from './BarraDeAlteracoes';

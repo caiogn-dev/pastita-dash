@@ -7,9 +7,14 @@ import {
   apagarBanner, listarBanners, subirBanner, MAXIMO_DE_BANNERS, type BannerDoCardapio,
 } from '../../services/storesApi';
 import logger from '../../services/logger';
+import { cn } from '../../utils/cn';
 
 interface BannersSectionProps {
   storeId: string;
+  /** Dentro do painel de propriedades do Storefront: sem cartão nem cabeçalho. */
+  embutida?: boolean;
+  /** Banner enviado ou apagado (a prévia recarrega para buscar). */
+  onMudou?: () => void;
 }
 
 /**
@@ -19,7 +24,7 @@ interface BannersSectionProps {
  * então 1 foto já basta. Isto é diferente da CAPA: a capa é a identidade fixa atrás do logo; o banner
  * é a promoção da semana.
  */
-export const BannersSection: React.FC<BannersSectionProps> = ({ storeId }) => {
+export const BannersSection: React.FC<BannersSectionProps> = ({ storeId, embutida = false, onMudou }) => {
   const [banners, setBanners] = useState<BannerDoCardapio[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [enviando, setEnviando] = useState(false);
@@ -48,6 +53,7 @@ export const BannersSection: React.FC<BannersSectionProps> = ({ storeId }) => {
     try {
       const novo = await subirBanner(storeId, arquivo);
       setBanners((atuais) => [...atuais, novo]);
+      onMudou?.();
     } catch (e: unknown) {
       logger.error('Erro ao subir banner:', e);
       const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
@@ -56,7 +62,7 @@ export const BannersSection: React.FC<BannersSectionProps> = ({ storeId }) => {
       setEnviando(false);
       if (entrada.current) entrada.current.value = '';
     }
-  }, [storeId]);
+  }, [storeId, onMudou]);
 
   const apagar = useCallback(async (id: string) => {
     setErro('');
@@ -64,12 +70,75 @@ export const BannersSection: React.FC<BannersSectionProps> = ({ storeId }) => {
     setBanners((atuais) => atuais.filter((b) => b.id !== id));
     try {
       await apagarBanner(storeId, id);
+      onMudou?.();
     } catch (e) {
       logger.error('Erro ao apagar banner:', e);
       setBanners(antes);
       setErro('Não consegui apagar. Tente de novo.');
     }
-  }, [banners, storeId]);
+  }, [banners, storeId, onMudou]);
+
+  const conteudo = (
+    <>
+      {carregando ? (
+        <Loading rotulo="Carregando banners" />
+      ) : (
+        <ul className={embutida ? 'grid grid-cols-3 gap-2' : 'grid grid-cols-1 gap-3 sm:grid-cols-3'}>
+          {banners.map((b, i) => (
+            <li key={b.id} className="relative overflow-hidden rounded-lg border border-border-token">
+              <img src={b.url} alt={`Banner ${i + 1}`} className="aspect-square w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => apagar(b.id)}
+                aria-label={`Apagar banner ${i + 1}`}
+                className={cn(
+                  'absolute flex items-center justify-center rounded-full bg-surface text-danger-500 shadow focus:outline-none focus:ring-2 focus:ring-brand',
+                  embutida ? 'right-1 top-1 h-7 w-7' : 'right-2 top-2 h-8 w-8'
+                )}
+              >
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            </li>
+          ))}
+          {!cheio && (
+            <li>
+              <button
+                type="button"
+                onClick={() => entrada.current?.click()}
+                disabled={enviando}
+                className="flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border-token text-sm text-fg-muted-token hover:border-[var(--brand)] hover:text-fg-token focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-60"
+              >
+                <PhotoIcon className="h-6 w-6" />
+                {enviando ? 'Enviando...' : embutida ? 'Adicionar' : 'Adicionar banner'}
+              </button>
+            </li>
+          )}
+        </ul>
+      )}
+
+      <input
+        ref={entrada}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        aria-label="Arquivo do banner"
+        onChange={(e) => escolher(e.target.files?.[0])}
+      />
+    </>
+  );
+
+  if (embutida) {
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <span className="text-caption font-semibold text-fg-muted-token">Quadrado 1080 × 1080</span>
+          <span className="text-caption tabular-nums text-fg-muted-token">{banners.length}/{MAXIMO_DE_BANNERS}</span>
+        </div>
+        {conteudo}
+        {erro && <p role="alert" className="text-sm text-danger-500">{erro}</p>}
+      </div>
+    );
+  }
 
   return (
     <Card className="p-6">
@@ -85,47 +154,7 @@ export const BannersSection: React.FC<BannersSectionProps> = ({ storeId }) => {
         </span>
       </div>
 
-      {carregando ? (
-        <Loading rotulo="Carregando banners" />
-      ) : (
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {banners.map((b, i) => (
-            <li key={b.id} className="relative overflow-hidden rounded-lg border border-border-token">
-              <img src={b.url} alt={`Banner ${i + 1}`} className="aspect-square w-full object-cover" />
-              <button
-                type="button"
-                onClick={() => apagar(b.id)}
-                aria-label={`Apagar banner ${i + 1}`}
-                className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-surface text-danger-500 shadow focus:outline-none focus:ring-2 focus:ring-brand"
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
-            </li>
-          ))}
-          {!cheio && (
-            <li>
-              <button
-                type="button"
-                onClick={() => entrada.current?.click()}
-                disabled={enviando}
-                className="flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border-token text-sm text-fg-muted-token hover:border-[var(--brand)] hover:text-fg-token focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-60"
-              >
-                <PhotoIcon className="h-6 w-6" />
-                {enviando ? 'Enviando...' : 'Adicionar banner'}
-              </button>
-            </li>
-          )}
-        </ul>
-      )}
-
-      <input
-        ref={entrada}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        aria-label="Arquivo do banner"
-        onChange={(e) => escolher(e.target.files?.[0])}
-      />
+      {conteudo}
       <p className="mt-3 text-xs text-fg-muted-token">Imagem quadrada (1:1), ex.: 1080 × 1080. Texto grande e no centro.</p>
       {erro && <p role="alert" className="mt-2 text-sm text-danger-500">{erro}</p>}
     </Card>

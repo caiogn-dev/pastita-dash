@@ -74,3 +74,23 @@ describe('PhonePreview — computador e canal ao vivo', () => {
     expect(screen.queryByRole('button', { name: /computador/i })).not.toBeInTheDocument();
   });
 });
+
+describe('PhonePreview — tela do editor', () => {
+  it('preencher: a moldura usa a altura que tiver', () => {
+    render(<PhonePreview url="https://x" titulo="P" preencher />);
+    expect(screen.getByTestId('moldura-da-previa').className).toContain('flex-1');
+  });
+
+  it('sobreposição aparece por cima da página sem desmontar o iframe', () => {
+    const { rerender } = render(<PhonePreview url="https://x" titulo="P" />);
+    const antes = screen.getByTitle('P');
+    rerender(<PhonePreview url="https://x" titulo="P" sobreposicao={<p>Pedido confirmado!</p>} />);
+    expect(screen.getByText('Pedido confirmado!')).toBeInTheDocument();
+    expect(screen.getByTitle('P')).toBe(antes);
+  });
+
+  it('ações extras entram no cabeçalho', () => {
+    render(<PhonePreview url="https://x" titulo="P" acoesExtras={<button type="button">Inspecionar</button>} />);
+    expect(screen.getByRole('button', { name: 'Inspecionar' })).toBeInTheDocument();
+  });
+});

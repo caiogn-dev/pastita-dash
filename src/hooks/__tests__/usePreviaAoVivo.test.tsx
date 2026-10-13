@@ -69,3 +69,45 @@ describe('usePreviaAoVivo', () => {
     expect(() => result.current.enviarRascunho({})).not.toThrow();
   });
 });
+
+describe('usePreviaAoVivo — inspetor (clicar na prévia)', () => {
+  it('liga o inspetor e reenvia quando a prévia recarrega', () => {
+    const f = iframeFalso();
+    const { result } = renderHook(() => usePreviaAoVivo(`${ORIGEM}/preview/ce`));
+    act(() => { result.current.registrarIframe(f.el); });
+    act(() => { result.current.inspecionar(true); });
+    expect(f.postMessage).toHaveBeenCalledWith({ tipo: 'cardapidex:inspecionar', ligado: true }, ORIGEM);
+    f.postMessage.mockClear();
+    act(() => {
+      window.dispatchEvent(new MessageEvent('message', {
+        origin: ORIGEM, source: f.contentWindow as MessageEventSource, data: { tipo: 'cardapidex:previa-pronta' },
+      }));
+    });
+    expect(f.postMessage).toHaveBeenCalledWith({ tipo: 'cardapidex:inspecionar', ligado: true }, ORIGEM);
+  });
+
+  it('clique numa parte da prévia chega como área selecionada', () => {
+    const f = iframeFalso();
+    const onSelecionar = jest.fn();
+    const { result } = renderHook(() => usePreviaAoVivo(`${ORIGEM}/preview/ce`, { onSelecionar }));
+    act(() => { result.current.registrarIframe(f.el); });
+    act(() => {
+      window.dispatchEvent(new MessageEvent('message', {
+        origin: ORIGEM, source: f.contentWindow as MessageEventSource, data: { tipo: 'cardapidex:selecionar', area: 'cartao' },
+      }));
+    });
+    expect(onSelecionar).toHaveBeenCalledWith('cartao');
+  });
+
+  it('área desconhecida ou origem estranha não seleciona nada', () => {
+    const f = iframeFalso();
+    const onSelecionar = jest.fn();
+    const { result } = renderHook(() => usePreviaAoVivo(`${ORIGEM}/preview/ce`, { onSelecionar }));
+    act(() => { result.current.registrarIframe(f.el); });
+    act(() => {
+      window.dispatchEvent(new MessageEvent('message', { origin: ORIGEM, data: { tipo: 'cardapidex:selecionar', area: 'body' } }));
+      window.dispatchEvent(new MessageEvent('message', { origin: 'https://evil.com', data: { tipo: 'cardapidex:selecionar', area: 'topo' } }));
+    });
+    expect(onSelecionar).not.toHaveBeenCalled();
+  });
+});

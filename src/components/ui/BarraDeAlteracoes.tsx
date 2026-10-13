@@ -17,6 +17,8 @@ export interface BarraDeAlteracoesProps {
   salvando?: boolean;
   onSalvar: () => void;
   onDescartar: () => void;
+  /** Na barra de ferramentas da página (editor), sem flutuar. */
+  embutida?: boolean;
   className?: string;
 }
 
@@ -25,6 +27,7 @@ export const BarraDeAlteracoes: React.FC<BarraDeAlteracoesProps> = ({
   salvando = false,
   onSalvar,
   onDescartar,
+  embutida = false,
   className,
 }) => {
   if (quantidade <= 0) return null;
@@ -33,7 +36,9 @@ export const BarraDeAlteracoes: React.FC<BarraDeAlteracoesProps> = ({
       role="region"
       aria-label="Alterações não salvas"
       className={cn(
-        'superficie-alta sticky bottom-4 z-20 flex items-center justify-between gap-3 px-4 py-3',
+        embutida
+          ? 'flex items-center gap-3'
+          : 'superficie-alta sticky bottom-4 z-20 flex items-center justify-between gap-3 px-4 py-3',
         className
       )}
     >
@@ -42,10 +47,10 @@ export const BarraDeAlteracoes: React.FC<BarraDeAlteracoesProps> = ({
         {quantidade} {quantidade === 1 ? 'alteração' : 'alterações'}
       </span>
       <div className="flex items-center gap-2">
-        <Button variant="ghost" onClick={onDescartar} disabled={salvando}>
+        <Button variant="ghost" size={embutida ? 'sm' : undefined} onClick={onDescartar} disabled={salvando}>
           Descartar
         </Button>
-        <Button onClick={onSalvar} isLoading={salvando} disabled={salvando}>
+        <Button size={embutida ? 'sm' : undefined} onClick={onSalvar} isLoading={salvando} disabled={salvando}>
           Salvar
         </Button>
       </div>

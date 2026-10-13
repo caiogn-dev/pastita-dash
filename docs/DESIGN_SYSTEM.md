@@ -47,15 +47,18 @@ Aviso, Button, Card, StatCard, KpiGrid, Input/SearchInput, NumberField, Select, 
 FormStepper, FormSummary, FormChecklist, StringListField, Secao, PageShell, PageTabs, Tabela,
 Paginacao, RowActions, Badge, SeloDeEstado, Progresso, Verificacao, AcaoCard, EmptyState,
 Skeleton, Modal, Dropdown, Toast, Sparkline, RankedList, InsightList, PhonePreview, estados,
-EscolhaVisual, BarraDeAlteracoes.
+Segmentado, Deslizador, Propriedade, BarraDeAlteracoes.
 
-- **Aparência = `EscolhaVisual`, não `ChoiceCards`** (13/10). Escolha de como algo FICA (foto ao
-  lado, formato, logo redondo) mostra o resultado desenhado — com a foto/logo reais da loja quando
-  houver — e o nome curto embaixo. "Direita — Lista estilo iFood" em texto obriga a imaginar.
-- **Editor com prévia = rascunho ao vivo + `BarraDeAlteracoes`** (padrão do editor de tema da
-  Shopify). Cada mudança vai na hora para a `PhonePreview` (iframe real, `usePreviaAoVivo`), a
-  parte mexida acende na prévia, e UM salvar para a página inteira aparece só com alteração.
-  Nunca dois botões de salvar na mesma tela; nunca prévia que só muda depois de gravar.
+- **Editor com prévia = três colunas** (13/10, padrão do editor de tema da Shopify e de
+  Figma/Framer; o designer de etiqueta já era assim). `PageShell variante="quadro"`; à esquerda as
+  partes (o que se edita), no meio a página DE VERDADE (`PhonePreview preencher`, rascunho ao vivo
+  por `usePreviaAoVivo`, celular/computador), à direita as propriedades da parte escolhida em
+  linhas `Propriedade` (rótulo curto + controle compacto). Clicar numa parte da prévia abre a
+  configuração dela (inspetor). UM salvar, na barra de cima (`BarraDeAlteracoes embutida`), só
+  com alteração. Referência: `StorefrontPage.tsx`.
+- **Escolha de aparência = `Segmentado`** (ícone que desenha o resultado + nome curto;
+  `empilhado` quando o nome não cabe ao lado). Número que se ajusta olhando = `Deslizador`.
+  O resultado aparece na prévia — não desenhe miniaturas grandes nem explique em texto.
 
 ## 5. Ordem de migração (pela contagem de cor crua)
 Pedidos (73) · Pagamentos (70) · Dashboard (47) · Clientes (39) · Automações (28) · Inbox do

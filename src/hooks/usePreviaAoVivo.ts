@@ -15,18 +15,29 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 export const TIPO_RASCUNHO = 'cardapidex:rascunho';
 export const TIPO_FOCAR = 'cardapidex:focar';
 export const TIPO_PRONTA = 'cardapidex:previa-pronta';
+export const TIPO_INSPECIONAR = 'cardapidex:inspecionar';
+export const TIPO_SELECIONAR = 'cardapidex:selecionar';
 
 /** Partes da vitrine que a prévia sabe destacar. */
-export type AreaDaPrevia = 'topo' | 'cartao' | 'estoque' | 'peca-novamente';
+export type AreaDaPrevia = 'topo' | 'banners' | 'cartao' | 'estoque' | 'peca-novamente';
+const AREAS: AreaDaPrevia[] = ['topo', 'banners', 'cartao', 'estoque', 'peca-novamente'];
 
 export interface RascunhoDaPrevia {
   exibicao?: unknown;
   loja?: Record<string, unknown>;
 }
 
-export function usePreviaAoVivo(url: string) {
+export interface OpcoesDaPrevia {
+  /** Dono clicou numa parte da prévia com o inspetor ligado. */
+  onSelecionar?: (area: AreaDaPrevia) => void;
+}
+
+export function usePreviaAoVivo(url: string, { onSelecionar }: OpcoesDaPrevia = {}) {
   const iframe = useRef<HTMLIFrameElement | null>(null);
   const ultimo = useRef<RascunhoDaPrevia | null>(null);
+  const inspetorLigado = useRef(false);
+  const aoSelecionar = useRef(onSelecionar);
+  aoSelecionar.current = onSelecionar;
 
   const origem = useMemo(() => {
     try {
@@ -48,9 +59,14 @@ export function usePreviaAoVivo(url: string) {
   useEffect(() => {
     if (!origem) return undefined;
     const aoReceber = (e: MessageEvent) => {
-      if (e.origin !== origem || e.data?.tipo !== TIPO_PRONTA) return;
+      if (e.origin !== origem) return;
       if (e.source && iframe.current?.contentWindow && e.source !== iframe.current.contentWindow) return;
-      if (ultimo.current) postar({ tipo: TIPO_RASCUNHO, ...ultimo.current });
+      if (e.data?.tipo === TIPO_PRONTA) {
+        if (ultimo.current) postar({ tipo: TIPO_RASCUNHO, ...ultimo.current });
+        postar({ tipo: TIPO_INSPECIONAR, ligado: inspetorLigado.current });
+      } else if (e.data?.tipo === TIPO_SELECIONAR && AREAS.includes(e.data.area)) {
+        aoSelecionar.current?.(e.data.area);
+      }
     };
     window.addEventListener('message', aoReceber);
     return () => window.removeEventListener('message', aoReceber);
@@ -70,7 +86,15 @@ export function usePreviaAoVivo(url: string) {
 
   const focar = useCallback((area: AreaDaPrevia) => postar({ tipo: TIPO_FOCAR, area }), [postar]);
 
-  return { registrarIframe, enviarRascunho, focar };
+  const inspecionar = useCallback(
+    (ligado: boolean) => {
+      inspetorLigado.current = ligado;
+      postar({ tipo: TIPO_INSPECIONAR, ligado });
+    },
+    [postar]
+  );
+
+  return { registrarIframe, enviarRascunho, focar, inspecionar };
 }
 
 export default usePreviaAoVivo;

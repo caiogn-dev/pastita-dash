@@ -1,33 +1,33 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import React, { Fragment, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import {
+  ArrowTopRightOnSquareIcon,
+  CheckCircleIcon,
+  ComputerDesktopIcon,
+  CursorArrowRaysIcon,
+  DevicePhoneMobileIcon,
+} from '@heroicons/react/24/outline';
+
 import { getStore, updateStore, updateStoreWithFiles, type Store } from '../../services/storesApi';
 import { getErrorMessage } from '../../services';
 import { useStore } from '../../hooks';
 import { usePreviaAoVivo, type AreaDaPrevia } from '../../hooks/usePreviaAoVivo';
 import { buildStorefrontUrl, buildStorefrontPreviewUrl } from '../../utils/storefrontUrl';
-import {
-  BarraDeAlteracoes,
-  Button,
-  Card,
-  Input,
-  PageShell,
-  PageTabs,
-  PhonePreview,
-  Secao,
-  type Dispositivo,
-} from '../../components/ui';
-import {
-  ArrowUpTrayIcon,
-  GlobeAltIcon,
-  PhotoIcon,
-  RectangleGroupIcon,
-  SwatchIcon,
-  Squares2X2Icon,
-} from '@heroicons/react/24/outline';
+import { cn } from '../../utils/cn';
+import { BarraDeAlteracoes, Button, PageShell, PhonePreview, type Dispositivo } from '../../components/ui';
 import { buscarTemplates, TEMPLATES_DE_EMERGENCIA, type TemplateDoCardapio } from './templatesDoCardapio';
-import BannersSection from './BannersSection';
-import ExibicaoDoCardapioSection from './ExibicaoDoCardapioSection';
+import InspetorDaVitrine from './InspetorDaVitrine';
+import {
+  PARTES,
+  PARTE_DA_AREA,
+  PARTE_PADRAO,
+  definicaoDa,
+  ehParte,
+  parteMudou,
+  type FormDaVitrine,
+  type Parte,
+} from './partesDaVitrine';
 import {
   EXIBICAO_PADRAO,
   catalogoDaLojaService,
@@ -54,22 +54,12 @@ function validateImageFile(file: File, maxBytes: number): string | null {
 }
 
 /**
- * O tipo é `string`, não uma união fechada: os templates vêm do backend
+ * O template é `string`, não uma união fechada: os templates vêm do backend
  * (`GET /stores/templates/`), e uma união escrita aqui obrigaria deploy do
  * painel a cada template novo — que foi exatamente como o `banquete` ficou
  * invisível nesta tela.
  */
-type Template = string;
-
-interface StorefrontForm {
-  template: Template;
-  primary_color: string;
-  secondary_color: string;
-  tagline: string;
-  custom_domain: string;
-}
-
-const DEFAULT_FORM: StorefrontForm = {
+const DEFAULT_FORM: FormDaVitrine = {
   template: 'fresh',
   primary_color: '#2D6A4F',
   secondary_color: '#1B4332',
@@ -80,49 +70,66 @@ const DEFAULT_FORM: StorefrontForm = {
 /** Espelha a loja persistida no formato do formulário. Fonte única usada tanto
  *  na carga quanto no rollback do save — o rascunho nunca deve divergir do que
  *  o backend realmente guardou. */
-const formFromStore = (data: Store): StorefrontForm => ({
-  template: (data.template as Template) || DEFAULT_FORM.template,
+const formFromStore = (data: Store): FormDaVitrine => ({
+  template: data.template || DEFAULT_FORM.template,
   primary_color: data.primary_color || DEFAULT_FORM.primary_color,
   secondary_color: data.secondary_color || DEFAULT_FORM.secondary_color,
   tagline: data.tagline || DEFAULT_FORM.tagline,
   custom_domain: data.custom_domain || DEFAULT_FORM.custom_domain,
 });
 
-/**
- * Abas pela parte da vitrine que mudam. Abrir uma aba leva a prévia até essa
- * parte — mexer no topo e ficar olhando o rodapé é o que fazia a tela parecer
- * "botões sem efeito".
- */
-const ABAS = [
-  { id: 'marca', rotulo: 'Marca', icone: SwatchIcon },
-  { id: 'cardapio', rotulo: 'Cardápio', icone: Squares2X2Icon },
-  { id: 'banners', rotulo: 'Banners', icone: RectangleGroupIcon },
-  { id: 'endereco', rotulo: 'Endereço', icone: GlobeAltIcon },
-];
-const AREA_DA_ABA: Record<string, AreaDaPrevia | undefined> = {
-  marca: 'topo',
-  cardapio: 'cartao',
-  banners: 'topo',
-};
-
 const mensagemDoErro = (e: unknown) =>
   (e as { response?: { data?: { error?: string } } })?.response?.data?.error
   || getErrorMessage(e)
   || 'Não consegui salvar. Nada foi alterado.';
 
+/** Botão de ferramenta da barra de cima (mesmo desenho do designer de etiqueta). */
+const Ferramenta: React.FC<{ rotulo: string; ativo?: boolean; onClick: () => void; children: React.ReactNode }> = ({
+  rotulo, ativo, onClick, children,
+}) => (
+  <button
+    type="button"
+    title={rotulo}
+    aria-label={rotulo}
+    aria-pressed={ativo}
+    onClick={onClick}
+    className={cn(
+      'inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-md px-1.5 text-sm transition-colors',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+      ativo ? 'bg-brand-soft text-brand-ink' : 'text-fg-muted-token hover:bg-surface-2 hover:text-fg-token'
+    )}
+  >
+    {children}
+  </button>
+);
+
+const Separador: React.FC = () => <span className="mx-1 h-5 w-px bg-border-token" aria-hidden />;
+
+/** Tela de "pedido feito" por cima da prévia — ela precisa de um pedido real para existir. */
+const TelaDePedidoFeito: React.FC<{ titulo: string; mensagem: string }> = ({ titulo, mensagem }) => (
+  <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
+    <CheckCircleIcon className="h-16 w-16 text-success-token" aria-hidden />
+    <p className="text-lead font-semibold text-fg-token">{titulo}</p>
+    <p className="max-w-xs text-body text-fg-muted-token">{mensagem}</p>
+  </div>
+);
+
 /**
- * Storefront — editor da vitrine com a vitrine de verdade ao lado.
+ * Storefront — editor da vitrine em três colunas (13/10).
  *
- * Refeito em 13/10 (padrão do editor de tema da Shopify): tudo o que se mexe
- * aparece NA HORA na prévia (rascunho por postMessage, sem gravar), a parte
- * mexida acende, celular ou computador, e UM salvar para a página inteira que
- * só aparece quando há alteração. Antes: dois botões de salvar, prévia que só
- * mudava depois de gravar, e escolhas descritas em texto.
+ * Padrão de editor de tema (Shopify) e de ferramenta de desenho (Figma,
+ * Framer): partes da vitrine à esquerda, a vitrine DE VERDADE no meio — muda
+ * a cada clique, antes de salvar —, propriedades da parte escolhida à
+ * direita. Clicar numa parte da prévia abre a configuração dela (inspetor).
+ * Um salvar só, na barra de cima, que só aparece com alteração.
+ *
+ * Antes era uma página vertical: abas, cartões empilhados e a prévia num
+ * canto, mudando só depois de gravar.
  */
 export const StorefrontPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
   const { storeId: contextStoreId, stores } = useStore();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
 
   const storeData = stores.find(s => s.id === contextStoreId || s.slug === contextStoreId);
   const effectiveStoreId =
@@ -135,11 +142,12 @@ export const StorefrontPage: React.FC = () => {
   // Muda a cada save: remonta o iframe da prévia para mostrar o que foi gravado.
   const [geracaoDaPrevia, setGeracaoDaPrevia] = useState(0);
   const [dispositivo, setDispositivo] = useState<Dispositivo>('celular');
+  const [inspetorLigado, setInspetorLigado] = useState(true);
   const [store, setStore] = useState<Store | null>(null);
   // Os templates vêm do backend. Começa no fallback para a tela nunca abrir
   // sem opção nenhuma — aparência vazia é pior que lista de emergência.
   const [templates, setTemplates] = useState<TemplateDoCardapio[]>(TEMPLATES_DE_EMERGENCIA);
-  const [form, setForm] = useState<StorefrontForm>(DEFAULT_FORM);
+  const [form, setForm] = useState<FormDaVitrine>(DEFAULT_FORM);
 
   const [exibicaoGravada, setExibicaoGravada] = useState<ExibicaoDoCardapio>(EXIBICAO_PADRAO);
   const [exibicao, setExibicao] = useState<ExibicaoDoCardapio>(EXIBICAO_PADRAO);
@@ -150,6 +158,11 @@ export const StorefrontPage: React.FC = () => {
   const [logoPreview, setLogoPreview] = useState('');
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState('');
+
+  // A parte aberta vive na URL (?parte=): recarregar não perde o lugar.
+  const parteDaUrl = params.get('parte');
+  const parte: Parte = ehParte(parteDaUrl) ? parteDaUrl : PARTE_PADRAO;
+  const definicao = definicaoDa(parte);
 
   // Track blob URLs so we can revoke them to avoid memory leaks
   const logoBlobRef = useRef<string | null>(null);
@@ -178,7 +191,7 @@ export const StorefrontPage: React.FC = () => {
 
   useEffect(() => { buscarTemplates().then(setTemplates); }, []);
 
-  // Exibição e um produto de verdade para os desenhos — por slug, depois da loja.
+  // Exibição e um produto de verdade (para a amostra do "ver mais").
   const slug = store?.slug || '';
   useEffect(() => {
     if (!slug) return undefined;
@@ -188,15 +201,24 @@ export const StorefrontPage: React.FC = () => {
       .catch((e) => console.error('[StorefrontPage] exibição:', e));
     catalogoDaLojaService.ler(slug)
       .then((c) => { if (vivo) setAmostra(escolherAmostra(c)); })
-      .catch(() => { /* sem amostra, os desenhos usam um bloco da marca */ });
+      .catch(() => { /* sem amostra, usa um texto de exemplo */ });
     return () => { vivo = false; };
   }, [slug]);
+
+  const irParaParte = useCallback((nova: Parte) => {
+    const next = new URLSearchParams(params);
+    next.set('parte', nova);
+    setParams(next, { replace: true });
+  }, [params, setParams]);
 
   const urlPublica = store ? buildStorefrontUrl(store) : null;
   // O iframe aponta para /preview/{slug}, não para a loja: a loja leva ao
   // checkout e por isso continua bloqueada para enquadramento.
   const urlPreview = store ? buildStorefrontPreviewUrl(store) : null;
-  const { registrarIframe, enviarRascunho, focar } = usePreviaAoVivo(urlPreview || '');
+  const { registrarIframe, enviarRascunho, focar, inspecionar } = usePreviaAoVivo(urlPreview || '', {
+    // Clicou numa parte da prévia: abre a configuração dela.
+    onSelecionar: (area: AreaDaPrevia) => irParaParte(PARTE_DA_AREA[area]),
+  });
 
   // Rascunho → prévia, a cada mudança (120 ms para não mandar por tecla).
   useEffect(() => {
@@ -217,36 +239,23 @@ export const StorefrontPage: React.FC = () => {
     return () => clearTimeout(t);
   }, [store, form, exibicao, logoFile, bannerFile, enviarRascunho]);
 
-  // Abrir uma aba leva a prévia até a parte que ela muda.
-  const abaAtiva = params.get('aba') || ABAS[0].id;
+  useEffect(() => { if (store) inspecionar(inspetorLigado); }, [store, inspetorLigado, inspecionar]);
+
+  // Abrir uma parte leva a prévia até ela.
   useEffect(() => {
-    const area = AREA_DA_ABA[abaAtiva];
-    if (area && store) focar(area);
-  }, [abaAtiva, store, focar]);
+    if (store && definicao.area) focar(definicao.area);
+  }, [store, definicao.area, focar]);
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const escolherImagem = (tipo: 'logo' | 'capa') => (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const err = validateImageFile(file, MAX_LOGO_SIZE);
+    const err = validateImageFile(file, tipo === 'logo' ? MAX_LOGO_SIZE : MAX_BANNER_SIZE);
     if (err) { toast.error(err); e.target.value = ''; return; }
-    if (logoBlobRef.current) URL.revokeObjectURL(logoBlobRef.current);
+    const ref = tipo === 'logo' ? logoBlobRef : bannerBlobRef;
+    if (ref.current) URL.revokeObjectURL(ref.current);
     const url = URL.createObjectURL(file);
-    logoBlobRef.current = url;
-    setLogoFile(file);
-    setLogoPreview(url);
-    focar('topo');
-  };
-
-  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const err = validateImageFile(file, MAX_BANNER_SIZE);
-    if (err) { toast.error(err); e.target.value = ''; return; }
-    if (bannerBlobRef.current) URL.revokeObjectURL(bannerBlobRef.current);
-    const url = URL.createObjectURL(file);
-    bannerBlobRef.current = url;
-    setBannerFile(file);
-    setBannerPreview(url);
+    ref.current = url;
+    if (tipo === 'logo') { setLogoFile(file); setLogoPreview(url); } else { setBannerFile(file); setBannerPreview(url); }
     focar('topo');
   };
 
@@ -262,18 +271,16 @@ export const StorefrontPage: React.FC = () => {
     setBannerPreview('');
   };
 
-  const mudarForm = (parcial: Partial<StorefrontForm>) => setForm((f) => ({ ...f, ...parcial }));
+  const mudarForm = (parcial: Partial<FormDaVitrine>) => setForm((f) => ({ ...f, ...parcial }));
   const mudarExibicao = (parcial: Partial<ExibicaoDoCardapio>) => {
     setExibicao((e) => ({ ...e, ...parcial }));
     setErroDaExibicao('');
+    if (definicao.area) focar(definicao.area);
   };
 
   // O que difere do que está gravado — conta para a barra de salvar.
-  const camposDaLojaMudados = useMemo(() => {
-    if (!store) return [] as (keyof StorefrontForm)[];
-    const salvo = formFromStore(store);
-    return (Object.keys(form) as (keyof StorefrontForm)[]).filter((k) => form[k] !== salvo[k]);
-  }, [form, store]);
+  const formSalvo = useMemo(() => (store ? formFromStore(store) : DEFAULT_FORM), [store]);
+  const camposDaLojaMudados = (Object.keys(form) as (keyof FormDaVitrine)[]).filter((k) => form[k] !== formSalvo[k]);
   const exibicaoMudada = diferencas(exibicaoGravada, exibicao);
   const lojaMudou = camposDaLojaMudados.length > 0 || Boolean(logoFile) || Boolean(bannerFile);
   const quantidadeDeAlteracoes =
@@ -299,11 +306,11 @@ export const StorefrontPage: React.FC = () => {
     if (!effectiveStoreId) return;
 
     if (!HEX_COLOR_RE.test(form.primary_color)) {
-      toast.error('Cor primária inválida. Use formato hexadecimal #RRGGBB.');
+      toast.error('Cor principal inválida. Use o formato #RRGGBB.');
       return;
     }
     if (!HEX_COLOR_RE.test(form.secondary_color)) {
-      toast.error('Cor secundária inválida. Use formato hexadecimal #RRGGBB.');
+      toast.error('Cor de destaque inválida. Use o formato #RRGGBB.');
       return;
     }
 
@@ -329,9 +336,8 @@ export const StorefrontPage: React.FC = () => {
           console.error('[StorefrontPage] salvar loja:', err);
           toast.error(getErrorMessage(err) || 'Erro ao salvar. Tente novamente.');
           // Rollback: o save FALHOU, então o backend não mudou. Sem isto o rascunho
-          // otimista (cartão de template destacado, cores, domínio) permanecia na
-          // tela dando a impressão de que salvou — a queixa era o cartão marcado
-          // num template que nunca foi persistido. Volta ao que a loja tem de fato.
+          // otimista (template destacado, cores, domínio) permanecia na tela dando
+          // a impressão de que salvou. Volta ao que a loja tem de fato.
           if (store) setForm(formFromStore(store));
         }
       }
@@ -360,245 +366,140 @@ export const StorefrontPage: React.FC = () => {
 
   if (!store) return <div className="p-6 text-fg-muted-token">Carregando...</div>;
 
-  const logoAtual = logoPreview || store.logo_url || '';
+  const temArquivo = Boolean(logoFile || bannerFile);
+  const Icone = definicao.icone;
 
   return (
     <PageShell
+      variante="quadro"
       trilha={[{ rotulo: 'Configurações' }, { rotulo: 'Storefront' }]}
       titulo="Storefront"
       acoes={
-        urlPublica ? (
-          <a href={urlPublica} target="_blank" rel="noopener noreferrer">
-            <Button variant="outline">Abrir cardápio</Button>
-          </a>
-        ) : undefined
+        <div className="flex flex-wrap items-center gap-1">
+          <Ferramenta rotulo="Celular" ativo={dispositivo === 'celular'} onClick={() => setDispositivo('celular')}>
+            <DevicePhoneMobileIcon className="h-4 w-4" />
+          </Ferramenta>
+          <Ferramenta rotulo="Computador" ativo={dispositivo === 'computador'} onClick={() => setDispositivo('computador')}>
+            <ComputerDesktopIcon className="h-4 w-4" />
+          </Ferramenta>
+          <Separador />
+          {quantidadeDeAlteracoes > 0 ? (
+            <BarraDeAlteracoes
+              embutida
+              quantidade={quantidadeDeAlteracoes}
+              salvando={saving}
+              onSalvar={() => void salvar()}
+              onDescartar={descartar}
+            />
+          ) : (
+            <span className="flex items-center gap-1.5 px-2 text-caption text-fg-muted-token">
+              <CheckCircleIcon className="h-4 w-4 text-success-token" aria-hidden />
+              Tudo salvo
+            </span>
+          )}
+          {urlPublica && (
+            <a href={urlPublica} target="_blank" rel="noopener noreferrer" className="ml-1">
+              <Button variant="outline" size="sm">
+                <ArrowTopRightOnSquareIcon className="mr-1 h-4 w-4" />
+                Abrir
+              </Button>
+            </a>
+          )}
+        </div>
       }
     >
-      {/* Editor à esquerda, cardápio real à direita, mudando a cada clique. */}
-      <div
-        className={
-          dispositivo === 'computador'
-            ? 'grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]'
-            : 'grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_420px]'
-        }
-      >
-        <div className="flex min-w-0 flex-col gap-6">
-          <PageTabs abas={ABAS} ariaLabel="Partes da vitrine">
-            {(aba) => (
-              <div className="flex flex-col gap-6">
-                {aba === 'marca' && (
-                  <>
-                    {/* Identidade do cardápio — capa + logo compostos como aparecem no cardápio real (WYSIWYG) */}
-                    <Card noPadding className="overflow-hidden">
-                      <div className="px-6 pt-5 pb-3 border-b border-border-token">
-                        <h2 className="font-display text-lg tracking-wide text-fg-token">Identidade do cardápio</h2>
-                        <p className="mt-0.5 text-sm text-fg-muted-token">Capa e logo, exatamente como abrem o topo do seu cardápio.</p>
-                      </div>
+      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[210px_minmax(0,1fr)_340px]">
+        {/* ── esquerda: partes da vitrine ── */}
+        <nav
+          aria-label="Partes da vitrine"
+          className="superficie flex gap-1 overflow-x-auto p-1.5 max-xl:col-span-full xl:flex-col xl:overflow-y-auto xl:p-2"
+        >
+          {PARTES.map((p) => {
+            const IconeDaParte = p.icone;
+            const ativa = p.id === parte;
+            const pendente = parteMudou(p, form, formSalvo, exibicao, exibicaoGravada, temArquivo);
+            return (
+              <Fragment key={p.id}>
+                {p.grupo && <span className="hidden xl:my-1 xl:block xl:h-px xl:bg-border-token" aria-hidden />}
+                <button
+                  type="button"
+                  aria-pressed={ativa}
+                  onClick={() => irParaParte(p.id)}
+                  className={cn(
+                    'flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-left text-body transition-colors',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                    ativa ? 'bg-brand-soft font-semibold text-brand-ink' : 'text-fg-muted-token hover:bg-surface-2 hover:text-fg-token'
+                  )}
+                >
+                  <IconeDaParte className="h-[18px] w-[18px] shrink-0" />
+                  <span className="flex-1 truncate">{p.rotulo}</span>
+                  {pendente && (
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" aria-label="Alterado, ainda não salvo" />
+                  )}
+                </button>
+              </Fragment>
+            );
+          })}
+        </nav>
 
-                      {/* Composição capa + logo sobreposto */}
-                      <div className="relative">
-                        {/* Capa (banner) */}
-                        <label className="group relative block h-44 w-full cursor-pointer overflow-hidden bg-surface-2">
-                          {bannerPreview || store?.banner_url ? (
-                            <img
-                              src={bannerPreview || store?.banner_url || ''}
-                              alt="Capa do cardápio"
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                          ) : (
-                            <div
-                              className="flex h-full flex-col items-center justify-center text-fg-muted-token"
-                              style={{ background: 'linear-gradient(135deg, var(--surface-2), var(--surface))' }}
-                            >
-                              <PhotoIcon className="mb-1.5 h-7 w-7 opacity-70" />
-                              <span className="text-sm font-medium">Adicionar capa do cardápio</span>
-                              <span className="mt-0.5 text-xs opacity-70">1200 × 400px</span>
-                            </div>
-                          )}
-                          {/* scrim inferior p/ legibilidade do logo/nome */}
-                          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
-                          {/* realce no hover/foco com o ouro da marca */}
-                          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
-                            <span
-                              className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold text-[#1A1613]"
-                              style={{ backgroundColor: 'var(--brand)' }}
-                            >
-                              <ArrowUpTrayIcon className="h-4 w-4" />
-                              {bannerFile || store?.banner_url ? 'Trocar capa' : 'Enviar capa'}
-                            </span>
-                          </div>
-                          <input type="file" accept="image/*" className="sr-only" onChange={handleBannerChange} aria-label="Enviar capa do cardápio" />
-                        </label>
-
-                        {/* Logo sobreposto à capa (avatar sobre cover) */}
-                        <div className="absolute -bottom-10 left-6 z-10">
-                          <label
-                            className="group relative block h-24 w-24 cursor-pointer overflow-hidden rounded-2xl bg-surface-2"
-                            style={{ boxShadow: '0 0 0 4px var(--surface), 0 10px 26px -10px rgba(0,0,0,.5)' }}
-                          >
-                            {logoPreview || store?.logo_url ? (
-                              <img
-                                src={logoPreview || store?.logo_url || ''}
-                                alt="Logo da loja"
-                                className="h-full w-full object-cover"
-                                loading="lazy"
-                                decoding="async"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full flex-col items-center justify-center text-fg-muted-token">
-                                <span className="text-2xl">🏪</span>
-                                <span className="mt-0.5 text-badge font-medium">Logo</span>
-                              </div>
-                            )}
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
-                              <ArrowUpTrayIcon className="h-5 w-5" style={{ color: 'var(--brand)' }} />
-                            </div>
-                            <input type="file" accept="image/*" className="sr-only" onChange={handleLogoChange} aria-label="Enviar logo da loja" />
-                          </label>
-                        </div>
-                      </div>
-
-                      {/* Nome da loja + acento da cor primária + ações contextuais */}
-                      <div className="flex items-end justify-between gap-4 pb-5 pl-32 pr-6 pt-3">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="h-3.5 w-1 rounded-full" style={{ backgroundColor: HEX_COLOR_RE.test(form.primary_color) ? form.primary_color : 'var(--brand)' }} />
-                            <h3 className="truncate font-display text-base text-fg-token">{store?.name || 'Sua loja'}</h3>
-                          </div>
-                          <p className="mt-1 text-xs text-fg-muted-token">PNG ou JPG. Capa 1200×400px, logo 400×400px.</p>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-3 pb-0.5">
-                          {logoPreview && (
-                            <button type="button" onClick={clearLogo} className="text-xs text-fg-muted-token transition-colors hover:text-[var(--danger)]">Remover logo</button>
-                          )}
-                          {bannerPreview && (
-                            <button type="button" onClick={clearBanner} className="text-xs text-fg-muted-token transition-colors hover:text-[var(--danger)]">Remover capa</button>
-                          )}
-                        </div>
-                      </div>
-                    </Card>
-
-                    <Secao titulo="Template">
-                      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                        {templates.map(t => (
-                          <button
-                            key={t.id}
-                            type="button"
-                            title={t.description}
-                            onClick={() => mudarForm({ template: t.id })}
-                            className={`p-4 rounded border-2 text-left transition-all ${
-                              form.template === t.id
-                                ? 'border-brand bg-brand-soft'
-                                : 'border-border-token hover:bg-surface-2'
-                            }`}
-                          >
-                            <div className="text-2xl mb-2">{t.preview}</div>
-                            <div className="font-semibold text-sm text-fg-token">{t.label}</div>
-                          </button>
-                        ))}
-                      </div>
-                    </Secao>
-
-                    <Secao titulo="Cores da marca">
-                      <div className="grid grid-cols-2 gap-4">
-                        {([
-                          ['primary_color', 'Cor primária'],
-                          ['secondary_color', 'Cor secundária'],
-                        ] as const).map(([campo, rotulo]) => (
-                          <label key={campo} className="block">
-                            <span className="text-sm text-fg-muted-token">{rotulo}</span>
-                            <div className="mt-1 flex items-center gap-3">
-                              <input
-                                type="color"
-                                aria-label={rotulo}
-                                value={HEX_COLOR_RE.test(form[campo]) ? form[campo] : '#000000'}
-                                onChange={e => mudarForm({ [campo]: e.target.value })}
-                                className="w-10 h-10 rounded cursor-pointer border border-border-token"
-                              />
-                              <input
-                                type="text"
-                                value={form[campo]}
-                                onChange={e => mudarForm({ [campo]: e.target.value })}
-                                className="flex-1 rounded border border-border-token bg-surface text-fg-token px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand"
-                                maxLength={7}
-                              />
-                            </div>
-                          </label>
-                        ))}
-                      </div>
-                    </Secao>
-
-                    <Secao titulo="Frase do topo">
-                      <Input
-                        label={`Frase (${form.tagline.length}/200)`}
-                        value={form.tagline}
-                        onChange={e => mudarForm({ tagline: e.target.value })}
-                        placeholder="Ex: Saladas frescas todo dia"
-                        maxLength={200}
-                      />
-                    </Secao>
-                  </>
-                )}
-
-                {aba === 'cardapio' && (
-                  <>
-                    <ExibicaoDoCardapioSection
-                      valor={exibicao}
-                      gravado={exibicaoGravada}
-                      onMudar={mudarExibicao}
-                      onFocar={focar}
-                      amostra={amostra}
-                      logoUrl={logoAtual}
-                      nomeDaLoja={store.name}
-                    />
-                    {erroDaExibicao && <p role="alert" className="text-sm text-danger-token">{erroDaExibicao}</p>}
-                  </>
-                )}
-
-                {aba === 'banners' && store.id && <BannersSection storeId={store.id} />}
-
-                {aba === 'endereco' && (
-                  <Secao titulo="Domínio próprio">
-                    <Input
-                      label="Domínio"
-                      value={form.custom_domain}
-                      onChange={e => mudarForm({ custom_domain: e.target.value })}
-                      placeholder="loja.com.br"
-                    />
-                    <p className="mt-2 text-caption text-fg-muted-token">
-                      Sem domínio: cardapidex.com.br/{store.slug}
-                    </p>
-                  </Secao>
-                )}
-              </div>
-            )}
-          </PageTabs>
-
-          <BarraDeAlteracoes
-            quantidade={quantidadeDeAlteracoes}
-            salvando={saving}
-            onSalvar={() => void salvar()}
-            onDescartar={descartar}
-          />
-        </div>
-
-        <aside className="xl:sticky xl:top-4 xl:self-start">
+        {/* ── meio: a vitrine de verdade ── */}
+        <section
+          aria-label="Prévia da vitrine"
+          className="flex min-h-[620px] min-w-0 flex-col rounded-xl bg-surface-2 p-3 max-lg:order-last lg:min-h-0"
+        >
           <PhonePreview
             key={geracaoDaPrevia}
             url={urlPreview || ''}
             titulo="Como o cliente vê"
             aoVivo
+            preencher
             iframeRef={registrarIframe}
             dispositivo={dispositivo}
-            onDispositivo={setDispositivo}
-            rodape={
-              urlPublica ? (
-                <code className="text-caption text-fg-muted-token">{urlPublica}</code>
-              ) : null
+            acoesExtras={
+              <Ferramenta
+                rotulo="Inspecionar: clique numa parte da prévia para editar"
+                ativo={inspetorLigado}
+                onClick={() => setInspetorLigado((v) => !v)}
+              >
+                <CursorArrowRaysIcon className="h-4 w-4" />
+              </Ferramenta>
             }
+            sobreposicao={parte === 'pedido' ? (
+              <TelaDePedidoFeito
+                titulo={exibicao.agradecimento_titulo.trim() || 'Pedido confirmado!'}
+                mensagem={exibicao.agradecimento_subtitulo.trim() || 'Seu pedido foi processado com sucesso.'}
+              />
+            ) : undefined}
           />
+        </section>
+
+        {/* ── direita: propriedades da parte escolhida ── */}
+        <aside aria-label={definicao.rotulo} className="superficie flex min-h-0 flex-col overflow-hidden">
+          <header className="flex items-center gap-2.5 border-b border-border-token px-4 py-3">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-soft text-brand-ink" aria-hidden>
+              <Icone className="h-[18px] w-[18px]" />
+            </span>
+            <h2 className="text-base font-semibold text-fg-token">{definicao.rotulo}</h2>
+          </header>
+          <div className="min-h-0 flex-1 overflow-y-auto p-4">
+            <InspetorDaVitrine
+              parte={parte}
+              form={form}
+              formSalvo={formSalvo}
+              mudarForm={mudarForm}
+              exibicao={exibicao}
+              exibicaoSalva={exibicaoGravada}
+              mudarExibicao={mudarExibicao}
+              templates={templates}
+              loja={store}
+              logo={{ url: logoPreview || store.logo_url || '', pendente: Boolean(logoFile), onEscolher: escolherImagem('logo'), onRemover: clearLogo }}
+              capa={{ url: bannerPreview || store.banner_url || '', pendente: Boolean(bannerFile), onEscolher: escolherImagem('capa'), onRemover: clearBanner }}
+              amostra={amostra}
+              urlPublica={urlPublica}
+              onBannersMudaram={() => setGeracaoDaPrevia((g) => g + 1)}
+            />
+            {erroDaExibicao && <p role="alert" className="mt-4 text-sm text-danger-token">{erroDaExibicao}</p>}
+          </div>
         </aside>
       </div>
     </PageShell>

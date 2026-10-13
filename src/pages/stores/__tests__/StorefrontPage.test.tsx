@@ -1,5 +1,11 @@
+/**
+ * Storefront — editor em três colunas (13/10): partes da vitrine à esquerda,
+ * a vitrine de verdade no meio (muda a cada clique, sem salvar), propriedades
+ * da parte escolhida à direita. Clicar numa parte da prévia abre a
+ * configuração dela. Um salvar só, na barra de cima.
+ */
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { MemoryRouter } from 'react-router-dom';
 import { StorefrontPage } from '../StorefrontPage';
@@ -10,7 +16,6 @@ jest.mock('../../../services/storesApi', () => ({
   getStore: jest.fn(),
   updateStore: jest.fn(),
   updateStoreWithFiles: jest.fn(),
-  // A página monta a seção de banners, que lista ao abrir.
   MAXIMO_DE_BANNERS: 3,
   listarBanners: jest.fn().mockResolvedValue([]),
   subirBanner: jest.fn(),
@@ -41,8 +46,13 @@ jest.mock('../../../hooks', () => ({
 
 const enviarRascunho = jest.fn();
 const focar = jest.fn();
+const inspecionar = jest.fn();
+const previa: { onSelecionar?: (area: string) => void } = {};
 jest.mock('../../../hooks/usePreviaAoVivo', () => ({
-  usePreviaAoVivo: () => ({ registrarIframe: jest.fn(), enviarRascunho, focar }),
+  usePreviaAoVivo: (_url: string, opcoes: { onSelecionar?: (area: string) => void } = {}) => {
+    previa.onSelecionar = opcoes.onSelecionar;
+    return { registrarIframe: jest.fn(), enviarRascunho, focar, inspecionar };
+  },
 }));
 
 jest.mock('../../../utils/storefrontUrl', () => ({
@@ -50,9 +60,6 @@ jest.mock('../../../utils/storefrontUrl', () => ({
   buildStorefrontPreviewUrl: () => 'https://x/preview/loja-x',
 }));
 
-// templatesDoCardapio importa services/api (import.meta) — mock completo com a
-// mesma lista de emergência usada em produção. (Lista inline: jest.mock é
-// hoisted acima de qualquer const do módulo.)
 jest.mock('../templatesDoCardapio', () => {
   const lista = [
     { id: 'fresh', label: 'Fresh', description: 'd', preview: '🥗' },
@@ -65,21 +72,23 @@ jest.mock('../templatesDoCardapio', () => {
 jest.mock('../../../components/ui', () => ({
   ...jest.requireActual('../../../components/ui'),
   PageShell: ({ children, acoes }: { children: React.ReactNode; acoes?: React.ReactNode }) => <div>{acoes}{children}</div>,
-  PhonePreview: () => null,
+  PhonePreview: ({ sobreposicao, acoesExtras }: { sobreposicao?: React.ReactNode; acoesExtras?: React.ReactNode }) => (
+    <div data-testid="previa">{acoesExtras}{sobreposicao}</div>
+  ),
 }));
 
 jest.mock('react-hot-toast', () => ({ toast: { error: jest.fn(), success: jest.fn() } }));
 
 const mockedApi = storesApi as jest.Mocked<typeof storesApi>;
 
-const cardDe = (label: string) => screen.getByText(label).closest('button') as HTMLButtonElement;
-
-const renderPage = (aba = 'marca') =>
+const renderPage = (parte = 'estilo') =>
   render(
-    <MemoryRouter initialEntries={[`/?aba=${aba}`]}>
+    <MemoryRouter initialEntries={[`/?parte=${parte}`]}>
       <StorefrontPage />
     </MemoryRouter>,
   );
+
+const template = (nome: RegExp) => screen.getByRole('radio', { name: nome });
 
 const lojaFresh = {
   id: 's1',
@@ -102,58 +111,78 @@ beforeEach(() => {
 });
 
 describe('StorefrontPage — rollback do rascunho quando o save falha', () => {
-  it('reverte o cartão de template selecionado quando o save falha', async () => {
+  it('reverte o template escolhido quando o save falha', async () => {
     mockedApi.updateStore.mockRejectedValue(new Error('500 do domínio'));
-
     renderPage();
 
-    // Carga: 'Fresh' é o template persistido → cartão destacado.
-    await waitFor(() => expect(cardDe('Fresh').className).toContain('border-brand'));
+    await waitFor(() => expect(template(/fresh/i)).toHaveAttribute('aria-checked', 'true'));
+    fireEvent.click(template(/bold/i));
+    expect(template(/bold/i)).toHaveAttribute('aria-checked', 'true');
 
-    // Dono clica 'Bold' (otimista) → passa a destacado.
-    fireEvent.click(cardDe('Bold'));
-    expect(cardDe('Bold').className).toContain('border-brand');
-    expect(cardDe('Fresh').className).not.toContain('border-brand');
-
-    // Salva e FALHA.
     fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
 
-    // Rollback: volta a 'Fresh' (o que o backend realmente tem), 'Bold' desmarca.
-    await waitFor(() => expect(cardDe('Fresh').className).toContain('border-brand'));
-    expect(cardDe('Bold').className).not.toContain('border-brand');
+    // Rollback: volta a 'Fresh' (o que o backend realmente tem).
+    await waitFor(() => expect(template(/fresh/i)).toHaveAttribute('aria-checked', 'true'));
+    expect(template(/bold/i)).toHaveAttribute('aria-checked', 'false');
     expect(mockedApi.updateStore).toHaveBeenCalledTimes(1);
   });
 });
 
-describe('StorefrontPage — um salvar só, e a prévia muda antes de salvar', () => {
-  it('a barra só aparece com alteração, e Descartar volta ao salvo', async () => {
+describe('StorefrontPage — editor', () => {
+  it('a barra de salvar só aparece com alteração, e Descartar volta ao salvo', async () => {
     renderPage();
-    await waitFor(() => expect(cardDe('Fresh').className).toContain('border-brand'));
+    await waitFor(() => expect(template(/fresh/i)).toHaveAttribute('aria-checked', 'true'));
     expect(screen.queryByRole('region', { name: /alterações não salvas/i })).not.toBeInTheDocument();
 
-    fireEvent.click(cardDe('Bold'));
+    fireEvent.click(template(/bold/i));
     expect(screen.getByRole('region', { name: /alterações não salvas/i })).toHaveTextContent('1 alteração');
+    // A parte com alteração pendente ganha um ponto na lista da esquerda.
+    expect(within(screen.getByRole('button', { name: /cores e estilo/i })).getByLabelText(/não salvo/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /descartar/i }));
-    expect(cardDe('Fresh').className).toContain('border-brand');
+    expect(template(/fresh/i)).toHaveAttribute('aria-checked', 'true');
     expect(screen.queryByRole('region', { name: /alterações não salvas/i })).not.toBeInTheDocument();
   });
 
   it('o template escolhido vai para a prévia sem salvar', async () => {
     renderPage();
-    await waitFor(() => expect(cardDe('Fresh').className).toContain('border-brand'));
-    fireEvent.click(cardDe('Bold'));
+    await waitFor(() => expect(template(/fresh/i)).toHaveAttribute('aria-checked', 'true'));
+    fireEvent.click(template(/bold/i));
     await waitFor(() => expect(enviarRascunho).toHaveBeenLastCalledWith(
       expect.objectContaining({ loja: expect.objectContaining({ template: 'bold' }) }),
     ));
     expect(mockedApi.updateStore).not.toHaveBeenCalled();
   });
 
+  it('escolher a parte na lista abre as propriedades dela e leva a prévia até lá', async () => {
+    renderPage('topo');
+    fireEvent.click(await screen.findByRole('button', { name: /cartão do produto/i }));
+    expect(screen.getByRole('radiogroup', { name: 'Posição da foto' })).toBeInTheDocument();
+    expect(focar).toHaveBeenCalledWith('cartao');
+  });
+
+  it('clicar numa parte da PRÉVIA abre a configuração dela (inspetor)', async () => {
+    renderPage('topo');
+    await screen.findByRole('radiogroup', { name: 'Formato do logo' });
+    act(() => { previa.onSelecionar?.('estoque'); });
+    expect(screen.getByRole('switch', { name: /mostrar esgotados/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /estoque e seções/i })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('inspetor nasce ligado e desliga pelo botão', async () => {
+    renderPage('topo');
+    const botao = await screen.findByRole('button', { name: /inspecionar/i });
+    expect(botao).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() => expect(inspecionar).toHaveBeenLastCalledWith(true));
+    fireEvent.click(botao);
+    expect(inspecionar).toHaveBeenLastCalledWith(false);
+  });
+
   it('exibição: muda na prévia e grava só o que mudou, pela mesma barra', async () => {
     salvarExibicao.mockResolvedValue({ ...EXIBICAO, foto_posicao: 'direita' });
-    renderPage('cardapio');
-    const direita = await screen.findByRole('radio', { name: /à direita/i });
-    fireEvent.click(direita);
+    renderPage('cartao');
+    const grupo = await screen.findByRole('radiogroup', { name: 'Posição da foto' });
+    fireEvent.click(within(grupo).getByRole('radio', { name: 'Direita' }));
 
     await waitFor(() => expect(enviarRascunho).toHaveBeenLastCalledWith(
       expect.objectContaining({ exibicao: expect.objectContaining({ foto_posicao: 'direita' }) }),
@@ -164,19 +193,25 @@ describe('StorefrontPage — um salvar só, e a prévia muda antes de salvar', (
       fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
     });
     expect(salvarExibicao).toHaveBeenCalledWith('loja-x', { foto_posicao: 'direita' });
-    // Loja não mudou: não manda PATCH da loja à toa.
     expect(mockedApi.updateStore).not.toHaveBeenCalled();
     await waitFor(() => expect(screen.queryByRole('region', { name: /alterações não salvas/i })).not.toBeInTheDocument());
   });
 
   it('erro da exibição aparece e o rascunho fica', async () => {
     salvarExibicao.mockRejectedValue({ response: { data: { error: 'Texto com no máximo 60 caracteres.' } } });
-    renderPage('cardapio');
-    fireEvent.click(await screen.findByRole('radio', { name: /à direita/i }));
+    renderPage('cartao');
+    const grupo = await screen.findByRole('radiogroup', { name: 'Posição da foto' });
+    fireEvent.click(within(grupo).getByRole('radio', { name: 'Direita' }));
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
     });
     expect(await screen.findByRole('alert')).toHaveTextContent('60 caracteres');
-    expect(screen.getByRole('radio', { name: /à direita/i })).toHaveAttribute('aria-checked', 'true');
+    expect(within(grupo).getByRole('radio', { name: 'Direita' })).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('pedido feito: a tela de agradecimento aparece por cima da prévia', async () => {
+    renderPage('pedido');
+    const previaEl = await screen.findByTestId('previa');
+    expect(within(previaEl).getByText('Pedido confirmado!')).toBeInTheDocument();
   });
 });

@@ -44,6 +44,12 @@ export interface PhonePreviewProps {
   dispositivo?: Dispositivo;
   /** Com isto, aparece a troca celular/computador. */
   onDispositivo?: (d: Dispositivo) => void;
+  /** Ocupa a altura do contêiner (tela de editor) em vez dos 600px fixos. */
+  preencher?: boolean;
+  /** Desenho por cima da página (ex.: a tela de pedido feito), sem desmontar o iframe. */
+  sobreposicao?: React.ReactNode;
+  /** Botões a mais no cabeçalho (ex.: inspecionar). */
+  acoesExtras?: React.ReactNode;
 }
 
 export type Dispositivo = 'celular' | 'computador';
@@ -65,27 +71,35 @@ export const PhonePreview: React.FC<PhonePreviewProps> = ({
   iframeRef,
   dispositivo = 'celular',
   onDispositivo,
+  preencher = false,
+  sobreposicao,
+  acoesExtras,
 }) => {
   const [geracao, setGeracao] = useState(0);
   const computador = dispositivo === 'computador';
   // Escala do modo computador: 1280px de página dentro da largura da coluna.
   const moldura = useRef<HTMLDivElement | null>(null);
   const [escala, setEscala] = useState(0.3);
+  const [alturaDaMoldura, setAlturaDaMoldura] = useState(ALTURA_DA_MOLDURA);
   useEffect(() => {
     const el = moldura.current;
     if (!computador || !el || typeof ResizeObserver === 'undefined') return undefined;
-    const medir = () => setEscala(Math.min(1, el.clientWidth / LARGURA_DO_COMPUTADOR) || 0.3);
+    const medir = () => {
+      setEscala(Math.min(1, el.clientWidth / LARGURA_DO_COMPUTADOR) || 0.3);
+      if (preencher && el.clientHeight) setAlturaDaMoldura(el.clientHeight);
+    };
     medir();
     const ro = new ResizeObserver(medir);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [computador]);
+  }, [computador, preencher]);
 
   return (
-    <div className={cn('flex flex-col items-center gap-3', className)}>
+    <div className={cn('flex flex-col items-center gap-3', preencher && 'h-full min-h-0', className)}>
       <div className="flex w-full items-center justify-between gap-2">
         <p className="overline">{titulo}</p>
         <div className="flex items-center gap-2">
+          {acoesExtras}
           {onDispositivo && (
             <div className="flex rounded-md border border-border-token p-0.5" role="group" aria-label="Tamanho da tela">
               {DISPOSITIVOS.map(({ valor, rotulo, Icone }) => (
@@ -128,13 +142,16 @@ export const PhonePreview: React.FC<PhonePreviewProps> = ({
           vale garantir que o conteúdo respira. */}
       <div
         ref={moldura}
+        data-testid="moldura-da-previa"
         className={cn(
-          'w-full overflow-hidden bg-surface shadow-xl',
+          'relative w-full overflow-hidden bg-surface shadow-xl',
           computador
             ? 'rounded-lg border-4 border-fg-token/85'
-            : 'max-w-[390px] rounded-[2rem] border-8 border-fg-token/85'
+            : 'max-w-[390px] rounded-[2rem] border-8 border-fg-token/85',
+          preencher && 'min-h-0 flex-1',
+          preencher && !computador && 'max-h-[860px]'
         )}
-        style={computador ? { height: ALTURA_DA_MOLDURA } : undefined}
+        style={computador && !preencher ? { height: ALTURA_DA_MOLDURA } : undefined}
       >
         {url ? (
           <iframe
@@ -142,10 +159,13 @@ export const PhonePreview: React.FC<PhonePreviewProps> = ({
             ref={iframeRef}
             src={url}
             title={titulo}
-            className={cn('border-0 bg-white', computador ? 'origin-top-left' : 'h-[600px] w-full')}
+            className={cn(
+              'border-0 bg-white',
+              computador ? 'origin-top-left' : preencher ? 'h-full w-full' : 'h-[600px] w-full'
+            )}
             style={computador ? {
               width: `${LARGURA_DO_COMPUTADOR}px`,
-              height: `${Math.round(ALTURA_DA_MOLDURA / escala)}px`,
+              height: `${Math.round((preencher ? alturaDaMoldura : ALTURA_DA_MOLDURA) / escala)}px`,
               transform: `scale(${escala})`,
             } : undefined}
             // A página pública é nossa, mas o iframe não precisa de nada além
@@ -154,12 +174,13 @@ export const PhonePreview: React.FC<PhonePreviewProps> = ({
             loading="lazy"
           />
         ) : (
-          <div className="flex h-[600px] items-center justify-center p-6 text-center">
+          <div className={cn('flex items-center justify-center p-6 text-center', preencher ? 'h-full' : 'h-[600px]')}>
             <p className="text-body text-fg-muted-token">
               Pré-visualização indisponível: a loja ainda não tem um endereço público.
             </p>
           </div>
         )}
+        {sobreposicao && <div className="absolute inset-0 overflow-auto bg-surface">{sobreposicao}</div>}
       </div>
 
       {url && (
