@@ -14,6 +14,7 @@ export interface ExibicaoDoCardapio {
   foto_proporcao: FormatoDaFoto;
   mostrar_estoque_baixo: boolean;
   mostrar_esgotados: boolean;
+  mostrar_peca_novamente: boolean;
   agradecimento_titulo: string;
   agradecimento_subtitulo: string;
   logo_formato: FormatoDoLogo;
@@ -28,6 +29,7 @@ export const EXIBICAO_PADRAO: ExibicaoDoCardapio = {
   foto_proporcao: 'padrao',
   mostrar_estoque_baixo: true,
   mostrar_esgotados: true,
+  mostrar_peca_novamente: true,
   agradecimento_titulo: '',
   agradecimento_subtitulo: '',
   logo_formato: 'padrao',

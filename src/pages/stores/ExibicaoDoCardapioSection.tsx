@@ -137,6 +137,11 @@ export const ExibicaoDoCardapioSection: React.FC<Props> = ({ loja, onSalvo }) =>
             <Switch ligado={rascunho.mostrar_esgotados} rotulo="Mostrar esgotados"
               onMudar={(v) => mudar({ mostrar_esgotados: v })} />
           </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-body text-fg-token">Peça novamente</span>
+            <Switch ligado={rascunho.mostrar_peca_novamente} rotulo="Peça novamente"
+              onMudar={(v) => mudar({ mostrar_peca_novamente: v })} />
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
