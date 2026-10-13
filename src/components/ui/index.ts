@@ -91,3 +91,6 @@ export { Propriedade } from './Propriedade';
 export type { PropriedadeProps } from './Propriedade';
 export { BarraDeAlteracoes } from './BarraDeAlteracoes';
 export type { BarraDeAlteracoesProps } from './BarraDeAlteracoes';
+// Código de verificação (WhatsApp/SMS): 6 caixas em 3 + 3 sobre um campo só.
+export { CampoDeCodigo } from './CampoDeCodigo';
+export type { CampoDeCodigoProps } from './CampoDeCodigo';

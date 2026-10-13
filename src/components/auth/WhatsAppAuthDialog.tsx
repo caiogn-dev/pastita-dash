@@ -8,7 +8,7 @@ import { formatPhoneForWhatsApp } from '@/utils/formatters';
  * 3. Usuário recebe código e digita
  * 4. Sistema valida e autentica
  */
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/input';
+import { CampoDeCodigo } from '@/components/ui/CampoDeCodigo';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -49,14 +50,13 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
 }) => {
   const [step, setStep] = useState<Step>('phone');
   const [phone, setPhone] = useState('');
-  const [code, setCode] = useState(['', '', '', '', '', '']);
+  const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [countdown, setCountdown] = useState(0);
   const [remainingAttempts, setRemainingAttempts] = useState(3);
   
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
+  
   // Countdown para reenvio
   useEffect(() => {
     if (countdown > 0) {
@@ -70,19 +70,12 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
     if (isOpen) {
       setStep('phone');
       setPhone('');
-      setCode(['', '', '', '', '', '']);
+      setCode('');
       setError('');
       setCountdown(0);
       setRemainingAttempts(3);
     }
   }, [isOpen]);
-
-  // Focar primeiro input ao entrar na tela de código
-  useEffect(() => {
-    if (step === 'code') {
-      setTimeout(() => inputRefs.current[0]?.focus(), 100);
-    }
-  }, [step]);
 
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, '');
@@ -138,7 +131,7 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
       
       if (response.data.success) {
         setCountdown(60);
-        setCode(['', '', '', '', '', '']);
+        setCode('');
         toast.success('Código reenviado! Verifique seu WhatsApp');
       } else {
         setError(response.data.message || 'Erro ao reenviar código');
@@ -150,8 +143,10 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
     }
   };
 
-  const handleVerifyCode = async () => {
-    const fullCode = code.join('');
+ // Recebe o código do CampoDeCodigo: ler `code` do estado aqui pegava o
+  // valor de ANTES do último dígito (o envio automático rodava num setTimeout).
+  const handleVerifyCode = async (codigo?: string) => {
+    const fullCode = codigo ?? code;
     
     if (fullCode.length !== 6) {
       setError('Digite o código completo de 6 dígitos');
@@ -184,40 +179,12 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
         if (response.data.remaining_attempts !== undefined) {
           setRemainingAttempts(response.data.remaining_attempts);
         }
-        setCode(['', '', '', '', '', '']);
-        inputRefs.current[0]?.focus();
+        setCode('');
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao verificar código');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleCodeChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return;
-    
-    const newCode = [...code];
-    newCode[index] = value.slice(-1);
-    setCode(newCode);
-    
-    // Auto-focus próximo input
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-    
-    // Auto-submit quando completo
-    if (index === 5 && value) {
-      const fullCode = [...newCode.slice(0, 5), value].join('');
-      if (fullCode.length === 6) {
-        setTimeout(() => handleVerifyCode(), 300);
-      }
-    }
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !code[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
     }
   };
 
@@ -295,20 +262,16 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
               <p className="font-semibold text-lg">{phone}</p>
             </div>
             
-            <div className="flex justify-center gap-2">
-              {code.map((digit, index) => (
-                <Input
-                  key={index}
-                  ref={(el) => { inputRefs.current[index] = el; }}
-                  type="text"
-                  inputMode="numeric"
-                  value={digit}
-                  onChange={(e) => handleCodeChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  className="w-12 h-14 text-center text-2xl font-bold"
-                  maxLength={1}
-                />
-              ))}
+            <div className="flex justify-center">
+              <CampoDeCodigo
+                rotulo="Código do WhatsApp"
+                valor={code}
+                onMudar={(c) => { setCode(c); setError(''); }}
+                onCompleto={(c) => void handleVerifyCode(c)}
+                erro={Boolean(error)}
+                desabilitado={isLoading}
+                autoFocus
+              />
             </div>
             
             {remainingAttempts < 3 && (
@@ -318,8 +281,8 @@ export const WhatsAppAuthDialog: React.FC<WhatsAppAuthDialogProps> = ({
             )}
             
             <Button
-              onClick={handleVerifyCode}
-              disabled={isLoading || code.join('').length !== 6}
+              onClick={() => void handleVerifyCode()}
+              disabled={isLoading || code.length !== 6}
               className="w-full justify-center text-base"
             >
               {isLoading ? (
