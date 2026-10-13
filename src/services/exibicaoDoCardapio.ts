@@ -4,6 +4,8 @@ import api from './api';
 export type PosicaoDaFoto = 'padrao' | 'topo' | 'esquerda' | 'direita';
 export type EncaixeDaFoto = 'cortar' | 'inteira';
 export type FormatoDaFoto = 'padrao' | 'quadrada' | 'retangular' | 'paisagem';
+export type FormatoDoLogo = 'padrao' | 'redondo' | 'quadrado';
+export type AlinhamentoDoLogo = 'padrao' | 'esquerda' | 'centro';
 
 export interface ExibicaoDoCardapio {
   descricao_limite: number;
@@ -14,6 +16,8 @@ export interface ExibicaoDoCardapio {
   mostrar_esgotados: boolean;
   agradecimento_titulo: string;
   agradecimento_subtitulo: string;
+  logo_formato: FormatoDoLogo;
+  logo_alinhamento: AlinhamentoDoLogo;
 }
 
 /** Espelho do PADRAO do backend — só para a tela não nascer vazia. */
@@ -26,6 +30,8 @@ export const EXIBICAO_PADRAO: ExibicaoDoCardapio = {
   mostrar_esgotados: true,
   agradecimento_titulo: '',
   agradecimento_subtitulo: '',
+  logo_formato: 'padrao',
+  logo_alinhamento: 'padrao',
 };
 
 /** Só os campos que mudaram — o PATCH é parcial. */

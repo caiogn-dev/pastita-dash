@@ -10,6 +10,8 @@ import {
   type ExibicaoDoCardapio,
   type FormatoDaFoto,
   type PosicaoDaFoto,
+  type FormatoDoLogo,
+  type AlinhamentoDoLogo,
 } from '../../services/exibicaoDoCardapio';
 
 interface Props {
@@ -34,6 +36,17 @@ const FORMATOS: { valor: FormatoDaFoto; titulo: string; descricao: string }[] = 
   { valor: 'quadrada', titulo: 'Quadrada', descricao: '1:1' },
   { valor: 'retangular', titulo: 'Retangular', descricao: '4:3' },
   { valor: 'paisagem', titulo: 'Paisagem', descricao: '16:9' },
+];
+
+const FORMATOS_DO_LOGO: { valor: FormatoDoLogo; titulo: string; descricao: string }[] = [
+  { valor: 'padrao', titulo: 'Do template', descricao: 'Como o template desenha' },
+  { valor: 'redondo', titulo: 'Redondo', descricao: 'Círculo' },
+  { valor: 'quadrado', titulo: 'Quadrado', descricao: 'Cantos levemente arredondados' },
+];
+const ALINHAMENTOS_DO_LOGO: { valor: AlinhamentoDoLogo; titulo: string; descricao: string }[] = [
+  { valor: 'padrao', titulo: 'Do template', descricao: 'Como o template desenha' },
+  { valor: 'esquerda', titulo: 'À esquerda', descricao: 'Logo ao lado do nome' },
+  { valor: 'centro', titulo: 'Centralizado', descricao: 'Logo em cima do nome' },
 ];
 
 const mensagemDoErro = (e: unknown) =>
@@ -107,6 +120,11 @@ export const ExibicaoDoCardapioSection: React.FC<Props> = ({ loja, onSalvo }) =>
           onChange={(v) => mudar({ foto_encaixe: v })} />
         <ChoiceCards rotulo="Formato da foto" opcoes={FORMATOS} valor={rascunho.foto_proporcao}
           onChange={(v) => mudar({ foto_proporcao: v })} />
+
+        <ChoiceCards rotulo="Formato do logo" opcoes={FORMATOS_DO_LOGO} valor={rascunho.logo_formato}
+          onChange={(v) => mudar({ logo_formato: v })} />
+        <ChoiceCards rotulo="Alinhamento do topo" opcoes={ALINHAMENTOS_DO_LOGO} valor={rascunho.logo_alinhamento}
+          onChange={(v) => mudar({ logo_alinhamento: v })} />
 
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-4">
