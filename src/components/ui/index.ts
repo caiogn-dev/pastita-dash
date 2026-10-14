@@ -94,3 +94,14 @@ export type { BarraDeAlteracoesProps } from './BarraDeAlteracoes';
 // Código de verificação (WhatsApp/SMS): 6 caixas em 3 + 3 sobre um campo só.
 export { CampoDeCodigo } from './CampoDeCodigo';
 export type { CampoDeCodigoProps } from './CampoDeCodigo';
+
+// Formulário de um jeito só (14/10): rótulo, dica e erro ligados ao campo;
+// dinheiro, telefone e imagem pedidos sempre igual.
+export { Campo } from './Campo';
+export type { CampoProps } from './Campo';
+export { CampoDeDinheiro } from './CampoDeDinheiro';
+export type { CampoDeDinheiroProps } from './CampoDeDinheiro';
+export { CampoDeTelefone, mascararTelefone, limparTelefone } from './CampoDeTelefone';
+export type { CampoDeTelefoneProps } from './CampoDeTelefone';
+export { EnvioDeImagem } from './EnvioDeImagem';
+export type { EnvioDeImagemProps } from './EnvioDeImagem';

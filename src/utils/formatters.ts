@@ -32,6 +32,9 @@ const paraNumero = (valor: ValorEmDinheiro): number => {
   return Number.isFinite(n) ? n : 0;
 };
 
+/** O mesmo leitor, para quem recebe dinheiro digitado ou colado (CampoDeDinheiro). */
+export const lerDinheiro = paraNumero;
+
 /**
  * Dinheiro do painel. ESPECIFICAÇÃO em `__tests__/dinheiro.spec.ts`.
  *

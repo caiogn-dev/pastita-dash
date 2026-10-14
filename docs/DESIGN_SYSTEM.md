@@ -22,6 +22,10 @@ Selo, Progresso, dois PaymentBadge…). É por isso que "o estilo varia por pág
 - Componente local em página que já existe no kit (lista abaixo). Se falta algo no kit,
   crie no kit com teste, depois use.
 - `<select>`, `<input>` e `<textarea>` crus: use `Select`, `Input`, `NumberField`, `Switch`.
+- Rótulo montado à mão (`<label className=…>`): use `Campo` (rótulo + controle + dica/erro ligados).
+  Catraca em `src/styles/__tests__/camposCrus.test.ts`; migrou uma tela? `node scripts/campos-baseline.mjs`.
+- Dinheiro, telefone e imagem têm UM jeito: `CampoDeDinheiro` (centavos como maquininha, vazio = null),
+  `CampoDeTelefone` (máscara BR, `+` = estrangeiro), `EnvioDeImagem` (clicar, arrastar ou colar).
 
 ## 3. Como uma página é montada
 ```

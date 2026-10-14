@@ -8,7 +8,7 @@
  * - leftElement/rightElement (e aliases leftIcon/rightIcon).
  * - leftAddon/rightAddon.
  */
-import React, { forwardRef, useState } from 'react';
+import React, { forwardRef, useId, useState } from 'react';
 import { cn } from '../../utils/cn';
 
 export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
@@ -57,7 +57,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     ref
   ) => {
     const [focused, setFocused] = useState(false);
-    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+    // useId e não Math.random: o id sorteado mudava a cada renderização, e o
+    // rótulo apontava para um campo que já não existia.
+    const idGerado = useId();
+    const inputId = id || idGerado;
     const left = leftElement ?? leftIcon;
     const right = rightElement ?? rightIcon;
     const helper = helperText ?? hint;
