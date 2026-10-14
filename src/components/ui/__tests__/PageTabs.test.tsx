@@ -104,3 +104,29 @@ describe('PageTabs', () => {
     expect(painel).toHaveAttribute('aria-labelledby', screen.getByRole('tab', { name: 'Loja' }).id);
   });
 });
+
+describe('PageTabs lateral (molde Configurações, 14/10)', () => {
+  const montar = () =>
+    render(
+      <MemoryRouter>
+        <PageTabs abas={[...ABAS.slice(0, 2), { ...ABAS[2], mudou: true }]} ariaLabel="Seções" lateral>
+          {(aba) => <p>painel {aba}</p>}
+        </PageTabs>
+      </MemoryRouter>
+    );
+
+  it('menu vertical: setas para cima e para baixo andam', () => {
+    montar();
+    const lista = screen.getByRole('tablist');
+    expect(lista).toHaveAttribute('aria-orientation', 'vertical');
+    fireEvent.keyDown(lista, { key: 'ArrowDown' });
+    expect(screen.getByText('painel entrega')).toBeInTheDocument();
+    fireEvent.keyDown(lista, { key: 'ArrowUp' });
+    expect(screen.getByText('painel loja')).toBeInTheDocument();
+  });
+
+  it('seção com alteração não salva ganha o ponto, dito também em texto', () => {
+    montar();
+    expect(screen.getByRole('tab', { name: /Rastreamento.*alterado/i })).toBeInTheDocument();
+  });
+});

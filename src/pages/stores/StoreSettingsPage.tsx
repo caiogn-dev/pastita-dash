@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import {
@@ -23,8 +23,18 @@ import {
 } from '../../services/storesApi';
 import { useStore } from '../../hooks';
 import logger from '../../services/logger';
-import { Card, Button, StatCard, PageShell, PageTabs } from '../../components/ui';
+import {
+  Card,
+  StatCard,
+  PageShell,
+  PageTabs,
+  BarraDeAlteracoes,
+  Campo,
+  CampoDeTelefone,
+  Input,
+} from '../../components/ui';
 import { Switch } from '../../components/common';
+import { cn } from '../../utils/cn';
 import { aoAlternarModo, resumoDosModos, type ModosDeRecebimento, type Modo } from './modosDeRecebimento';
 import RecebimentoSection from './RecebimentoSection';
 import VoucherSection from './VoucherSection';
@@ -62,6 +72,47 @@ const defaultMetaTracking: StoreMetaTracking = {
   clarity_enabled: false,
 };
 
+const FORM_VAZIO = {
+  name: '',
+  email: '',
+  phone: '',
+  whatsapp_number: '',
+  address: '',
+  city: '',
+  state: '',
+  zip_code: '',
+  latitude: '',
+  longitude: '',
+};
+type FormDaLoja = typeof FORM_VAZIO;
+
+const CAMPOS_DA_LOJA: (keyof FormDaLoja)[] = ['name', 'email', 'phone', 'whatsapp_number'];
+const CAMPOS_DO_LOCAL: (keyof FormDaLoja)[] = ['address', 'city', 'state', 'zip_code', 'latitude', 'longitude'];
+const CAMPOS_DO_RASTREIO: (keyof StoreMetaTracking)[] = [
+  'meta_pixel_id', 'meta_pixel_enabled', 'meta_capi_enabled', 'meta_capi_test_event_code', 'clarity_id', 'clarity_enabled',
+];
+
+/** O que está gravado no servidor — é contra isto que se conta "o que mudou". */
+interface Salvo {
+  form: FormDaLoja;
+  horas: OperatingHours;
+  avaliacao: string;
+  rastreio: StoreMetaTracking;
+}
+
+const SALVO_VAZIO: Salvo = { form: FORM_VAZIO, horas: {}, avaliacao: '', rastreio: defaultMetaTracking };
+
+const iguais = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+/** Erro de coordenada em texto, ou null. Vale só ao salvar, não a cada tecla. */
+function erroDaCoordenada(valor: string, limite: 90 | 180): string | null {
+  if (!valor.trim()) return null;
+  const n = parseFloat(valor);
+  if (Number.isNaN(n)) return 'Use um número, como -10.18';
+  if (n < -limite || n > limite) return `Precisa estar entre -${limite} e ${limite}`;
+  return null;
+}
+
 export const StoreSettingsPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
   const { storeId: contextStoreId, stores } = useStore();
@@ -75,9 +126,12 @@ export const StoreSettingsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [store, setStore] = useState<Store | null>(null);
+  const [salvo, setSalvo] = useState<Salvo>(SALVO_VAZIO);
+  const [storeForm, setStoreForm] = useState<FormDaLoja>(FORM_VAZIO);
   const [operatingHours, setOperatingHours] = useState<OperatingHours>({});
   const [metaTracking, setMetaTracking] = useState<StoreMetaTracking>(defaultMetaTracking);
   const [googleReviewUrl, setGoogleReviewUrl] = useState('');
+  const [erros, setErros] = useState<{ latitude?: string | null; longitude?: string | null }>({});
   /** Entrega/retirada: os campos existem no banco e o cardápio já os respeita
    *  — faltava o dono poder mudar depois do onboarding. */
   const [modos, setModos] = useState<ModosDeRecebimento>({ delivery: true, pickup: true });
@@ -86,9 +140,9 @@ export const StoreSettingsPage: React.FC = () => {
   /**
    * Liga/desliga entrega ou retirada.
    *
-   * Salva no ato (sem botão "Salvar"): é um interruptor de duas posições e
-   * o efeito é imediato no cardápio. Em caso de erro, volta ao estado
-   * anterior — deixar o botão ligado sem ter salvo é pior que não mexer.
+   * Salva no ato (fora da barra de alterações): é um interruptor de duas
+   * posições e o efeito é imediato no cardápio. Em caso de erro, volta ao
+   * estado anterior — deixar o botão ligado sem ter salvo é pior que não mexer.
    */
   const alternarRecebimento = useCallback(async (modo: Modo, ligado: boolean) => {
     const anterior = modos;
@@ -114,35 +168,23 @@ export const StoreSettingsPage: React.FC = () => {
       setSalvandoModos(null);
     }
   }, [modos, effectiveStoreId]);
-  const [storeForm, setStoreForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    whatsapp_number: '',
-    address: '',
-    city: '',
-    state: '',
-    zip_code: '',
-    latitude: '',
-    longitude: '',
-  });
 
-  const loadStore = useCallback(async () => {
+  /** `silencioso`: depois de salvar, recarrega sem trocar a tela pelo "Carregando". */
+  const loadStore = useCallback(async (silencioso = false) => {
     if (!effectiveStoreId) {
       setLoading(false);
       return;
     }
 
-    setLoading(true);
+    if (!silencioso) setLoading(true);
     try {
       const [data, tracking] = await Promise.all([
         getStore(effectiveStoreId),
         getStoreMetaTracking(effectiveStoreId),
       ]);
       setStore(data);
-      setMetaTracking({ ...tracking, meta_capi_access_token: '' });
 
-      setStoreForm({
+      const form: FormDaLoja = {
         name: data.name || '',
         email: data.email || '',
         phone: data.phone || '',
@@ -153,20 +195,25 @@ export const StoreSettingsPage: React.FC = () => {
         zip_code: data.zip_code || '',
         latitude: data.latitude?.toString() || '',
         longitude: data.longitude?.toString() || '',
+      };
+      const stored = (data.operating_hours as OperatingHours) || {};
+      const horas: OperatingHours = {};
+      DAYS.forEach(d => {
+        horas[d.key] = stored[d.key] || { ...DEFAULT_HOURS, is_open: d.key !== 'sunday' };
       });
+      const avaliacao = String((data.metadata || {}).google_review_url || '');
+      const rastreio = { ...tracking, meta_capi_access_token: '' };
 
-      const metadata = data.metadata || {};
-      setGoogleReviewUrl(String(metadata.google_review_url || ''));
+      setSalvo({ form, horas, avaliacao, rastreio });
+      setStoreForm(form);
+      setOperatingHours(horas);
+      setGoogleReviewUrl(avaliacao);
+      setMetaTracking(rastreio);
+      setErros({});
       setModos({
         delivery: data.delivery_enabled !== false,
         pickup: data.pickup_enabled !== false,
       });
-      const stored = (data.operating_hours as OperatingHours) || {};
-      const initialized: OperatingHours = {};
-      DAYS.forEach(d => {
-        initialized[d.key] = stored[d.key] || { ...DEFAULT_HOURS, is_open: d.key !== 'sunday' };
-      });
-      setOperatingHours(initialized);
     } catch (error) {
       logger.error('Error loading store:', error);
       toast.error('Erro ao carregar configurações da loja');
@@ -179,136 +226,113 @@ export const StoreSettingsPage: React.FC = () => {
     loadStore();
   }, [loadStore]);
 
-  const handleSaveStore = async () => {
+  // ── O que mudou, por seção ────────────────────────────────────────────
+  const mudouNaLoja = CAMPOS_DA_LOJA.filter((k) => storeForm[k] !== salvo.form[k]);
+  const mudouNoLocal = CAMPOS_DO_LOCAL.filter((k) => storeForm[k] !== salvo.form[k]);
+  const diasMudados = DAYS.filter((d) => !iguais(operatingHours[d.key], salvo.horas[d.key]));
+  const avaliacaoMudou = googleReviewUrl.trim() !== salvo.avaliacao.trim();
+  const rastreioMudado = CAMPOS_DO_RASTREIO.filter((k) => metaTracking[k] !== salvo.rastreio[k]).length
+    + (metaTracking.meta_capi_access_token?.trim() ? 1 : 0);
+
+  const quantidade = mudouNaLoja.length + mudouNoLocal.length + diasMudados.length
+    + (avaliacaoMudou ? 1 : 0) + rastreioMudado;
+
+  // Sair da página com alteração pendente perde o que foi digitado.
+  useEffect(() => {
+    if (quantidade === 0) return;
+    const avisar = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', avisar);
+    return () => window.removeEventListener('beforeunload', avisar);
+  }, [quantidade]);
+
+  const descartar = () => {
+    setStoreForm(salvo.form);
+    setOperatingHours(salvo.horas);
+    setGoogleReviewUrl(salvo.avaliacao);
+    setMetaTracking(salvo.rastreio);
+    setErros({});
+  };
+
+  /**
+   * UM salvar para a página. Eram cinco ("Salvar Informações", "Salvar
+   * Localização", "Salvar Horários", "Salvar Rastreamento", "Salvar Link de
+   * Avaliação"): mexia-se no horário e no nome, salvava-se um, e o outro se
+   * perdia ao trocar de aba. Tudo que é da loja vai numa gravação só — com o
+   * metadata montado uma vez, para a avaliação e as coordenadas não se
+   * sobrescreverem.
+   */
+  const salvar = async () => {
     if (!effectiveStoreId) return;
-    setSaving(true);
-    try {
-      const payload = {
-        name: storeForm.name,
-        email: storeForm.email,
-        phone: storeForm.phone,
-        whatsapp_number: storeForm.whatsapp_number,
-        address: storeForm.address,
-        city: storeForm.city,
-        state: storeForm.state,
-        zip_code: storeForm.zip_code,
+
+    if (mudouNoLocal.length) {
+      const novosErros = {
+        latitude: erroDaCoordenada(storeForm.latitude, 90),
+        longitude: erroDaCoordenada(storeForm.longitude, 180),
       };
-
-      await updateStore(effectiveStoreId, payload);
-      toast.success('Informações da loja atualizadas!');
-      loadStore();
-    } catch (error) {
-      logger.error('Error saving store:', error);
-      toast.error('Erro ao salvar informações da loja');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSaveGoogleReview = async () => {
-    if (!effectiveStoreId) return;
-    setSaving(true);
-    try {
-      await updateStore(effectiveStoreId, {
-        metadata: { ...(store?.metadata || {}), google_review_url: googleReviewUrl.trim() },
-      });
-      toast.success('Link de avaliação do Google salvo!');
-      loadStore();
-    } catch (error) {
-      logger.error('Error saving google review url:', error);
-      toast.error('Erro ao salvar link de avaliação');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSaveLocation = async () => {
-    if (!effectiveStoreId) return;
-    const lat = parseFloat(storeForm.latitude);
-    const lng = parseFloat(storeForm.longitude);
-
-    if (isNaN(lat) || isNaN(lng)) {
-      toast.error('Latitude e longitude devem ser números válidos');
-      return;
-    }
-
-    if (lat < -90 || lat > 90) {
-      toast.error('Latitude deve estar entre -90 e 90');
-      return;
-    }
-
-    if (lng < -180 || lng > 180) {
-      toast.error('Longitude deve estar entre -180 e 180');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const currentMetadata = store?.metadata || {};
-      const payload = {
-        // Campos do modelo (o form recarrega a partir destes; antes só gravava em
-        // metadata.store_* e a localização "sumia" no reload). Mantém metadata como
-        // fallback legado lido por geo/service.py e maps_views.py.
-        latitude: lat,
-        longitude: lng,
-        metadata: {
-          ...currentMetadata,
-          store_latitude: lat,
-          store_longitude: lng,
-        },
-      };
-
-      await updateStore(effectiveStoreId, payload);
-      toast.success('Localização da loja atualizada!');
-      loadStore();
-    } catch (error) {
-      logger.error('Error saving location:', error);
-      toast.error('Erro ao salvar localização');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSaveOperatingHours = async () => {
-    if (!effectiveStoreId) return;
-    setSaving(true);
-    try {
-      await updateStore(effectiveStoreId, { operating_hours: operatingHours });
-      toast.success('Horários de funcionamento atualizados!');
-      loadStore();
-    } catch (error) {
-      logger.error('Error saving operating hours:', error);
-      toast.error('Erro ao salvar horários de funcionamento');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSaveMetaTracking = async () => {
-    if (!effectiveStoreId) return;
-    setSaving(true);
-    try {
-      const payload: Partial<StoreMetaTracking> = {
-        meta_pixel_id: metaTracking.meta_pixel_id.trim(),
-        meta_pixel_enabled: metaTracking.meta_pixel_enabled,
-        meta_capi_enabled: metaTracking.meta_capi_enabled,
-        meta_capi_test_event_code: metaTracking.meta_capi_test_event_code.trim(),
-        clarity_id: metaTracking.clarity_id.trim(),
-        clarity_enabled: metaTracking.clarity_enabled,
-      };
-      if (metaTracking.meta_capi_access_token?.trim()) {
-        payload.meta_capi_access_token = metaTracking.meta_capi_access_token.trim();
+      setErros(novosErros);
+      if (novosErros.latitude || novosErros.longitude) {
+        toast.error('Confira a localização antes de salvar.');
+        return;
       }
-      const saved = await updateStoreMetaTracking(effectiveStoreId, payload);
-      setMetaTracking({ ...saved, meta_capi_access_token: '' });
-      toast.success('Rastreamento da Meta atualizado!');
+    }
+
+    const payload: Record<string, unknown> = {};
+    const metadata: Record<string, unknown> = { ...(store?.metadata || {}) };
+    let mexeuNoMetadata = false;
+
+    for (const k of mudouNaLoja) payload[k] = storeForm[k];
+    if (mudouNoLocal.length) {
+      for (const k of ['address', 'city', 'state', 'zip_code'] as const) payload[k] = storeForm[k];
+      if (storeForm.latitude.trim() && storeForm.longitude.trim()) {
+        const lat = parseFloat(storeForm.latitude);
+        const lng = parseFloat(storeForm.longitude);
+        // Campos do modelo (o form recarrega a partir destes) + metadata como
+        // fallback legado lido por geo/service.py e maps_views.py.
+        payload.latitude = lat;
+        payload.longitude = lng;
+        metadata.store_latitude = lat;
+        metadata.store_longitude = lng;
+        mexeuNoMetadata = true;
+      }
+    }
+    if (diasMudados.length) payload.operating_hours = operatingHours;
+    if (avaliacaoMudou) {
+      metadata.google_review_url = googleReviewUrl.trim();
+      mexeuNoMetadata = true;
+    }
+    if (mexeuNoMetadata) payload.metadata = metadata;
+
+    setSaving(true);
+    try {
+      if (Object.keys(payload).length) {
+        await updateStore(effectiveStoreId, payload);
+      }
+      if (rastreioMudado) {
+        const dados: Partial<StoreMetaTracking> = {
+          meta_pixel_id: metaTracking.meta_pixel_id.trim(),
+          meta_pixel_enabled: metaTracking.meta_pixel_enabled,
+          meta_capi_enabled: metaTracking.meta_capi_enabled,
+          meta_capi_test_event_code: metaTracking.meta_capi_test_event_code.trim(),
+          clarity_id: metaTracking.clarity_id.trim(),
+          clarity_enabled: metaTracking.clarity_enabled,
+        };
+        if (metaTracking.meta_capi_access_token?.trim()) {
+          dados.meta_capi_access_token = metaTracking.meta_capi_access_token.trim();
+        }
+        await updateStoreMetaTracking(effectiveStoreId, dados);
+      }
+      toast.success(quantidade === 1 ? 'Alteração salva' : `${quantidade} alterações salvas`);
+      await loadStore(true);
     } catch (error) {
-      logger.error('Error saving Meta tracking:', error);
-      toast.error('Erro ao salvar rastreamento da Meta');
+      logger.error('Error saving store settings:', error);
+      toast.error('Não foi possível salvar. As alterações continuam aqui.');
     } finally {
       setSaving(false);
     }
   };
+
+  const mudarForm = (campo: keyof FormDaLoja) => (valor: string) =>
+    setStoreForm((atual) => ({ ...atual, [campo]: valor }));
 
   if (loading) {
     return (
@@ -342,9 +366,8 @@ export const StoreSettingsPage: React.FC = () => {
       className="mx-auto max-w-6xl"
     >
 
-      {/* Os KPIs ficam FORA das abas: respondem "como esta loja está", e a
-          resposta não muda conforme a seção aberta. Dentro de uma aba,
-          sumiriam nas outras três. */}
+      {/* Os KPIs ficam FORA das seções: respondem "como esta loja está", e a
+          resposta não muda conforme a seção aberta. */}
         <div className="grid grid-cols-3 max-md:grid-cols-1 gap-4">
           <StatCard
             label="Status"
@@ -355,13 +378,16 @@ export const StoreSettingsPage: React.FC = () => {
           <StatCard label="Produtos" value={store?.products_count ?? 0} />
         </div>
 
+      {/* Molde Configurações: seções à esquerda, conteúdo ao lado, um salvar.
+          Sete abas numa linha já passavam da largura e escondiam as últimas. */}
       <PageTabs
+        lateral
         ariaLabel="Seções das configurações da loja"
         abas={[
-          { id: 'loja', rotulo: 'Loja', icone: BuildingStorefrontIcon },
-          { id: 'entrega', rotulo: 'Entrega e horários', icone: ClockIcon },
-          { id: 'rastreamento', rotulo: 'Rastreamento', icone: ChartBarIcon },
-          { id: 'avaliacoes', rotulo: 'Avaliações', icone: StarIcon },
+          { id: 'loja', rotulo: 'Loja', icone: BuildingStorefrontIcon, mudou: mudouNaLoja.length + mudouNoLocal.length > 0 },
+          { id: 'entrega', rotulo: 'Entrega e horários', icone: ClockIcon, mudou: diasMudados.length > 0 },
+          { id: 'rastreamento', rotulo: 'Rastreamento', icone: ChartBarIcon, mudou: rastreioMudado > 0 },
+          { id: 'avaliacoes', rotulo: 'Avaliações', icone: StarIcon, mudou: avaliacaoMudou },
           { id: 'recebimento', rotulo: 'Recebimento', icone: BanknotesIcon },
           { id: 'fiscal', rotulo: 'Nota fiscal', icone: DocumentTextIcon },
           { id: 'atendimento', rotulo: 'Atendimento', icone: ChatBubbleLeftRightIcon },
@@ -371,162 +397,104 @@ export const StoreSettingsPage: React.FC = () => {
           <div className="flex flex-col gap-6">
             {aba === 'loja' && (
               <>
-        <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
-          <Card className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <BuildingStorefrontIcon className="w-5 h-5 text-fg-muted-token" />
-              <h2 className="text-lg font-semibold text-fg-token">Informações da Loja</h2>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-fg-muted-token">Nome</label>
-                <input
-                  type="text"
-                  value={storeForm.name}
-                  onChange={(e) => setStoreForm({ ...storeForm, name: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg-muted-token">Email</label>
-                <input
-                  type="email"
-                  value={storeForm.email}
-                  onChange={(e) => setStoreForm({ ...storeForm, email: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg-muted-token">Telefone</label>
-                <input
-                  type="text"
-                  value={storeForm.phone}
-                  onChange={(e) => setStoreForm({ ...storeForm, phone: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg-muted-token">WhatsApp</label>
-                <input
-                  type="text"
-                  value={storeForm.whatsapp_number}
-                  onChange={(e) => setStoreForm({ ...storeForm, whatsapp_number: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                />
-              </div>
-              <Button
-                onClick={handleSaveStore}
-                disabled={saving}
-                className="w-full justify-center"
-              >
-                {saving ? 'Salvando...' : 'Salvar Informações'}
-              </Button>
-            </div>
-          </Card>
+                <Card className="p-6">
+                  <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-fg-token">
+                    <BuildingStorefrontIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
+                    Informações da loja
+                  </h2>
+                  <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
+                    <Campo rotulo="Nome da loja" className="col-span-2 max-md:col-span-1">
+                      <Input value={storeForm.name} onChange={(e) => mudarForm('name')(e.target.value)} />
+                    </Campo>
+                    <Campo rotulo="E-mail">
+                      <Input type="email" value={storeForm.email} onChange={(e) => mudarForm('email')(e.target.value)} />
+                    </Campo>
+                    <CampoDeTelefone rotulo="Telefone" valor={storeForm.phone} onMudar={mudarForm('phone')} />
+                    <CampoDeTelefone
+                      rotulo="WhatsApp"
+                      valor={storeForm.whatsapp_number}
+                      onMudar={mudarForm('whatsapp_number')}
+                    />
+                  </div>
+                </Card>
 
-          <Card className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <MapPinIcon className="w-5 h-5 text-fg-muted-token" />
-              <h2 className="text-lg font-semibold text-fg-token">Localização</h2>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-fg-muted-token">Endereço</label>
-                <input
-                  type="text"
-                  value={storeForm.address}
-                  onChange={(e) => setStoreForm({ ...storeForm, address: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-fg-muted-token">Cidade</label>
-                  <input
-                    type="text"
-                    value={storeForm.city}
-                    onChange={(e) => setStoreForm({ ...storeForm, city: e.target.value })}
-                    className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-fg-muted-token">Estado</label>
-                  <input
-                    type="text"
-                    value={storeForm.state}
-                    onChange={(e) => setStoreForm({ ...storeForm, state: e.target.value })}
-                    className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg-muted-token">CEP</label>
-                <input
-                  type="text"
-                  value={storeForm.zip_code}
-                  onChange={(e) => setStoreForm({ ...storeForm, zip_code: e.target.value })}
-                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                />
-              </div>
-              {effectiveStoreId && (
-                <LocalizacaoNoGoogle
-                  storeSlug={effectiveStoreId}
-                  onEscolher={({ lat, lng, endereco }) => setStoreForm({
-                    ...storeForm,
-                    latitude: String(lat),
-                    longitude: String(lng),
-                    address: storeForm.address || endereco || '',
-                  })}
-                />
-              )}
-              {storeForm.latitude && storeForm.longitude && (
-                <a
-                  href={`https://www.google.com/maps?q=${storeForm.latitude},${storeForm.longitude}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-sm font-semibold text-brand-ink hover:underline"
-                >
-                  <MapPinIcon className="h-4 w-4" /> Ver no mapa
-                </a>
-              )}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-fg-muted-token">Latitude</label>
-                  <input
-                    type="text"
-                    value={storeForm.latitude}
-                    onChange={(e) => setStoreForm({ ...storeForm, latitude: e.target.value })}
-                    className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-fg-muted-token">Longitude</label>
-                  <input
-                    type="text"
-                    value={storeForm.longitude}
-                    onChange={(e) => setStoreForm({ ...storeForm, longitude: e.target.value })}
-                    className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                  />
-                </div>
-              </div>
-              <Button
-                onClick={handleSaveLocation}
-                disabled={saving}
-                className="w-full justify-center"
-              >
-                {saving ? 'Salvando...' : 'Salvar Localização'}
-              </Button>
-            </div>
-          </Card>
-        </div>
+                <Card className="p-6">
+                  <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-fg-token">
+                    <MapPinIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
+                    Localização
+                  </h2>
+                  <div className="grid grid-cols-6 gap-4 max-md:grid-cols-2">
+                    <Campo rotulo="Endereço" className="col-span-6 max-md:col-span-2">
+                      <Input value={storeForm.address} onChange={(e) => mudarForm('address')(e.target.value)} />
+                    </Campo>
+                    <Campo rotulo="Cidade" className="col-span-3 max-md:col-span-2">
+                      <Input value={storeForm.city} onChange={(e) => mudarForm('city')(e.target.value)} />
+                    </Campo>
+                    <Campo rotulo="Estado" className="col-span-1">
+                      <Input
+                        value={storeForm.state}
+                        maxLength={2}
+                        onChange={(e) => mudarForm('state')(e.target.value.toUpperCase())}
+                      />
+                    </Campo>
+                    <Campo rotulo="CEP" className="col-span-2 max-md:col-span-1">
+                      <Input
+                        inputMode="numeric"
+                        value={storeForm.zip_code}
+                        onChange={(e) => mudarForm('zip_code')(e.target.value)}
+                      />
+                    </Campo>
+                  </div>
+
+                  <div className="mt-5 flex flex-col gap-4 border-t border-border-token pt-5">
+                    {effectiveStoreId && (
+                      <LocalizacaoNoGoogle
+                        storeSlug={effectiveStoreId}
+                        onEscolher={({ lat, lng, endereco }) => setStoreForm((atual) => ({
+                          ...atual,
+                          latitude: String(lat),
+                          longitude: String(lng),
+                          address: atual.address || endereco || '',
+                        }))}
+                      />
+                    )}
+                    <div className="grid grid-cols-2 items-start gap-4">
+                      <Campo rotulo="Latitude" erro={erros.latitude}>
+                        <Input
+                          inputMode="decimal"
+                          className="tabular-nums"
+                          value={storeForm.latitude}
+                          onChange={(e) => mudarForm('latitude')(e.target.value)}
+                        />
+                      </Campo>
+                      <Campo rotulo="Longitude" erro={erros.longitude}>
+                        <Input
+                          inputMode="decimal"
+                          className="tabular-nums"
+                          value={storeForm.longitude}
+                          onChange={(e) => mudarForm('longitude')(e.target.value)}
+                        />
+                      </Campo>
+                    </div>
+                    {storeForm.latitude && storeForm.longitude && (
+                      <a
+                        href={`https://www.google.com/maps?q=${storeForm.latitude},${storeForm.longitude}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 self-start text-sm font-semibold text-brand-ink hover:underline"
+                      >
+                        <MapPinIcon className="h-4 w-4" aria-hidden /> Ver no mapa
+                      </a>
+                    )}
+                  </div>
+                </Card>
               </>
             )}
 
             {aba === 'entrega' && (
               <>
         {/* COMO O CLIENTE RECEBE — antes do preço, porque decide se o preço
-            sequer existe. O cardápio já lê estes campos; o que faltava era o
-            dono poder mudar depois do onboarding. */}
+            sequer existe. Salva no ato (ver alternarRecebimento). */}
         <Card className="p-6">
           <div className="mb-1 flex items-center gap-2">
             <TruckIcon className="h-5 w-5 text-fg-muted-token" />
@@ -534,11 +502,6 @@ export const StoreSettingsPage: React.FC = () => {
           </div>
           <p className="text-sm text-fg-muted-token">{resumoDosModos(modos)}</p>
 
-          {/* Linha com chave, e não cartão-que-é-chave.
-              O cartão inteiro era um `role="switch"` com um pino desenhado
-              dentro dele — a terceira geometria de interruptor do painel, e um
-              alvo de clique do tamanho de um parágrafo, onde ler a explicação
-              já mudava a configuração da loja. Agora a chave é a chave. */}
           <ul className="mt-4 divide-y divide-border-token">
             {([
               { modo: 'delivery' as Modo, titulo: 'Entrega', ajuda: 'O cliente informa o endereço e paga o frete.', Icone: TruckIcon },
@@ -570,18 +533,9 @@ export const StoreSettingsPage: React.FC = () => {
               );
             })}
           </ul>
-        </Card>
 
-        {/* O PREÇO da entrega mora em Zonas de Entrega, não aqui.
-            Esta aba tinha os mesmos campos e uma TERCEIRA cópia da matemática
-            do frete (`calculateExampleFee`) — três implementações do mesmo
-            número, e as faixas do banco tinham precedência sobre as duas telas,
-            então o que se editava aqui não valia nada. */}
-        <Card className="p-6">
-          <div className="flex items-center gap-2 mb-2">
-            <TruckIcon className="w-5 h-5 text-fg-muted-token" />
-            <h2 className="text-lg font-semibold text-fg-token">Entrega</h2>
-          </div>
+          {/* O PREÇO da entrega mora em Zonas de Entrega, não aqui: esta aba
+              já teve uma terceira cópia da matemática do frete. */}
           <Link
             to={effectiveStoreId ? `/stores/${effectiveStoreId}/delivery-zones` : '/delivery-zones'}
             className="mt-4 inline-flex items-center gap-2 rounded bg-brand-soft px-4 py-2 text-sm font-medium text-brand-ink transition-colors hover:bg-brand-soft/80"
@@ -591,180 +545,133 @@ export const StoreSettingsPage: React.FC = () => {
           </Link>
         </Card>
 
-        {/* Horários de Funcionamento */}
         <Card className="p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <ClockIcon className="w-5 h-5 text-fg-muted-token" />
-            <h3 className="text-base font-semibold text-fg-token">Horários de funcionamento</h3>
-          </div>
-          <div className="space-y-3">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-fg-token">
+            <ClockIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
+            Horários de funcionamento
+          </h2>
+          <ul className="divide-y divide-border-token">
             {DAYS.map(day => {
               const h = operatingHours[day.key] || DEFAULT_HOURS;
+              const mudar = (parcial: Partial<DayHours>) =>
+                setOperatingHours(prev => ({ ...prev, [day.key]: { ...h, ...parcial } }));
               return (
-                <div key={day.key} className="flex items-center gap-3">
-                  <div className="w-24 flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setOperatingHours(prev => ({
-                        ...prev,
-                        [day.key]: { ...h, is_open: !h.is_open }
-                      }))}
-                      className={`w-full text-xs font-semibold px-2 py-1.5 rounded transition-colors ${
-                        h.is_open
-                          ? 'bg-brand-soft text-brand-ink hover:bg-brand-soft/80'
-                          : 'bg-surface-2 text-fg-muted-token hover:bg-surface-2/80'
-                      }`}
-                    >
-                      {h.is_open ? '✓ ' : ''}{day.label}
-                    </button>
-                  </div>
+                <li key={day.key} className="flex min-h-[52px] items-center gap-3 py-2">
+                  <button
+                    type="button"
+                    aria-pressed={h.is_open}
+                    onClick={() => mudar({ is_open: !h.is_open })}
+                    className={cn(
+                      'w-24 shrink-0 rounded px-2 py-1.5 text-xs font-semibold transition-colors',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                      h.is_open
+                        ? 'bg-brand-soft text-brand-ink hover:bg-brand-soft/80'
+                        : 'bg-surface-2 text-fg-muted-token hover:bg-surface-2/80'
+                    )}
+                  >
+                    {day.label}
+                  </button>
                   {h.is_open ? (
-                    <div className="flex items-center gap-2 flex-1">
-                      <input
+                    <div className="flex items-center gap-2">
+                      <Input
                         type="time"
+                        size="sm"
+                        aria-label={`${day.label}: abre`}
+                        className="w-28"
                         value={h.open}
-                        onChange={e => setOperatingHours(prev => ({
-                          ...prev,
-                          [day.key]: { ...h, open: e.target.value }
-                        }))}
-                        className="border border-border-token bg-surface rounded px-2 py-1.5 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
+                        onChange={e => mudar({ open: e.target.value })}
                       />
-                      <span className="text-fg-muted-token text-sm">até</span>
-                      <input
+                      <span className="text-sm text-fg-muted-token">até</span>
+                      <Input
                         type="time"
+                        size="sm"
+                        aria-label={`${day.label}: fecha`}
+                        className="w-28"
                         value={h.close}
-                        onChange={e => setOperatingHours(prev => ({
-                          ...prev,
-                          [day.key]: { ...h, close: e.target.value }
-                        }))}
-                        className="border border-border-token bg-surface rounded px-2 py-1.5 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
+                        onChange={e => mudar({ close: e.target.value })}
                       />
                     </div>
                   ) : (
-                    <span className="text-sm text-fg-muted-token italic">Fechado</span>
+                    <span className="text-sm text-fg-muted-token">Fechado</span>
                   )}
-                </div>
+                </li>
               );
             })}
-          </div>
-          <Button
-            onClick={handleSaveOperatingHours}
-            disabled={saving}
-            className="mt-6 w-full justify-center"
-          >
-            {saving ? 'Salvando...' : 'Salvar Horários'}
-          </Button>
+          </ul>
         </Card>
         {store?.id && (
-          <div className="mt-6">
-            <TempoDePreparoSection
-              storeId={store.id}
-              minutosAtuais={Number(store.default_prep_minutes) || 0}
-            />
-          </div>
+          <TempoDePreparoSection
+            storeId={store.id}
+            minutosAtuais={Number(store.default_prep_minutes) || 0}
+          />
         )}
               </>
             )}
 
             {aba === 'rastreamento' && (
-              <>
-        <Card className="p-6">
-          <div className="flex items-center gap-2 mb-2">
-            <ChartBarIcon className="w-5 h-5 text-fg-muted-token" />
-            <h3 className="text-base font-semibold text-fg-token">Meta Pixel e Conversions API</h3>
-          </div>
-          <p className="text-sm text-fg-muted-token mb-5">
-            Só o ID numérico do Pixel.
-          </p>
-          <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-fg-muted-token">ID do Meta Pixel</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={metaTracking.meta_pixel_id}
-                  onChange={e => setMetaTracking(prev => ({
-                    ...prev,
-                    meta_pixel_id: e.target.value.replace(/\D/g, ''),
-                  }))}
-                  placeholder="Ex.: 123456789012345"
-                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                />
-              </div>
-              <label className="flex items-center gap-3 text-sm text-fg-token cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={metaTracking.meta_pixel_enabled}
-                  onChange={e => setMetaTracking(prev => ({ ...prev, meta_pixel_enabled: e.target.checked }))}
-                  className="h-4 w-4 accent-[var(--color-brand)]"
-                />
-                Ativar Meta Pixel na vitrine
-              </label>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-fg-muted-token">
-                  Token da Conversions API {metaTracking.meta_capi_token_configured && '• configurado'}
-                </label>
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  value={metaTracking.meta_capi_access_token || ''}
-                  onChange={e => setMetaTracking(prev => ({ ...prev, meta_capi_access_token: e.target.value }))}
-                  placeholder={metaTracking.meta_capi_token_configured ? 'Deixe vazio para manter o token atual' : 'Token gerado no Gerenciador de Eventos'}
-                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                />
-              </div>
-              <label className="flex items-center gap-3 text-sm text-fg-token cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={metaTracking.meta_capi_enabled}
-                  onChange={e => setMetaTracking(prev => ({ ...prev, meta_capi_enabled: e.target.checked }))}
-                  className="h-4 w-4 accent-[var(--color-brand)]"
-                />
-                Enviar compras pela Conversions API
-              </label>
-            </div>
-          </div>
-          <div className="mt-6 pt-5 border-t border-border-token">
-            <div className="flex items-center gap-2 mb-2">
-              <ChartBarIcon className="w-5 h-5 text-fg-muted-token" />
-              <h3 className="text-base font-semibold text-fg-token">Microsoft Clarity</h3>
-            </div>
-            <p className="text-sm text-fg-muted-token mb-5">
-              Código do projeto em clarity.microsoft.com.
-            </p>
-            <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5">
-              <div>
-                <label className="text-sm font-medium text-fg-muted-token">ID do projeto Clarity</label>
-                <input
-                  type="text"
-                  value={metaTracking.clarity_id}
-                  onChange={e => setMetaTracking(prev => ({
-                    ...prev,
-                    clarity_id: e.target.value.replace(/[^a-zA-Z0-9]/g, ''),
-                  }))}
-                  placeholder="Ex.: abc1de23fg"
-                  className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-                />
-              </div>
-              <label className="flex items-center gap-3 text-sm text-fg-token cursor-pointer self-end pb-2">
-                <input
-                  type="checkbox"
-                  checked={metaTracking.clarity_enabled}
-                  onChange={e => setMetaTracking(prev => ({ ...prev, clarity_enabled: e.target.checked }))}
-                  className="h-4 w-4 accent-[var(--color-brand)]"
-                />
-                Ativar Clarity na vitrine
-              </label>
-            </div>
-          </div>
-          <Button onClick={handleSaveMetaTracking} disabled={saving} className="mt-6 w-full justify-center">
-            {saving ? 'Salvando...' : 'Salvar Rastreamento'}
-          </Button>
-        </Card>
-              </>
+              <Card className="p-6">
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-fg-token">
+                  <ChartBarIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
+                  Meta Pixel e Conversions API
+                </h2>
+                <div className="grid grid-cols-2 gap-x-5 gap-y-4 max-md:grid-cols-1">
+                  <Campo rotulo="ID do Meta Pixel">
+                    <Input
+                      inputMode="numeric"
+                      placeholder="Ex.: 123456789012345"
+                      value={metaTracking.meta_pixel_id}
+                      onChange={e => setMetaTracking(prev => ({
+                        ...prev,
+                        meta_pixel_id: e.target.value.replace(/\D/g, ''),
+                      }))}
+                    />
+                  </Campo>
+                  <Campo
+                    rotulo="Token da Conversions API"
+                    extra={metaTracking.meta_capi_token_configured ? 'configurado' : undefined}
+                  >
+                    <Input
+                      type="password"
+                      autoComplete="new-password"
+                      placeholder={metaTracking.meta_capi_token_configured ? 'Vazio mantém o atual' : 'Do Gerenciador de Eventos'}
+                      value={metaTracking.meta_capi_access_token || ''}
+                      onChange={e => setMetaTracking(prev => ({ ...prev, meta_capi_access_token: e.target.value }))}
+                    />
+                  </Campo>
+                  <LinhaComChave
+                    rotulo="Meta Pixel na vitrine"
+                    ligado={metaTracking.meta_pixel_enabled}
+                    onMudar={(v) => setMetaTracking(prev => ({ ...prev, meta_pixel_enabled: v }))}
+                  />
+                  <LinhaComChave
+                    rotulo="Compras pela Conversions API"
+                    ligado={metaTracking.meta_capi_enabled}
+                    onMudar={(v) => setMetaTracking(prev => ({ ...prev, meta_capi_enabled: v }))}
+                  />
+                </div>
+
+                <h2 className="mb-4 mt-6 flex items-center gap-2 border-t border-border-token pt-5 text-lg font-semibold text-fg-token">
+                  <ChartBarIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
+                  Microsoft Clarity
+                </h2>
+                <div className="grid grid-cols-2 items-end gap-x-5 gap-y-4 max-md:grid-cols-1">
+                  <Campo rotulo="ID do projeto Clarity">
+                    <Input
+                      placeholder="Ex.: abc1de23fg"
+                      value={metaTracking.clarity_id}
+                      onChange={e => setMetaTracking(prev => ({
+                        ...prev,
+                        clarity_id: e.target.value.replace(/[^a-zA-Z0-9]/g, ''),
+                      }))}
+                    />
+                  </Campo>
+                  <LinhaComChave
+                    rotulo="Clarity na vitrine"
+                    ligado={metaTracking.clarity_enabled}
+                    onMudar={(v) => setMetaTracking(prev => ({ ...prev, clarity_enabled: v }))}
+                  />
+                </div>
+              </Card>
             )}
 
             {aba === 'recebimento' && store?.id && (
@@ -775,30 +682,22 @@ export const StoreSettingsPage: React.FC = () => {
                     (store as unknown as { usa_gateway_da_plataforma?: boolean }).usa_gateway_da_plataforma,
                   )}
                 />
-                <div className="mt-6">
-                  <VoucherSection storeId={store.id} />
-                </div>
-                <div className="mt-6">
-                  <ValePorLinkSection
-                    storeId={store.id}
-                    ligadas={
-                      (store as unknown as { vale_por_link_brands?: string[] })
-                        .vale_por_link_brands || []
-                    }
-                    whatsapp={store.whatsapp_number || ''}
-                  />
-                </div>
-                <div className="mt-6">
-                  <AcrescimoDoValeSection
-                    storeId={store.id}
-                    percentualAtual={Number(
-                      (store as unknown as { voucher_fee_percent?: number }).voucher_fee_percent,
-                    ) || 0}
-                  />
-                </div>
-                <div className="mt-6">
-                  <CaixaDinheiroSection loja={store} onSalvo={setStore} />
-                </div>
+                <VoucherSection storeId={store.id} />
+                <ValePorLinkSection
+                  storeId={store.id}
+                  ligadas={
+                    (store as unknown as { vale_por_link_brands?: string[] })
+                      .vale_por_link_brands || []
+                  }
+                  whatsapp={store.whatsapp_number || ''}
+                />
+                <AcrescimoDoValeSection
+                  storeId={store.id}
+                  percentualAtual={Number(
+                    (store as unknown as { voucher_fee_percent?: number }).voucher_fee_percent,
+                  ) || 0}
+                />
+                <CaixaDinheiroSection loja={store} onSalvo={setStore} />
               </>
             )}
 
@@ -811,33 +710,46 @@ export const StoreSettingsPage: React.FC = () => {
             )}
 
             {aba === 'avaliacoes' && (
-              <>
-        <Card className="p-6">
-          <h3 className="text-base font-semibold text-fg-token">Avaliações no Google</h3>
-          <div className="mt-4">
-            <label className="text-sm text-fg-muted-token">Link de avaliação do Google</label>
-            <input
-              type="url"
-              value={googleReviewUrl}
-              onChange={(e) => setGoogleReviewUrl(e.target.value)}
-              placeholder="https://g.page/r/SEU_CODIGO/review"
-              className="w-full mt-1 px-4 py-2 bg-surface text-fg-token border border-border-token rounded focus:outline-none focus:ring-2 focus:ring-brand"
-            />
-            <p className="text-xs text-fg-muted-token mt-1">
-              No Perfil da Empresa no Google: {'"Pedir avaliações"'} → copiar link.
-            </p>
-          </div>
-          <Button onClick={handleSaveGoogleReview} disabled={saving} className="mt-4 w-full justify-center">
-            {saving ? 'Salvando...' : 'Salvar Link de Avaliação'}
-          </Button>
-        </Card>
-              </>
+              <Card className="p-6">
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-fg-token">
+                  <StarIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
+                  Avaliações no Google
+                </h2>
+                <Campo
+                  rotulo="Link de avaliação do Google"
+                  dica={'No Perfil da Empresa no Google: "Pedir avaliações" → copiar link.'}
+                >
+                  <Input
+                    type="url"
+                    placeholder="https://g.page/r/SEU_CODIGO/review"
+                    value={googleReviewUrl}
+                    onChange={(e) => setGoogleReviewUrl(e.target.value)}
+                  />
+                </Campo>
+              </Card>
             )}
           </div>
         )}
       </PageTabs>
+
+      <BarraDeAlteracoes
+        quantidade={quantidade}
+        salvando={saving}
+        onSalvar={salvar}
+        onDescartar={descartar}
+      />
     </PageShell>
   );
 };
+
+/** Liga/desliga com o rótulo ao lado — no lugar dos checkboxes soltos. */
+const LinhaComChave: React.FC<{ rotulo: string; ligado: boolean; onMudar: (v: boolean) => void }> = ({
+  rotulo, ligado, onMudar,
+}) => (
+  <div className="flex h-10 items-center justify-between gap-3 rounded border border-border-token px-3">
+    <span className="text-sm text-fg-token">{rotulo}</span>
+    <Switch checked={ligado} onChange={onMudar} ariaLabel={rotulo} />
+  </div>
+);
 
 export default StoreSettingsPage;

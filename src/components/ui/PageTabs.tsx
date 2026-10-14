@@ -38,6 +38,8 @@ export interface PageTab {
   icone?: React.ComponentType<{ className?: string }>;
   /** Marca a aba com um ponto de atenção (ex.: seção com erro ou pendência). */
   alerta?: boolean;
+  /** Seção com alteração ainda não salva (ponto da marca, como no Propriedade). */
+  mudou?: boolean;
 }
 
 export interface PageTabsProps {
@@ -46,6 +48,12 @@ export interface PageTabsProps {
   ariaLabel: string;
   /** Nome do parâmetro na URL. Trocar só se a página já usar `aba`. */
   parametro?: string;
+  /**
+   * Menu à esquerda (molde Configurações): no computador as seções viram uma
+   * coluna e o conteúdo fica ao lado; no celular volta a ser a faixa no topo.
+   * Sete abas numa linha só já passavam da largura e escondiam as últimas.
+   */
+  lateral?: boolean;
   className?: string;
 }
 
@@ -54,6 +62,7 @@ export const PageTabs: React.FC<PageTabsProps> = ({
   children,
   ariaLabel,
   parametro = 'aba',
+  lateral = false,
   className,
 }) => {
   const [params, setParams] = useSearchParams();
@@ -81,10 +90,10 @@ export const PageTabs: React.FC<PageTabsProps> = ({
 
   const aoTeclar = (e: React.KeyboardEvent) => {
     const i = abas.findIndex((a) => a.id === ativa);
-    if (e.key === 'ArrowRight') {
+    if (e.key === 'ArrowRight' || (lateral && e.key === 'ArrowDown')) {
       e.preventDefault();
       ir(abas[(i + 1) % abas.length].id);
-    } else if (e.key === 'ArrowLeft') {
+    } else if (e.key === 'ArrowLeft' || (lateral && e.key === 'ArrowUp')) {
       e.preventDefault();
       ir(abas[(i - 1 + abas.length) % abas.length].id);
     } else if (e.key === 'Home') {
@@ -99,12 +108,16 @@ export const PageTabs: React.FC<PageTabsProps> = ({
   if (!abas.length) return null;
 
   return (
-    <div className={cn('flex flex-col gap-5', className)}>
+    <div className={cn('flex flex-col gap-5', lateral && 'lg:flex-row lg:items-start lg:gap-8', className)}>
       <div
         role="tablist"
         aria-label={ariaLabel}
+        aria-orientation={lateral ? 'vertical' : undefined}
         onKeyDown={aoTeclar}
-        className="flex gap-1 overflow-x-auto border-b border-border-token"
+        className={cn(
+          'flex gap-1 overflow-x-auto border-b border-border-token',
+          lateral && 'lg:sticky lg:top-4 lg:w-56 lg:shrink-0 lg:flex-col lg:overflow-visible lg:border-b-0'
+        )}
       >
         {abas.map((aba) => {
           const Icone = aba.icone;
@@ -124,13 +137,20 @@ export const PageTabs: React.FC<PageTabsProps> = ({
                 'flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-4 py-2.5',
                 'text-body font-medium transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand',
+                lateral && 'lg:rounded lg:border-b-0 lg:px-3 lg:py-2',
                 selecionada
-                  ? 'border-brand text-brand-ink'
-                  : 'border-transparent text-fg-muted-token hover:text-fg-token'
+                  ? cn('border-brand text-brand-ink', lateral && 'lg:bg-brand-soft')
+                  : cn('border-transparent text-fg-muted-token hover:text-fg-token', lateral && 'lg:hover:bg-surface-2')
               )}
             >
               {Icone && <Icone className="h-4 w-4 shrink-0" />}
               {aba.rotulo}
+              {aba.mudou && (
+                <>
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-brand" />
+                  <span className="sr-only">(alterado, não salvo)</span>
+                </>
+              )}
               {aba.alerta && (
                 <>
                   {/* Cor sozinha não é sinal: o texto diz o mesmo. */}
@@ -148,7 +168,7 @@ export const PageTabs: React.FC<PageTabsProps> = ({
         id={`painel-${ativa}`}
         aria-labelledby={`aba-${ativa}`}
         tabIndex={0}
-        className="focus-visible:outline-none"
+        className={cn('focus-visible:outline-none', lateral && 'min-w-0 lg:flex-1')}
       >
         {children(ativa)}
       </div>
