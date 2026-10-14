@@ -3,7 +3,7 @@
  * seu mapa, com paletas diferentes para o mesmo "pago".
  */
 import type { BadgeTone } from './Badge';
-import { pagoNaEntrega, rotuloDePagamento } from '../../utils/rotulosDeEstado';
+import { pagoNaEntrega, rotuloDePagamento, STATUS_LABELS } from '../../utils/rotulosDeEstado';
 
 export interface Estado { rotulo: string; tone: BadgeTone }
 
@@ -57,31 +57,36 @@ export function estadoDeCampanha(status?: string | null): Estado {
  *   saiu/pronto → success  despachado
  *   entregue    → neutral  acabou, não pede mais nada
  */
-const PEDIDO: Record<string, Estado> = {
-  pending: { rotulo: 'Pendente', tone: 'warning' },
-  processing: { rotulo: 'Processando', tone: 'warning' },
-  awaiting_payment: { rotulo: 'Aguardando pagamento', tone: 'warning' },
-  payment_pending: { rotulo: 'Aguardando pagamento', tone: 'warning' },
-  confirmed: { rotulo: 'Confirmado', tone: 'info' },
-  paid: { rotulo: 'Pago', tone: 'info' },
-  payment_confirmed: { rotulo: 'Pagamento confirmado', tone: 'info' },
-  preparing: { rotulo: 'Preparando', tone: 'brand' },
-  ready: { rotulo: 'Pronto', tone: 'success' },
-  out_for_delivery: { rotulo: 'Saiu para entrega', tone: 'success' },
-  shipped: { rotulo: 'Enviado', tone: 'success' },
-  delivered: { rotulo: 'Entregue', tone: 'neutral' },
-  completed: { rotulo: 'Concluído', tone: 'neutral' },
+// Só a COR. O texto vem de `rotulosDeEstado.STATUS_LABELS` — havia sete mapas
+// de status e eles discordavam ("Em entrega" × "Saiu para entrega").
+const TOM_DO_PEDIDO: Record<string, BadgeTone> = {
+  pending: 'warning',
+  processing: 'warning',
+  awaiting_payment: 'warning',
+  payment_pending: 'warning',
+  confirmed: 'info',
+  paid: 'info',
+  payment_confirmed: 'info',
+  preparing: 'brand',
+  ready: 'success',
+  out_for_delivery: 'success',
+  shipped: 'success',
+  delivered: 'neutral',
+  completed: 'neutral',
   // Cancelado é fim, não falha — neutro, igual ao pagamento.
-  cancelled: { rotulo: 'Cancelado', tone: 'neutral' },
-  failed: { rotulo: 'Falhou', tone: 'danger' },
-  refunded: { rotulo: 'Reembolsado', tone: 'neutral' },
+  cancelled: 'neutral',
+  failed: 'danger',
+  refunded: 'neutral',
 };
 
 /** O NOSSO rótulo primeiro; o do backend (`status_display`) como reserva para
  *  status novo sem tradução — nunca "Delivered" para o dono da loja. */
 export function estadoDePedido(status?: string | null, rotuloDoBackend?: string | null): Estado {
   const chave = (status || '').toLowerCase();
-  return PEDIDO[chave] ?? { rotulo: rotuloDoBackend || status || '—', tone: 'neutral' };
+  return {
+    rotulo: STATUS_LABELS[chave] || rotuloDoBackend || status || '—',
+    tone: TOM_DO_PEDIDO[chave] ?? 'neutral',
+  };
 }
 
 /** Prazo de um pedido em aberto (régua de `orderSla.ts`): no prazo não grita. */

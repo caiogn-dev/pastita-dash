@@ -12,13 +12,16 @@
  */
 export const STATUS_LABELS: Record<string, string> = {
   pending: 'Pendente',
+  awaiting_payment: 'Aguardando pagamento',
+  payment_pending: 'Aguardando pagamento',
+  payment_confirmed: 'Pagamento confirmado',
   confirmed: 'Confirmado',
   processing: 'Processando',
   paid: 'Pago',
   preparing: 'Preparando',
   ready: 'Pronto',
   shipped: 'Enviado',
-  out_for_delivery: 'Em entrega',
+  out_for_delivery: 'Saiu para entrega',
   delivered: 'Entregue',
   completed: 'Concluído',
   cancelled: 'Cancelado',

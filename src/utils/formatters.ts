@@ -4,6 +4,8 @@
  * Use these functions throughout the dashboard for consistent formatting.
  */
 
+import { STATUS_LABELS } from './rotulosDeEstado';
+
 // ==================== Currency Formatting ====================
 
 /** Aceita o que o backend e os formulários realmente mandam. */
@@ -408,28 +410,12 @@ export function formatFileSize(bytes: number): string {
 
 // ==================== Order Status Formatting ====================
 
-export const ORDER_STATUS_LABELS: Record<string, string> = {
-  pending: 'Pendente',
-  confirmed: 'Confirmado',
-  preparing: 'Preparando',
-  ready: 'Pronto',
-  out_for_delivery: 'Em Entrega',
-  delivered: 'Entregue',
-  cancelled: 'Cancelado',
-};
-
-export const ORDER_STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  confirmed: 'bg-blue-100 text-blue-800',
-  preparing: 'bg-orange-100 text-orange-800',
-  ready: 'bg-purple-100 text-purple-800',
-  out_for_delivery: 'bg-indigo-100 text-indigo-800',
-  delivered: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800',
-};
+/** Status do pedido em texto: a fonte é `rotulosDeEstado.STATUS_LABELS`
+ *  (havia sete mapas e eles discordavam). Nome antigo mantido para quem importa. */
+export const ORDER_STATUS_LABELS: Record<string, string> = STATUS_LABELS;
 
 export function formatOrderStatus(status: string): string {
-  return ORDER_STATUS_LABELS[status] || status;
+  return STATUS_LABELS[status] || status;
 }
 
 // ==================== Payment Status Formatting ====================

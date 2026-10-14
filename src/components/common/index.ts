@@ -25,7 +25,6 @@ export {
   OrderStatusBadge,
   ConversationStatusBadge,
   ConversationModeBadge,
-  ORDER_STATUS_CONFIG,
   CONVERSATION_STATUS_CONFIG,
   CONVERSATION_MODE_CONFIG,
 } from './Badge';

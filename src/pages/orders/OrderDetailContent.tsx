@@ -10,6 +10,8 @@
  * is provided by the caller so the same content renders in both surfaces.
  */
 import { copyToClipboard } from '../../utils/clipboard';
+import { SeloDeEstado } from '../../components/ui/SeloDeEstado';
+import { estadoDePedido } from '../../components/ui/estados';
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
   ArrowLeftIcon,
@@ -105,21 +107,6 @@ const CANAL_DO_PEDIDO: Record<string, string> = {
   dashboard: 'Painel',
 };
 
-// Badges de status nos tokens semânticos do tema (os --*-soft já têm valor
-// próprio no dark, então não precisam de variante dark:).
-const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-[var(--warning-soft)] text-[var(--warning)]',
-  confirmed: 'bg-[var(--info-soft)] text-[var(--info)]',
-  paid: 'bg-[var(--info-soft)] text-[var(--info)]',
-  preparing: 'bg-brand-soft text-[var(--brand)]',
-  processing: 'bg-brand-soft text-[var(--brand)]',
-  ready: 'bg-[var(--info-soft)] text-[var(--info)]',
-  out_for_delivery: 'bg-[var(--info-soft)] text-[var(--info)]',
-  shipped: 'bg-[var(--info-soft)] text-[var(--info)]',
-  delivered: 'bg-[var(--success-soft)] text-[var(--success)]',
-  completed: 'bg-[var(--success-soft)] text-[var(--success)]',
-  cancelled: 'bg-[var(--danger-soft)] text-[var(--danger)]',
-};
 
 
 // =============================================================================
@@ -511,7 +498,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
     return <PageLoading />;
   }
 
-  const statusColors = STATUS_COLORS[order.status.toLowerCase()] || STATUS_COLORS.pending;
+  const estadoDoPedido = estadoDePedido(order.status);
   const paymentStatus = order.payment_status || 'pending';
   const paymentStatusLabel = PAYMENT_STATUS_LABELS;
 
@@ -580,9 +567,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${statusColors}`}>
-              {STATUS_LABELS[order.status.toLowerCase()] || order.status}
-            </span>
+            <SeloDeEstado tone={estadoDoPedido.tone}>{estadoDoPedido.rotulo}</SeloDeEstado>
             <span className="text-xl font-semibold tracking-[-0.03em] text-fg-token">
               {formatCurrency(order.total)}
             </span>

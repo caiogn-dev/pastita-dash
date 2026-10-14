@@ -7,6 +7,7 @@
  */
 import React, { forwardRef } from 'react';
 import { cn } from '../../utils/cn';
+import { estadoDePedido } from './estados';
 
 export type BadgeTone = 'brand' | 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
@@ -109,20 +110,6 @@ export default Badge;
 
 type StatusConfig = { label: string; variant: BadgeVariant };
 
-export const ORDER_STATUS_CONFIG: Record<string, StatusConfig> = {
-  pending: { label: 'Pendente', variant: 'warning' },
-  processing: { label: 'Processando', variant: 'info' },
-  confirmed: { label: 'Confirmado', variant: 'success' },
-  paid: { label: 'Pago', variant: 'success' },
-  preparing: { label: 'Preparando', variant: 'info' },
-  ready: { label: 'Pronto', variant: 'success' },
-  shipped: { label: 'Enviado', variant: 'info' },
-  out_for_delivery: { label: 'Em Entrega', variant: 'warning' },
-  delivered: { label: 'Entregue', variant: 'success' },
-  cancelled: { label: 'Cancelado', variant: 'danger' },
-  refunded: { label: 'Reembolsado', variant: 'gray' },
-  failed: { label: 'Falhou', variant: 'danger' },
-};
 
 export const CONVERSATION_STATUS_CONFIG: Record<string, StatusConfig> = {
   active: { label: 'Ativa', variant: 'success' },
@@ -137,17 +124,19 @@ export const CONVERSATION_MODE_CONFIG: Record<string, StatusConfig> = {
   hybrid: { label: 'Híbrido', variant: 'info' },
 };
 
+// Status do pedido: texto e cor vêm de `estados.ts` (que lê `rotulosDeEstado`).
+// O mapa próprio que morava aqui divergia das outras telas.
 export const StatusBadge: React.FC<{ status: string; children?: React.ReactNode }> = ({
   status,
   children,
 }) => {
-  const config: StatusConfig = ORDER_STATUS_CONFIG[status] ?? { label: status, variant: 'gray' };
-  return <Badge variant={config.variant}>{children || config.label}</Badge>;
+  const estado = estadoDePedido(status);
+  return <Badge tone={estado.tone}>{children || estado.rotulo}</Badge>;
 };
 
 export const OrderStatusBadge: React.FC<{ status: string }> = ({ status }) => {
-  const config: StatusConfig = ORDER_STATUS_CONFIG[status] ?? { label: status, variant: 'gray' };
-  return <Badge variant={config.variant}>{config.label}</Badge>;
+  const estado = estadoDePedido(status);
+  return <Badge tone={estado.tone}>{estado.rotulo}</Badge>;
 };
 
 export const ConversationStatusBadge: React.FC<{ status: string }> = ({ status }) => {

@@ -1,6 +1,7 @@
 /**
  * AnalyticsPage - Relatórios (sem Chakra UI)
  */
+import { STATUS_LABELS } from '../../utils/rotulosDeEstado';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -70,13 +71,6 @@ type GroupBy = 'day' | 'week' | 'month';
 // TabValue e o mapa de relatórios moram em `relatorios.ts` — a página deixou
 // de ser dona da navegação dela.
 
-// Rótulos pt-BR dos status de pedido (para a distribuição na aba Pedidos).
-const ORDER_STATUS_LABELS: Record<string, string> = {
-  pending: 'Pendente', confirmed: 'Confirmado', processing: 'Processando',
-  paid: 'Pago', preparing: 'Preparando', ready: 'Pronto', shipped: 'Enviado',
-  out_for_delivery: 'Em entrega', delivered: 'Entregue', completed: 'Concluído',
-  cancelled: 'Cancelado', refunded: 'Reembolsado', failed: 'Falhou',
-};
 const NEGATIVE_STATUSES = new Set(['cancelled', 'refunded', 'failed']);
 
 // ─── KpiCard ─────────────────────────────────────────────────────────────────
@@ -401,7 +395,7 @@ const AnalyticsPage: React.FC = () => {
 
     const statusItems = Object.entries(statuses)
       .map(([k, v]) => ({
-        label: ORDER_STATUS_LABELS[k] || k,
+        label: STATUS_LABELS[k] || k,
         value: Number(v) || 0,
         danger: NEGATIVE_STATUSES.has(k),
       }))

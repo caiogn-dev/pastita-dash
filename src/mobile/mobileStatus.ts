@@ -1,13 +1,8 @@
-/** pt-BR labels for order statuses shown on mobile. */
-export const STATUS_LABEL: Record<string, string> = {
-  pending: 'Recebido',
-  confirmed: 'Confirmado',
-  preparing: 'Em preparo',
-  ready: 'Pronto',
-  out_for_delivery: 'Saiu para entrega',
-  delivered: 'Entregue',
-  cancelled: 'Cancelado',
-};
+import { STATUS_LABELS } from '../utils/rotulosDeEstado';
+
+/** Status do pedido no celular: o MESMO texto do resto do painel (aqui era
+ *  "Recebido" o que lá é "Pendente"). Nome antigo mantido para quem importa. */
+export const STATUS_LABEL: Record<string, string> = STATUS_LABELS;
 
 import { proximaAcaoDoPedido } from '../pages/orders/proximaAcao';
 import type { Order } from '../types';
