@@ -24,9 +24,10 @@ const store = {
   metadata: { bio_settings: { headline: 'Oi', links: {}, instagram_url: '' } },
 };
 
-function mount() {
+// A tela virou editor por partes: cada bloco antigo é uma `?parte=`.
+function mount(parte = 'perfil') {
   return render(
-    <MemoryRouter initialEntries={['/stores/ce-saladas/link-bio']}>
+    <MemoryRouter initialEntries={[`/stores/ce-saladas/link-bio?parte=${parte}`]}>
       <Routes>
         <Route path="/stores/:storeId/link-bio" element={<LinkBioPage />} />
       </Routes>
@@ -49,14 +50,14 @@ beforeEach(() => {
 
 describe('LinkBioPage', () => {
   it('mostra a URL pública da bio e os links customizados', async () => {
-    mount();
+    mount('links');
     await waitFor(() => expect(screen.getByText(/bio\.cardapidex\.com\.br\/ce-saladas/)).toBeInTheDocument());
     expect(screen.getByText('Pesquisa')).toBeInTheDocument();
   });
 
   it('mostra paywall quando stats devolve 403', async () => {
     getBioStats.mockRejectedValue({ response: { status: 403, data: { detail: 'Estatísticas do Link na Bio são exclusivas dos planos Pro e Premium. Faça upgrade do plano.' } } });
-    mount();
+    mount('estatisticas');
     // detail do 403 aparece na seção de estatísticas E no PaywallModal compartilhado
     await waitFor(() => expect(screen.getAllByText(/exclusivas dos planos Pro e Premium/).length).toBeGreaterThan(1));
   });
@@ -65,6 +66,8 @@ describe('LinkBioPage', () => {
     updateStore.mockRejectedValue({ response: { status: 500, data: {} } });
     mount();
     await waitFor(() => expect(screen.getByText(/bio\.cardapidex\.com\.br\/ce-saladas/)).toBeInTheDocument());
+    // O Salvar só existe quando há alteração (barra única).
+    await userEvent.type(screen.getByLabelText(/headline/i), '!');
     await userEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
     await waitFor(() => expect(screen.getByText(/não foi possível salvar o conteúdo/i)).toBeInTheDocument());
   });
@@ -75,6 +78,8 @@ describe('LinkBioPage', () => {
     });
     mount();
     await waitFor(() => expect(screen.getByText(/bio\.cardapidex\.com\.br\/ce-saladas/)).toBeInTheDocument());
+    // O Salvar só existe quando há alteração (barra única).
+    await userEvent.type(screen.getByLabelText(/headline/i), '!');
     await userEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
     await waitFor(() => expect(screen.getAllByText(/exclusivos dos planos Pro e Premium/).length).toBeGreaterThan(0));
   });
@@ -93,7 +98,7 @@ describe('botões fixos aplicam na hora', () => {
 
   it('desligar o Cardápio salva sozinho, sem passar pelo Salvar', async () => {
     updateStore.mockResolvedValue({ ...store });
-    mount();
+    mount('botoes');
     await screen.findByRole('switch', { name: /cardápio/i });
 
     await userEvent.click(screen.getByRole('switch', { name: /cardápio/i }));
@@ -105,7 +110,7 @@ describe('botões fixos aplicam na hora', () => {
 
   it('se o salvamento falha, a chave VOLTA — não fica mentindo ligada', async () => {
     updateStore.mockRejectedValue({ response: { status: 500, data: {} } });
-    mount();
+    mount('botoes');
     const chave = await screen.findByRole('switch', { name: /whatsapp/i });
     expect(chave).toBeChecked();
 
@@ -117,7 +122,7 @@ describe('botões fixos aplicam na hora', () => {
 
   it('o link personalizado continua aplicando na hora', async () => {
     updateBioLink.mockResolvedValue({});
-    mount();
+    mount('links');
     const chave = await screen.findByRole('switch', { name: /pesquisa/i });
     await userEvent.click(chave);
     await waitFor(() => expect(updateBioLink).toHaveBeenCalledWith('l1', { is_active: false }));
@@ -126,7 +131,7 @@ describe('botões fixos aplicam na hora', () => {
 
 describe('a linha do link', () => {
   it('guarda mover e excluir atrás de um kebab, com rótulo em texto', async () => {
-    mount();
+    mount('links');
     await screen.findByText('Pesquisa');
 
     // Antes: "↑", "↓" e "Excluir" soltos na linha, o destrutivo colado nos
@@ -141,7 +146,7 @@ describe('a linha do link', () => {
     listBioLinks.mockResolvedValue([
       { id: 'l1', store: 'uuid-1', title: 'Pesquisa', url: 'https://f.gle/x', icon: '📝', sort_order: 0, is_active: false },
     ]);
-    mount();
+    mount('links');
     expect(await screen.findByText(/oculto/i)).toBeInTheDocument();
   });
 });
