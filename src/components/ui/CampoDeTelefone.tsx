@@ -21,10 +21,7 @@ export interface CampoDeTelefoneProps {
   className?: string;
 }
 
-export function mascararTelefone(valor: string): string {
-  const texto = String(valor || '');
-  const digitos = texto.replace(/\D/g, '');
-  if (texto.trim().startsWith('+')) return `+${digitos}`;
+function mascaraNacional(digitos: string): string {
   if (digitos.length <= 2) return digitos ? `(${digitos}` : '';
   const ddd = digitos.slice(0, 2);
   const resto = digitos.slice(2);
@@ -34,9 +31,27 @@ export function mascararTelefone(valor: string): string {
   return `(${ddd}) ${resto.slice(0, meio)}-${resto.slice(meio)}`;
 }
 
+/** 12 ou 13 dígitos começando com 55 = número brasileiro com o código do país,
+ *  que é como o backend devolve o número depois de normalizar. */
+const comCodigoDoBrasil = (digitos: string) => digitos.length >= 12 && digitos.startsWith('55');
+
+export function mascararTelefone(valor: string): string {
+  const texto = String(valor || '');
+  const digitos = texto.replace(/\D/g, '');
+  const internacional = texto.trim().startsWith('+');
+  if ((internacional && digitos.startsWith('55') && digitos.length > 2) || (!internacional && comCodigoDoBrasil(digitos))) {
+    return `+55 ${mascaraNacional(digitos.slice(2, 13))}`;
+  }
+  if (internacional) return `+${digitos}`;
+  return mascaraNacional(digitos);
+}
+
 export function limparTelefone(bruto: string): string {
   const digitos = bruto.replace(/\D/g, '');
   if (bruto.trim().startsWith('+')) return `+${digitos.slice(0, 15)}`;
+  // O número salvo pode voltar com o 55 na frente: cortar em 11 aqui gravava
+  // outro número na primeira edição.
+  if (comCodigoDoBrasil(digitos)) return digitos.slice(0, 13);
   return digitos.slice(0, 11);
 }
 

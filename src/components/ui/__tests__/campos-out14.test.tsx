@@ -122,6 +122,17 @@ describe('CampoDeTelefone', () => {
     expect(onMudar).toHaveBeenLastCalledWith('+3464752082');
   });
 
+  // O backend devolve o número normalizado, com o 55 na frente. Mostrar
+  // "(55) 63999-547790" e cortar em 11 dígitos ao editar gravava outro número.
+  it('número salvo com 55 na frente mostra o +55 e não perde dígito ao editar', () => {
+    const { campo, onMudar } = montar('5563999547790');
+    expect(campo.value).toBe('+55 (63) 99954-7790');
+    fireEvent.change(campo, { target: { value: '+55 (63) 99954-779' } });
+    expect(onMudar).toHaveBeenLastCalledWith('+556399954779');
+    fireEvent.change(campo, { target: { value: '5563999547790' } });
+    expect(onMudar).toHaveBeenLastCalledWith('5563999547790');
+  });
+
   it('não passa de 11 dígitos no nacional', () => {
     const { campo, onMudar } = montar('');
     fireEvent.change(campo, { target: { value: '119876543219999' } });
