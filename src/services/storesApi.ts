@@ -79,6 +79,9 @@ export interface Store {
   default_delivery_fee: number;
   /** Tempo padrão de preparo (min). 0 = loja sem previsão. */
   default_prep_minutes?: number;
+  /** Prazo de entrega que o cliente vê ("30–45 min"). 0 no máximo = não mostra. */
+  prazo_entrega_min?: number;
+  prazo_entrega_max?: number;
   operating_hours: Record<string, { open: string; close: string; is_open: boolean }>;
   is_open: boolean;
   owner: number;
@@ -112,6 +115,9 @@ export interface StoreInput {
   min_order_value?: number;
   default_delivery_fee?: number;
   default_prep_minutes?: number;
+  /** Prazo de entrega que o cliente vê ("30–45 min"). 0 no máximo = não mostra. */
+  prazo_entrega_min?: number;
+  prazo_entrega_max?: number;
   metadata?: Record<string, unknown>;
   operating_hours?: Record<string, { open: string; close: string; is_open: boolean }>;
   primary_color?: string;

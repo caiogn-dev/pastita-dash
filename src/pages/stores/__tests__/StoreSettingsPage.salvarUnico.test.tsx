@@ -38,6 +38,8 @@ const loja = {
   delivery_enabled: true,
   pickup_enabled: true,
   operating_hours: {},
+  prazo_entrega_min: 0,
+  prazo_entrega_max: 0,
 };
 
 const rastreio = {
@@ -127,6 +129,26 @@ describe('Configurações: um salvar só', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
     await waitFor(() => expect(api.updateStoreMetaTracking).toHaveBeenCalledTimes(1));
     expect((api.updateStoreMetaTracking as jest.Mock).mock.calls[0][1].meta_pixel_id).toBe('123');
+    expect(api.updateStore).not.toHaveBeenCalled();
+  });
+
+  // 14/10: o cliente via "~3 min" (trajeto) e reclamava de demora dentro do
+  // prazo. O dono define a faixa que o cliente vê ("30–45 min").
+  it('prazo de entrega para o cliente entra no mesmo salvar', async () => {
+    montar('/stores/ce-saladas/settings?aba=entrega');
+    fireEvent.change(await screen.findByLabelText('Prazo mínimo'), { target: { value: '30' } });
+    fireEvent.change(screen.getByLabelText('Prazo máximo'), { target: { value: '45' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(api.updateStore).toHaveBeenCalledTimes(1));
+    expect((api.updateStore as jest.Mock).mock.calls[0][1]).toMatchObject({ prazo_entrega_min: 30, prazo_entrega_max: 45 });
+  });
+
+  it('prazo invertido não grava', async () => {
+    montar('/stores/ce-saladas/settings?aba=entrega');
+    fireEvent.change(await screen.findByLabelText('Prazo mínimo'), { target: { value: '50' } });
+    fireEvent.change(screen.getByLabelText('Prazo máximo'), { target: { value: '40' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    expect(await screen.findByText(/mínimo não pode passar do máximo/i)).toBeInTheDocument();
     expect(api.updateStore).not.toHaveBeenCalled();
   });
 });

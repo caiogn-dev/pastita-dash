@@ -83,11 +83,19 @@ const FORM_VAZIO = {
   zip_code: '',
   latitude: '',
   longitude: '',
+  prazo_entrega_min: '',
+  prazo_entrega_max: '',
 };
 type FormDaLoja = typeof FORM_VAZIO;
 
 const CAMPOS_DA_LOJA: (keyof FormDaLoja)[] = ['name', 'email', 'phone', 'whatsapp_number'];
 const CAMPOS_DO_LOCAL: (keyof FormDaLoja)[] = ['address', 'city', 'state', 'zip_code', 'latitude', 'longitude'];
+const CAMPOS_DO_PRAZO: (keyof FormDaLoja)[] = ['prazo_entrega_min', 'prazo_entrega_max'];
+
+const minutosOuZero = (texto: string) => {
+  const n = parseInt(texto, 10);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
 const CAMPOS_DO_RASTREIO: (keyof StoreMetaTracking)[] = [
   'meta_pixel_id', 'meta_pixel_enabled', 'meta_capi_enabled', 'meta_capi_test_event_code', 'clarity_id', 'clarity_enabled',
 ];
@@ -131,7 +139,7 @@ export const StoreSettingsPage: React.FC = () => {
   const [operatingHours, setOperatingHours] = useState<OperatingHours>({});
   const [metaTracking, setMetaTracking] = useState<StoreMetaTracking>(defaultMetaTracking);
   const [googleReviewUrl, setGoogleReviewUrl] = useState('');
-  const [erros, setErros] = useState<{ latitude?: string | null; longitude?: string | null }>({});
+  const [erros, setErros] = useState<{ latitude?: string | null; longitude?: string | null; prazo?: string | null }>({});
   /** Entrega/retirada: os campos existem no banco e o cardápio já os respeita
    *  — faltava o dono poder mudar depois do onboarding. */
   const [modos, setModos] = useState<ModosDeRecebimento>({ delivery: true, pickup: true });
@@ -195,6 +203,8 @@ export const StoreSettingsPage: React.FC = () => {
         zip_code: data.zip_code || '',
         latitude: data.latitude?.toString() || '',
         longitude: data.longitude?.toString() || '',
+        prazo_entrega_min: data.prazo_entrega_min ? String(data.prazo_entrega_min) : '',
+        prazo_entrega_max: data.prazo_entrega_max ? String(data.prazo_entrega_max) : '',
       };
       const stored = (data.operating_hours as OperatingHours) || {};
       const horas: OperatingHours = {};
@@ -229,12 +239,13 @@ export const StoreSettingsPage: React.FC = () => {
   // ── O que mudou, por seção ────────────────────────────────────────────
   const mudouNaLoja = CAMPOS_DA_LOJA.filter((k) => storeForm[k] !== salvo.form[k]);
   const mudouNoLocal = CAMPOS_DO_LOCAL.filter((k) => storeForm[k] !== salvo.form[k]);
+  const mudouNoPrazo = CAMPOS_DO_PRAZO.filter((k) => storeForm[k] !== salvo.form[k]);
   const diasMudados = DAYS.filter((d) => !iguais(operatingHours[d.key], salvo.horas[d.key]));
   const avaliacaoMudou = googleReviewUrl.trim() !== salvo.avaliacao.trim();
   const rastreioMudado = CAMPOS_DO_RASTREIO.filter((k) => metaTracking[k] !== salvo.rastreio[k]).length
     + (metaTracking.meta_capi_access_token?.trim() ? 1 : 0);
 
-  const quantidade = mudouNaLoja.length + mudouNoLocal.length + diasMudados.length
+  const quantidade = mudouNaLoja.length + mudouNoLocal.length + mudouNoPrazo.length + diasMudados.length
     + (avaliacaoMudou ? 1 : 0) + rastreioMudado;
 
   // Sair da página com alteração pendente perde o que foi digitado.
@@ -276,7 +287,22 @@ export const StoreSettingsPage: React.FC = () => {
       }
     }
 
+    if (mudouNoPrazo.length) {
+      const minimo = minutosOuZero(storeForm.prazo_entrega_min);
+      const maximo = minutosOuZero(storeForm.prazo_entrega_max);
+      const erroDoPrazo = maximo && minimo > maximo ? 'O mínimo não pode passar do máximo.' : null;
+      setErros((atual) => ({ ...atual, prazo: erroDoPrazo }));
+      if (erroDoPrazo) {
+        toast.error('Confira o prazo de entrega antes de salvar.');
+        return;
+      }
+    }
+
     const payload: Record<string, unknown> = {};
+    if (mudouNoPrazo.length) {
+      payload.prazo_entrega_min = minutosOuZero(storeForm.prazo_entrega_min);
+      payload.prazo_entrega_max = minutosOuZero(storeForm.prazo_entrega_max);
+    }
     const metadata: Record<string, unknown> = { ...(store?.metadata || {}) };
     let mexeuNoMetadata = false;
 
@@ -385,7 +411,7 @@ export const StoreSettingsPage: React.FC = () => {
         ariaLabel="Seções das configurações da loja"
         abas={[
           { id: 'loja', rotulo: 'Loja', icone: BuildingStorefrontIcon, mudou: mudouNaLoja.length + mudouNoLocal.length > 0 },
-          { id: 'entrega', rotulo: 'Entrega e horários', icone: ClockIcon, mudou: diasMudados.length > 0 },
+          { id: 'entrega', rotulo: 'Entrega e horários', icone: ClockIcon, mudou: diasMudados.length + mudouNoPrazo.length > 0 },
           { id: 'rastreamento', rotulo: 'Rastreamento', icone: ChartBarIcon, mudou: rastreioMudado > 0 },
           { id: 'avaliacoes', rotulo: 'Avaliações', icone: StarIcon, mudou: avaliacaoMudou },
           { id: 'recebimento', rotulo: 'Recebimento', icone: BanknotesIcon },
@@ -543,6 +569,33 @@ export const StoreSettingsPage: React.FC = () => {
             <TruckIcon className="w-4 h-4" />
             Abrir preço da entrega
           </Link>
+        </Card>
+
+        {/* A promessa que o cliente vê no cardápio, no checkout e no WhatsApp
+            ("chega entre 13:14 e 13:29"). Atraso é o que passa do máximo. */}
+        <Card className="p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-fg-token">
+            <TruckIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
+            Prazo de entrega
+          </h2>
+          <div className="grid max-w-md grid-cols-2 items-start gap-4">
+            <Campo rotulo="Prazo mínimo" erro={erros.prazo}>
+              <Input
+                type="number" inputMode="numeric" min={0} max={600}
+                rightAddon="min" className="tabular-nums" placeholder="30"
+                value={storeForm.prazo_entrega_min}
+                onChange={(e) => mudarForm('prazo_entrega_min')(e.target.value)}
+              />
+            </Campo>
+            <Campo rotulo="Prazo máximo">
+              <Input
+                type="number" inputMode="numeric" min={0} max={600}
+                rightAddon="min" className="tabular-nums" placeholder="45"
+                value={storeForm.prazo_entrega_max}
+                onChange={(e) => mudarForm('prazo_entrega_max')(e.target.value)}
+              />
+            </Campo>
+          </div>
         </Card>
 
         <Card className="p-6">
