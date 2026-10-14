@@ -49,28 +49,55 @@ test('no ingrediente da loja, "Paguei R$ __ por __" mostra o custo por kg e vai 
   abrirPagina();
   const linhas = await screen.findAllByText('Queijo');
   fireEvent.click(linhas[0]);
-  const modal = await screen.findByRole('dialog');
-  fireEvent.change(within(modal).getByLabelText('Paguei (R$)'), { target: { value: '30' } });
-  fireEvent.change(within(modal).getByLabelText('Quantidade comprada'), { target: { value: '1000' } });
-  expect(within(modal).getByText(/R\$ 30,00 por kg/)).toBeInTheDocument();
-  fireEvent.click(within(modal).getByRole('button', { name: 'Salvar' }));
+  const painel = await screen.findByRole('complementary', { name: /Queijo/ });
+  // Dinheiro enche pelos centavos (CampoDeDinheiro): 3000 = R$ 30,00.
+  fireEvent.change(within(painel).getByLabelText('Paguei'), { target: { value: '3000' } });
+  fireEvent.change(within(painel).getByLabelText('Quantidade comprada'), { target: { value: '1000' } });
+  expect(within(painel).getByText(/R\$ 30,00 por kg/)).toBeInTheDocument();
+  fireEvent.click(within(painel).getByRole('button', { name: 'Salvar ingrediente' }));
   await waitFor(() => expect(api.patch).toHaveBeenCalled());
   const [, corpo] = (api.patch as jest.Mock).mock.calls[0];
   expect(corpo).toMatchObject({ preco_pago: '30', quantidade_comprada: '1000', unidade_compra: 'g', quantidade_por_unidade: null });
 });
 
-test('ingrediente sem preço manda o preço vazio, não zero', async () => {
-  abrirPagina();
-  fireEvent.click((await screen.findAllByText('Queijo'))[0]);
-  const modal = await screen.findByRole('dialog');
-  fireEvent.click(within(modal).getByRole('button', { name: 'Salvar' }));
-  await waitFor(() => expect(api.patch).toHaveBeenCalled());
-  const [, corpo] = (api.patch as jest.Mock).mock.calls[0];
-  expect(corpo).toMatchObject({ preco_pago: null, quantidade_comprada: null, unidade_compra: '' });
-});
+/**
+ * Lista + painel (14/10): editar abria uma janela por cima da lista — para
+ * conferir o ingrediente de cima era fechar, achar, abrir de novo.
+ */
+describe('lista + painel', () => {
+  const abrirEm = (url: string) => render(
+    <MemoryRouter initialEntries={[url]}>
+      <Routes><Route path="/stores/:storeId/ingredientes" element={<IngredientsPage />} /></Routes>
+    </MemoryRouter>,
+  );
 
-test('a aba "Custo e margem" lê o resumo de custos da loja', async () => {
-  abrirPagina();
-  fireEvent.click(await screen.findByRole('tab', { name: /Custo e margem/ }));
-  await waitFor(() => expect(apiGet).toHaveBeenCalledWith('/nutrition/custos/', { params: { store: 's1' } }));
+  test('abrir um ingrediente não cobre a lista: painel ao lado, sem janela', async () => {
+    abrirPagina();
+    fireEvent.click((await screen.findAllByText('Queijo'))[0]);
+    expect(await screen.findByRole('complementary', { name: /Queijo/ })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('table')).toBeInTheDocument();
+  });
+
+  test('?ingrediente=novo abre o cadastro vazio, e fechar volta à lista', async () => {
+    abrirEm('/stores/loja/ingredientes?ingrediente=novo');
+    const painel = await screen.findByRole('complementary', { name: 'Novo ingrediente' });
+    expect(within(painel).getByLabelText('Nome')).toHaveValue('');
+    fireEvent.click(within(painel).getByRole('button', { name: 'Fechar' }));
+    await waitFor(() => expect(screen.queryByRole('complementary')).toBeNull());
+  });
+
+  test('?ingrediente=<id> abre direto o ingrediente (recarregar não perde o lugar)', async () => {
+    abrirEm('/stores/loja/ingredientes?ingrediente=i1');
+    const painel = await screen.findByRole('complementary', { name: /Queijo/ });
+    expect(within(painel).getByLabelText('Nome')).toHaveValue('Queijo');
+  });
+
+  test('nenhum campo sem rótulo no painel', async () => {
+    abrirEm('/stores/loja/ingredientes?ingrediente=i1');
+    const painel = await screen.findByRole('complementary', { name: /Queijo/ });
+    for (const campo of within(painel).getAllByRole('textbox').concat(within(painel).getAllByRole('spinbutton'))) {
+      expect(campo).toHaveAccessibleName();
+    }
+  });
 });

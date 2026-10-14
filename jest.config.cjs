@@ -30,6 +30,13 @@ module.exports = {
   // cobre o comportamento de uma tela ou de um bug específico. Nomes
   // diferentes para intenções diferentes.
   testMatch: ['**/__tests__/**/*.test.ts?(x)', '**/__tests__/**/*.spec.ts?(x)'],
+  // Cópias de trabalho dos agentes moram em `.claude/worktrees/` DENTRO do
+  // repo. Sem isto o jest rodava cada uma delas junto: 14/10, 1.765 dos 2.235
+  // arquivos de teste eram de cópias, a suíte quadruplicava e a memória
+  // estourava (processo morto), com falhas que nem eram deste código.
+  testPathIgnorePatterns: ['/node_modules/', '<rootDir>/\\.claude/'],
+  modulePathIgnorePatterns: ['<rootDir>/\\.claude/'],
+  watchPathIgnorePatterns: ['<rootDir>/\\.claude/'],
   transform: {
     '/src/mobile/.+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
     '/src/components/whatsapp/.+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',

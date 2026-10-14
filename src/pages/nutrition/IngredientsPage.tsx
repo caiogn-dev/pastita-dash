@@ -19,65 +19,27 @@
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatarNutriente } from './rotulosDeNutriente';
-import { useParams } from 'react-router-dom';
-import { BeakerIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
-import api, { getErrorMessage, normalizePaginatedResponse } from '../../services/api';
-import { adotarIngrediente } from '../../services/nutrition';
+import api, { normalizePaginatedResponse } from '../../services/api';
 import { getStores } from '../../services/storesApi';
-import { Badge, Button, Modal, PageShell, SearchInput, Tabela, RowActions } from '../../components/ui';
+import { Badge, Button, PageShell, SearchInput, Segmentado, Select, Tabela, RowActions } from '../../components/ui';
 import { Loading } from '../../components/common';
 import RecipeBuilder from './RecipeBuilder';
 import TabelaDeCustos from './TabelaDeCustos';
-import { custoPorMil } from './custoDoIngrediente';
-import { formatCurrency } from '../../utils/formatters';
 import { useConfirm } from '../../hooks/useConfirm';
 import { PortaoDoAdicional } from '../../components/billing/PortaoDoAdicional';
 import { ADICIONAL_ETIQUETA } from '../../services/billing';
-
-type NutrientKey =
-  | 'energy_kcal' | 'carbohydrates_g' | 'total_sugars_g' | 'added_sugars_g'
-  | 'protein_g' | 'total_fat_g' | 'saturated_fat_g' | 'trans_fat_g'
-  | 'fiber_g' | 'sodium_mg';
-
-interface Ingredient {
-  id: string;
-  /** `null` = alimento oficial da base compartilhada (somente leitura). */
-  store: string | null;
-  display_name: string;
-  canonical_name: string;
-  category: string;
-  source: string;
-  allergens?: string[];
-  may_contain?: string[];
-  allergens_reviewed?: boolean;
-  [key: string]: unknown;
-}
-
-interface Alergenico { valor: string; rotulo: string; gluten: boolean }
-
-/** Nome que o lojista entende para cada fonte de dado nutricional. */
-const ROTULO_DA_FONTE: Record<string, string> = {
-  taco: 'TACO', pof: 'POF/IBGE', tbca: 'TBCA', off: 'Fabricante', manufacturer: 'Fabricante', lab: 'Laudo', manual: 'Manual', calculated: 'Calculado',
-};
-
-const nutrients: { key: NutrientKey; label: string; unit: string }[] = [
-  { key: 'energy_kcal', label: 'Energia', unit: 'kcal' },
-  { key: 'carbohydrates_g', label: 'Carboidratos', unit: 'g' },
-  { key: 'total_sugars_g', label: 'Açúcares totais', unit: 'g' },
-  { key: 'added_sugars_g', label: 'Açúcares adicionados', unit: 'g' },
-  { key: 'protein_g', label: 'Proteínas', unit: 'g' },
-  { key: 'total_fat_g', label: 'Gorduras totais', unit: 'g' },
-  { key: 'saturated_fat_g', label: 'Gorduras saturadas', unit: 'g' },
-  { key: 'trans_fat_g', label: 'Gorduras trans', unit: 'g' },
-  { key: 'fiber_g', label: 'Fibra alimentar', unit: 'g' },
-  { key: 'sodium_mg', label: 'Sódio', unit: 'mg' },
-];
-
-const empty = {
-  display_name: '', canonical_name: '', category: '', source: 'manual', default_unit: 'g',
-} as Record<string, string>;
+import { cn } from '../../utils/cn';
+import {
+  NUTRIENTES as nutrients,
+  PainelDoIngrediente,
+  ROTULO_DA_FONTE,
+  type Alergenico,
+  type Ingredient,
+} from './PainelDoIngrediente';
 
 function IngredientesDaLoja() {
   const { storeId } = useParams<{ storeId: string }>();
@@ -96,20 +58,12 @@ function IngredientesDaLoja() {
     return () => clearTimeout(id);
   }, [search, aba]);
 
-  const [editing, setEditing] = useState<Ingredient | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [salvando, setSalvando] = useState(false);
   const [ConfirmDialog, confirmAction] = useConfirm();
-  const [form, setForm] = useState<Record<string, string>>(empty);
   const [storeUuid, setStoreUuid] = useState<string>();
-  // Alergênicos ficam FORA do `form` (que é tudo string) porque são listas.
   const [alergenicos, setAlergenicos] = useState<Alergenico[]>([]);
-  const [contem, setContem] = useState<string[]>([]);
-  const [podeConter, setPodeConter] = useState<string[]>([]);
-  const [revisado, setRevisado] = useState(false);
-
-  /** Oficial = da base compartilhada. Editar direto é proibido; adota-se. */
-  const editandoOficial = Boolean(editing && !editing.store);
+  // Ingrediente aberto mora na URL: recarregar ou mandar o link não perde o lugar.
+  const [params, setParams] = useSearchParams();
+  const aberto = params.get('ingrediente');
 
   // A lista dos 21 grupos da RDC 26/2015 vem da API: repetir a lista legal
   // aqui garantiria que um dia as duas divirjam.
@@ -160,78 +114,24 @@ function IngredientesDaLoja() {
   const naoRevisados = daLoja.filter(i => !i.allergens_reviewed).length;
 
   const abrir = (item?: Ingredient) => {
-    setEditing(item || null);
-    setForm(item
-      ? Object.fromEntries(Object.entries(item).map(([k, v]) => [k, v == null ? '' : String(v)]))
-      : { ...empty });
-    setContem(item?.allergens ?? []);
-    setPodeConter(item?.may_contain ?? []);
-    setRevisado(Boolean(item?.allergens_reviewed));
-    setModalOpen(true);
+    const proximo = new URLSearchParams(params);
+    proximo.set('ingrediente', item ? String(item.id) : 'novo');
+    setParams(proximo, { replace: true });
   };
 
-  const fechar = () => { setModalOpen(false); setEditing(null); setForm(empty); };
+  const fechar = () => {
+    const proximo = new URLSearchParams(params);
+    proximo.delete('ingrediente');
+    setParams(proximo, { replace: true });
+  };
 
-  const alternar = (lista: string[], set: (v: string[]) => void, valor: string) =>
-    set(lista.includes(valor) ? lista.filter(v => v !== valor) : [...lista, valor]);
+  const painelAberto = aberto === 'novo' || Boolean(aberto && items.some(i => String(i.id) === aberto));
+  const editando = aberto && aberto !== 'novo' ? items.find(i => String(i.id) === aberto) ?? null : null;
 
-  const unidadeBase = form.default_unit || 'g';
-  const unidadeDaCompra = form.unidade_compra || unidadeBase;
-  const temPreco = Boolean(form.preco_pago || form.quantidade_comprada);
-  const custoMil = custoPorMil({
-    preco: form.preco_pago || '', quantidade: form.quantidade_comprada || '', unidade: unidadeDaCompra,
-    porUnidade: form.quantidade_por_unidade || '', unidadeBase, densidade: form.density_g_ml || '',
-  });
-
-  const save = async () => {
-    if (!form.display_name.trim()) { toast.error('Informe o nome'); return; }
-    // Só o que este formulário edita. Devolver o objeto inteiro stringificado
-    // mandava `source_accessed_at: ""` de volta — o campo de data é nulo em
-    // todo ingrediente, "" não é data, e o salvamento morria em 400 para
-    // TODOS eles. Formulário posta o que edita, não o que recebeu.
-    const payload = {
-      display_name: form.display_name,
-      canonical_name: form.canonical_name || form.display_name,
-      category: form.category || '',
-      store: editing ? editing.store : storeUuid,
-      ...Object.fromEntries(nutrients.map(n =>
-        [n.key, form[n.key] === '' || form[n.key] == null ? null : form[n.key]])),
-      // Um alergênico marcado como "contém" nunca vai também em "pode conter":
-      // a norma proíbe amaciar uma certeza com advertência de traço.
-      allergens: contem,
-      may_contain: podeConter.filter(v => !contem.includes(v)),
-      allergens_reviewed: revisado,
-      // Ficha de custo. Em branco é "não sei quanto pago" — nunca zero, que
-      // faria o prato parecer mais barato do que é.
-      preco_pago: form.preco_pago || null,
-      quantidade_comprada: form.quantidade_comprada || null,
-      unidade_compra: temPreco ? unidadeDaCompra : '',
-      quantidade_por_unidade: temPreco && unidadeDaCompra === 'un' ? form.quantidade_por_unidade || null : null,
-    };
-    setSalvando(true);
-    try {
-      if (editandoOficial) {
-        // Base compartilhada: PATCH é recusado. Adotar cria a cópia da loja
-        // com a revisão já aplicada e reaponta as receitas desta loja.
-        if (!storeUuid) { toast.error('Loja não identificada'); return; }
-        const { store: _ignorado, ...camposAdotados } = payload;
-        await adotarIngrediente(editing!.id, storeUuid, camposAdotados);
-        toast.success('Alimento adotado na sua loja — agora ele é seu para editar');
-      } else if (editing) {
-        await api.patch(`/nutrition/ingredients/${editing.id}/`, payload);
-        toast.success('Ingrediente salvo');
-      } else {
-        await api.post('/nutrition/ingredients/', payload);
-        toast.success('Ingrediente criado');
-      }
-      fechar();
-      setAba('loja');
-      await load();
-    } catch (e) {
-      toast.error(getErrorMessage(e));
-    } finally {
-      setSalvando(false);
-    }
+  const aoSalvar = async () => {
+    fechar();
+    setAba('loja');
+    await load();
   };
 
   const remove = async (item: Ingredient) => {
@@ -260,26 +160,12 @@ function IngredientesDaLoja() {
 
   const filtros = (
     <div className="flex flex-wrap items-center gap-3">
-      <div
-        role="tablist"
-        aria-label="Origem do ingrediente"
-        className="inline-flex overflow-hidden rounded-lg border border-border-token text-sm"
-      >
-        {abas.map(({ id, rotulo }) => (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={aba === id}
-            type="button"
-            onClick={() => setAba(id)}
-            className={aba === id
-              ? 'bg-[var(--brand)] px-3 py-1.5 font-medium text-[var(--on-brand)]'
-              : 'px-3 py-1.5 text-fg-muted-token transition hover:bg-surface-2'}
-          >
-            {rotulo}
-          </button>
-        ))}
-      </div>
+      <Segmentado
+        rotulo="Origem do ingrediente"
+        opcoes={abas.map(({ id, rotulo }) => ({ valor: id, rotulo }))}
+        valor={aba}
+        onChange={setAba}
+      />
       {aba !== 'custos' && <>
       <div className="min-w-56 flex-1">
         <SearchInput
@@ -288,14 +174,13 @@ function IngredientesDaLoja() {
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
         />
       </div>
-      <select
-        className="rounded border border-border-token bg-surface px-3 py-2 text-sm text-fg-token"
-        value={category}
-        onChange={e => setCategory(e.target.value)}
-      >
-        <option value="">Todas as categorias</option>
-        {categories.map(c => <option key={c}>{c}</option>)}
-      </select>
+      <Select
+        rotuloOculto="Categoria"
+        vazio="Todas as categorias"
+        opcoes={categories.map(c => ({ valor: c, rotulo: c }))}
+        valor={category}
+        onMudar={setCategory}
+      />
       </>}
     </div>
   );
@@ -324,6 +209,11 @@ function IngredientesDaLoja() {
         )}
 
         {aba === 'custos' ? <TabelaDeCustos storeUuid={storeUuid} /> : (
+        // Lista + painel: a edição abre AO LADO. Com o painel aberto a tabela
+        // fica só com nome e alergênicos — os dez nutrientes já estão no painel.
+        // No celular o painel toma a tela e "Fechar" devolve a lista.
+        <div className={cn('grid gap-5', painelAberto && 'lg:grid-cols-[minmax(0,1fr)_440px] lg:items-start')}>
+        <div className={cn('min-w-0', painelAberto && 'max-lg:hidden')}>
         <Tabela<(typeof visible)[number]>
           itens={visible}
           chave={(i) => String(i.id)}
@@ -346,7 +236,7 @@ function IngredientesDaLoja() {
             {
               chave: 'fonte',
               cabecalho: 'Fonte',
-              classe: 'max-lg:hidden',
+              classe: painelAberto ? 'hidden' : 'max-lg:hidden',
               render: (i) => <span className="text-xs text-fg-muted-token" title={i.source === 'off' ? 'Rótulo do fabricante, via Open Food Facts' : undefined}>{ROTULO_DA_FONTE[i.source] ?? i.source}</span>,
             },
             {
@@ -365,7 +255,7 @@ function IngredientesDaLoja() {
                   <span className="text-fg-muted-token">—</span>
                 ),
             },
-            ...nutrients.map((n) => ({
+            ...(painelAberto ? [] : nutrients).map((n) => ({
               chave: n.key,
               cabecalho: `${n.label} (${n.unit})`,
               alinhamento: 'direita' as const,
@@ -397,200 +287,21 @@ function IngredientesDaLoja() {
             },
           ]}
         />
+        </div>
+        {painelAberto && (
+          <PainelDoIngrediente
+            key={aberto ?? ''}
+            ingrediente={editando}
+            alergenicos={alergenicos}
+            storeUuid={storeUuid}
+            onFechar={fechar}
+            onSalvo={aoSalvar}
+          />
+        )}
+        </div>
         )}
       </div>
 
-      <Modal
-        open={modalOpen}
-        onClose={fechar}
-        size="xl"
-        title={editandoOficial
-          ? `Alimento oficial — ${editing?.display_name}`
-          : editing ? 'Editar ingrediente' : 'Novo ingrediente'}
-      >
-        <div className="space-y-4">
-          {editandoOficial && (
-            <div className="rounded-lg border border-[var(--info)]/35 bg-[var(--info-soft)] p-3 text-sm">
-              <p className="font-medium text-fg-token">
-                <BeakerIcon className="mr-1 inline h-4 w-4" />
-                Este alimento vem de {ROTULO_DA_FONTE[editing?.source ?? ''] ?? editing?.source} e é compartilhado por todas as lojas.
-              </p>
-            </div>
-          )}
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="text-sm text-fg-muted-token">
-              Nome
-              <input
-                className="mt-1 w-full rounded border border-border-token bg-surface p-2 text-fg-token"
-                value={form.display_name || ''}
-                onChange={e => setForm({ ...form, display_name: e.target.value, canonical_name: e.target.value })}
-              />
-            </label>
-            <label className="text-sm text-fg-muted-token">
-              Categoria
-              <input
-                className="mt-1 w-full rounded border border-border-token bg-surface p-2 text-fg-token"
-                value={form.category || ''}
-                onChange={e => setForm({ ...form, category: e.target.value })}
-              />
-            </label>
-            {nutrients.map(n => (
-              <label key={n.key} className="text-sm text-fg-muted-token">
-                {n.label} ({n.unit}/100 g)
-                <input
-                  type="number"
-                  min="0"
-                  step="0.0001"
-                  className="mt-1 w-full rounded border border-border-token bg-surface p-2 text-right tabular-nums text-fg-token"
-                  value={form[n.key] || ''}
-                  onChange={e => setForm({ ...form, [n.key]: e.target.value })}
-                />
-              </label>
-            ))}
-          </div>
-
-          <section className="space-y-2 border-t border-border-token pt-4">
-            <div>
-              <h3 className="font-semibold text-fg-token">Quanto você paga</h3>
-            </div>
-            <div className="flex flex-wrap items-end gap-2 text-sm text-fg-muted-token">
-              <label>
-                Paguei (R$)
-                <input
-                  type="number" min="0" step="0.01"
-                  className="mt-1 block w-28 rounded border border-border-token bg-surface p-2 text-right tabular-nums text-fg-token"
-                  value={form.preco_pago || ''}
-                  onChange={e => setForm({ ...form, preco_pago: e.target.value })}
-                />
-              </label>
-              <span className="pb-2">por</span>
-              <label>
-                Quantidade comprada
-                <input
-                  type="number" min="0" step="0.001"
-                  className="mt-1 block w-28 rounded border border-border-token bg-surface p-2 text-right tabular-nums text-fg-token"
-                  value={form.quantidade_comprada || ''}
-                  onChange={e => setForm({ ...form, quantidade_comprada: e.target.value })}
-                />
-              </label>
-              <label>
-                Unidade
-                <select
-                  className="mt-1 block rounded border border-border-token bg-surface p-2 text-fg-token"
-                  value={unidadeDaCompra}
-                  onChange={e => setForm({ ...form, unidade_compra: e.target.value })}
-                >
-                  <option value="g">g</option>
-                  <option value="ml">ml</option>
-                  <option value="un">unidade</option>
-                </select>
-              </label>
-              {unidadeDaCompra === 'un' && (
-                <label>
-                  Cada unidade tem ({unidadeBase})
-                  <input
-                    type="number" min="0" step="0.001"
-                    className="mt-1 block w-28 rounded border border-border-token bg-surface p-2 text-right tabular-nums text-fg-token"
-                    value={form.quantidade_por_unidade || ''}
-                    onChange={e => setForm({ ...form, quantidade_por_unidade: e.target.value })}
-                  />
-                </label>
-              )}
-              <span className="pb-2 tabular-nums text-fg-token">
-                {custoMil != null
-                  ? `= ${formatCurrency(custoMil)} por ${unidadeBase === 'ml' ? 'litro' : 'kg'}`
-                  : temPreco && form.preco_pago && form.quantidade_comprada
-                    ? (unidadeDaCompra === 'un'
-                        ? 'informe quanto vem em cada unidade'
-                        : `a receita usa ${unidadeBase}: informe a compra em ${unidadeBase} ou por unidade`)
-                    : null}
-              </span>
-            </div>
-          </section>
-
-          <section className="space-y-3 border-t border-border-token pt-4">
-            <div>
-              <h3 className="font-semibold text-fg-token">
-                Alergênicos <span className="text-xs font-normal text-fg-muted-token">RDC 26/2015</span>
-              </h3>
-            </div>
-
-            <div>
-              <div className="mb-1 text-sm font-medium text-fg-token">Contém</div>
-              <div className="flex flex-wrap gap-1.5">
-                {alergenicos.map(a => {
-                  const on = contem.includes(a.valor);
-                  return (
-                    <button
-                      key={a.valor}
-                      type="button"
-                      aria-pressed={on}
-                      onClick={() => alternar(contem, setContem, a.valor)}
-                      className={`rounded-full border px-2.5 py-1 text-xs transition ${on
-                        ? 'border-[var(--danger)] bg-[var(--danger)] text-white'
-                        : 'border-border-token text-fg-muted-token hover:text-fg-token'}`}
-                    >
-                      {a.rotulo}{a.gluten && ' ⚠'}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-1 text-sm font-medium text-fg-token">
-                Pode conter{' '}
-                <span className="text-xs font-normal text-fg-muted-token">(contaminação cruzada)</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {alergenicos.filter(a => !contem.includes(a.valor)).map(a => {
-                  const on = podeConter.includes(a.valor);
-                  return (
-                    <button
-                      key={a.valor}
-                      type="button"
-                      aria-pressed={on}
-                      onClick={() => alternar(podeConter, setPodeConter, a.valor)}
-                      className={`rounded-full border px-2.5 py-1 text-xs transition ${on
-                        ? 'border-[var(--warning)] bg-[var(--warning)] text-[#1a1a1a]'
-                        : 'border-border-token text-fg-muted-token hover:text-fg-token'}`}
-                    >
-                      {a.rotulo}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <label className="flex items-start gap-2 rounded border border-border-token p-3 text-sm">
-              <input
-                type="checkbox"
-                className="mt-0.5"
-                checked={revisado}
-                onChange={e => setRevisado(e.target.checked)}
-              />
-              <span>
-                <b className="text-fg-token">Alergênicos revisados</b>
-                <span className="block text-xs text-fg-muted-token">
-                  Marque só depois de conferir a embalagem ou a ficha técnica. Lista
-                  vazia sem esta marca significa “ninguém olhou”, não “não tem”.
-                </span>
-              </span>
-            </label>
-          </section>
-
-
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={fechar}>Cancelar</Button>
-            <Button onClick={save} disabled={salvando}>
-              {salvando
-                ? 'Salvando…'
-                : editandoOficial ? 'Adotar na minha loja' : 'Salvar'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </PageShell>
   );
 }
