@@ -42,15 +42,17 @@ export const Campo: React.FC<CampoProps> = ({ rotulo, dica, erro, obrigatorio = 
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
       <div className="flex items-baseline justify-between gap-2">
-        <label htmlFor={id} className={cn('text-sm font-medium', erro ? 'text-danger-500' : 'text-fg-token')}>
-          {rotulo}
-        </label>
-        {(obrigatorio || extra) && (
-          <span className="flex items-baseline gap-2 text-xs text-fg-muted-token">
-            {extra}
-            {obrigatorio && <span>obrigatório</span>}
-          </span>
-        )}
+        {/* Asterisco e não a palavra: em coluna estreita "obrigatório"
+            empurrava o rótulo para duas linhas e desalinhava o vizinho. Fica
+            FORA do <label> para o nome do campo continuar sendo só o rótulo;
+            o `required` no controle já é anunciado pelo leitor de tela. */}
+        <span className="flex items-baseline">
+          <label htmlFor={id} className={cn('text-sm font-medium', erro ? 'text-danger-500' : 'text-fg-token')}>
+            {rotulo}
+          </label>
+          {obrigatorio && <span aria-hidden data-obrigatorio className="ml-0.5 text-sm text-danger-500">*</span>}
+        </span>
+        {extra && <span className="flex items-baseline gap-2 text-xs text-fg-muted-token">{extra}</span>}
       </div>
 
       {filho

@@ -43,8 +43,8 @@ describe('Campo', () => {
         <input />
       </Campo>
     );
-    expect(screen.getByLabelText(/Preço/)).toBeRequired();
-    expect(screen.getByText('obrigatório')).toBeInTheDocument();
+    expect(screen.getByLabelText('Preço')).toBeRequired();
+    expect(screen.getByText('*')).toHaveAttribute('aria-hidden');
   });
 
   it('funciona com o Input do kit sem rótulo duplicado', () => {
