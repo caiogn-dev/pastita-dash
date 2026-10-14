@@ -155,6 +155,15 @@ export function estadoDeAutomacao(ativa?: boolean | null): Estado {
   return ativa ? { rotulo: 'Ativa', tone: 'success' } : { rotulo: 'Pausada', tone: 'neutral' };
 }
 
+// ─── Cupom ──────────────────────────────────────────────────────────────────
+
+/** Cupom ligado mas fora da validade é "Expirado", não "Ativo": quem olha a
+ *  lista quer saber se o cliente consegue usar, e o switch sozinho mente. */
+export function estadoDeCupom(ativo?: boolean | null, validoAgora?: boolean | null): Estado {
+  if (!ativo) return { rotulo: 'Inativo', tone: 'neutral' };
+  return validoAgora ? { rotulo: 'Ativo', tone: 'success' } : { rotulo: 'Expirado', tone: 'danger' };
+}
+
 // ─── Conversa (WhatsApp, Instagram, Messenger) ───────────────────────────────
 
 const CONVERSA: Record<string, Estado> = {

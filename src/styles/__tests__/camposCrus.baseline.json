@@ -34,7 +34,6 @@
   "pages/automation/CustomerSessionsPage.tsx": 6,
   "pages/automation/ScheduledMessagesPage.tsx": 12,
   "pages/cash/CashPage.tsx": 10,
-  "pages/coupons/CouponsPage.tsx": 16,
   "pages/delivery/DeliveryZonesPage.tsx": 4,
   "pages/delivery/FormulaDeEntregaCard.tsx": 2,
   "pages/delivery/FreteGratisCard.tsx": 6,

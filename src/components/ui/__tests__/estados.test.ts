@@ -8,6 +8,7 @@ import { describe, expect, it } from '@jest/globals';
 
 import {
   estadoDeAutomacao,
+  estadoDeCupom,
   estadoDeCliente,
   estadoDeConversa,
   estadoDePagamento,
@@ -126,5 +127,17 @@ describe('reembolso', () => {
     expect(estadoDePedido('refunded').rotulo).toBe('Reembolsado');
     expect(estadoDePagamento('refunded').rotulo).toBe('Reembolsado');
     expect(estadoDePagamento('partially_refunded').rotulo).toBe('Reembolso parcial');
+  });
+});
+
+describe('estadoDeCupom', () => {
+  it('desligado é Inativo, mesmo dentro da validade', () => {
+    expect(estadoDeCupom(false, true)).toEqual({ rotulo: 'Inativo', tone: 'neutral' });
+  });
+  it('ligado e dentro da validade é Ativo', () => {
+    expect(estadoDeCupom(true, true)).toEqual({ rotulo: 'Ativo', tone: 'success' });
+  });
+  it('ligado mas fora da validade é Expirado', () => {
+    expect(estadoDeCupom(true, false)).toEqual({ rotulo: 'Expirado', tone: 'danger' });
   });
 });

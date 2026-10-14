@@ -64,22 +64,15 @@ describe('CouponsPage — feedback de erro', () => {
     mockedService.createCoupon.mockRejectedValue(new Error('code: cupom duplicado'));
     renderPage();
 
-    const newButtons = await screen.findAllByText('Novo cupom');
-    fireEvent.click(newButtons[0]);
+    fireEvent.click((await screen.findAllByText('Novo cupom'))[0]);
 
     fireEvent.change(screen.getByPlaceholderText('Ex: DESCONTO10'), {
       target: { value: 'TESTE10' },
     });
-    // Primeiro input numérico do modal = Valor do Desconto
-    fireEvent.change(screen.getAllByRole('spinbutton')[0], {
+    fireEvent.change(screen.getByLabelText('Valor do desconto'), {
       target: { value: '10' },
     });
-
-    // O formulário virou assistente de 3 passos (Benefício › Regras › Alcance),
-    // como o do Prefiro: o botão que conclui só existe no último, e é isso que
-    // evita o "cliquei em avançar achando que ia salvar".
-    fireEvent.click(screen.getByRole('button', { name: /Avançar/ }));
-    fireEvent.click(screen.getByRole('button', { name: /Avançar/ }));
+    // Painel ao lado (sem assistente de passos): um botão só, que salva.
     fireEvent.click(screen.getByRole('button', { name: 'Criar cupom' }));
 
     await waitFor(() => {
@@ -89,16 +82,14 @@ describe('CouponsPage — feedback de erro', () => {
     });
   });
 
-  it('não deixa avançar sem código nem valor — o cupom não existe sem os dois', async () => {
-    // Descobrir isso no último passo obriga a voltar depois de já ter
-    // preenchido tudo o mais.
+  it('não salva sem código nem valor — o cupom não existe sem os dois', async () => {
     renderPage();
     fireEvent.click((await screen.findAllByText('Novo cupom'))[0]);
 
-    fireEvent.click(screen.getByRole('button', { name: /Avançar/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Criar cupom' }));
 
     expect(mockedToast.error).toHaveBeenCalledWith(expect.stringContaining('código'));
-    expect(screen.getByRole('button', { name: /Avançar/ })).toBeInTheDocument();
+    expect(mockedService.createCoupon).not.toHaveBeenCalled();
   });
 
   it('mostra toast de erro quando o carregamento de cupons falha', async () => {
@@ -112,8 +103,7 @@ describe('CouponsPage — feedback de erro', () => {
 
   it('digitar no formulário NÃO dispara aviso de erro a cada tecla (28/09)', async () => {
     renderPage();
-    const newButtons = await screen.findAllByText('Novo cupom');
-    fireEvent.click(newButtons[0]);
+    fireEvent.click((await screen.findAllByText('Novo cupom'))[0]);
     const toastErro = (toast as unknown as { error: jest.Mock }).error;
     toastErro.mockClear();
 
@@ -123,8 +113,8 @@ describe('CouponsPage — feedback de erro', () => {
     }
 
     expect(toastErro).not.toHaveBeenCalled();
-    // Só o CLIQUE em avançar com pendência avisa — uma vez.
-    fireEvent.click(screen.getByRole('button', { name: /avançar/i }));
+    // Só o CLIQUE em salvar com pendência avisa — uma vez.
+    fireEvent.click(screen.getByRole('button', { name: 'Criar cupom' }));
     expect(toastErro).toHaveBeenCalledTimes(1);
     expect(toastErro.mock.calls[0][0]).toMatch(/valor do desconto/i);
   });
