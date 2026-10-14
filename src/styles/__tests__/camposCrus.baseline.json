@@ -60,7 +60,6 @@
   "pages/orders/HistoricoPedidosPage.tsx": 4,
   "pages/orders/NotaFiscalPedido.tsx": 3,
   "pages/orders/OrderDetailContent.tsx": 2,
-  "pages/payments/PaymentLinkPage.tsx": 12,
   "pages/pdv/DesignerDeEtiqueta.tsx": 8,
   "pages/pdv/EtiquetasPage.tsx": 9,
   "pages/pdv/LotesPage.tsx": 2,

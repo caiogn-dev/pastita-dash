@@ -7,22 +7,32 @@
  *
  * A TELA GUARDAVA O LINK SÓ NO ESTADO DO REACT (12/ago): um F5 e o lojista
  * perdia a cobrança, sem lugar nenhum para reencontrar o link nem para saber se
- * o cliente pagou. E havia 14 cobranças reais no banco que a tela nunca mostrou
- * — 5 delas pendentes, algumas pagas. O comentário antigo dizia que o backend
- * não sabia listá-las; sabia desde sempre (`Q(order__store) | Q(store)`).
+ * o cliente pagou. Agora o histórico é a memória: o link vive na lista, com
+ * status de pagamento, e o formulário volta a ser só o formulário.
  *
- * Agora o histórico é a memória: o link vive na lista, com status de pagamento,
- * e o formulário volta a ser só o formulário.
+ * Molde "formulário + resumo" (14/10): à esquerda o que se preenche, à direita
+ * (sticky) o resumo vivo e o botão com verbo + objeto. O link gerado ocupa o
+ * lugar do resumo.
  */
 import { copyToClipboard } from '../../utils/clipboard';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ClipboardDocumentIcon, PlusIcon, ShareIcon } from '@heroicons/react/24/outline';
 import { paymentsService, getErrorMessage } from '../../services';
 import { useStore } from '../../hooks';
 import { ordersService } from '../../services';
 import type { Order } from '../../types';
-import { PageShell } from '../../components/ui';
+import {
+  Aviso,
+  Button,
+  Campo,
+  CampoDeDinheiro,
+  FormSummary,
+  Input,
+  PageShell,
+  Secao,
+  Select,
+} from '../../components/ui';
 import { formatCurrency } from '../../utils/formatters';
 
 interface GeneratedLink {
@@ -42,7 +52,6 @@ interface Cobranca {
   created_at: string;
   paid_at?: string | null;
 }
-
 
 const formatDate = (iso?: string | null) => {
   if (!iso) return '';
@@ -68,9 +77,10 @@ const SITUACAO: Record<string, { rotulo: string; classe: string }> = {
 };
 
 export const PaymentLinkPage: React.FC = () => {
-  const { storeId, storeName, isStoreSelected } = useStore();
+  const { storeId, isStoreSelected } = useStore();
 
-  const [amount, setAmount] = useState('');
+  // number|null como o CampoDeDinheiro entrega; vazio é null, não zero.
+  const [amount, setAmount] = useState<number | null>(null);
   const [description, setDescription] = useState('');
   const [payerName, setPayerName] = useState('');
   const [payerEmail, setPayerEmail] = useState('');
@@ -122,7 +132,7 @@ export const PaymentLinkPage: React.FC = () => {
     setPedidoId(id);
     const p = pedidos.find((o) => String(o.id) === id);
     if (!p) return;
-    setAmount(String(p.total ?? ''));
+    setAmount(p.total != null ? Number(p.total) : null);
     if (!description.trim()) setDescription(`Pedido ${p.order_number}`);
     if (!payerName.trim() && p.customer_name) setPayerName(p.customer_name);
   };
@@ -132,17 +142,12 @@ export const PaymentLinkPage: React.FC = () => {
    *
    * Em 14/ago uma venda de R$ 62,89 foi lançada às 20:41 e às 20:54 saiu um
    * link AVULSO do mesmo valor. Pago, o link virou um segundo pedido: a mesma
-   * venda contada duas vezes no faturamento, e a cópia sem item nenhum — foi
-   * ela que apareceu na página de pedidos "só com o valor".
-   *
-   * O valor idêntico a um pedido não pago é o sinal, e ele chega ANTES do
-   * envio: depois de gerado, o link já está com o cliente.
+   * venda contada duas vezes no faturamento. O sinal chega ANTES do envio:
+   * depois de gerado, o link já está com o cliente.
    */
   const pedidoDoMesmoValor = useMemo(() => {
-    if (pedidoId) return undefined;
-    const parsed = Number(amount.trim().replace(',', '.'));
-    if (!parsed || Number.isNaN(parsed)) return undefined;
-    return pedidos.find((p) => Math.abs(Number(p.total ?? 0) - parsed) < 0.005);
+    if (pedidoId || !amount) return undefined;
+    return pedidos.find((p) => Math.abs(Number(p.total ?? 0) - amount) < 0.005);
   }, [amount, pedidoId, pedidos]);
 
   const handleGenerate = async (e: React.FormEvent) => {
@@ -151,15 +156,13 @@ export const PaymentLinkPage: React.FC = () => {
       toast.error('Selecione uma loja no menu superior.');
       return;
     }
-    const parsed = Number(amount.trim().replace(',', '.'));
-    if (Number.isNaN(parsed) || parsed <= 0) {
+    const parsed = amount ?? 0;
+    if (parsed <= 0) {
       toast.error('Informe um valor válido.');
       return;
     }
     // Sem pedido anexado E sem descrição, o pedido que a cobrança gera nasce
-    // sem itens — só com o valor e a linha genérica "Cobrança por link de
-    // pagamento" (foi o que aconteceu na venda da Letícia). Exige um dos dois:
-    // anexar o pedido (traz os itens) ou dizer o que está cobrando.
+    // sem itens — só com o valor (foi o que aconteceu na venda da Letícia).
     if (!pedidoId && !description.trim()) {
       toast.error('Anexe um pedido ou escreva uma descrição do que está cobrando — senão o pedido nasce sem itens, só com o valor.');
       return;
@@ -200,209 +203,188 @@ export const PaymentLinkPage: React.FC = () => {
     else toast.error('Não foi possível copiar. Copie manualmente.');
   };
 
+  // Folha nativa no celular; no computador cai no WhatsApp Web.
+  const handleShare = async (url: string) => {
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ url, text: 'Link de pagamento' });
+      } catch {
+        // Fechar a folha de compartilhar não é erro.
+      }
+      return;
+    }
+    window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank', 'noopener,noreferrer');
+  };
+
+  // Limpa os campos junto: reaproveitá-los gera cobrança em duplicidade sem querer.
+  const novaCobranca = () => {
+    setGenerated(null);
+    setAmount(null);
+    setDescription('');
+    setPayerName('');
+    setPayerEmail('');
+    setPayerDocument('');
+    setPedidoId('');
+  };
+
+  const pedidoEscolhido = pedidos.find((o) => String(o.id) === pedidoId);
+  const textoDoBotao = amount ? `Gerar link de ${formatCurrency(amount)}` : 'Gerar link';
+
   return (
-    <PageShell
-      className="mx-auto w-full max-w-2xl"
-      titulo="Link de pagamento"
-    >
+    <PageShell className="mx-auto w-full max-w-5xl" titulo="Link de pagamento">
+      {!isStoreSelected && <Aviso tom="info" titulo="Selecione uma loja no menu superior" />}
 
-      {!isStoreSelected && (
-        <div className="superficie px-4 py-3 text-sm text-fg-muted-token">
-          Selecione uma loja no menu superior para gerar uma cobrança.
-        </div>
-      )}
+      {/* Celular: uma coluna, resumo + botão no fim. Computador: duas, resumo
+          sticky. O <form> envolve as duas para o botão da direita enviar. */}
+      <form onSubmit={handleGenerate} className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="flex min-w-0 flex-col gap-5">
+          {/* Pedido vem ANTES do valor porque é ele que preenche o valor. Sem
+              vínculo, o pagamento entra como cobrança solta: o dinheiro aparece,
+              a venda não (2 cobranças de R$ 249,01 ficaram fora do faturamento). */}
+          <Secao titulo="Cobrança">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <Select
+                  rotulo="Pedido"
+                  valor={pedidoId}
+                  onMudar={escolherPedido}
+                  vazio="Cobrança avulsa — sem pedido"
+                  opcoes={pedidos.map((p) => ({
+                    valor: String(p.id),
+                    rotulo: `${p.order_number} — ${p.customer_name || 'Sem nome'} — R$ ${p.total}`,
+                  }))}
+                />
+                {/* Aviso, não bloqueio: cobrar avulso um valor que coincide com um
+                    pedido é raro, mas legítimo. Quem decide é quem está no balcão. */}
+                {pedidoDoMesmoValor && (
+                  <Aviso
+                    tom="atencao"
+                    titulo={`Pedido ${pedidoDoMesmoValor.order_number}${
+                      pedidoDoMesmoValor.customer_name ? ` (${pedidoDoMesmoValor.customer_name})` : ''
+                    } em aberto com o mesmo valor`}
+                    acao={
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => escolherPedido(String(pedidoDoMesmoValor.id))}
+                      >
+                        Vincular a esse pedido
+                      </Button>
+                    }
+                  >
+                    Cobrando avulso, a venda é contada duas vezes.
+                  </Aviso>
+                )}
+              </div>
 
-      <form onSubmit={handleGenerate} className="space-y-4 superficie p-5">
-        {/* Vem ANTES do valor porque é ele que preenche o valor. Sem vínculo, o
-            pagamento entra como cobrança solta: o dinheiro aparece, a venda
-            não. Foi assim que 2 cobranças pagas de R$ 249,01 ficaram fora do
-            faturamento. */}
-        <div>
-          <label htmlFor="pl-order" className="block text-sm font-medium text-fg-token">
-            Pedido <span className="font-normal text-fg-muted-token">(opcional)</span>
-          </label>
-          <select
-            id="pl-order"
-            value={pedidoId}
-            onChange={(e) => escolherPedido(e.target.value)}
-            className="mt-1 w-full superficie-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
-          >
-            <option value="">Cobrança avulsa — sem pedido</option>
-            {pedidos.map((p) => (
-              <option key={String(p.id)} value={String(p.id)}>
-                {p.order_number} — {p.customer_name || 'Sem nome'} — R$ {p.total}
-              </option>
-            ))}
-          </select>
+              <CampoDeDinheiro rotulo="Valor" valor={amount} onMudar={setAmount} obrigatorio />
 
-          {/* Aviso, não bloqueio: cobrar avulso um valor que coincide com um
-              pedido é raro, mas legítimo. Quem decide é quem está no balcão. */}
-          {pedidoDoMesmoValor && (
-            <div
-              role="alert"
-              className="mt-2 rounded-xl border border-[var(--warning)] bg-[var(--warning-soft)] px-3 py-2 text-xs text-fg-token"
-            >
-              O pedido <strong>{pedidoDoMesmoValor.order_number}</strong>
-              {pedidoDoMesmoValor.customer_name ? ` (${pedidoDoMesmoValor.customer_name})` : ''} está
-              em aberto com o <strong>mesmo valor</strong>. Cobrando avulso, o pagamento vira uma
-              segunda venda e o faturamento conta as duas.{' '}
-              <button
-                type="button"
-                onClick={() => escolherPedido(String(pedidoDoMesmoValor.id))}
-                className="font-semibold underline underline-offset-2"
-              >
-                Vincular a esse pedido
-              </button>
+              {/* Sem pedido, a descrição é o que dá itens ao pedido que a cobrança
+                  gera — por isso só é obrigatória nesse caso. */}
+              <Campo rotulo="Descrição" obrigatorio={!pedidoId}>
+                <Input
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Ex: Sinal do evento"
+                />
+              </Campo>
             </div>
-          )}
+          </Secao>
+
+          <Secao titulo="Pagador (opcional)">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Campo rotulo="Nome">
+                <Input value={payerName} onChange={(e) => setPayerName(e.target.value)} />
+              </Campo>
+              <Campo rotulo="E-mail">
+                <Input type="email" value={payerEmail} onChange={(e) => setPayerEmail(e.target.value)} />
+              </Campo>
+              {/* Sem máscara de propósito: o payload segue exatamente o que foi digitado. */}
+              <Campo rotulo="CPF" className="sm:col-span-2">
+                <Input
+                  inputMode="numeric"
+                  value={payerDocument}
+                  onChange={(e) => setPayerDocument(e.target.value)}
+                  placeholder="000.000.000-00"
+                />
+              </Campo>
+            </div>
+          </Secao>
         </div>
 
-        <div>
-          <label htmlFor="pl-amount" className="block text-sm font-medium text-fg-token">
-            Valor (R$)
-          </label>
-          <input
-            id="pl-amount"
-            type="number"
-            min="0"
-            step="0.01"
-            inputMode="decimal"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className="mt-1 w-full superficie-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
-            placeholder="0,00"
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="pl-description" className="block text-sm font-medium text-fg-token">
-            Descrição (opcional)
-          </label>
-          <input
-            id="pl-description"
-            type="text"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="mt-1 w-full superficie-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
-            placeholder="Ex: Sinal do evento"
-          />
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="pl-payer-name" className="block text-sm font-medium text-fg-token">
-              Nome do pagador (opcional)
-            </label>
-            <input
-              id="pl-payer-name"
-              type="text"
-              value={payerName}
-              onChange={(e) => setPayerName(e.target.value)}
-              className="mt-1 w-full superficie-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
-            />
-          </div>
-          <div>
-            <label htmlFor="pl-payer-email" className="block text-sm font-medium text-fg-token">
-              E-mail do pagador (opcional)
-            </label>
-            <input
-              id="pl-payer-email"
-              type="email"
-              value={payerEmail}
-              onChange={(e) => setPayerEmail(e.target.value)}
-              className="mt-1 w-full superficie-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="pl-payer-document" className="block text-sm font-medium text-fg-token">
-            CPF do pagador (opcional)
-          </label>
-          <input
-            id="pl-payer-document"
-            type="text"
-            inputMode="numeric"
-            value={payerDocument}
-            onChange={(e) => setPayerDocument(e.target.value)}
-            className="mt-1 w-full superficie-2 px-3 py-2 text-sm text-fg-token outline-none focus:border-brand"
-            placeholder="000.000.000-00"
-          />
-        </div>
-
-        {!pedidoId && !description.trim() && (
-          <p className="text-xs text-amber-600 dark:text-amber-400">
-            Anexe um pedido ou escreva uma descrição — sem isso o pedido nasce sem itens, só com o valor.
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={generating || !isStoreSelected}
-          className="w-full rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-[var(--brand-strong)] transition hover:opacity-90 disabled:opacity-60"
-        >
-          {generating ? 'Gerando...' : 'Gerar link de pagamento'}
-        </button>
-      </form>
-
-      {generated && (
-        <section className="mt-6 space-y-4 superficie p-5">
-          <h2 className="text-base font-semibold text-fg-token">
-            Link gerado {generated.amount != null ? `— ${formatCurrency(Number(generated.amount))}` : ''}
-          </h2>
-
-          {generated.payment_url && (
-            <div className="space-y-2">
-              <span className="text-xs font-semibold text-fg-muted-token">Link de pagamento</span>
-              <div className="flex items-center gap-2">
-                <code className="block flex-1 break-all rounded-xl border border-dashed border-border-token px-3 py-2 text-xs text-fg-token">
-                  {generated.payment_url}
-                </code>
-                <button
-                  type="button"
+        <aside aria-label="Resumo do link" className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-4">
+          {generated?.payment_url ? (
+            <section
+              aria-label="Link gerado"
+              className="flex flex-col gap-3 rounded border border-border-token bg-surface p-4"
+            >
+              <h3 className="text-body font-semibold text-fg-token">
+                Link gerado{generated.amount != null ? ` — ${formatCurrency(Number(generated.amount))}` : ''}
+              </h3>
+              <code className="block break-all rounded border border-dashed border-border-token px-3 py-2 text-xs text-fg-token">
+                {generated.payment_url}
+              </code>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  leftIcon={<ClipboardDocumentIcon className="h-4 w-4" />}
                   onClick={() => handleCopy(generated.payment_url!)}
-                  className="shrink-0 rounded-full border border-border-token px-3 py-2 text-xs font-medium text-fg-token hover:bg-surface-2"
                 >
                   Copiar
-                </button>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <a
-                  href={generated.payment_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex rounded-full bg-brand px-4 py-2 text-sm font-semibold text-[var(--brand-strong)] transition hover:opacity-90"
+                </Button>
+                <Button
+                  variant="outline"
+                  leftIcon={<ShareIcon className="h-4 w-4" />}
+                  onClick={() => handleShare(generated.payment_url!)}
                 >
-                  Abrir link de pagamento
-                </a>
-                <span className="text-xs text-fg-muted-token">
-                  Envie este link para o cliente — ele paga por cartão, PIX ou boleto.
-                </span>
+                  Compartilhar
+                </Button>
               </div>
-            </div>
+              <a
+                href={generated.payment_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-10 items-center justify-center rounded bg-brand px-4 text-sm font-semibold text-on-brand transition-colors hover:bg-brand-hover"
+              >
+                Abrir link de pagamento
+              </a>
+              <Button variant="ghost" leftIcon={<PlusIcon className="h-4 w-4" />} onClick={novaCobranca}>
+                Nova cobrança
+              </Button>
+            </section>
+          ) : (
+            <>
+              <FormSummary
+                linhas={[
+                  { rotulo: 'Valor', valor: amount ? formatCurrency(amount) : undefined },
+                  { rotulo: 'Pedido', valor: pedidoEscolhido ? pedidoEscolhido.order_number : 'Avulsa' },
+                  { rotulo: 'Pagador', valor: payerName.trim() || undefined },
+                ]}
+              />
+              <Button type="submit" size="lg" fullWidth isLoading={generating} disabled={!isStoreSelected}>
+                {generating ? 'Gerando…' : textoDoBotao}
+              </Button>
+            </>
           )}
-        </section>
-      )}
+        </aside>
+      </form>
 
-      <section className="mt-8">
-        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-          <div>
-            <h2 className="text-base font-semibold text-fg-token">Cobranças geradas</h2>
-          </div>
-          <button
-            type="button"
+      <Secao
+        titulo="Cobranças geradas"
+        acoes={
+          <Button
+            variant="outline"
+            size="sm"
             onClick={carregarCobrancas}
             disabled={carregandoLista}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border-token px-3 py-1.5 text-xs font-medium text-fg-token transition hover:bg-surface-2 disabled:opacity-60"
+            leftIcon={<ArrowPathIcon className={`h-4 w-4 ${carregandoLista ? 'animate-spin' : ''}`} />}
           >
-            <ArrowPathIcon className={`h-4 w-4 ${carregandoLista ? 'animate-spin' : ''}`} />
             Atualizar
-          </button>
-        </div>
-
+          </Button>
+        }
+      >
         {cobrancas.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-border-token px-4 py-8 text-center text-sm text-fg-muted-token">
+          <p className="rounded border border-dashed border-border-token px-4 py-8 text-center text-sm text-fg-muted-token">
             {carregandoLista ? 'Carregando…' : 'Nenhuma cobrança avulsa ainda.'}
           </p>
         ) : (
@@ -415,7 +397,7 @@ export const PaymentLinkPage: React.FC = () => {
               return (
                 <li
                   key={c.id}
-                  className="flex flex-wrap items-center gap-x-4 gap-y-2 superficie px-4 py-3"
+                  className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded border border-border-token px-4 py-3"
                 >
                   <div className="min-w-40 flex-1">
                     <p className="text-sm font-semibold text-fg-token">
@@ -437,18 +419,14 @@ export const PaymentLinkPage: React.FC = () => {
 
                   {c.payment_url && (
                     <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(c.payment_url!)}
-                        className="rounded-full border border-border-token px-3 py-1.5 text-xs font-medium text-fg-token transition hover:bg-surface-2"
-                      >
+                      <Button variant="outline" size="sm" onClick={() => handleCopy(c.payment_url!)}>
                         Copiar link
-                      </button>
+                      </Button>
                       <a
                         href={c.payment_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="rounded-full border border-border-token px-3 py-1.5 text-xs font-medium text-fg-token transition hover:bg-surface-2"
+                        className="inline-flex h-8 items-center rounded border border-border-token bg-surface px-3 text-sm font-medium text-fg-token transition-colors hover:bg-surface-2"
                       >
                         Abrir
                       </a>
@@ -459,7 +437,7 @@ export const PaymentLinkPage: React.FC = () => {
             })}
           </ul>
         )}
-      </section>
+      </Secao>
     </PageShell>
   );
 };

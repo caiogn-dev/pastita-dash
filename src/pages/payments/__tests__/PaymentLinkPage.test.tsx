@@ -48,9 +48,9 @@ describe('PaymentLinkPage — link de pagamento avulso (F5)', () => {
 
     render(<PaymentLinkPage />);
 
-    fireEvent.change(screen.getByLabelText('Valor (R$)'), { target: { value: '30' } });
-    fireEvent.change(screen.getByLabelText('Descrição (opcional)'), { target: { value: 'Sinal' } });
-    fireEvent.click(screen.getByRole('button', { name: /Gerar link de pagamento/i }));
+    fireEvent.change(screen.getByLabelText('Valor'), { target: { value: '3000' } });
+    fireEvent.change(screen.getByLabelText('Descrição'), { target: { value: 'Sinal' } });
+    fireEvent.click(screen.getByRole('button', { name: /Gerar link/i }));
 
     await waitFor(() =>
       expect(mockCreatePaymentLink).toHaveBeenCalledWith({
@@ -72,10 +72,10 @@ describe('PaymentLinkPage — link de pagamento avulso (F5)', () => {
 
     render(<PaymentLinkPage />);
 
-    fireEvent.change(screen.getByLabelText('Valor (R$)'), { target: { value: '30' } });
+    fireEvent.change(screen.getByLabelText('Valor'), { target: { value: '3000' } });
     // Descrição obrigatória quando não se anexa pedido (senão nasce sem itens).
-    fireEvent.change(screen.getByLabelText('Descrição (opcional)'), { target: { value: 'Sinal' } });
-    fireEvent.click(screen.getByRole('button', { name: /Gerar link de pagamento/i }));
+    fireEvent.change(screen.getByLabelText('Descrição'), { target: { value: 'Sinal' } });
+    fireEvent.click(screen.getByRole('button', { name: /Gerar link/i }));
 
     expect(await screen.findByText('https://mp/init')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Abrir link de pagamento/i })).toHaveAttribute('href', 'https://mp/init');
@@ -83,16 +83,16 @@ describe('PaymentLinkPage — link de pagamento avulso (F5)', () => {
 
   it('não chama o serviço com valor inválido', async () => {
     render(<PaymentLinkPage />);
-    fireEvent.change(screen.getByLabelText('Valor (R$)'), { target: { value: '0' } });
-    fireEvent.click(screen.getByRole('button', { name: /Gerar link de pagamento/i }));
+    fireEvent.change(screen.getByLabelText('Valor'), { target: { value: '0' } });
+    fireEvent.click(screen.getByRole('button', { name: /Gerar link/i }));
     await waitFor(() => expect(mockCreatePaymentLink).not.toHaveBeenCalled());
   });
 
   it('NÃO gera link sem pedido anexado E sem descrição (evita pedido só-valor)', async () => {
     render(<PaymentLinkPage />);
-    fireEvent.change(screen.getByLabelText('Valor (R$)'), { target: { value: '50' } });
+    fireEvent.change(screen.getByLabelText('Valor'), { target: { value: '5000' } });
     // sem descrição, sem pedido anexado
-    fireEvent.click(screen.getByRole('button', { name: /Gerar link de pagamento/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Gerar link/i }));
     await waitFor(() => expect(mockCreatePaymentLink).not.toHaveBeenCalled());
   });
 
@@ -102,10 +102,10 @@ describe('PaymentLinkPage — link de pagamento avulso (F5)', () => {
       store_payment: { id: 'sp1', order: null },
     });
     render(<PaymentLinkPage />);
-    fireEvent.change(screen.getByLabelText('Valor (R$)'), { target: { value: '12.5' } });
-    fireEvent.change(screen.getByLabelText('Nome do pagador (opcional)'), { target: { value: 'João' } });
-    fireEvent.change(screen.getByLabelText('Descrição (opcional)'), { target: { value: 'Sinal do evento' } });
-    fireEvent.click(screen.getByRole('button', { name: /Gerar link de pagamento/i }));
+    fireEvent.change(screen.getByLabelText('Valor'), { target: { value: '1250' } });
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'João' } });
+    fireEvent.change(screen.getByLabelText('Descrição'), { target: { value: 'Sinal do evento' } });
+    fireEvent.click(screen.getByRole('button', { name: /Gerar link/i }));
     await waitFor(() =>
       expect(mockCreatePaymentLink).toHaveBeenCalledWith({ store: 'loja-1', amount: 12.5, payer_name: 'João', description: 'Sinal do evento' }),
     );
@@ -152,9 +152,9 @@ describe('PaymentLinkPage — link de pagamento avulso (F5)', () => {
     render(<PaymentLinkPage />);
     await waitFor(() => expect(mockGetPayments).toHaveBeenCalledTimes(1));
 
-    fireEvent.change(screen.getByLabelText('Valor (R$)'), { target: { value: '30' } });
-    fireEvent.change(screen.getByLabelText('Descrição (opcional)'), { target: { value: 'Sinal' } });
-    fireEvent.click(screen.getByRole('button', { name: /Gerar link de pagamento/i }));
+    fireEvent.change(screen.getByLabelText('Valor'), { target: { value: '3000' } });
+    fireEvent.change(screen.getByLabelText('Descrição'), { target: { value: 'Sinal' } });
+    fireEvent.click(screen.getByRole('button', { name: /Gerar link/i }));
 
     await waitFor(() => expect(mockGetPayments).toHaveBeenCalledTimes(2));
   });

@@ -25,7 +25,6 @@
   "pages/automation/CustomerSessionsPage.tsx": 1,
   "pages/marketing/email/NewCampaignPage.tsx": 1,
   "pages/nutrition/RevisaoDeAlergenicos.tsx": 2,
-  "pages/payments/PaymentLinkPage.tsx": 2,
   "pages/products/components/ProductsToolbar.tsx": 1,
   "pages/reports/sections/OverviewSummarySection.tsx": 3,
   "pages/reports/sections/StoreScoreSection.tsx": 1,

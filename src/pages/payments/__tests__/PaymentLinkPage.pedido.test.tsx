@@ -72,7 +72,7 @@ describe('vincular cobrança a um pedido', () => {
     await screen.findByRole('option', { name: /CE-123/ });
     await userEvent.selectOptions(screen.getByLabelText(/pedido/i), 'ped-1');
 
-    expect(screen.getByLabelText(/valor/i)).toHaveValue(142);
+    expect(screen.getByLabelText(/valor/i)).toHaveValue('142,00');
   });
 
   it('manda o pedido junto na criação do link', async () => {
@@ -92,7 +92,7 @@ describe('o avulso continua existindo', () => {
     render(<PaymentLinkPage />);
 
     await screen.findByRole('option', { name: /CE-123/ });
-    await userEvent.type(screen.getByLabelText(/valor/i), '50');
+    await userEvent.type(screen.getByLabelText(/valor/i), '5000');
     // Sem pedido, a descrição é o que dá identidade — obrigatória agora.
     await userEvent.type(screen.getByLabelText(/descrição/i), 'Sinal do evento');
     await userEvent.click(screen.getByRole('button', { name: /gerar/i }));
@@ -109,9 +109,9 @@ describe('o avulso continua existindo', () => {
     render(<PaymentLinkPage />);
 
     await screen.findByRole('option', { name: /CE-123/ });
-    await userEvent.type(screen.getByLabelText(/valor/i), '142');
+    await userEvent.type(screen.getByLabelText(/valor/i), '14200');
 
-    const aviso = await screen.findByRole('alert');
+    const aviso = await screen.findByRole('status');
     expect(aviso).toHaveTextContent(/CE-123/);
     expect(aviso).toHaveTextContent(/mesmo valor/i);
   });
@@ -120,12 +120,12 @@ describe('o avulso continua existindo', () => {
     render(<PaymentLinkPage />);
 
     await screen.findByRole('option', { name: /CE-123/ });
-    await userEvent.type(screen.getByLabelText(/valor/i), '142');
-    await screen.findByRole('alert');
+    await userEvent.type(screen.getByLabelText(/valor/i), '14200');
+    await screen.findByRole('status');
 
     await userEvent.selectOptions(screen.getByLabelText(/pedido/i), 'ped-1');
 
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('valor que não bate com pedido nenhum não gera aviso', async () => {
@@ -133,9 +133,9 @@ describe('o avulso continua existindo', () => {
     render(<PaymentLinkPage />);
 
     await screen.findByRole('option', { name: /CE-123/ });
-    await userEvent.type(screen.getByLabelText(/valor/i), '37');
+    await userEvent.type(screen.getByLabelText(/valor/i), '3700');
 
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('a opção de cobrança avulsa é a padrão', async () => {
