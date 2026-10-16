@@ -43,6 +43,7 @@ import { getOrders, getOrderStats, updateOrderStatus, StoreOrder } from '../../s
 import { dashboardService } from '../../services';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
 import { AiDailySummaryCard } from '../../components/dashboard/AiDailySummaryCard';
+import { VigiasDoDiaCard } from '../../components/dashboard/VigiasDoDiaCard';
 import ForecastPanel from '../../components/dashboard/ForecastPanel';
 import { useAiDailySummary } from '../../hooks/queries/useAiDailySummary';
 import type { Order } from '../../types';
@@ -640,6 +641,9 @@ export const DashboardPage: React.FC = () => {
       )}
 
       {/* ── Resumo IA (ontem) ── */}
+      {/* ── Vigias: o que foi avisado no WhatsApp do dono ── */}
+      <VigiasDoDiaCard store={storeSlug || storeId} />
+
       <AiDailySummaryCard store={storeSlug || storeId} />
 
       {/* Mesma chamada do resumo (react-query dedupa pela queryKey): o forecast

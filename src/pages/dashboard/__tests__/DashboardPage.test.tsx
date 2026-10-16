@@ -10,6 +10,10 @@ jest.mock('../../../components/dashboard/CarrinhosAbandonadosCard', () => ({
   __esModule: true,
   CarrinhosAbandonadosCard: () => null,
 }));
+jest.mock('../../../components/dashboard/VigiasDoDiaCard', () => ({
+  __esModule: true,
+  VigiasDoDiaCard: () => null,
+}));
 
 // ── Mocks das dependências pesadas do dashboard ──────────────────────────────
 jest.mock('../../../services/storesApi', () => ({

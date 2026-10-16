@@ -113,6 +113,7 @@ const HandoverRequestsPage = lazy(() => import('./pages/whatsapp').then(m => ({ 
 const AvaliacoesPage = lazy(() => import('./pages/avaliacoes/AvaliacoesPage'));
 const RecuperacaoPage = lazy(() => import('./pages/marketing/recuperacao/RecuperacaoPage'));
 const PromocaoDoDiaPage = lazy(() => import('./pages/marketing/promocao/PromocaoDoDiaPage'));
+const VigiasPage = lazy(() => import('./pages/vigias/VigiasPage'));
 const InformativosPage = lazy(() => import('./pages/marketing/informativos/InformativosPage'));
 const PromocaoNoInstagramPage = lazy(() => import('./pages/marketing/instagram/PromocaoNoInstagramPage'));
 const InstagramCallbackPage = lazy(() => import('./pages/instagram/InstagramCallbackPage'));
@@ -261,6 +262,7 @@ const AppContent: React.FC = () => {
         {/* Analytics/Reports Routes */}
         <Route path="analytics" element={<Navigate to="/analytics/visao-geral" replace />} />
         <Route path="analytics/:relatorio" element={<PageBoundary><AnalyticsPage /></PageBoundary>} />
+        <Route path="vigias" element={<PageBoundary><VigiasPage /></PageBoundary>} />
         <Route path="conquistas" element={<PageBoundary><ConquistasPage /></PageBoundary>} />
         <Route path="reports" element={<Navigate to="/analytics" replace />} />
         <Route path="colaboradores" element={<PageBoundary><ColaboradoresPage /></PageBoundary>} />
