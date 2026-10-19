@@ -96,10 +96,15 @@ const KdsPage: React.FC = () => {
     setAdvancing(order.id);
     try {
       await updateOrderStatus(order.id, next.status);
-      // Otimista: atualizar a store local imediatamente
-      const { orders, setOrders } = useRootStore.getState();
-      const current = orders[storeId as string] || [];
-      setOrders(storeId as string, current.map((o: StoreOrder) =>
+      // Otimista: atualizar a store local imediatamente.
+      // O cache é chaveado pelo UUID da loja, mas a rota entrega o SLUG em
+      // `storeId`. Ler/gravar por `storeId` cru acha um balde vazio e grava `[]`
+      // por cima do quadro inteiro — por isso normaliza pela mesma chave que o
+      // seletor de exibição (e o setOrders) já usa.
+      const { orders, setOrders, stores } = useRootStore.getState();
+      const key = resolveStoreKey(stores, storeId);
+      const current = orders[key] || [];
+      setOrders(key, current.map((o: StoreOrder) =>
         o.id === order.id ? { ...o, status: next.status } : o,
       ));
     } catch (err) {
