@@ -6,15 +6,49 @@
  * verde do WhatsApp em hex, a cor por categoria, o campo de texto cru e os botões
  * "Usar template" e "Editar" que não faziam nada. O que a prévia entrega de
  * verdade é a mensagem pronta: "Copiar mensagem".
+ *
+ * 19/10: os avisos de status do pedido (confirmado, em preparo, saiu, entregue)
+ * vinham de uma lista fixa daqui e NÃO eram o que a loja mandava — a Maria
+ * Vitória, de retirada, recebeu "em breve estará a caminho". Agora a seção
+ * "Avisos automáticos do pedido" lê as AutoMessages da loja no servidor: o que
+ * aparece é o que sai, e o "Editar" leva para onde se muda.
  */
-import React, { useMemo, useState } from 'react';
-import { ChatBubbleLeftRightIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ChatBubbleLeftRightIcon, DocumentDuplicateIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 import { BalaoDeWhatsApp } from '../../../components/marketing/BalaoDeWhatsApp';
 import { Badge, Button, EmptyState, Input, PageShell, PeriodChips, Secao } from '../../../components/ui';
 import { cn } from '../../../utils/cn';
 import { getTemplatesByCategory, whatsappTemplates, WhatsAppTemplate } from '../../../data/whatsappTemplates';
+import { useStore } from '../../../hooks/useStore';
+import { autoMessageService, eventTypeLabels } from '../../../services/automation';
+import type { AutoMessage, AutoMessageEventType } from '../../../types';
+
+/** Avisos que saem sozinhos quando o status do pedido muda, na ordem do pedido. */
+const EVENTOS_DE_STATUS: AutoMessageEventType[] = [
+  'order_confirmed', 'order_preparing', 'order_ready',
+  'order_out_for_delivery', 'order_delivered', 'order_cancelled',
+];
+
+/** Valores de exemplo para a prévia — as mesmas chaves que o servidor preenche. */
+const EXEMPLO_DO_PEDIDO: Record<string, string> = {
+  customer_name: 'Maria Vitória',
+  primeiro_nome: 'Maria',
+  order_number: 'CE-2610194335',
+  order_status: 'Em preparo',
+  order_total: '76.43',
+  total: '76,43',
+  tempo: '40',
+  endereco: 'Quadra 110 Norte, Alameda 8, 29',
+  entregue_ou_retirado: 'entregue',
+  proximo_passo: 'Pode vir buscar!',
+};
+
+function previaDoAviso(texto: string): string {
+  return texto.replace(/\{(\w+)\}/g, (marca, chave: string) => EXEMPLO_DO_PEDIDO[chave] ?? marca);
+}
 
 type Categoria = 'all' | WhatsAppTemplate['category'];
 
@@ -47,6 +81,30 @@ const WhatsAppTemplatesPage: React.FC = () => {
   const [categoria, setCategoria] = useState<Categoria>('all');
   const [escolhido, setEscolhido] = useState<WhatsAppTemplate | null>(null);
   const [valores, setValores] = useState<Record<string, string>>({});
+  const [aviso, setAviso] = useState<AutoMessage | null>(null);
+  const [avisos, setAvisos] = useState<AutoMessage[]>([]);
+  const { storeId } = useStore();
+
+  useEffect(() => {
+    if (!storeId) return undefined;
+    let vivo = true;
+    autoMessageService
+      .list({ page_size: 100 })
+      .then((resposta) => {
+        if (!vivo) return;
+        const daLoja = (resposta.results ?? []).filter(
+          (m) => m.store_id === storeId && EVENTOS_DE_STATUS.includes(m.event_type),
+        );
+        daLoja.sort((a, b) => EVENTOS_DE_STATUS.indexOf(a.event_type) - EVENTOS_DE_STATUS.indexOf(b.event_type));
+        setAvisos(daLoja);
+      })
+      .catch(() => {
+        if (vivo) setAvisos([]);
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [storeId]);
 
   const lista = categoria === 'all' ? whatsappTemplates : getTemplatesByCategory(categoria);
 
@@ -63,11 +121,17 @@ const WhatsAppTemplatesPage: React.FC = () => {
   );
 
   const escolher = (modelo: WhatsAppTemplate) => {
+    setAviso(null);
     setEscolhido(modelo);
     setValores(Object.fromEntries(modelo.variables.map((v) => [v, ''])));
   };
 
-  const texto = escolhido ? preencher(escolhido, valores) : '';
+  const escolherAviso = (mensagem: AutoMessage) => {
+    setEscolhido(null);
+    setAviso(mensagem);
+  };
+
+  const texto = aviso ? previaDoAviso(aviso.message_text) : escolhido ? preencher(escolhido, valores) : '';
 
   const copiar = async () => {
     try {
@@ -93,6 +157,45 @@ const WhatsAppTemplatesPage: React.FC = () => {
       }
     >
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
+        <div className="flex min-w-0 flex-col gap-5">
+        {avisos.length > 0 && (
+          <Secao
+            titulo="Avisos automáticos do pedido"
+            contador={avisos.length}
+            acoes={
+              <Link
+                to={`/automation/companies/${avisos[0].company}/messages`}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-brand hover:underline"
+              >
+                <PencilSquareIcon className="h-4 w-4" />
+                Editar
+              </Link>
+            }
+          >
+            <ul className="-mx-2 flex flex-col gap-1">
+              {avisos.map((mensagem) => {
+                const ativo = aviso?.id === mensagem.id;
+                return (
+                  <li key={mensagem.id}>
+                    <button
+                      type="button"
+                      aria-pressed={ativo}
+                      onClick={() => escolherAviso(mensagem)}
+                      className={cn(
+                        'flex w-full items-center rounded-lg px-3 py-2.5 text-left font-medium text-fg-token transition-colors',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                        ativo ? 'bg-brand-soft' : 'hover:bg-surface-2',
+                      )}
+                    >
+                      {eventTypeLabels[mensagem.event_type] ?? mensagem.name}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </Secao>
+        )}
+
         <Secao
           titulo="Modelos"
           contador={lista.length}
@@ -126,9 +229,14 @@ const WhatsAppTemplatesPage: React.FC = () => {
             })}
           </ul>
         </Secao>
+        </div>
 
         <div className="lg:sticky lg:top-6">
-          {escolhido ? (
+          {aviso ? (
+            <Secao titulo="Prévia" descricao={eventTypeLabels[aviso.event_type] ?? aviso.name}>
+              <BalaoDeWhatsApp remetente="Sua loja" texto={texto} />
+            </Secao>
+          ) : escolhido ? (
             <Secao
               titulo="Prévia"
               descricao={escolhido.name}

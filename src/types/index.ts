@@ -571,6 +571,9 @@ export interface AutoMessage {
   id: string;
   account?: string;
   company_id?: string;
+  /** Perfil (CompanyProfile) dono da mensagem — vem como `company` na API. */
+  company?: string;
+  store_id?: string;
   name: string;
   event_type: AutoMessageEventType;
   delay_minutes?: number;

@@ -17,38 +17,6 @@ export const whatsappTemplates: WhatsAppTemplate[] = [
     variables: ['nome', 'loja', 'especialidade', 'localizacao', 'canal_pedido']
   },
   {
-    id: 'order_confirmed',
-    name: 'Confirmação de Pedido',
-    description: 'Confirmação recebimento do pedido',
-    category: 'transactional',
-    content: `✅ *Pedido Confirmado!*\n\nOlá {{nome}}, recebemos seu pedido #{{pedido}}.\n\n💰 *Total:* R$ {{valor}}\n⏱️ *Tempo:* {{tempo}} min\n\nVamos preparar com carinho!`,
-    variables: ['nome', 'pedido', 'valor', 'tempo']
-  },
-  {
-    id: 'order_preparing',
-    name: 'Pedido em Preparação',
-    description: 'Avisa cliente que pedido está sendo preparado',
-    category: 'transactional',
-    content: `👨‍🍳 *Seu pedido está sendo preparado!*\n\nOlá {{nome}},\n\nPedido #{{pedido}} em preparação.\n⏱️ Falta aproximadamente {{tempo}} minutos!`,
-    variables: ['nome', 'pedido', 'tempo']
-  },
-  {
-    id: 'order_delivery',
-    name: 'Saiu para Entrega',
-    description: 'Notifica que pedido saiu para entrega',
-    category: 'transactional',
-    content: `🛵 *Seu pedido saiu para entrega!*\n\nOlá {{nome}},\n\nPedido #{{pedido}} a caminho!\n📍 {{endereco}}\n⏱️ Chega em {{tempo}} min`,
-    variables: ['nome', 'pedido', 'endereco', 'tempo']
-  },
-  {
-    id: 'order_delivered',
-    name: 'Pedido Entregue',
-    description: 'Confirma entrega e solicita avaliação',
-    category: 'transactional',
-    content: `✨ *Pedido Entregue!*\n\nOlá {{nome}},\n\nSeu pedido #{{pedido}} foi entregue! 🎉\n\nEsperamos que aproveite!\nAvalie: {{link}}`,
-    variables: ['nome', 'pedido', 'link']
-  },
-  {
     id: 'coupon',
     name: 'Cupom de Desconto',
     description: 'Envia cupom de desconto promocional',
