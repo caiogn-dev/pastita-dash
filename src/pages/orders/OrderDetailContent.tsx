@@ -72,6 +72,7 @@ import { RegistrarPagamentoModal } from '../../components/orders/RegistrarPagame
 import { CancelarPedidoModal } from '../../components/orders/CancelarPedidoModal';
 import { saldoDoPedido, podeRegistrarPagamento } from './saldoDoPedido';
 import { useStore } from '../../hooks';
+import { LinhasDeDesconto } from '../../components/orders/LinhasDeDesconto';
 import { LinhaDoTempoDoPedido } from '../../components/orders/LinhaDoTempoDoPedido';
 import { proximaAcaoDoPedido } from './proximaAcao';
 import { enderecoDaEntrega } from './enderecoDaEntrega';
@@ -765,29 +766,36 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                   <dt className="text-fg-muted-token">Entrega</dt>
                   <dd>{formatCurrency(order.delivery_fee || order.shipping_cost)}</dd>
                 </div>
-                {/* De ONDE veio o abatimento: cupom e saldo gasto ficavam
-                    somados num "Desconto" só, e quem abria o pedido não tinha
-                    como saber por que o valor era aquele. */}
-                {cashbackUsado > 0 ? (
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-fg-muted-token">Cashback usado</dt>
-                    <dd className="text-[var(--success)]">-{formatCurrency(cashbackUsado)}</dd>
-                  </div>
-                ) : null}
-                {order.coupon_code?.trim() ? (
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-fg-muted-token">Cupom</dt>
-                    <dd className="font-mono text-xs">{order.coupon_code.trim()}</dd>
-                  </div>
-                ) : null}
-                {order.discount ? (
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-fg-muted-token">
-                      {cashbackUsado > 0 ? 'Desconto total' : 'Desconto'}
-                    </dt>
-                    <dd className="text-[var(--success)]">-{formatCurrency(order.discount)}</dd>
-                  </div>
-                ) : null}
+                {/* De ONDE veio o abatimento: uma linha por origem (cupom com
+                    código, resgate com o item grátis, cashback). Dono, 19/10:
+                    o resgate aparecia só como "Desconto". Pedido sem a lista
+                    (backend antigo) cai nas linhas de antes. */}
+                {order.descontos && order.descontos.length > 0 ? (
+                  <LinhasDeDesconto descontos={order.descontos} formatar={formatCurrency} />
+                ) : (
+                  <>
+                  {cashbackUsado > 0 ? (
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-fg-muted-token">Cashback usado</dt>
+                      <dd className="text-[var(--success)]">-{formatCurrency(cashbackUsado)}</dd>
+                    </div>
+                  ) : null}
+                  {order.coupon_code?.trim() ? (
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-fg-muted-token">Cupom</dt>
+                      <dd className="font-mono text-xs">{order.coupon_code.trim()}</dd>
+                    </div>
+                  ) : null}
+                  {order.discount ? (
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-fg-muted-token">
+                        {cashbackUsado > 0 ? 'Desconto total' : 'Desconto'}
+                      </dt>
+                      <dd className="text-[var(--success)]">-{formatCurrency(order.discount)}</dd>
+                    </div>
+                  ) : null}
+                  </>
+                )}
                 {manualSurcharge > 0 ? (
                   <div className="flex justify-between gap-3">
                     <dt className="text-fg-muted-token">Acréscimo</dt>

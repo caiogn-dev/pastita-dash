@@ -65,6 +65,9 @@ export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   voucher: 'Vale-refeição',
   voucher_link: 'Vale-refeição (link)',
   link: 'Link de pagamento',
+  // 19/10: pedido de total zero (resgate da fidelidade na retirada) não passa
+  // por cobrança nenhuma — server2 `CheckoutService.SEM_COBRANCA`.
+  sem_cobranca: 'Sem cobrança (grátis)',
   bank_transfer: 'Transferência',
   other: 'Outro',
   boleto: 'Boleto',

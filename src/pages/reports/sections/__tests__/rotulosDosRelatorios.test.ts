@@ -3,7 +3,7 @@ import { paymentLabel, gatewayLabel } from '../shared';
 import { rotuloDePagamento } from '../../../../utils/rotulosDeEstado';
 
 describe('paymentLabel nos relatórios', () => {
-  it.each(['pix', 'cash', 'card', 'credit_card', 'debit_card', 'card_on_delivery', 'voucher', 'voucher_link', 'link'])(
+  it.each(['pix', 'cash', 'card', 'credit_card', 'debit_card', 'card_on_delivery', 'voucher', 'voucher_link', 'link', 'sem_cobranca'])(
     '%s usa o mapa único',
     (m) => {
       expect(paymentLabel(m)).toBe(rotuloDePagamento(m));

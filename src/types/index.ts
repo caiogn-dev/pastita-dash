@@ -364,6 +364,8 @@ export interface Order {
   is_fully_paid?: boolean;
   /** Código do cupom que REALMENTE valeu no pedido (vazio quando não houve). */
   coupon_code?: string;
+  /** De onde veio o desconto (cupom, resgate, cashback). server2 descontos_do_pedido. */
+  descontos?: DescontoDoPedido[];
   /**
    * Quantos pedidos esta pessoa já fez na loja, incluindo este. Só vem no
    * DETALHE — na listagem o backend manda null para não pagar um COUNT por
@@ -1053,4 +1055,16 @@ export interface AutomationSettings {
     enabled: boolean;
     delay_minutes: number;
   };
+}
+
+/** Uma origem do desconto do pedido — server2 `services/descontos_do_pedido.py`. */
+export interface DescontoDoPedido {
+  tipo: 'cupom' | 'fidelidade' | 'cashback' | 'manual' | 'desconto';
+  rotulo: string;
+  /** Decimal em string, como o backend manda ("5.29"). */
+  valor: string;
+  /** Só no cupom. */
+  codigo?: string;
+  /** Só no resgate: o item que saiu grátis. */
+  item?: string;
 }

@@ -153,6 +153,15 @@ export const useOrderPrint = () => {
         : 0);
     const surcharge = typeof rawSurcharge === 'number' ? rawSurcharge : Number(rawSurcharge || 0);
     const total = Number(pedido.total || 0);
+    // De onde veio o desconto (cupom com código, resgate com o item grátis).
+    // Pedido antigo sem a lista: a linha somada de sempre.
+    const descontos = Array.isArray(pedido.descontos) ? pedido.descontos : [];
+    const linhasDeDesconto = descontos.length > 0
+      ? descontos.map((d) => {
+        const rotulo = d.tipo === 'fidelidade' && d.item ? `Resgate fidelidade: ${d.item}` : d.rotulo;
+        return `<div class="tot"><span>${escapeHtml(rotulo)}</span><span>- ${formatMoney(Number(d.valor))}</span></div>`;
+      }).join('')
+      : (discount > 0 ? `<div class="tot"><span>Desconto</span><span>- ${formatMoney(discount)}</span></div>` : '');
 
     const storeName = options?.storeName || (pedido as unknown as { store_name?: string }).store_name || 'LOJA';
     const storePhone = options?.storePhone || '';
@@ -497,7 +506,7 @@ export const useOrderPrint = () => {
         <div class="rule"></div>
         <div class="tot"><span>Subtotal</span><span>${formatMoney(subtotal)}</span></div>
         ${deliveryFee > 0 ? `<div class="tot"><span>Entrega</span><span>${formatMoney(deliveryFee)}</span></div>` : ''}
-        ${discount > 0 ? `<div class="tot"><span>Desconto</span><span>- ${formatMoney(discount)}</span></div>` : ''}
+        ${linhasDeDesconto}
         ${surcharge > 0 ? `<div class="tot"><span>Acrescimo</span><span>${formatMoney(surcharge)}</span></div>` : ''}
         ${Number(pedido.voucher_fee || 0) > 0 ? `<div class="tot"><span>Acrescimo vale</span><span>${formatMoney(Number(pedido.voucher_fee))}</span></div>` : ''}
         <div class="total-final">TOTAL ${formatMoney(total)}</div>
