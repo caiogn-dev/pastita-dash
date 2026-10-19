@@ -72,6 +72,26 @@ export interface NotasDaLoja {
   notas: NotaDaLoja[];
 }
 
+export interface ItemDaNota {
+  id: string;
+  nome: string;
+  quantidade: number;
+  valor_unitario: string;
+  subtotal: string;
+  /** false = item fora do cardápio. */
+  do_cardapio: boolean;
+}
+
+export interface ValoresDaNota {
+  itens: string;
+  frete: string;
+  desconto: string;
+  acrescimo: string;
+  /** Já cobrada do cliente; entra na nota, mas não se edita aqui. */
+  taxa_do_vale: string;
+  total: string;
+}
+
 export interface PedidoParaNota {
   id: string;
   order_number: string;
@@ -79,6 +99,11 @@ export interface PedidoParaNota {
   total: string | number;
   created_at: string;
   delivery_method: string;
+  payment_method: string;
+  /** As linhas da nota — são os itens do pedido. */
+  itens: ItemDaNota[];
+  /** A conta da nota, valores em texto com 2 casas. */
+  valores: ValoresDaNota;
   /** A última tentativa de cada modelo. */
   notas: { modelo: ModeloDeNota; status: NotaDaLoja['status'] }[];
   /** O que o pedido já sabe do destinatário — vira preenchimento do formulário. */

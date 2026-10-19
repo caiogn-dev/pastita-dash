@@ -17,6 +17,13 @@ import {
   classificarDocumento, cnpjValido, formatarCep, formatarDocumento, somenteDigitos,
 } from '../../utils/documento';
 import { formatCurrency } from '../../utils/formatters';
+import { ordersService } from '../../services/orders';
+import {
+  ajusteDoPedido, calcularConta, dinheiro, linhasDoPedido, problemasDasLinhas, valoresDoPedido,
+  type LinhaDaNota, type ValoresEditaveis,
+} from './contaDaNota';
+import { ProdutosDaNota } from './ProdutosDaNota';
+import { PagamentoDaNota } from './PagamentoDaNota';
 
 export interface EmitirNotaProps {
   aberto: boolean;
@@ -51,8 +58,21 @@ const OPCOES_DE_MODELO = [
   { valor: '65' as ModeloDeNota, titulo: 'NFC-e', descricao: 'Consumidor', icone: ReceiptPercentIcon },
 ];
 
+type Etapa = 'cliente' | 'produtos' | 'pagamento';
+
+const ETAPAS: { id: Etapa; rotulo: string }[] = [
+  { id: 'cliente', rotulo: 'Cliente' },
+  { id: 'produtos', rotulo: 'Produtos' },
+  { id: 'pagamento', rotulo: 'Pagamento' },
+];
+
 /**
- * Emissão manual: pedido → tipo → para quem a nota sai.
+ * Emissão manual: pedido → tipo → Cliente, Produtos, Pagamento.
+ *
+ * Produtos e Pagamento editam o PRÓPRIO pedido (gravado ao emitir): a nota é
+ * o pedido, e relatório, caixa e nota não podem divergir. Antes de 19/10 não
+ * havia onde pôr um item na nota — a Ivoneth lançou "+10 pessoas" como
+ * acréscimo solto e a SEFAZ recusou.
  *
  * O destinatário é digitado AQUI e guardado no cadastro da loja. Antes ele era
  * lido do endereço de entrega do pedido, e um pedido de retirada não tem
@@ -79,6 +99,9 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
   const [rejeicao, setRejeicao] = useState('');
   const [consultando, setConsultando] = useState(false);
   const [emitindo, setEmitindo] = useState(false);
+  const [etapa, setEtapa] = useState<Etapa>('cliente');
+  const [linhas, setLinhas] = useState<LinhaDaNota[]>([]);
+  const [valores, setValores] = useState<ValoresEditaveis>({ frete: '0', desconto: '0', acrescimo: '0' });
 
   const preencher = (dados: Partial<DestinatarioDaNota>) => {
     if (dados.documento !== undefined) setDocumento(formatarDocumento(dados.documento));
@@ -89,8 +112,15 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
     setErros({});
   };
 
+  const carregarConta = (escolhido: PedidoParaNota) => {
+    setLinhas(linhasDoPedido(escolhido));
+    setValores(valoresDoPedido(escolhido));
+  };
+
   const escolher = (escolhido: PedidoParaNota, documentoDeFora = '') => {
     setPedido(escolhido);
+    carregarConta(escolhido);
+    setEtapa('cliente');
     setRejeicao('');
     const documentoFinal = documentoDeFora || escolhido.sugestao.documento;
     preencher({ ...escolhido.sugestao, documento: documentoFinal });
@@ -130,6 +160,12 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
     return () => { ativo = false; clearTimeout(espera); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aberto, loja, busca, pedido, pedidoInicial]);
+
+  const conta = useMemo(
+    () => calcularConta(linhas, valores, dinheiro(pedido?.valores?.taxa_do_vale)),
+    [linhas, valores, pedido],
+  );
+  const problemas = useMemo(() => problemasDasLinhas(linhas), [linhas]);
 
   const numero = somenteDigitos(documento);
   const emailLimpo = email.trim().toLowerCase();
@@ -184,7 +220,8 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
     if (!pedido) return;
     const faltas = validar();
     setErros(faltas);
-    if (Object.values(faltas).some(Boolean)) return;
+    if (Object.values(faltas).some(Boolean)) { setEtapa('cliente'); return; }
+    if (Object.keys(problemas).length) { setEtapa('produtos'); return; }
 
     const destinatario: DestinatarioDaNota | undefined = numero
       ? {
@@ -207,6 +244,15 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
     setEmitindo(true);
     setRejeicao('');
     try {
+      // O que mudou na tela vai primeiro para o pedido; a nota sai dele.
+      const ajuste = ajusteDoPedido(pedido, linhas, valores);
+      if (ajuste) {
+        await ordersService.adjustOrder(pedido.id, ajuste, loja);
+        // Relê o pedido: a próxima tentativa (se a SEFAZ recusar) parte do
+        // que foi gravado, e não reaplica o mesmo ajuste.
+        const [atualizado] = await fiscalService.listarPedidos(loja, { id: pedido.id });
+        if (atualizado) { setPedido(atualizado); carregarConta(atualizado); }
+      }
       const nota = await fiscalService.emitir(loja, {
         order_id: pedido.id,
         modelo,
@@ -302,7 +348,7 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
             <div className="superficie flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-sm">
               <span className="font-semibold text-fg-token">{pedido.order_number}</span>
               <span className="min-w-0 flex-1 truncate text-fg-muted-token">{pedido.customer_name}</span>
-              <span className="font-medium text-fg-token">{formatCurrency(pedido.total)}</span>
+              <span className="font-medium text-fg-token">{formatCurrency(conta.total)}</span>
               <Button
                 size="sm"
                 variant="ghost"
@@ -315,6 +361,42 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
 
             <ChoiceCards rotulo="Tipo de nota" opcoes={OPCOES_DE_MODELO} valor={modelo} onChange={setModelo} />
 
+            <div role="tablist" aria-label="Etapas da nota" className="flex gap-1 border-b border-border-token">
+              {ETAPAS.map((e) => {
+                const pendente = (e.id === 'produtos' && Object.keys(problemas).length > 0)
+                  || (e.id === 'cliente' && Object.values(erros).some(Boolean));
+                return (
+                  <button
+                    key={e.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={etapa === e.id}
+                    onClick={() => setEtapa(e.id)}
+                    className={`-mb-px flex items-center gap-1.5 border-b-2 px-3 py-2 text-body font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                      etapa === e.id ? 'border-brand text-brand-ink' : 'border-transparent text-fg-muted-token hover:text-fg-token'
+                    }`}
+                  >
+                    {e.rotulo}
+                    {pendente && <span aria-label="requer atenção" className="h-1.5 w-1.5 rounded-pill bg-[var(--danger)]" />}
+                  </button>
+                );
+              })}
+            </div>
+
+            {etapa === 'produtos' && (
+              <ProdutosDaNota loja={loja} linhas={linhas} onMudar={setLinhas} problemas={problemas} />
+            )}
+
+            {etapa === 'pagamento' && (
+              <PagamentoDaNota
+                valores={valores}
+                onMudar={setValores}
+                conta={conta}
+                formaDePagamento={pedido.payment_method}
+              />
+            )}
+
+            {etapa === 'cliente' && (
             <fieldset className="space-y-3">
               <legend className="mb-2 text-body font-semibold text-fg-token">Destinatário</legend>
 
@@ -413,12 +495,28 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
                 <div className="sm:col-span-1">{campoDeEndereco('state', 'UF', { maxLength: 2 })}</div>
               </div>
             </fieldset>
+            )}
 
             {rejeicao && <Aviso tom="erro" titulo="A nota não saiu">{rejeicao}</Aviso>}
 
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={onFechar}>Fechar</Button>
-              <Button onClick={emitir} isLoading={emitindo}>{`Emitir ${NOME_MODELO[modelo]}`}</Button>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-sm text-fg-muted-token">
+                Total da nota <span className="font-semibold tabular-nums text-fg-token">{formatCurrency(conta.total)}</span>
+              </span>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="ghost" onClick={onFechar}>Fechar</Button>
+                {etapa !== 'cliente' && (
+                  <Button variant="outline" onClick={() => setEtapa(ETAPAS[ETAPAS.findIndex((e) => e.id === etapa) - 1].id)}>
+                    ← Voltar
+                  </Button>
+                )}
+                {etapa !== 'pagamento' && (
+                  <Button variant="outline" onClick={() => setEtapa(ETAPAS[ETAPAS.findIndex((e) => e.id === etapa) + 1].id)}>
+                    Avançar →
+                  </Button>
+                )}
+                <Button onClick={emitir} isLoading={emitindo}>{`Emitir ${NOME_MODELO[modelo]}`}</Button>
+              </div>
             </div>
           </>
         )}

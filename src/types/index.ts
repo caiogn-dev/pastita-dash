@@ -448,10 +448,14 @@ export interface CreateOrder {
 }
 
 export interface OrderItemOp {
-  op: 'add' | 'update' | 'remove';
+  op: 'add' | 'add_custom' | 'update' | 'remove';
   item_id?: string;
   product_id?: string;
   quantity?: number;
+  /** add_custom: nome do item fora do cardápio; update: renomeia a linha. */
+  name?: string;
+  /** add_custom: obrigatório; update: troca o preço da linha. */
+  unit_price?: number;
 }
 
 export interface OrderAdjustPayload {
