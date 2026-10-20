@@ -155,7 +155,7 @@ export const InspetorDaVitrine: React.FC<InspetorDaVitrineProps> = (p) => {
     const redondo = exibicao.logo_formato === 'redondo';
     return (
       <div className="flex flex-col gap-5">
-        <Propriedade rotulo="Capa" mudou={p.capa.pendente} valor={p.capa.pendente ? <button type="button" onClick={p.capa.onRemover} className="text-caption text-fg-muted-token hover:text-danger-token">Desfazer</button> : undefined}>
+        <Propriedade rotulo="Capa" mudou={p.capa.pendente} valor={p.capa.pendente ? <button type="button" onClick={p.capa.onRemover} className="text-caption text-fg-muted-token hover:text-danger-token">Desfazer</button> : <span className="text-caption text-fg-muted-token">1920 × 600 px</span>}>
           <TrocaDeImagem imagem={p.capa} alt="Capa" rotuloDoBotao="Trocar capa" className="aspect-[3/1] w-full rounded-lg" vazio={<PhotoIcon className="h-6 w-6" />} />
         </Propriedade>
         <Propriedade rotulo="Logo" mudou={p.logo.pendente} valor={p.logo.pendente ? <button type="button" onClick={p.logo.onRemover} className="text-caption text-fg-muted-token hover:text-danger-token">Desfazer</button> : undefined}>
@@ -186,8 +186,8 @@ export const InspetorDaVitrine: React.FC<InspetorDaVitrineProps> = (p) => {
   if (p.parte === 'estilo') {
     return (
       <div className="flex flex-col gap-5">
-        <Propriedade rotulo="Template" mudou={mudouForm('template')}>
-          <div role="radiogroup" aria-label="Template" className="grid grid-cols-2 gap-2">
+        <Propriedade rotulo="Modelo" mudou={mudouForm('template')}>
+          <div role="radiogroup" aria-label="Modelo" className="grid grid-cols-2 gap-2">
             {p.templates.map((t) => {
               const escolhido = form.template === t.id;
               return (

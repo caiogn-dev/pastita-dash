@@ -48,7 +48,7 @@ const TABS: Tab[] = [
   { id: 'coupons', label: 'Cupons', icon: TagIcon, path: 'coupons' },
   { id: 'delivery', label: 'Entrega', icon: TruckIcon, path: 'delivery' },
   { id: 'settings', label: 'Configurações', icon: Cog6ToothIcon, path: 'settings' },
-  { id: 'storefront', label: 'Storefront', icon: BuildingStorefrontIcon, path: 'storefront' },
+  { id: 'storefront', label: 'Aparência da loja', icon: BuildingStorefrontIcon, path: 'aparencia' },
 ];
 
 export const StoreDetailPage: React.FC = () => {

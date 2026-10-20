@@ -19,6 +19,8 @@ export interface BarraDeAlteracoesProps {
   onDescartar: () => void;
   /** Na barra de ferramentas da página (editor), sem flutuar. */
   embutida?: boolean;
+  /** "Publicar" onde o efeito é o cliente ver (aparência da loja). */
+  rotuloSalvar?: string;
   className?: string;
 }
 
@@ -28,6 +30,7 @@ export const BarraDeAlteracoes: React.FC<BarraDeAlteracoesProps> = ({
   onSalvar,
   onDescartar,
   embutida = false,
+  rotuloSalvar = 'Salvar',
   className,
 }) => {
   if (quantidade <= 0) return null;
@@ -51,7 +54,7 @@ export const BarraDeAlteracoes: React.FC<BarraDeAlteracoesProps> = ({
           Descartar
         </Button>
         <Button size={embutida ? 'sm' : undefined} onClick={onSalvar} isLoading={salvando} disabled={salvando}>
-          Salvar
+          {rotuloSalvar}
         </Button>
       </div>
     </div>

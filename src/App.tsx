@@ -286,6 +286,8 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId/link-bio" element={<PageBoundary><LinkBioPage /></PageBoundary>} />
         <Route path="stores/:storeId/payments" element={<PageBoundary><PaymentsPage /></PageBoundary>} />
         <Route path="stores/:storeId/settings" element={<PageBoundary><StoreSettingsPage /></PageBoundary>} />
+        <Route path="stores/:storeId/aparencia" element={<PageBoundary><StorefrontPage /></PageBoundary>} />
+        {/* Endereço antigo: favoritos e links de suporte continuam abrindo. */}
         <Route path="stores/:storeId/storefront" element={<PageBoundary><StorefrontPage /></PageBoundary>} />
         <Route path="stores/:storeId/delivery" element={<PageBoundary><DeliveryZonesPage /></PageBoundary>} />
         <Route path="stores/:storeId/printing" element={<PageBoundary><PrintSettingsPage /></PageBoundary>} />

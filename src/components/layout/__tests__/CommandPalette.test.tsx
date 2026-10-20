@@ -73,6 +73,21 @@ describe('CommandPalette', () => {
     expect(achados.some((o) => /Vendas/.test(o.textContent ?? ''))).toBe(true);
   });
 
+  it('nome antigo ainda acha a tela renomeada (storefront, kds, taco)', () => {
+    // 20/10: os itens ganharam nome em português; quem já decorou o antigo
+    // digita o antigo. A paleta acha pelo sinônimo e mostra o nome novo.
+    renderizar();
+    const campo = screen.getByRole('combobox');
+    for (const [termo, nome] of [
+      ['storefront', /Aparência da loja/],
+      ['kds', /Tela da cozinha/],
+      ['taco', /Tabela nutricional/],
+    ] as const) {
+      fireEvent.change(campo, { target: { value: termo } });
+      expect(screen.getByRole('option', { name: nome })).toBeInTheDocument();
+    }
+  });
+
   it('setas movem a seleção e Enter navega para ela', () => {
     renderizar();
     const campo = screen.getByRole('combobox');

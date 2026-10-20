@@ -191,7 +191,7 @@ export const HandoverRequestsPage: React.FC = () => {
 
   return (
     <PageShell
-      titulo="Fila humana"
+      titulo="Esperando atendente"
      
       acoes={(
         <Button variant="outline" size="sm" leftIcon={<ArrowPathIcon className="h-4 w-4" />} onClick={() => void carregar()}>

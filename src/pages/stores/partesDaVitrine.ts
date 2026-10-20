@@ -1,5 +1,5 @@
 /**
- * Partes da vitrine — a coluna da esquerda do editor do Storefront.
+ * Partes da vitrine — a coluna da esquerda do editor da Aparência da loja.
  *
  * O editor segue o padrão de editor de tema (Shopify) e de ferramenta de
  * desenho (Figma/Framer): partes à esquerda, a vitrine de verdade no meio,
@@ -40,18 +40,18 @@ export interface DefinicaoDaParte {
   exibicao: (keyof ExibicaoDoCardapio)[];
   /** Logo e capa ainda não enviados contam como alteração desta parte. */
   arquivos?: boolean;
-  /** Separador antes deste item na lista. */
-  grupo?: boolean;
+  /** Título do bloco que começa neste item (Marca, Cardápio…). */
+  grupo?: string;
 }
 
 export const PARTES: DefinicaoDaParte[] = [
-  { id: 'topo', rotulo: 'Topo da loja', icone: BuildingStorefrontIcon, area: 'topo', campos: ['tagline'], exibicao: ['logo_formato', 'logo_alinhamento'], arquivos: true },
-  { id: 'estilo', rotulo: 'Cores e estilo', icone: SwatchIcon, area: 'topo', campos: ['template', 'primary_color', 'secondary_color'], exibicao: [] },
-  { id: 'banners', rotulo: 'Banners', icone: RectangleGroupIcon, area: 'banners', campos: [], exibicao: [] },
-  { id: 'cartao', rotulo: 'Cartão do produto', icone: Squares2X2Icon, area: 'cartao', campos: [], exibicao: ['foto_posicao', 'foto_proporcao', 'foto_encaixe', 'descricao_limite'], grupo: true },
-  { id: 'estoque', rotulo: 'Estoque e seções', icone: ArchiveBoxIcon, area: 'estoque', campos: [], exibicao: ['mostrar_estoque_baixo', 'mostrar_esgotados', 'mostrar_peca_novamente'] },
-  { id: 'pedido', rotulo: 'Pedido feito', icone: CheckBadgeIcon, campos: [], exibicao: ['agradecimento_titulo', 'agradecimento_subtitulo'], grupo: true },
-  { id: 'endereco', rotulo: 'Endereço da loja', icone: GlobeAltIcon, campos: ['custom_domain'], exibicao: [] },
+  { id: 'topo', rotulo: 'Logo e capa', icone: BuildingStorefrontIcon, area: 'topo', campos: ['tagline'], exibicao: ['logo_formato', 'logo_alinhamento'], arquivos: true, grupo: 'Marca' },
+  { id: 'estilo', rotulo: 'Cores e modelo', icone: SwatchIcon, area: 'topo', campos: ['template', 'primary_color', 'secondary_color'], exibicao: [] },
+  { id: 'banners', rotulo: 'Banners de promoção', icone: RectangleGroupIcon, area: 'banners', campos: [], exibicao: [], grupo: 'Cardápio' },
+  { id: 'cartao', rotulo: 'Como o prato aparece', icone: Squares2X2Icon, area: 'cartao', campos: [], exibicao: ['foto_posicao', 'foto_proporcao', 'foto_encaixe', 'descricao_limite'] },
+  { id: 'estoque', rotulo: 'Esgotados e estoque', icone: ArchiveBoxIcon, area: 'estoque', campos: [], exibicao: ['mostrar_estoque_baixo', 'mostrar_esgotados', 'mostrar_peca_novamente'] },
+  { id: 'pedido', rotulo: 'Mensagem de confirmação', icone: CheckBadgeIcon, campos: [], exibicao: ['agradecimento_titulo', 'agradecimento_subtitulo'], grupo: 'Depois do pedido' },
+  { id: 'endereco', rotulo: 'Link da loja', icone: GlobeAltIcon, campos: ['custom_domain'], exibicao: [] },
 ];
 
 export const PARTE_PADRAO: Parte = 'topo';

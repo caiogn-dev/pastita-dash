@@ -15,7 +15,7 @@ import { useStore } from '../../hooks';
 import { usePreviaAoVivo, type AreaDaPrevia } from '../../hooks/usePreviaAoVivo';
 import { buildStorefrontUrl, buildStorefrontPreviewUrl } from '../../utils/storefrontUrl';
 import { cn } from '../../utils/cn';
-import { BarraDeAlteracoes, Button, PageShell, PhonePreview, type Dispositivo } from '../../components/ui';
+import { BarraDeAlteracoes, PageShell, PhonePreview, type Dispositivo } from '../../components/ui';
 import { buscarTemplates, TEMPLATES_DE_EMERGENCIA, type TemplateDoCardapio } from './templatesDoCardapio';
 import InspetorDaVitrine from './InspetorDaVitrine';
 import {
@@ -356,7 +356,7 @@ export const StorefrontPage: React.FC = () => {
       }
 
       if (tudoCerto) {
-        toast.success('Storefront salvo');
+        toast.success('Aparência publicada');
         setGeracaoDaPrevia((g) => g + 1);
       }
     } finally {
@@ -372,8 +372,8 @@ export const StorefrontPage: React.FC = () => {
   return (
     <PageShell
       variante="quadro"
-      trilha={[{ rotulo: 'Configurações' }, { rotulo: 'Storefront' }]}
-      titulo="Storefront"
+      trilha={[{ rotulo: 'Configurações' }, { rotulo: 'Aparência da loja' }]}
+      titulo="Aparência da loja"
       acoes={
         <div className="flex flex-wrap items-center gap-1">
           <Ferramenta rotulo="Celular" ativo={dispositivo === 'celular'} onClick={() => setDispositivo('celular')}>
@@ -390,19 +390,23 @@ export const StorefrontPage: React.FC = () => {
               salvando={saving}
               onSalvar={() => void salvar()}
               onDescartar={descartar}
+              rotuloSalvar="Publicar"
             />
           ) : (
             <span className="flex items-center gap-1.5 px-2 text-caption text-fg-muted-token">
               <CheckCircleIcon className="h-4 w-4 text-success-token" aria-hidden />
-              Tudo salvo
+              Publicado
             </span>
           )}
           {urlPublica && (
-            <a href={urlPublica} target="_blank" rel="noopener noreferrer" className="ml-1">
-              <Button variant="outline" size="sm">
-                <ArrowTopRightOnSquareIcon className="mr-1 h-4 w-4" />
-                Abrir
-              </Button>
+            <a
+              href={urlPublica}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-1 inline-flex h-8 items-center gap-1 rounded-lg border border-border-token px-3 text-body font-medium text-fg-token hover:bg-surface-2"
+            >
+              <ArrowTopRightOnSquareIcon className="h-4 w-4" aria-hidden />
+              Ver loja
             </a>
           )}
         </div>
@@ -420,7 +424,11 @@ export const StorefrontPage: React.FC = () => {
             const pendente = parteMudou(p, form, formSalvo, exibicao, exibicaoGravada, temArquivo);
             return (
               <Fragment key={p.id}>
-                {p.grupo && <span className="hidden xl:my-1 xl:block xl:h-px xl:bg-border-token" aria-hidden />}
+                {p.grupo && (
+                  <span className="hidden px-2.5 pb-1 pt-3 text-overline font-semibold uppercase tracking-wide text-fg-muted-token first:pt-1 xl:block">
+                    {p.grupo}
+                  </span>
+                )}
                 <button
                   type="button"
                   aria-pressed={ativa}

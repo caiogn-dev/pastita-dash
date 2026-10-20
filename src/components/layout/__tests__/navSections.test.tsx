@@ -87,14 +87,15 @@ it('sem automação habilitada, Marketing e Automação somem — o resto fica',
   expect(labels).toEqual(expect.arrayContaining(['Início', 'Pedidos', 'Atendimento', 'Balcão', 'Cardápio']));
 });
 
-it('Configurações mantém Geral/Entrega/Storefront/Pagamentos e Colaboradores', () => {
+it('Configurações mantém Geral/Entrega/Aparência da loja/Pagamentos e Colaboradores', () => {
   // Colaboradores entrou em 22/09: o CRUD de equipe existia desde junho sem
   // nenhuma tela, e sem item de menu uma tela nova não existe para o lojista.
   const cfg = acha('Configurações');
   expect(cfg.items.map((i) => i.name)).toEqual([
-    'Geral', 'Entrega', 'Storefront', 'Pagamentos', 'Colaboradores',
+    'Geral', 'Entrega', 'Aparência da loja', 'Pagamentos', 'Colaboradores',
   ]);
   expect(cfg.items[0].href).toBe('/stores/loja-x/settings');
+  expect(cfg.items[2].href).toBe('/stores/loja-x/aparencia');
 });
 
 it('nenhum link de conta no menu — eles vivem no menu do avatar', () => {
@@ -156,4 +157,12 @@ it('Financeiro leva às Notas fiscais', () => {
   expect(acha('Financeiro').items.map((i) => [i.name, i.href])).toEqual([
     ['Notas fiscais', '/stores/loja-x/notas-fiscais'],
   ]);
+});
+
+it('menu sem sigla nem inglês: KDS, TACO, Fila humana e Storefront ganharam nome de balcão', () => {
+  const nomes = todosItens().map((i) => i.name);
+  expect(nomes).toEqual(expect.arrayContaining(['Tela da cozinha', 'Tabela nutricional', 'Esperando atendente', 'Aparência da loja']));
+  for (const velho of ['Cozinha (KDS)', 'Ingredientes e TACO', 'Fila humana', 'Storefront']) {
+    expect(nomes).not.toContain(velho);
+  }
 });

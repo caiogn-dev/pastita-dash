@@ -35,6 +35,7 @@ interface Destino {
   secao: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  tambem?: string[];
 }
 
 /** Minúsculas e sem acento: ninguém digita "Relatórios" com acento na correria. */
@@ -47,7 +48,7 @@ function achatar(sections: NavSection[]): Destino[] {
   for (const s of sections) {
     if (s.href) out.push({ nome: s.label, secao: '', href: s.href, icon: s.icon });
     for (const i of s.items) {
-      out.push({ nome: i.name, secao: s.label, href: i.href, icon: i.icon });
+      out.push({ nome: i.name, secao: s.label, href: i.href, icon: i.icon, tambem: i.tambem });
     }
   }
   return out;
@@ -69,7 +70,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     const q = normalizar(termo.trim());
     if (!q) return destinos;
     // Casa contra "seção nome" para que "cardapio bio" também encontre.
-    return destinos.filter((d) => normalizar(`${d.secao} ${d.nome}`).includes(q));
+    return destinos.filter((d) =>
+      normalizar(`${d.secao} ${d.nome}`).includes(q)
+      || (d.tambem ?? []).some((t) => normalizar(t).includes(q)));
   }, [destinos, termo]);
 
   // Abrir sempre começa do zero: a paleta é para um salto, não para retomar

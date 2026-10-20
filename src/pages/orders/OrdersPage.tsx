@@ -784,7 +784,7 @@ export const OrdersPage: React.FC = () => {
                   title="Abrir tela de cozinha em nova aba"
                 >
                   <Button variant="outline" className="py-1.5">
-                    Modo Cozinha (KDS)
+                    Tela da cozinha
                   </Button>
                 </a>
               )}

@@ -21,6 +21,8 @@ export interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
+  /** Outros nomes que a busca (Ctrl+K) aceita — o nome antigo, a sigla. */
+  tambem?: string[];
   /** Quando presente, renderiza um cabeçalho de seção acima deste item */
   sectionHeader?: string;
 }
@@ -164,7 +166,7 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
       badge: unreadBadge,
       items: [
         { name: 'Conversas',    href: '/inbox/whatsapp',                     icon: ChatBubbleLeftRightIcon },
-        { name: 'Fila humana',  href: '/whatsapp/handover',                  icon: HandRaisedIcon },
+        { name: 'Esperando atendente', href: '/whatsapp/handover',           icon: HandRaisedIcon, tambem: ['fila humana', 'handover'] },
         // O que a loja mandou sozinha (status, lembretes, avaliação) e se chegou.
         { name: 'Avisos automáticos', href: '/whatsapp/avisos',              icon: BellAlertIcon },
         // Texto que o atendente repete o dia todo, a um "/" de distância no chat.
@@ -185,7 +187,7 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
         { name: 'Venda no balcão',   href: storeHref('pdv'),  icon: QrCodeIcon },
         ...(caixaEnabled ? [{ name: 'Caixa', href: storeHref('cash'), icon: BanknotesIcon }] : []),
         { name: 'Link de pagamento', href: '/payments/link',  icon: LinkIcon },
-        { name: 'Cozinha (KDS)',     href: storeHref('kds'),  icon: FireIcon },
+        { name: 'Tela da cozinha',   href: storeHref('kds'),  icon: FireIcon, tambem: ['kds', 'cozinha'] },
         // Bipar o código de barras da comanda avança o pedido para a saída.
         { name: 'Expedição',         href: storeHref('expedicao'), icon: ArchiveBoxArrowDownIcon },
       ],
@@ -225,7 +227,7 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
       label: 'Etiquetas',
       icon: TagIcon,
       items: [
-        { name: 'Ingredientes e TACO', href: storeHref('ingredientes'), icon: BeakerIcon },
+        { name: 'Tabela nutricional',  href: storeHref('ingredientes'), icon: BeakerIcon, tambem: ['ingredientes', 'taco', 'anvisa'] },
         { name: 'Imprimir etiquetas',  href: storeHref('etiquetas'),    icon: TagIcon },
         { name: 'Impressoras',         href: storeHref('printing'),     icon: PrinterIcon },
       ],
@@ -258,7 +260,8 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
       items: [
         { name: 'Geral',      href: storeHref('settings'),   icon: Cog6ToothIcon },
         { name: 'Entrega',    href: storeHref('delivery'),   icon: ShoppingCartIcon },
-        { name: 'Storefront', href: storeHref('storefront'), icon: BuildingStorefrontIcon },
+        // Era "Storefront": inglês e jargão. O lojista procura "aparência".
+        { name: 'Aparência da loja', href: storeHref('aparencia'), icon: BuildingStorefrontIcon, tambem: ['storefront', 'vitrine', 'cores', 'logo', 'capa', 'tema'] },
         { name: 'Pagamentos', href: storeHref('payments'),   icon: CreditCardIcon },
         // Existia CRUD de equipe desde junho e nenhuma tela: o endpoint
         // pedia o id do usuário (e como UUID, enquanto a chave é inteira),

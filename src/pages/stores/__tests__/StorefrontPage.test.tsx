@@ -71,7 +71,7 @@ jest.mock('../templatesDoCardapio', () => {
 
 jest.mock('../../../components/ui', () => ({
   ...jest.requireActual('../../../components/ui'),
-  PageShell: ({ children, acoes }: { children: React.ReactNode; acoes?: React.ReactNode }) => <div>{acoes}{children}</div>,
+  PageShell: ({ children, acoes, titulo }: { children: React.ReactNode; acoes?: React.ReactNode; titulo?: string }) => <div><h1>{titulo}</h1>{acoes}{children}</div>,
   PhonePreview: ({ sobreposicao, acoesExtras }: { sobreposicao?: React.ReactNode; acoesExtras?: React.ReactNode }) => (
     <div data-testid="previa">{acoesExtras}{sobreposicao}</div>
   ),
@@ -119,7 +119,7 @@ describe('StorefrontPage — rollback do rascunho quando o save falha', () => {
     fireEvent.click(template(/bold/i));
     expect(template(/bold/i)).toHaveAttribute('aria-checked', 'true');
 
-    fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^publicar$/i }));
 
     // Rollback: volta a 'Fresh' (o que o backend realmente tem).
     await waitFor(() => expect(template(/fresh/i)).toHaveAttribute('aria-checked', 'true'));
@@ -137,7 +137,7 @@ describe('StorefrontPage — editor', () => {
     fireEvent.click(template(/bold/i));
     expect(screen.getByRole('region', { name: /alterações não salvas/i })).toHaveTextContent('1 alteração');
     // A parte com alteração pendente ganha um ponto na lista da esquerda.
-    expect(within(screen.getByRole('button', { name: /cores e estilo/i })).getByLabelText(/não salvo/i)).toBeInTheDocument();
+    expect(within(screen.getByRole('button', { name: /cores e modelo/i })).getByLabelText(/não salvo/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /descartar/i }));
     expect(template(/fresh/i)).toHaveAttribute('aria-checked', 'true');
@@ -156,7 +156,7 @@ describe('StorefrontPage — editor', () => {
 
   it('escolher a parte na lista abre as propriedades dela e leva a prévia até lá', async () => {
     renderPage('topo');
-    fireEvent.click(await screen.findByRole('button', { name: /cartão do produto/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /como o prato aparece/i }));
     expect(screen.getByRole('radiogroup', { name: 'Posição da foto' })).toBeInTheDocument();
     expect(focar).toHaveBeenCalledWith('cartao');
   });
@@ -166,7 +166,7 @@ describe('StorefrontPage — editor', () => {
     await screen.findByRole('radiogroup', { name: 'Formato do logo' });
     act(() => { previa.onSelecionar?.('estoque'); });
     expect(screen.getByRole('switch', { name: /mostrar esgotados/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /estoque e seções/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /esgotados e estoque/i })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('inspetor nasce ligado e desliga pelo botão', async () => {
@@ -190,7 +190,7 @@ describe('StorefrontPage — editor', () => {
     expect(focar).toHaveBeenCalledWith('cartao');
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^publicar$/i }));
     });
     expect(salvarExibicao).toHaveBeenCalledWith('loja-x', { foto_posicao: 'direita' });
     expect(mockedApi.updateStore).not.toHaveBeenCalled();
@@ -203,7 +203,7 @@ describe('StorefrontPage — editor', () => {
     const grupo = await screen.findByRole('radiogroup', { name: 'Posição da foto' });
     fireEvent.click(within(grupo).getByRole('radio', { name: 'Direita' }));
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^publicar$/i }));
     });
     expect(await screen.findByRole('alert')).toHaveTextContent('60 caracteres');
     expect(within(grupo).getByRole('radio', { name: 'Direita' })).toHaveAttribute('aria-checked', 'true');
@@ -213,5 +213,22 @@ describe('StorefrontPage — editor', () => {
     renderPage('pedido');
     const previaEl = await screen.findByTestId('previa');
     expect(within(previaEl).getByText('Pedido confirmado!')).toBeInTheDocument();
+  });
+});
+
+describe('Aparência da loja — nome e fluxo (20/10)', () => {
+  it('título em português, partes agrupadas por assunto e Publicar/Ver loja', async () => {
+    renderPage('topo');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Aparência da loja' })).toBeInTheDocument();
+    expect(screen.queryByText('Storefront')).toBeNull();
+
+    const partes = screen.getByRole('navigation', { name: /partes da vitrine/i });
+    expect(within(partes).getByText('Marca')).toBeInTheDocument();
+    expect(within(partes).getByText('Cardápio')).toBeInTheDocument();
+    expect(within(partes).getByText('Depois do pedido')).toBeInTheDocument();
+    expect(within(partes).getByRole('button', { name: /logo e capa/i })).toHaveAttribute('aria-pressed', 'true');
+
+    expect(screen.getByText('Publicado')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /ver loja/i })).toHaveAttribute('href', 'https://x');
   });
 });

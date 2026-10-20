@@ -187,9 +187,9 @@ function IngredientesDaLoja() {
 
   return (
     <PageShell
-      titulo="Ingredientes e TACO"
+      titulo="Tabela nutricional"
      
-      trilha={[{ rotulo: 'Produtos', href: `/stores/${storeId}/products` }, { rotulo: 'Ingredientes e TACO' }]}
+      trilha={[{ rotulo: 'Produtos', href: `/stores/${storeId}/products` }, { rotulo: 'Tabela nutricional' }]}
       acoes={<Button onClick={() => abrir()}><PlusIcon className="h-5 w-5" />Novo ingrediente</Button>}
       filtros={filtros}
     >
@@ -310,7 +310,7 @@ function IngredientesDaLoja() {
  *  continua visível para todos: quem clica sem ter vê o que ganharia. */
 export default function IngredientsPage() {
   return (
-    <PortaoDoAdicional chave={ADICIONAL_ETIQUETA} titulo="Ingredientes e TACO">
+    <PortaoDoAdicional chave={ADICIONAL_ETIQUETA} titulo="Tabela nutricional">
       <IngredientesDaLoja />
     </PortaoDoAdicional>
   );
