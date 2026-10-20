@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowDownTrayIcon,
@@ -12,7 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Button, Card, Modal, Loading } from '../../components/common';
-import { PageShell, Tabela, RowActions, Badge, SearchInput, KpiGrid, Select } from '../../components/ui';
+import { PageShell, Tabela, RowActions, Badge, SearchInput, KpiGrid, Select, EmptyState } from '../../components/ui';
 import { useStore } from '../../hooks';
 import { marketingService, Subscriber } from '../../services/marketingService';
 import { useRootStore } from '../../stores/rootStore';
@@ -43,6 +43,7 @@ export const SubscribersPage: React.FC = () => {
   const effectiveStoreRouteKey = routeStoreParam || routeStore?.slug || effectiveStoreId || null;
 
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(false);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -71,29 +72,44 @@ export const SubscribersPage: React.FC = () => {
     }
   }, [routeStoreParam, stores, setSelectedStore]);
 
-  useEffect(() => {
-    const loadCustomers = async () => {
-      if (!effectiveStoreId) {
-        setLoading(false);
-        setSubscribers([]);
-        return;
-      }
+  const loadCustomers = useCallback(async () => {
+    if (!effectiveStoreId) {
+      setLoading(false);
+      setSubscribers([]);
+      return;
+    }
 
-      try {
-        setLoading(true);
-        const data = await marketingService.subscribers.list(effectiveStoreId);
-        setSubscribers(data);
-        logger.info('Loaded customer base', { count: data.length, storeId: effectiveStoreId });
-      } catch (error) {
-        logger.error('Failed to load customer base', error);
-        toast.error('Erro ao carregar a base de clientes');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadCustomers();
+    setErro(false);
+    try {
+      setLoading(true);
+      const data = await marketingService.subscribers.list(effectiveStoreId);
+      setSubscribers(data);
+      logger.info('Loaded customer base', { count: data.length, storeId: effectiveStoreId });
+    } catch (error) {
+      // Falha não pode virar "0 clientes": liga o erro acionável e mantém o
+      // cache (se houver) na tela com um aviso, em vez do vazio enganoso.
+      logger.error('Failed to load customer base', error);
+      setErro(true);
+      toast.error('Erro ao carregar a base de clientes');
+    } finally {
+      setLoading(false);
+    }
   }, [effectiveStoreId]);
+
+  // Trocar de loja invalida o cache: as linhas da loja A não valem como cache da
+  // loja B. Sem limpar, uma falha ao carregar B deixaria as linhas de A na tela —
+  // o guard `erro && subscribers.length === 0` não dispara com array não-vazio, e
+  // a página renderizaria os clientes/KPIs de A sob a loja B selecionada
+  // (vazamento entre lojas). Limpamos ao mudar de loja para B cair no erro
+  // acionável da própria loja, nunca nos dados de A.
+  useEffect(() => {
+    setSubscribers([]);
+    setErro(false);
+  }, [effectiveStoreId]);
+
+  useEffect(() => {
+    loadCustomers();
+  }, [loadCustomers]);
 
   const filteredSubscribers = useMemo(() => {
     let result = subscribers;
@@ -241,6 +257,28 @@ export const SubscribersPage: React.FC = () => {
 
   if (loading) {
     return <Loading />;
+  }
+
+  // Falha SEM dado em cache: erro acionável no lugar dos KPIs zerados e do
+  // "Nenhum cliente na base ainda" — que diria a uma loja que já vendeu que
+  // ela não tem cliente nenhum. Com cache, a lista segue na tela (o toast já
+  // avisou da falha ao atualizar).
+  if (erro && subscribers.length === 0) {
+    return (
+      <PageShell
+        trilha={[{ rotulo: 'Campanhas', href: '/marketing' }, { rotulo: 'Base de clientes' }]}
+        titulo="Base de clientes"
+      >
+        <div role="alert" className="superficie">
+          <EmptyState
+            icone={<UserGroupIcon className="h-10 w-10" />}
+            titulo="Não foi possível carregar a base de clientes"
+            descricao="A conexão falhou. Seus contatos continuam lá: tente de novo."
+            acao={<Button variant="secondary" onClick={() => loadCustomers()}>Tentar de novo</Button>}
+          />
+        </div>
+      </PageShell>
+    );
   }
 
   return (
