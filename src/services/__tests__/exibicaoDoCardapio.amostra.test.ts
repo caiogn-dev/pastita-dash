@@ -37,7 +37,13 @@ describe('resumirDescricao (espelho da vitrine)', () => {
   });
 
   it('corta na última palavra inteira e põe reticências', () => {
-    expect(resumirDescricao('1x Queridinha 1x Suco da sua escolha', 20)).toEqual({ texto: '1x Queridinha 1x…', cortou: true });
+    const t = 'Purê leve e cremoso de banana-da-terra, recheado com frango desfiado ao tempero caseiro.';
+    expect(resumirDescricao(t, 70)).toEqual({ texto: 'Purê leve e cremoso de banana-da-terra, recheado com frango desfiado…', cortou: true });
+  });
+
+  it('menos de 60 vale 60, igual à vitrine', () => {
+    const t = 'Purê leve e cremoso de banana-da-terra, recheado com frango desfiado ao tempero caseiro.';
+    expect(resumirDescricao(t, 20)).toEqual(resumirDescricao(t, 60));
   });
 
   it('texto curto passa inteiro, sem negrito de markdown', () => {

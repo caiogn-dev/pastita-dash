@@ -11,7 +11,7 @@ import {
   EllipsisVerticalIcon,
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
-import { SearchInput, Switch } from '../ui';
+import { FalhaAoCarregar, SearchInput, Switch } from '../ui';
 import type { StoreCombo } from '../../services/storesApi';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -23,6 +23,9 @@ export interface ComboListProps {
   onToggleActive: (combo: StoreCombo) => void;
   onToggleFeatured: (combo: StoreCombo) => void;
   onDuplicate?: (combo: StoreCombo) => void;
+  /** A busca caiu: sem combos em mãos, mostra o erro no lugar do "nenhum combo". */
+  falhou?: boolean;
+  onTentarDeNovo?: () => void;
 }
 
 type Filtro = 'todos' | 'ativos' | 'fora';
@@ -129,7 +132,7 @@ const CartaoDoCombo: React.FC<{
 };
 
 export const ComboList: React.FC<ComboListProps> = ({
-  combos, loading = false, onEdit, onDelete, onToggleActive, onToggleFeatured, onDuplicate,
+  combos, loading = false, onEdit, onDelete, onToggleActive, onToggleFeatured, onDuplicate, falhou = false, onTentarDeNovo,
 }) => {
   const [busca, setBusca] = useState('');
   const [filtro, setFiltro] = useState<Filtro>('todos');
@@ -178,7 +181,9 @@ export const ComboList: React.FC<ComboListProps> = ({
         </div>
       </div>
 
-      {visiveis.length === 0 ? (
+      {falhou && combos.length === 0 ? (
+        <FalhaAoCarregar titulo="Não foi possível carregar os combos" onTentarDeNovo={onTentarDeNovo} />
+      ) : visiveis.length === 0 ? (
         <p className="py-16 text-center text-sm text-fg-muted-token">
           {loading ? 'Carregando…' : busca ? 'Nenhum combo encontrado' : 'Nenhum combo ainda'}
         </p>

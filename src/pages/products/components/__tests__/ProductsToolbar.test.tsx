@@ -118,3 +118,15 @@ describe('ações do cardápio', () => {
     expect(screen.getByText(/concluir ordenação/i)).toBeInTheDocument();
   });
 });
+
+describe('cardápio em PDF', () => {
+  // O servidor gerava o PDF e o painel tinha a função, mas nenhum botão (20/10).
+  it('o botão "Baixar PDF" chama a ação', () => {
+    const onBaixarPdf = jest.fn();
+    render(
+      <AcoesDoCardapio reorderMode={false} onReorderCategories={jest.fn()} onAddCategory={jest.fn()} onBaixarPdf={onBaixarPdf} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /baixar pdf/i }));
+    expect(onBaixarPdf).toHaveBeenCalled();
+  });
+});

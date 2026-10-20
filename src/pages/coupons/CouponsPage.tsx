@@ -78,6 +78,8 @@ export const CouponsPage: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<CouponStats | null>(null);
   const [loading, setLoading] = useState(true);
+  // Falhou a última busca: a tabela troca o "nenhum cupom" pelo erro.
+  const [falhou, setFalhou] = useState(false);
   const [search, setSearch] = useState('');
   const [filterActive, setFilterActive] = useState<boolean | undefined>(undefined);
   const [filterType, setFilterType] = useState<'percentage' | 'fixed' | ''>('');
@@ -162,8 +164,10 @@ export const CouponsPage: React.FC = () => {
       setCoupons(couponsData.results);
       setTotal(couponsData.count ?? couponsData.results.length);
       setStats(statsData);
+      setFalhou(false);
     } catch (err) {
       logger.error('Error loading coupons:', err);
+      setFalhou(true);
       toast.error('Erro ao carregar cupons');
     } finally {
       setLoading(false);
@@ -491,6 +495,9 @@ export const CouponsPage: React.FC = () => {
             onAbrir={(c) => irParaCupom(c.id)}
             classeDaLinha={(c) => (c.id === cupomId ? 'bg-brand-soft' : '')}
             carregando={loading}
+            falhou={falhou}
+            falha={{ titulo: 'Não foi possível carregar os cupons' }}
+            onTentarDeNovo={loadCoupons}
             vazio={{
               titulo: 'Nenhum cupom encontrado',
               descricao: 'Comece criando um cupom de desconto.',

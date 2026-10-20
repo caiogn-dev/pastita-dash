@@ -78,3 +78,18 @@ describe('ComboList', () => {
     expect(screen.getByText('Nenhum combo ainda')).toBeInTheDocument();
   });
 });
+
+describe('ComboList — falha ao carregar', () => {
+  // 20/10: com a busca caindo a tela dizia "Nenhum combo ainda".
+  it('busca caiu e nada em mãos: erro com "Tentar novamente", nunca o vazio', () => {
+    const tentar = jest.fn();
+    render(
+      <ComboList combos={[]} falhou onTentarDeNovo={tentar}
+        onEdit={jest.fn()} onDelete={jest.fn()} onToggleActive={jest.fn()} onToggleFeatured={jest.fn()} />,
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível carregar os combos');
+    expect(screen.queryByText('Nenhum combo ainda')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /tentar novamente/i }));
+    expect(tentar).toHaveBeenCalled();
+  });
+});

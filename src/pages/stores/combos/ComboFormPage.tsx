@@ -25,6 +25,7 @@ import storesApi, {
   uploadComboImage,
 } from '../../../services/storesApi';
 import logger from '../../../services/logger';
+import { getErrorMessage } from '../../../services/api';
 
 export const ComboFormPage: React.FC = () => {
   const navigate = useNavigate();
@@ -105,7 +106,9 @@ export const ComboFormPage: React.FC = () => {
       navigate(`/stores/${storeSlug || storeId}/combos`);
     } catch (err) {
       logger.error('Error saving combo:', err);
-      toast.error('Não foi possível salvar o combo');
+      // O motivo vem do servidor ("preço obrigatório"…): sem ele o lojista não
+      // sabe o que corrigir (auditoria 20/10).
+      toast.error(`Não foi possível salvar o combo: ${getErrorMessage(err)}`);
     } finally {
       setSaving(false);
     }

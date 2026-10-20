@@ -77,8 +77,10 @@ it('cartão: foto, formato, encaixe e o corte da descrição com o produto real'
   expect(p.mudarExibicao).toHaveBeenCalledWith({ foto_encaixe: 'inteira' });
 
   const slider = screen.getByRole('slider', { name: /descrição/i });
-  expect(slider).toHaveAttribute('aria-valuetext', '20 letras');
-  expect(screen.getByTestId('amostra-da-descricao')).toHaveTextContent('1x Queridinha 1x…');
+  // 20 vale 60 (piso de 20/10): a amostra de 57 letras cabe inteira.
+  expect(slider).toHaveAttribute('aria-valuetext', '60 letras');
+  expect(screen.getByTestId('amostra-da-descricao')).toHaveTextContent('1x Sobremesa do dia');
+  expect(screen.getByTestId('amostra-da-descricao')).not.toHaveTextContent('ver mais');
   fireEvent.change(slider, { target: { value: '0' } });
   expect(p.mudarExibicao).toHaveBeenCalledWith({ descricao_limite: 0 });
 });

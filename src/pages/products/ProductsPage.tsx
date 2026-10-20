@@ -34,7 +34,9 @@ import { ReajusteDePrecoModal } from './components/ReajusteDePrecoModal';
 import { reajusteDePrecoService } from '../../services/reajusteDePreco';
 import { ProductFormModal } from './ProductFormModal';
 import { useConfirm } from '../../hooks/useConfirm';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { abrirCardapioPdf } from '../../services/reports';
+import { getErrorMessage } from '../../services/api';
 
 export const ProductsPage: React.FC = () => {
   const { storeId } = useStore();
@@ -51,8 +53,21 @@ export const ProductsPage: React.FC = () => {
   const [salvandoMontador, setSalvandoMontador] = useState(false);
   const [productTypes, setProductTypes] = useState<StoreProductType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [estadoFiltro, setEstadoFiltro] = useState<EstadoDoProduto>('todos');
+  // Busca e filtro na URL: sair para editar um prato e voltar não apaga o
+  // recorte (auditoria 20/10; Clientes e Histórico já faziam assim).
+  const [params, setParams] = useSearchParams();
+  const search = params.get('busca') ?? '';
+  const estadoFiltro = (params.get('estado') as EstadoDoProduto | null) ?? 'todos';
+  const mudarParam = useCallback((chave: string, valor: string, padrao: string) => {
+    setParams((atual) => {
+      const novo = new URLSearchParams(atual);
+      if (!valor || valor === padrao) novo.delete(chave);
+      else novo.set(chave, valor);
+      return novo;
+    }, { replace: true });
+  }, [setParams]);
+  const setSearch = useCallback((v: string) => mudarParam('busca', v, ''), [mudarParam]);
+  const setEstadoFiltro = useCallback((v: EstadoDoProduto) => mudarParam('estado', v, 'todos'), [mudarParam]);
   const [collapsed, setCollapsed] = useState<Set<string | null>>(new Set());
   const [reorderMode, setReorderMode] = useState(false);
   const [addCatOpen, setAddCatOpen] = useState(false);
@@ -316,6 +331,9 @@ export const ProductsPage: React.FC = () => {
           onAddCategory={() => setAddCatOpen(true)}
           onReajustarPrecos={() => setReajusteAberto(true)}
           onInformativos={() => navegar('/marketing/informativos')}
+          onBaixarPdf={() => {
+            abrirCardapioPdf().catch((erro) => toast.error(`Não foi possível gerar o PDF: ${getErrorMessage(erro)}`));
+          }}
         />
       }
       filtros={
@@ -335,7 +353,7 @@ export const ProductsPage: React.FC = () => {
         <EmptyState
           icone={<ExclamationTriangleIcon className="h-8 w-8 text-[var(--warning)]" />}
           titulo="Não foi possível carregar o cardápio"
-          descricao="Os produtos não puderam ser carregados. Isso não apagou nada — é só a consulta que falhou."
+          descricao="Seus produtos continuam salvos."
           acao={
             <Button variant="outline" onClick={() => productsQuery.refetch()}>
               Tentar novamente

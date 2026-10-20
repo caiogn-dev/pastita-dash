@@ -119,3 +119,16 @@ describe('CouponsPage — feedback de erro', () => {
     expect(toastErro.mock.calls[0][0]).toMatch(/valor do desconto/i);
   });
 });
+
+describe('CouponsPage — falha ao carregar não vira "nenhum cupom"', () => {
+  it('a busca cai: diz que não carregou e oferece tentar de novo', async () => {
+    mockedService.getCoupons.mockRejectedValue(new Error('rede'));
+    mockedService.getStats.mockResolvedValue({} as never);
+    renderPage();
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.queryByText('Nenhum cupom encontrado')).toBeNull();
+    mockedService.getCoupons.mockResolvedValue({ count: 0, next: null, previous: null, results: [] } as never);
+    fireEvent.click(screen.getByRole('button', { name: /tentar novamente/i }));
+    expect(await screen.findByText('Nenhum cupom encontrado')).toBeInTheDocument();
+  });
+});

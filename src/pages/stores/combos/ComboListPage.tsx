@@ -53,6 +53,7 @@ export const ComboListPage: React.FC = () => {
   const [combos, setCombos] = useState<StoreCombo[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingCombo, setDeletingCombo] = useState<StoreCombo | null>(null);
+  const [falhou, setFalhou] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!storeId) {
@@ -66,9 +67,10 @@ export const ComboListPage: React.FC = () => {
       // mas ComboList nunca usa essa prop (o editor é que carrega produtos).
       const combosRes = await getCombos(storeId);
       setCombos(combosRes.results || []);
+      setFalhou(false);
     } catch (err) {
       logger.error('Error loading combos:', err);
-      toast.error('Erro ao carregar combos');
+      setFalhou(true);
     } finally {
       setLoading(false);
     }
@@ -162,6 +164,8 @@ export const ComboListPage: React.FC = () => {
       <ComboList
         combos={combos}
         loading={loading}
+        falhou={falhou}
+        onTentarDeNovo={loadData}
         onEdit={combo => navigate(`/stores/${storeSlug}/combos/${combo.id}/edit`)}
         onDuplicate={combo => navigate(`/stores/${storeSlug}/combos/new?de=${combo.id}`)}
         onDelete={setDeletingCombo}

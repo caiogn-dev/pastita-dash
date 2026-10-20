@@ -355,7 +355,7 @@ const CreateStoreModal: React.FC<CreateStoreModalProps> = ({ isOpen, onClose, on
             required
           />
           <Input
-            label="Slug (URL)"
+            label="Endereço do cardápio"
             value={formData.slug}
             onChange={e => setFormData(prev => ({ ...prev, slug: e.target.value }))}
             required

@@ -15,9 +15,9 @@ import { getErrorMessage } from '../../../services/api';
 import type { Product } from '../../../services/products';
 import type { StoreCategory } from '../../../services/storesApi';
 import { cn } from '../../../utils/cn';
+import { formatCurrency } from '../../../utils/formatters';
 
-const reais = (v: string | number) =>
-  `R$ ${Number(v).toFixed(2).replace('.', ',')}`;
+const reais = (v: string | number) => formatCurrency(Number(v));
 
 interface Props {
   isOpen: boolean;

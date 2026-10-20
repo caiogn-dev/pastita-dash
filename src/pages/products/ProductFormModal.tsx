@@ -31,7 +31,7 @@ import storesApi, {
 import logger from '../../services/logger';
 import { compressImage } from '../../utils/compressImage';
 import { PaywallModal } from '../../components/billing/PaywallModal';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, formatPercent } from '../../utils/formatters';
 
 export interface ProductFormModalProps {
   isOpen: boolean;
@@ -426,7 +426,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     { id: 'inventory', label: 'Estoque', icon: CubeIcon },
     ...(isCurrentlyEditing ? ([{ id: 'variants', label: 'Variantes', icon: Squares2X2Icon }] as const) : []),
     { id: 'media', label: 'Mídia', icon: PhotoIcon },
-    { id: 'seo', label: 'SEO', icon: MagnifyingGlassIcon },
+    { id: 'seo', label: 'Google', icon: MagnifyingGlassIcon },
     // Só na edição, como Variantes: a receita é vinculada ao produto por id,
     // e um produto que ainda não existe não tem a que vincular.
     ...(isCurrentlyEditing ? ([{ id: 'nutrition', label: 'Nutricional', icon: BeakerIcon }] as const) : []),
@@ -922,7 +922,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     },
                     {
                       label: 'Margem',
-                      value: `${(((formData.price - formData.cost_price) / formData.price) * 100).toFixed(1)}%`,
+                      value: formatPercent(((formData.price - formData.cost_price) / formData.price) * 100),
                       // Margem e markup davam números diferentes lado a lado,
                       // do mesmo tamanho, sem dizer sobre o quê. Confundir os
                       // dois é como se erra preço de cardápio.
@@ -931,7 +931,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     },
                     {
                       label: 'Markup',
-                      value: `${(((formData.price - formData.cost_price) / formData.cost_price) * 100).toFixed(1)}%`,
+                      value: formatPercent(((formData.price - formData.cost_price) / formData.cost_price) * 100),
                       definicao: 'Quanto você somou sobre o CUSTO para chegar no preço.',
                     },
                   ]}
@@ -1115,7 +1115,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-fg-token mb-1">
-                  Título SEO
+                  Título no Google
                 </label>
                 <input
                   type="text"
@@ -1132,7 +1132,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-fg-token mb-1">
-                  Descrição SEO
+                  Descrição no Google
                 </label>
                 <textarea
                   value={formData.meta_description || ''}
@@ -1173,7 +1173,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
             <FormSummary
               linhas={[
                 { rotulo: 'Nome', valor: formData.name },
-                { rotulo: 'Preço', valor: formData.price ? `R$ ${Number(formData.price).toFixed(2)}` : '' },
+                { rotulo: 'Preço', valor: formData.price ? formatCurrency(formData.price) : '' },
                 { rotulo: 'Categoria', valor: categories.find((c) => c.id === formData.category)?.name },
                 { rotulo: 'Status', valor: ROTULO_STATUS[formData.status ?? 'active'] },
                 { rotulo: 'SKU', valor: formData.sku },

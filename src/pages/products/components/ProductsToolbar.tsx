@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUpDown, Megaphone, Percent, Plus, Search } from 'lucide-react';
+import { ArrowUpDown, FileDown, Megaphone, Percent, Plus, Search } from 'lucide-react';
 import { PeriodChips } from '../../../components/ui';
 import type { EstadoDoProduto } from '../numerosDoCardapio';
 
@@ -61,8 +61,17 @@ export const AcoesDoCardapio: React.FC<{
   onAddCategory: () => void;
   onReajustarPrecos?: () => void;
   onInformativos?: () => void;
-}> = ({ reorderMode, onReorderCategories, onAddCategory, onReajustarPrecos, onInformativos }) => (
+  onBaixarPdf?: () => void;
+}> = ({ reorderMode, onReorderCategories, onAddCategory, onReajustarPrecos, onInformativos, onBaixarPdf }) => (
   <div className="flex flex-wrap items-center gap-2">
+    {onBaixarPdf && (
+      <button
+        className="flex items-center gap-1 rounded border border-[var(--border)] px-3 py-2 text-fg-token"
+        onClick={onBaixarPdf}
+      >
+        <FileDown size={16} /> Baixar PDF
+      </button>
+    )}
     {/* Informativos não ganhou item no menu (trava de 38 destinos, 03/10):
         o aviso aparece no cardápio, então a porta de entrada é daqui. */}
     {onInformativos && (

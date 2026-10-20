@@ -89,6 +89,14 @@ const mockProducts = [
   },
 ];
 
+// O motivo do erro e o PDF passam pelo cliente da API; aqui só importa a tela.
+jest.mock('../services/api', () => ({
+  __esModule: true,
+  default: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
+  getErrorMessage: (e: unknown) => String(e),
+}));
+jest.mock('../services/reports', () => ({ abrirCardapioPdf: jest.fn().mockResolvedValue(undefined) }));
+
 jest.mock('../services/storesApi', () => ({
   getCombos: jest.fn(async () => ({
     results: [mockCombo],

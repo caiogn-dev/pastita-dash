@@ -43,7 +43,9 @@ import { PageLoading } from '../../components/common';
 import CreditosDeCarteiraHoje from './CreditosDeCarteiraHoje';
 import {
   Button,
+  FalhaAoCarregar,
   PageShell,
+  SearchInput,
   SeloDeEstado,
   estadoDePagamento,
   estadoDePedido,
@@ -69,6 +71,7 @@ import type { Order } from '../../types';
 
 import { COLUMNS, resolveFocusColumn } from './orderColumns';
 import { pedidosDaColuna, ENTREGUES_DE_HOJE } from './pedidosDoQuadro';
+import { filtrarPedidosDoQuadro } from './buscaNoQuadro';
 import type { ColumnId } from './orderColumns';
 import { getStageStart, getAvgPrepMinutes, prazoDoAgendado, situacaoDoPreparo } from './orderSla';
 import { proximaAcaoDoPedido } from './proximaAcao';
@@ -439,6 +442,9 @@ export const OrdersPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  // Busca do quadro (número, nome ou telefone) e falha da última carga.
+  const [busca, setBusca] = useState('');
+  const [falhouAoCarregar, setFalhouAoCarregar] = useState(false);
 
   // Keyboard shortcut: press 'N' when not focused on an input opens the drawer
   useEffect(() => {
@@ -634,9 +640,9 @@ export const OrdersPage: React.FC = () => {
       // "Entregue" mostra só o de hoje; o resto vive no Histórico. As colunas
       // de trabalho em aberto continuam mostrando tudo — pedido parado de
       // ontem é justamente o que precisa aparecer.
-      orders: pedidosDaColuna(effectiveOrders as StoreOrder[], col),
+      orders: pedidosDaColuna(filtrarPedidosDoQuadro(effectiveOrders as StoreOrder[], busca), col),
     })),
-  [effectiveOrders, focusColumn]);
+  [effectiveOrders, focusColumn, busca]);
 
   // Fila do modal: os pedidos da MESMA coluna do pedido aberto, na ordem do
   // board — habilita a navegação anterior/próximo dentro do OrderDetailModal.
@@ -726,8 +732,10 @@ export const OrdersPage: React.FC = () => {
       const { setOrders } = useRootStore.getState();
       setOrders(storeQuery, response.results);
       setLastSync(new Date());
+      setFalhouAoCarregar(false);
     } catch (error) {
       console.error('[OrdersPage] loadOrders:', error);
+      setFalhouAoCarregar(true);
       toast.error(getErrorMessage(error) || 'Erro ao carregar pedidos');
     } finally {
       setRefreshing(false);
@@ -813,6 +821,13 @@ export const OrdersPage: React.FC = () => {
             // sobre os dados: a conexão ao vivo, o último sinal, o preparo
             // médio e o filtro de coluna ativo.
             <div className="flex flex-wrap items-center gap-2">
+              <SearchInput
+                className="w-full sm:w-64"
+                placeholder="Nº do pedido, nome ou telefone"
+                aria-label="Buscar pedido no quadro"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+              />
               <SeloDeEstado tone={wsConnected ? 'success' : 'neutral'}>
                 {wsConnected ? <SignalIcon className="h-3 w-3" aria-hidden /> : <SignalSlashIcon className="h-3 w-3" aria-hidden />}
                 {wsConnected ? 'Ao vivo' : 'Offline'}
@@ -849,6 +864,16 @@ export const OrdersPage: React.FC = () => {
         {/* Compra de saldo (carteira) não entra nas colunas; a faixa diz o que
             foi, para ninguém procurar um pedido que não existe. */}
         <CreditosDeCarteiraHoje storeSlug={storeQuery} />
+
+        {/* A carga caiu sem pedido nenhum em mãos: dizer, em vez de um quadro
+            vazio que o operador lê como "não tem pedido" (auditoria 20/10). */}
+        {falhouAoCarregar && storeOrders.length === 0 && (
+          <FalhaAoCarregar
+            className="mb-2"
+            titulo="Não foi possível carregar os pedidos"
+            onTentarDeNovo={() => loadOrders(true)}
+          />
+        )}
 
         {/* Kanban columns — <xl: scroll horizontal (kanban-standard); xl+: 5 colunas na grade.
             Altura das colunas vem do flex-1 do container (não há Navbar nesta rota dedicada). */}

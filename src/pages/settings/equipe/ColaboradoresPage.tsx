@@ -7,6 +7,7 @@ import { PageShell } from '../../../components/ui';
 import { crmApi } from '../../../services/crmApi';
 import { getErrorMessage } from '../../../services';
 import { useStore } from '../../../hooks/useStore';
+import { useConfirm } from '../../../hooks/useConfirm';
 import type { TeamMember } from '../../../types/crm';
 import {
   PAPEIS_ESCOLHIVEIS,
@@ -25,6 +26,7 @@ import {
  */
 export const ColaboradoresPage: React.FC = () => {
   const { storeSlug } = useStore();
+  const [ConfirmDialog, confirm] = useConfirm();
 
   const [membros, setMembros] = useState<TeamMember[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -98,6 +100,13 @@ export const ColaboradoresPage: React.FC = () => {
 
   const remover = async (membro: TeamMember) => {
     if (!storeSlug) return;
+    const confirmado = await confirm({
+      title: 'Remover colaborador',
+      message: `${nomeDoColaborador(membro.user)} perde o acesso ao painel agora.`,
+      confirmText: 'Remover',
+      variant: 'danger',
+    });
+    if (!confirmado) return;
     try {
       await crmApi.removeTeamMember(storeSlug, membro.id);
       toast.success('Colaborador removido.');
@@ -226,6 +235,7 @@ export const ColaboradoresPage: React.FC = () => {
           </ul>
         )}
       </div>
+      {ConfirmDialog}
     </PageShell>
   );
 };

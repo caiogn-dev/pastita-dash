@@ -103,8 +103,12 @@ const MARCAS = /(\*\*|__|~~|\*|_)(.+?)\1/g;
  * src/utils/exibicaoDoCardapio.js): mesmo corte na última palavra inteira.
  * `null` = automático (a vitrine corta por linhas).
  */
-export function resumirDescricao(texto: string, limite: number): { texto: string; cortou: boolean } | null {
-  if (!limite || limite <= 0) return null;
+export const LIMITE_MINIMO_DA_DESCRICAO = 60;
+
+export function resumirDescricao(texto: string, limiteEscolhido: number): { texto: string; cortou: boolean } | null {
+  if (!limiteEscolhido || limiteEscolhido <= 0) return null;
+  // Menos que isso nem o nome do prato cabe ("Escondidinho de… ver mais").
+  const limite = Math.max(limiteEscolhido, LIMITE_MINIMO_DA_DESCRICAO);
   const limpo = String(texto || '')
     .split('\n').map((l) => l.trim()).filter(Boolean).join(' ')
     .replace(MARCAS, '$2')

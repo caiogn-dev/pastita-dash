@@ -36,8 +36,8 @@ beforeEach(() => {
 const blocoAlelo = async () => within(await screen.findByRole('region', { name: 'Alelo' }));
 
 const preencher = (bloco: ReturnType<typeof within>) => {
-  fireEvent.change(bloco.getByLabelText('Merchant ID'), { target: { value: ' d55454c7-f324-4fcd-a618-4f61c92013d8 ' } });
-  fireEvent.change(bloco.getByLabelText('Merchant Key'), { target: { value: 'KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK' } });
+  fireEvent.change(bloco.getByLabelText(/Merchant ID/), { target: { value: ' d55454c7-f324-4fcd-a618-4f61c92013d8 ' } });
+  fireEvent.change(bloco.getByLabelText(/Merchant Key/), { target: { value: 'KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK' } });
   fireEvent.change(bloco.getByLabelText(/client id/i), { target: { value: '1da50a26-af11-45e2-a8f8-7e41410b65e9' } });
   fireEvent.change(bloco.getByLabelText(/client secret/i), { target: { value: 'csecret' } });
 };
@@ -46,7 +46,7 @@ describe('Alelo no mesmo cartão do vale', () => {
   it('aparece no mesmo cartão, em bloco próprio', async () => {
     render(<VoucherSection storeId="s1" />);
     const bloco = await blocoAlelo();
-    expect(bloco.getByLabelText('Merchant ID')).toBeInTheDocument();
+    expect(bloco.getByLabelText(/Merchant ID/)).toBeInTheDocument();
     expect(screen.getByText(/vale-refeição e vale-alimentação/i)).toBeInTheDocument();
   });
 
@@ -82,7 +82,7 @@ describe('Alelo no mesmo cartão do vale', () => {
   it('faltando chave, avisa e não salva', async () => {
     render(<VoucherSection storeId="s1" />);
     const bloco = await blocoAlelo();
-    fireEvent.change(bloco.getByLabelText('Merchant ID'), { target: { value: 'd55454c7-f324-4fcd-a618-4f61c92013d8' } });
+    fireEvent.change(bloco.getByLabelText(/Merchant ID/), { target: { value: 'd55454c7-f324-4fcd-a618-4f61c92013d8' } });
     fireEvent.click(bloco.getByRole('button', { name: /salvar alelo/i }));
     expect(await bloco.findByRole('alert')).toHaveTextContent(/quatro chaves/i);
     expect(criar).not.toHaveBeenCalled();
@@ -96,7 +96,7 @@ describe('Alelo no mesmo cartão do vale', () => {
     }] });
     render(<VoucherSection storeId="s1" />);
     const bloco = await blocoAlelo();
-    await waitFor(() => expect(bloco.getByLabelText('Merchant ID')).toHaveValue('d55454c7-f324-4fcd-a618-4f61c92013d8'));
+    await waitFor(() => expect(bloco.getByLabelText(/Merchant ID/)).toHaveValue('d55454c7-f324-4fcd-a618-4f61c92013d8'));
     expect(bloco.getByLabelText(/conta de teste/i)).toBeChecked();
 
     fireEvent.click(bloco.getByRole('button', { name: /salvar alelo/i }));
@@ -125,7 +125,7 @@ describe('Alelo no mesmo cartão do vale', () => {
       render(<VoucherSection storeId="s1" />);
       const bloco = await blocoAlelo();
       preencher(bloco);
-      fireEvent.change(bloco.getByLabelText('Merchant ID'),
+      fireEvent.change(bloco.getByLabelText(/Merchant ID/),
         { target: { value: 'd55454c7-f324-4fcd-a618-4f61c92013d8.' } });
       fireEvent.click(bloco.getByRole('button', { name: /salvar alelo/i }));
       expect(await bloco.findByRole('alert')).toHaveTextContent(/merchant id/i);
@@ -136,11 +136,11 @@ describe('Alelo no mesmo cartão do vale', () => {
       render(<VoucherSection storeId="s1" />);
       const bloco = await blocoAlelo();
       preencher(bloco);
-      fireEvent.change(bloco.getByLabelText('Merchant ID'),
+      fireEvent.change(bloco.getByLabelText(/Merchant ID/),
         { target: { value: 'd55454c7-f324-4fcd-a618-4f61c92013d8' } });
       fireEvent.change(bloco.getByLabelText(/client id/i),
         { target: { value: '1da50a26-af11-45e2-a8f8-7e41410b65e9' } });
-      fireEvent.change(bloco.getByLabelText('Merchant Key'), { target: { value: 'curta' } });
+      fireEvent.change(bloco.getByLabelText(/Merchant Key/), { target: { value: 'curta' } });
       fireEvent.click(bloco.getByRole('button', { name: /salvar alelo/i }));
       expect(await bloco.findByRole('alert')).toHaveTextContent(/merchant key/i);
       expect(criar).not.toHaveBeenCalled();
@@ -149,9 +149,9 @@ describe('Alelo no mesmo cartão do vale', () => {
     it('chaves certas, com espaço em volta, são limpas e salvas', async () => {
       render(<VoucherSection storeId="s1" />);
       const bloco = await blocoAlelo();
-      fireEvent.change(bloco.getByLabelText('Merchant ID'),
+      fireEvent.change(bloco.getByLabelText(/Merchant ID/),
         { target: { value: ' d55454c7-f324-4fcd-a618-4f61c92013d8 ' } });
-      fireEvent.change(bloco.getByLabelText('Merchant Key'), { target: { value: ` ${'K'.repeat(40)} ` } });
+      fireEvent.change(bloco.getByLabelText(/Merchant Key/), { target: { value: ` ${'K'.repeat(40)} ` } });
       fireEvent.change(bloco.getByLabelText(/client id/i),
         { target: { value: '1da50a26-af11-45e2-a8f8-7e41410b65e9' } });
       fireEvent.change(bloco.getByLabelText(/client secret/i), { target: { value: 'segredo=' } });
@@ -166,9 +166,9 @@ describe('Alelo no mesmo cartão do vale', () => {
       criar.mockRejectedValue({ response: { data: { public_key: ['Merchant ID inválido: são 36 caracteres.'] } } });
       render(<VoucherSection storeId="s1" />);
       const bloco = await blocoAlelo();
-      fireEvent.change(bloco.getByLabelText('Merchant ID'),
+      fireEvent.change(bloco.getByLabelText(/Merchant ID/),
         { target: { value: 'd55454c7-f324-4fcd-a618-4f61c92013d8' } });
-      fireEvent.change(bloco.getByLabelText('Merchant Key'), { target: { value: 'K'.repeat(40) } });
+      fireEvent.change(bloco.getByLabelText(/Merchant Key/), { target: { value: 'K'.repeat(40) } });
       fireEvent.change(bloco.getByLabelText(/client id/i),
         { target: { value: '1da50a26-af11-45e2-a8f8-7e41410b65e9' } });
       fireEvent.change(bloco.getByLabelText(/client secret/i), { target: { value: 'segredo=' } });

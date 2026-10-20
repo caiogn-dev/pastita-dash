@@ -163,13 +163,13 @@ export const getErrorMessage = (error: unknown): string => {
       stringifyApiErrorValue(data?.detail) ||
       stringifyApiErrorValue(data) ||
       error.message ||
-      'An unexpected error occurred'
+      'Algo deu errado. Tente de novo.'
     );
   }
   if (error instanceof Error) {
     return error.message;
   }
-  return 'An unexpected error occurred';
+  return 'Algo deu errado. Tente de novo.';
 };
 
 /**

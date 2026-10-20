@@ -25,6 +25,7 @@ import { cn } from '../../utils/cn';
 import {
   resumirDescricao,
   type AlinhamentoDoLogo,
+  LIMITE_MINIMO_DA_DESCRICAO,
   type AmostraDoCardapio,
   type EncaixeDaFoto,
   type ExibicaoDoCardapio,
@@ -101,7 +102,7 @@ const ALINHAMENTOS: { valor: AlinhamentoDoLogo; rotulo: string; icone: React.Rea
   { valor: 'centro', rotulo: 'No centro', icone: <LogoNoCentro />, dica: 'Logo em cima do nome' },
 ];
 
-const textoDoLimite = (n: number) => (n === 0 ? 'Automático' : `${n} letras`);
+const textoDoLimite = (n: number) => (n === 0 ? 'Automático' : `${Math.max(n, LIMITE_MINIMO_DA_DESCRICAO)} letras`);
 
 /** Troca de imagem: a própria miniatura é o botão. */
 const TrocaDeImagem: React.FC<{

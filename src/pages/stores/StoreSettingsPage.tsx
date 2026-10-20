@@ -530,9 +530,9 @@ export const StoreSettingsPage: React.FC = () => {
 
           <ul className="mt-4 divide-y divide-border-token">
             {([
-              { modo: 'delivery' as Modo, titulo: 'Entrega', ajuda: 'O cliente informa o endereço e paga o frete.', Icone: TruckIcon },
-              { modo: 'pickup' as Modo, titulo: 'Retirada no balcão', ajuda: 'O cliente busca na loja, sem frete.', Icone: BuildingStorefrontIcon },
-            ]).map(({ modo, titulo, ajuda, Icone }) => {
+              { modo: 'delivery' as Modo, titulo: 'Entrega', Icone: TruckIcon },
+              { modo: 'pickup' as Modo, titulo: 'Retirada no balcão', Icone: BuildingStorefrontIcon },
+            ]).map(({ modo, titulo, Icone }) => {
               const ligado = modos[modo];
               return (
                 <li key={modo} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
@@ -547,7 +547,6 @@ export const StoreSettingsPage: React.FC = () => {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-fg-token">{titulo}</p>
-                    <p className="text-xs text-fg-muted-token">{ajuda}</p>
                   </div>
                   <Switch
                     checked={ligado}
@@ -665,10 +664,10 @@ export const StoreSettingsPage: React.FC = () => {
               <Card className="p-6">
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-fg-token">
                   <ChartBarIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
-                  Meta Pixel e Conversions API
+                  Anúncios no Facebook e Instagram
                 </h2>
                 <div className="grid grid-cols-2 gap-x-5 gap-y-4 max-md:grid-cols-1">
-                  <Campo rotulo="ID do Meta Pixel">
+                  <Campo rotulo="Número do Pixel">
                     <Input
                       inputMode="numeric"
                       placeholder="Ex.: 123456789012345"
@@ -680,24 +679,24 @@ export const StoreSettingsPage: React.FC = () => {
                     />
                   </Campo>
                   <Campo
-                    rotulo="Token da Conversions API"
+                    rotulo="Chave de conversões"
                     extra={metaTracking.meta_capi_token_configured ? 'configurado' : undefined}
                   >
                     <Input
                       type="password"
                       autoComplete="new-password"
-                      placeholder={metaTracking.meta_capi_token_configured ? 'Vazio mantém o atual' : 'Do Gerenciador de Eventos'}
+                      placeholder={metaTracking.meta_capi_token_configured ? 'Vazio mantém o atual' : 'Copie do Gerenciador de Eventos'}
                       value={metaTracking.meta_capi_access_token || ''}
                       onChange={e => setMetaTracking(prev => ({ ...prev, meta_capi_access_token: e.target.value }))}
                     />
                   </Campo>
                   <LinhaComChave
-                    rotulo="Meta Pixel na vitrine"
+                    rotulo="Medir visitas do cardápio"
                     ligado={metaTracking.meta_pixel_enabled}
                     onMudar={(v) => setMetaTracking(prev => ({ ...prev, meta_pixel_enabled: v }))}
                   />
                   <LinhaComChave
-                    rotulo="Compras pela Conversions API"
+                    rotulo="Avisar o Facebook de cada venda"
                     ligado={metaTracking.meta_capi_enabled}
                     onMudar={(v) => setMetaTracking(prev => ({ ...prev, meta_capi_enabled: v }))}
                   />
@@ -705,10 +704,10 @@ export const StoreSettingsPage: React.FC = () => {
 
                 <h2 className="mb-4 mt-6 flex items-center gap-2 border-t border-border-token pt-5 text-lg font-semibold text-fg-token">
                   <ChartBarIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
-                  Microsoft Clarity
+                  Gravação das visitas (Clarity)
                 </h2>
                 <div className="grid grid-cols-2 items-end gap-x-5 gap-y-4 max-md:grid-cols-1">
-                  <Campo rotulo="ID do projeto Clarity">
+                  <Campo rotulo="Código do Clarity">
                     <Input
                       placeholder="Ex.: abc1de23fg"
                       value={metaTracking.clarity_id}
@@ -719,7 +718,7 @@ export const StoreSettingsPage: React.FC = () => {
                     />
                   </Campo>
                   <LinhaComChave
-                    rotulo="Clarity na vitrine"
+                    rotulo="Gravar visitas do cardápio"
                     ligado={metaTracking.clarity_enabled}
                     onMudar={(v) => setMetaTracking(prev => ({ ...prev, clarity_enabled: v }))}
                   />

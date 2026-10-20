@@ -1891,7 +1891,8 @@ export interface StoreComboInput {
 
 export const getCombos = async (storeId?: string): Promise<PaginatedResponse<StoreCombo>> => {
   try {
-    const params = storeId ? { store: storeId } : {};
+    // Lista inteira: a página padrão do servidor é 20 e o 21º combo sumia.
+    const params = { ...(storeId ? { store: storeId } : {}), page_size: 500 };
     const response = await api.get(`${BASE_URL}/combos/`, { params });
     return normalizePaginatedResponse<StoreCombo>(response.data);
   } catch (error) {

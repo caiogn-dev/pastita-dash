@@ -28,12 +28,12 @@ import { FormulaDeEntregaCard } from './FormulaDeEntregaCard';
 import { FreteGratisCard } from './FreteGratisCard';
 import { anelDaPromo, lerPromo } from './freteGratis';
 import { getCategories, getStore, updateStore } from '../../services/storesApi';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, formatNumber } from '../../utils/formatters';
 
 const formatKm = (value?: number | string | null) => {
   const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? '0'));
-  if (!Number.isFinite(numeric)) return '0.00';
-  return numeric.toFixed(2);
+  // "2,5" e não "2.50": número de lojista brasileiro (auditoria 20/10).
+  return formatNumber(Number.isFinite(numeric) ? numeric : 0, { maximumFractionDigits: 2 });
 };
 
 const formatDays = (value?: number | string | null) => {
@@ -601,7 +601,7 @@ export const DeliveryZonesPage: React.FC = () => {
                 {z.distance_label
                   ? z.distance_label
                   : z.min_km !== null && z.min_km !== undefined
-                    ? `${formatKm(z.min_km)} - ${
+                    ? `${formatKm(z.min_km)} a ${
                         z.max_km !== null && z.max_km !== undefined ? formatKm(z.max_km) : '?'
                       } km`
                     : '—'}

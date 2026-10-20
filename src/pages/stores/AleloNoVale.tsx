@@ -154,14 +154,14 @@ export const AleloNoVale: React.FC<AleloNoValeProps> = ({ storeId, bandeiras }) 
       <div className="mt-2 space-y-4">
         <Input
           id="cielo-merchant-id"
-          label="Merchant ID"
+          label="Código do estabelecimento (Merchant ID)"
           autoComplete="off"
           value={merchantId}
           onChange={(e) => setMerchantId(e.target.value)}
         />
         <Input
           id="cielo-merchant-key"
-          label="Merchant Key"
+          label="Chave do estabelecimento (Merchant Key)"
           type="password"
           autoComplete="off"
           placeholder={manter}
@@ -170,14 +170,14 @@ export const AleloNoVale: React.FC<AleloNoValeProps> = ({ storeId, bandeiras }) 
         />
         <Input
           id="cielo-sop-client-id"
-          label="Client ID (Silent Order Post)"
+          label="Código do cartão (Client ID)"
           autoComplete="off"
           value={clientId}
           onChange={(e) => setClientId(e.target.value)}
         />
         <Input
           id="cielo-sop-client-secret"
-          label="Client Secret (Silent Order Post)"
+          label="Senha do cartão (Client Secret)"
           type="password"
           autoComplete="off"
           placeholder={manter}

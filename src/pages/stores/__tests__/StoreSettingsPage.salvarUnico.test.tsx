@@ -125,7 +125,7 @@ describe('Configurações: um salvar só', () => {
 
   it('rastreamento mexido grava só o rastreamento', async () => {
     montar('/stores/ce-saladas/settings?aba=rastreamento');
-    fireEvent.change(await screen.findByLabelText('ID do Meta Pixel'), { target: { value: '12a3' } });
+    fireEvent.change(await screen.findByLabelText('Número do Pixel'), { target: { value: '12a3' } });
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
     await waitFor(() => expect(api.updateStoreMetaTracking).toHaveBeenCalledTimes(1));
     expect((api.updateStoreMetaTracking as jest.Mock).mock.calls[0][1].meta_pixel_id).toBe('123');
