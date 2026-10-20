@@ -11,7 +11,6 @@ jest.mock('react-hot-toast', () => ({ toast: { success: jest.fn(), error: jest.f
 jest.mock('../../../services/logger', () => ({ __esModule: true, default: { error: jest.fn() } }));
 jest.mock('../../../hooks', () => ({ useStore: () => ({ storeId: 'ce-saladas', stores: [] }) }));
 jest.mock('../LocalizacaoNoGoogle', () => ({ LocalizacaoNoGoogle: () => null }));
-jest.mock('../TempoDePreparoSection', () => ({ __esModule: true, default: () => null }));
 jest.mock('../RecebimentoSection', () => ({ __esModule: true, default: () => null }));
 jest.mock('../VoucherSection', () => ({ __esModule: true, default: () => null }));
 jest.mock('../ValePorLinkSection', () => ({ __esModule: true, default: () => null }));
@@ -40,6 +39,7 @@ const loja = {
   operating_hours: {},
   prazo_entrega_min: 0,
   prazo_entrega_max: 0,
+  default_prep_minutes: 20,
 };
 
 const rastreio = {
@@ -149,6 +149,27 @@ describe('Configurações: um salvar só', () => {
     fireEvent.change(screen.getByLabelText('Prazo máximo'), { target: { value: '40' } });
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
     expect(await screen.findByText(/mínimo não pode passar do máximo/i)).toBeInTheDocument();
+    expect(api.updateStore).not.toHaveBeenCalled();
+  });
+
+  // 20/10: o tempo de preparo tinha um "Salvar" só dele no meio da aba —
+  // o único bloco da página fora da barra de alterações.
+  it('tempo de preparo entra no mesmo salvar', async () => {
+    montar('/stores/ce-saladas/settings?aba=entrega');
+    const campo = await screen.findByLabelText('Tempo padrão');
+    expect(campo).toHaveValue(20);
+    fireEvent.change(campo, { target: { value: '35' } });
+    expect(screen.getByRole('tab', { name: /Entrega.*alterado/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(api.updateStore).toHaveBeenCalledTimes(1));
+    expect((api.updateStore as jest.Mock).mock.calls[0][1]).toEqual({ default_prep_minutes: 35 });
+  });
+
+  it('tempo de preparo acima de 600 min não grava', async () => {
+    montar('/stores/ce-saladas/settings?aba=entrega');
+    fireEvent.change(await screen.findByLabelText('Tempo padrão'), { target: { value: '900' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    expect(await screen.findByText(/0 a 600 minutos/i)).toBeInTheDocument();
     expect(api.updateStore).not.toHaveBeenCalled();
   });
 });

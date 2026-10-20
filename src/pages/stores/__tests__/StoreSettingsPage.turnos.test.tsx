@@ -9,7 +9,6 @@ jest.mock('react-hot-toast', () => ({ toast: { success: jest.fn(), error: jest.f
 jest.mock('../../../services/logger', () => ({ __esModule: true, default: { error: jest.fn() } }));
 jest.mock('../../../hooks', () => ({ useStore: () => ({ storeId: 'agriao', stores: [] }) }));
 jest.mock('../LocalizacaoNoGoogle', () => ({ LocalizacaoNoGoogle: () => null }));
-jest.mock('../TempoDePreparoSection', () => ({ __esModule: true, default: () => null }));
 jest.mock('../RecebimentoSection', () => ({ __esModule: true, default: () => null }));
 jest.mock('../VoucherSection', () => ({ __esModule: true, default: () => null }));
 jest.mock('../ValePorLinkSection', () => ({ __esModule: true, default: () => null }));

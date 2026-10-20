@@ -41,7 +41,6 @@ import RecebimentoSection from './RecebimentoSection';
 import VoucherSection from './VoucherSection';
 import ValePorLinkSection from './ValePorLinkSection';
 import AcrescimoDoValeSection from './AcrescimoDoValeSection';
-import TempoDePreparoSection from './TempoDePreparoSection';
 import NotaFiscalSection from './NotaFiscalSection';
 import CaixaDinheiroSection from './CaixaDinheiroSection';
 import AvisoFilaHumanaSection from './AvisoFilaHumanaSection';
@@ -90,12 +89,20 @@ const FORM_VAZIO = {
   longitude: '',
   prazo_entrega_min: '',
   prazo_entrega_max: '',
+  tempo_preparo: '',
 };
 type FormDaLoja = typeof FORM_VAZIO;
 
 const CAMPOS_DA_LOJA: (keyof FormDaLoja)[] = ['name', 'email', 'phone', 'whatsapp_number'];
 const CAMPOS_DO_LOCAL: (keyof FormDaLoja)[] = ['address', 'city', 'state', 'zip_code', 'latitude', 'longitude'];
 const CAMPOS_DO_PRAZO: (keyof FormDaLoja)[] = ['prazo_entrega_min', 'prazo_entrega_max'];
+
+/** Tempo de preparo vazio = 0 = sem previsão "pronto às" no quadro de pedidos. */
+const erroDoPreparo = (texto: string) => {
+  const limpo = texto.trim();
+  const n = limpo === '' ? 0 : Number(limpo);
+  return Number.isInteger(n) && n >= 0 && n <= 600 ? null : 'Use um número inteiro de 0 a 600 minutos.';
+};
 
 const minutosOuZero = (texto: string) => {
   const n = parseInt(texto, 10);
@@ -146,7 +153,7 @@ export const StoreSettingsPage: React.FC = () => {
   const [pausas, setPausas] = useState<Pausa[]>([]);
   const [metaTracking, setMetaTracking] = useState<StoreMetaTracking>(defaultMetaTracking);
   const [googleReviewUrl, setGoogleReviewUrl] = useState('');
-  const [erros, setErros] = useState<{ latitude?: string | null; longitude?: string | null; prazo?: string | null }>({});
+  const [erros, setErros] = useState<{ latitude?: string | null; longitude?: string | null; prazo?: string | null; preparo?: string | null }>({});
   /** Entrega/retirada: os campos existem no banco e o cardápio já os respeita
    *  — faltava o dono poder mudar depois do onboarding. */
   const [modos, setModos] = useState<ModosDeRecebimento>({ delivery: true, pickup: true });
@@ -212,6 +219,7 @@ export const StoreSettingsPage: React.FC = () => {
         longitude: data.longitude?.toString() || '',
         prazo_entrega_min: data.prazo_entrega_min ? String(data.prazo_entrega_min) : '',
         prazo_entrega_max: data.prazo_entrega_max ? String(data.prazo_entrega_max) : '',
+        tempo_preparo: data.default_prep_minutes ? String(data.default_prep_minutes) : '',
       };
       const stored = (data.operating_hours as OperatingHours) || {};
       const horas: OperatingHours = {};
@@ -249,6 +257,7 @@ export const StoreSettingsPage: React.FC = () => {
   const mudouNaLoja = CAMPOS_DA_LOJA.filter((k) => storeForm[k] !== salvo.form[k]);
   const mudouNoLocal = CAMPOS_DO_LOCAL.filter((k) => storeForm[k] !== salvo.form[k]);
   const mudouNoPrazo = CAMPOS_DO_PRAZO.filter((k) => storeForm[k] !== salvo.form[k]);
+  const preparoMudou = storeForm.tempo_preparo !== salvo.form.tempo_preparo;
   const diasMudados = DAYS.filter((d) => !iguais(operatingHours[d.key], salvo.horas[d.key]));
   const pausasMudaram = !iguais(pausas, salvo.pausas);
   const avaliacaoMudou = googleReviewUrl.trim() !== salvo.avaliacao.trim();
@@ -256,7 +265,7 @@ export const StoreSettingsPage: React.FC = () => {
     + (metaTracking.meta_capi_access_token?.trim() ? 1 : 0);
 
   const quantidade = mudouNaLoja.length + mudouNoLocal.length + mudouNoPrazo.length + diasMudados.length
-    + (avaliacaoMudou ? 1 : 0) + (pausasMudaram ? 1 : 0) + rastreioMudado;
+    + (preparoMudou ? 1 : 0)    + (avaliacaoMudou ? 1 : 0) + (pausasMudaram ? 1 : 0) + rastreioMudado;
 
   // Sair da página com alteração pendente perde o que foi digitado.
   useEffect(() => {
@@ -324,7 +333,17 @@ export const StoreSettingsPage: React.FC = () => {
       }
     }
 
+    if (preparoMudou) {
+      const erro = erroDoPreparo(storeForm.tempo_preparo);
+      setErros((atual) => ({ ...atual, preparo: erro }));
+      if (erro) {
+        toast.error('Confira o tempo de preparo antes de salvar.');
+        return;
+      }
+    }
+
     const payload: Record<string, unknown> = {};
+    if (preparoMudou) payload.default_prep_minutes = Number(storeForm.tempo_preparo.trim() || 0);
     if (mudouNoPrazo.length) {
       payload.prazo_entrega_min = minutosOuZero(storeForm.prazo_entrega_min);
       payload.prazo_entrega_max = minutosOuZero(storeForm.prazo_entrega_max);
@@ -442,7 +461,7 @@ export const StoreSettingsPage: React.FC = () => {
         ariaLabel="Seções das configurações da loja"
         abas={[
           { id: 'loja', rotulo: 'Loja', icone: BuildingStorefrontIcon, mudou: mudouNaLoja.length + mudouNoLocal.length > 0 },
-          { id: 'entrega', rotulo: 'Entrega e horários', icone: ClockIcon, mudou: diasMudados.length + mudouNoPrazo.length > 0 },
+          { id: 'entrega', rotulo: 'Entrega e horários', icone: ClockIcon, mudou: diasMudados.length + mudouNoPrazo.length > 0 || preparoMudou },
           { id: 'rastreamento', rotulo: 'Rastreamento', icone: ChartBarIcon, mudou: rastreioMudado > 0 },
           { id: 'avaliacoes', rotulo: 'Avaliações', icone: StarIcon, mudou: avaliacaoMudou },
           { id: 'recebimento', rotulo: 'Recebimento', icone: BanknotesIcon },
@@ -642,12 +661,24 @@ export const StoreSettingsPage: React.FC = () => {
           </h2>
           <PausasProgramadas pausas={pausas} onChange={setPausas} />
         </Card>
-        {store?.id && (
-          <TempoDePreparoSection
-            storeId={store.id}
-            minutosAtuais={Number(store.default_prep_minutes) || 0}
-          />
-        )}
+        {/* Copiado para o pedido quando entra em preparo: vira o "pronto às"
+            do quadro, que marca ATRASADO quando passa. 0 desliga. */}
+        <Card className="p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-fg-token">
+            <ClockIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
+            Tempo de preparo
+          </h2>
+          <div className="max-w-[12rem]">
+            <Campo rotulo="Tempo padrão" erro={erros.preparo}>
+              <Input
+                type="number" inputMode="numeric" min={0} max={600}
+                rightAddon="min" className="tabular-nums" placeholder="20"
+                value={storeForm.tempo_preparo}
+                onChange={(e) => mudarForm('tempo_preparo')(e.target.value)}
+              />
+            </Campo>
+          </div>
+        </Card>
               </>
             )}
 
