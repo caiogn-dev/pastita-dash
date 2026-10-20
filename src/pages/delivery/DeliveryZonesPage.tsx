@@ -26,6 +26,7 @@ import { useStore } from '../../hooks';
 import { ZonasDePrecoFixoCard, type CategoriaDaLoja } from './ZonasDePrecoFixoCard';
 import { FormulaDeEntregaCard } from './FormulaDeEntregaCard';
 import { FreteGratisCard } from './FreteGratisCard';
+import { SimuladorDeFreteCard } from './SimuladorDeFreteCard';
 import { anelDaPromo, lerPromo } from './freteGratis';
 import { getCategories, getStore, updateStore } from '../../services/storesApi';
 import { formatCurrency, formatNumber } from '../../utils/formatters';
@@ -61,6 +62,7 @@ export const DeliveryZonesPage: React.FC = () => {
     return match?.id || contextStoreId || null;
   }, [routeStoreId, contextStoreId, stores]);
   const settingsPath = storeId ? `/stores/${storeId}/settings` : '/settings';
+  const storeSlug = stores.find((s) => s.id === storeId)?.slug ?? null;
   const [zones, setZones] = useState<DeliveryZone[]>([]);
   const [stats, setStats] = useState<DeliveryZoneStats | null>(null);
   const [storeLocation, setStoreLocation] = useState<StoreLocation | null>(null);
@@ -497,6 +499,11 @@ export const DeliveryZonesPage: React.FC = () => {
             setStoreMetadata(novoMetadata);
           }}
         />
+      )}
+
+      {/* Confere o preço que o cliente vai ver, pelo cálculo do checkout. */}
+      {storeSlug && (
+        <SimuladorDeFreteCard key={storeSlug} storeSlug={storeSlug} metadataAtual={storeMetadata ?? {}} />
       )}
 
       {/* As faixas por km resolvem a cidade; as zonas abaixo resolvem as

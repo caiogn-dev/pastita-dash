@@ -29,6 +29,9 @@ jest.mock('../../../services/delivery', () => ({
 // A página passou a ler o metadata da loja (zonas de preço fixo). Sem o mock,
 // o import do storesApi carrega o cliente axios, que exige VITE_API_URL e
 // derruba a suíte inteira antes do primeiro teste.
+// O simulador de taxa importa o cliente HTTP real (que exige VITE_API_URL).
+jest.mock('../../../services/api', () => ({ __esModule: true, default: {}, getErrorMessage: String }));
+jest.mock('../../../services/orders', () => ({ ordersService: { calculateDeliveryFee: jest.fn() } }));
 jest.mock('../../../services/storesApi', () => ({
   getStore: jest.fn().mockResolvedValue({ id: 'store-1', metadata: {} }),
   updateStore: jest.fn().mockResolvedValue({}),
