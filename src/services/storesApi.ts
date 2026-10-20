@@ -1391,6 +1391,8 @@ export const getOrderStatsRaw = async (params: {
 export const getCustomers = async (params?: {
   store?: string;
   search?: string;
+  /** vip · ativos · em_risco · inativos · sem_compra (régua do servidor). */
+  segmento?: string;
   page?: number;
   page_size?: number;
 }): Promise<PaginatedResponse<StoreCustomer>> => {
@@ -1415,11 +1417,14 @@ export interface SegmentosDeClientes {
   em_risco: number;
   inativos: number;
   sem_compra: number;
+  /** Servidor anterior a 20/10 não manda. */
+  vip?: number;
   reguas: {
     ativos: string;
     em_risco: string;
     inativos: string;
     sem_compra: string;
+    vip?: string;
   };
 }
 

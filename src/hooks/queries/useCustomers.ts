@@ -21,16 +21,18 @@ export function useCustomers(
   storeId: string | undefined | null,
   search: string,
   page: number,
-  pageSize = 30
+  pageSize = 30,
+  segmento?: string
 ) {
   return useQuery({
-    queryKey: ['customers', storeId, search, page, pageSize],
+    queryKey: ['customers', storeId, search, page, pageSize, segmento ?? null],
     queryFn: () =>
       getCustomers({
         store: storeId ?? undefined,
         search: search || undefined,
         page,
         page_size: pageSize,
+        segmento: segmento || undefined,
       }),
     enabled: !!storeId,
     placeholderData: keepPreviousData,

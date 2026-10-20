@@ -19,11 +19,12 @@ import toast from 'react-hot-toast';
 import { PageLoading } from '../../components/common';
 import {
   Button, Badge, RowActions, Input, Textarea, Switch,
-  PageShell, KpiGrid, InsightList, Tabela, SearchInput,
+  PageShell, KpiGrid, InsightList, Tabela, SearchInput, PeriodChips,
   EmptyState, FalhaAoCarregar, SeloDeEstado, Skeleton,
   estadoDePedido, estadoDeCliente, estadoDeSegmento,
 } from '../../components/ui';
 import { insightsDeClientes } from './insightsDeClientes';
+import { abasDeSegmento, regraDoSegmento, segmentoDaUrl, type Segmento } from './abasDeSegmento';
 import { rotuloDeDias, rotuloDePerfil, type TomDeCrm } from './rotulosDeCrm';
 import { getErrorMessage } from '../../services';
 import { StoreCustomer, StoreCustomerAddress, createCustomer, deleteCustomer, getCustomer, updateCustomer } from '../../services/storesApi';
@@ -998,8 +999,22 @@ export const CustomersPage: React.FC = () => {
 
   const storeQuery = storeSlug || storeId;
 
+  // Aba de segmento na URL, como a busca: o link "107 em risco" do topo
+  // chega aqui já filtrado e sobrevive ao F5.
+  const segmento = segmentoDaUrl(searchParams);
+  const mudarSegmento = (s: Segmento) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (s === 'todos') next.delete('segmento'); else next.set('segmento', s);
+      next.delete('page');
+      return next;
+    });
+  };
+
   // Lista paginada + busca server-side (count/results vêm do backend).
-  const customersQuery = useCustomers(storeQuery, debouncedSearch, page, PAGE_SIZE);
+  const customersQuery = useCustomers(
+    storeQuery, debouncedSearch, page, PAGE_SIZE, segmento === 'todos' ? undefined : segmento,
+  );
 
   const customers = customersQuery.data?.results ?? [];
   const totalCount = customersQuery.data?.count ?? 0;
@@ -1125,15 +1140,23 @@ export const CustomersPage: React.FC = () => {
         </div>
       }
       filtros={
-        <SearchInput
-          className="w-72 max-sm:w-full"
-          placeholder="Buscar por nome, e-mail ou telefone…"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            if (page !== 1) setPage(1);
-          }}
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <SearchInput
+            className="w-72 max-sm:w-full"
+            placeholder="Buscar por nome, e-mail ou telefone…"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              if (page !== 1) setPage(1);
+            }}
+          />
+          <PeriodChips<Segmento>
+            ariaLabel="Grupo de clientes"
+            options={abasDeSegmento(statsQuery.data?.segmentos)}
+            value={segmento}
+            onChange={mudarSegmento}
+          />
+        </div>
       }
     >
 
@@ -1171,13 +1194,12 @@ export const CustomersPage: React.FC = () => {
             titulo: i.titulo,
             valor: i.valor,
             recomendacao: i.recomendacao,
-            // Reativação sai daqui direto para onde se cria a oferta. Sem isso
-            // o diagnóstico morre em texto e o operador precisa lembrar onde
-            // ficam os cupons.
+            // "107 em risco" abre a aba com os 107 — antes mandava criar
+            // cupom sem mostrar para quem, e o número morria em texto.
             acao:
               i.chave === 'saudavel'
                 ? undefined
-                : { rotulo: 'Criar cupom', onClick: () => navigate(storeSlug ? `/stores/${storeSlug}/coupons` : '/') },
+                : { rotulo: 'Ver quem são', onClick: () => mudarSegmento(i.chave as Segmento) },
           }))}
         />
       )}
@@ -1189,10 +1211,12 @@ export const CustomersPage: React.FC = () => {
         onAbrir={abrirFicha}
         carregando={customersQuery.isFetching}
         vazio={{
-          titulo: 'Nenhum cliente encontrado',
+          titulo: segmento !== 'todos' ? 'Ninguém neste grupo' : 'Nenhum cliente encontrado',
           descricao: debouncedSearch
             ? `Nenhum cadastro bate com "${debouncedSearch}". Confira a grafia ou busque pelo telefone.`
-            : 'Clientes entram aqui no primeiro pedido, ou pelo botão Novo cliente.',
+            : segmento !== 'todos'
+              ? (regraDoSegmento(statsQuery.data?.segmentos, segmento) ?? '')
+              : 'Clientes entram aqui no primeiro pedido, ou pelo botão Novo cliente.',
           icone: <UserGroupIcon className="h-8 w-8" />,
         }}
         paginacao={{
