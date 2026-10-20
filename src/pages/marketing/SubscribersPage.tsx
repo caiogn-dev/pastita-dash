@@ -96,6 +96,17 @@ export const SubscribersPage: React.FC = () => {
     }
   }, [effectiveStoreId]);
 
+  // Trocar de loja invalida o cache: as linhas da loja A não valem como cache da
+  // loja B. Sem limpar, uma falha ao carregar B deixaria as linhas de A na tela —
+  // o guard `erro && subscribers.length === 0` não dispara com array não-vazio, e
+  // a página renderizaria os clientes/KPIs de A sob a loja B selecionada
+  // (vazamento entre lojas). Limpamos ao mudar de loja para B cair no erro
+  // acionável da própria loja, nunca nos dados de A.
+  useEffect(() => {
+    setSubscribers([]);
+    setErro(false);
+  }, [effectiveStoreId]);
+
   useEffect(() => {
     loadCustomers();
   }, [loadCustomers]);

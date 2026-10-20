@@ -21,9 +21,10 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => navegar,
 }));
 
+let lojaId = 'loja-1';
 jest.mock('../../../hooks', () => ({
   __esModule: true,
-  useStore: () => ({ storeId: 'loja-1', storeName: 'Cê', stores: [] }),
+  useStore: () => ({ storeId: lojaId, storeName: 'Cê', stores: [] }),
 }));
 
 jest.mock('../../../stores/rootStore', () => ({
@@ -73,6 +74,7 @@ const umCliente = () => ({
 const tela = () => render(<MemoryRouter><SubscribersPage /></MemoryRouter>);
 
 beforeEach(() => {
+  lojaId = 'loja-1';
   navegar.mockReset();
   listMock.mockReset();
 });
@@ -113,4 +115,23 @@ test('sucesso → renderiza a base, sem estado de erro', async () => {
   expect(
     screen.queryByText(/não foi possível carregar a base de clientes/i),
   ).not.toBeInTheDocument();
+});
+
+test('trocar de loja com a nova falhando não vaza os clientes da loja anterior', async () => {
+  // Loja A carrega e mostra Maria Silva.
+  listMock.mockResolvedValueOnce([umCliente()]);
+  const { rerender } = tela();
+  expect((await screen.findAllByText('Maria Silva')).length).toBeGreaterThan(0);
+
+  // Troca para a loja B (StoreSelector muda o storeId do contexto) e a carga de B cai.
+  lojaId = 'loja-2';
+  listMock.mockRejectedValueOnce(new Error('rede'));
+  rerender(<MemoryRouter><SubscribersPage /></MemoryRouter>);
+
+  // Mostra o erro acionável da loja B...
+  expect(
+    await screen.findByText(/não foi possível carregar a base de clientes/i),
+  ).toBeInTheDocument();
+  // ...e NUNCA os clientes da loja A sob a loja B selecionada (vazamento entre lojas).
+  expect(screen.queryByText('Maria Silva')).not.toBeInTheDocument();
 });
