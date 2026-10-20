@@ -76,6 +76,10 @@ export const PhonePreview: React.FC<PhonePreviewProps> = ({
   acoesExtras,
 }) => {
   const [geracao, setGeracao] = useState(0);
+  // Carimbo novo a cada abertura e a cada "Atualizar": a Cloudflare manda
+  // max-age=14400 e o navegador mostraria o cardápio de horas atrás.
+  const [carimbo, setCarimbo] = useState(() => Date.now());
+  const urlDoQuadro = url ? `${url}${url.includes('?') ? '&' : '?'}v=${carimbo}` : url;
   const computador = dispositivo === 'computador';
   // Escala do modo computador: 1280px de página dentro da largura da coluna.
   const moldura = useRef<HTMLDivElement | null>(null);
@@ -129,7 +133,7 @@ export const PhonePreview: React.FC<PhonePreviewProps> = ({
           <button
             type="button"
             aria-label="Atualizar pré-visualização"
-            onClick={() => setGeracao((g) => g + 1)}
+            onClick={() => { setGeracao((g) => g + 1); setCarimbo(Date.now()); }}
             disabled={!url}
             className="rounded p-1.5 text-fg-muted-token transition-colors hover:bg-surface-2 hover:text-fg-token disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
@@ -157,7 +161,7 @@ export const PhonePreview: React.FC<PhonePreviewProps> = ({
           <iframe
             key={geracao}
             ref={iframeRef}
-            src={url}
+            src={urlDoQuadro}
             title={titulo}
             className={cn(
               'border-0 bg-white',

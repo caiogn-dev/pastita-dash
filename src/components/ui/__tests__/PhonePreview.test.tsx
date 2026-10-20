@@ -19,7 +19,7 @@ describe('PhonePreview', () => {
   it('renderiza a página real, não um desenho dela', () => {
     render(<PhonePreview url="https://bio.cardapidex.com.br/minha-loja" titulo="Pré-visualização" />);
     const frame = screen.getByTitle('Pré-visualização');
-    expect(frame).toHaveAttribute('src', 'https://bio.cardapidex.com.br/minha-loja');
+    expect(frame.getAttribute('src')).toMatch(/^https:\/\/bio\.cardapidex\.com\.br\/minha-loja\?v=\d+$/);
   });
 
   it('recarregar troca a identidade do frame para forçar novo fetch', () => {
@@ -92,5 +92,26 @@ describe('PhonePreview — tela do editor', () => {
   it('ações extras entram no cabeçalho', () => {
     render(<PhonePreview url="https://x" titulo="P" acoesExtras={<button type="button">Inspecionar</button>} />);
     expect(screen.getByRole('button', { name: 'Inspecionar' })).toBeInTheDocument();
+  });
+});
+
+describe('PhonePreview — nunca a cópia guardada no navegador', () => {
+  // 20/10: a Cloudflare manda max-age=14400 para /preview; o iframe mostrava o
+  // cardápio de horas atrás (card velho com "Adicionar" largo) depois do deploy.
+  it('carrega com um carimbo e troca o carimbo ao atualizar', () => {
+    render(<PhonePreview url="https://cardapidex.com.br/preview/loja-x" titulo="Prévia" />);
+    const antes = (screen.getByTitle('Prévia') as HTMLIFrameElement).getAttribute('src')!;
+    expect(antes).toMatch(/^https:\/\/cardapidex\.com\.br\/preview\/loja-x\?v=\d+$/);
+
+    const agora = jest.spyOn(Date, 'now').mockReturnValue(Number(antes.split('v=')[1]) + 5000);
+    fireEvent.click(screen.getByRole('button', { name: /atualizar pré-visualização/i }));
+    const depois = (screen.getByTitle('Prévia') as HTMLIFrameElement).getAttribute('src')!;
+    expect(depois).not.toBe(antes);
+    agora.mockRestore();
+  });
+
+  it('URL que já tem consulta ganha o carimbo com &', () => {
+    render(<PhonePreview url="https://x.com/preview/a?modo=1" titulo="Prévia" />);
+    expect((screen.getByTitle('Prévia') as HTMLIFrameElement).getAttribute('src')).toMatch(/\?modo=1&v=\d+$/);
   });
 });
