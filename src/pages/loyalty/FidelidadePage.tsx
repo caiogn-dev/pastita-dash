@@ -703,7 +703,7 @@ const FidelidadePage: React.FC = () => {
                                     aria-label={`${a.progress} de ${threshold} itens`}
                                   >
                                     <span
-                                      className="block h-full rounded-pill bg-brand"
+                                      className="block h-full rounded-pill bg-brand-ink"
                                       style={{
                                         width: `${Math.min(100, (a.progress / (Number(threshold) || 10)) * 100)}%`,
                                       }}

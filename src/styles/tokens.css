@@ -1,16 +1,23 @@
 /* ============================================
    DESIGN TOKENS — Cardapidex Premium (Dark Luxe)
-   Carvão + ouro. light (marfim) em :root, dark (grafite) em .dark.
-   Ouro: #DEBE79 (dark) / #C9A24B (light). Chrome: --brand-strong.
+   Carvão + ouro. light (neutro) em :root, dark (grafite) em .dark.
+   Ação: carvão #1C1917 (light) / ouro #DEBE79 (dark). No claro o ouro é
+   acento: --brand-ink (texto, fio, progresso) e --brand-soft (fundo).
    Semânticos (success/danger/warning/info) e --primary-* NÃO são marca.
    ============================================ */
 :root {
-  --brand: #C9A24B;
-  --brand-hover: #B8923E;
+  /* TINTA DE AÇÃO no claro é CARVÃO, não ouro (20/10). O ouro claro como
+     fundo de botão lia como mostarda apagada e, com texto escuro por cima,
+     deixava o botão principal com cara de desabilitado. Carvão com texto
+     branco é o par mais legível que existe (17:1) e deixa o ouro livre para
+     ser o que ele faz bem: acento — --brand-ink no texto, --brand-soft no
+     fundo de chip, o fio do item ativo. O escuro continua ouro. */
+  --brand: #1C1917;
+  --brand-hover: #3A3530;
   /* Texto que vai EM CIMA do ouro. Era branco, e branco sobre ouro dá 2.40:1
      no claro e 1.79:1 no escuro — a WCAG AA pede 4.5:1. Todo botão de ação
      principal do painel estava ilegível. Com texto escuro: 8.75:1 e 11.75:1. */
-  --on-brand: #241E14;
+  --on-brand: #FFFFFF;
   /* Ouro como TEXTO no tema claro. O --brand (#C9A24B) dá 2,08–2,40:1 sobre os
      três fundos claros — reprova até para elemento de UI (3:1), e é a cor do
      número mais importante da tela (StatCard tone="brand", 94 usos). Este tom
@@ -20,7 +27,7 @@
   /* Borda de controle de formulário. A --border (1,38:1) é decorativa e fica —
      a suavidade é da identidade. Mas input, select e textarea têm limite que
      PRECISA ser percebido (WCAG 1.4.11 pede 3:1), senão o campo some no fundo. */
-  --border-input: #998769;
+  --border-input: #8E8E96;
   --brand-strong: #1A1613;        /* carvão da marca — usado como TINTA sobre o ouro */
 
   /* ── CROMO (navbar + coluna lateral) ──────────────────────────────────────
@@ -30,12 +37,14 @@
      coluna branca — dois materiais diferentes para a mesma casca.
      Agora o cromo acompanha o tema. No claro é marfim (a barra pertence à
      página); no escuro continua carvão com o fio de ouro. */
+  /* Branco liso. O gradiente para creme (#FBF7EF) e a borda bege faziam a
+     barra parecer de outro material que o fundo neutro logo abaixo. */
   --chrome-bg: #FFFFFF;
-  --chrome-bg-to: #FBF7EF;        /* leve gradiente vertical, dá profundidade */
-  --chrome-fg: #2B2620;
-  --chrome-fg-muted: #756B5C;     /* 4,53:1 sobre o cromo claro */
-  --chrome-border: #E6DAC4;
-  --chrome-hover: rgba(43,38,32,.06);
+  --chrome-bg-to: #FFFFFF;
+  --chrome-fg: #1C1917;
+  --chrome-fg-muted: #63636B;
+  --chrome-border: #E7E7EA;
+  --chrome-hover: rgba(28,25,23,.05);
   /* Sem fio de ouro no claro: a --chrome-border já separa a barra, e um
      traço dourado sobre marfim vira sujeira. */
   --chrome-hairline: transparent;
@@ -46,15 +55,17 @@
      um tom amador. O ouro rende MAIS sobre cinza neutro: sem outro amarelo
      competindo, ele vira o único acento quente da tela.
      Guardado o calor onde ele funciona: --brand-soft continua dourado. */
-  --canvas: #F7F7F8;
-  --surface: #ffffff;
-  --surface-2: #F0F0F2;
-  --border: #E4E4E8;
-  --border-strong: #D6D6DC;
-  --fg: #2B2620;
+  --canvas: #F6F6F7;
+  --surface: #FFFFFF;
+  --surface-2: #F2F2F4;
+  --border: #E7E7EA;
+  --border-strong: #D9D9DE;
+  /* Grafite quase neutro. O marrom (#2B2620) sobre cinza frio dava dois
+     climas na mesma tela. */
+  --fg: #1C1917;
   /* 4,53–5,23:1. Era #8A7E6C (3,44–3,98) — reprovava para texto normal, e é o
      tom de 652 usos: legenda, sub-rótulo, "vs ontem", preview de conversa. */
-  --fg-muted: #756B5C;
+  --fg-muted: #63636B;
   --success: #047857;
   --success-strong: #065f46;
   --success-soft: #d1fae5;

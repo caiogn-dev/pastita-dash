@@ -184,7 +184,7 @@ const ICONE: Record<ChaveDaEtapa, typeof CheckIcon> = {
 };
 
 const CLASSE_DA_BOLINHA: Record<EstadoDaEtapaNaLinha, string> = {
-  concluida: 'border-[var(--brand)] bg-[var(--brand)] text-brand-strong',
+  concluida: 'border-[var(--brand)] bg-[var(--brand)] text-on-brand',
   atual: 'border-[var(--brand)] bg-surface text-[var(--brand)] ring-4 ring-brand-soft',
   futura: 'border-border-token bg-surface text-fg-muted-token',
   cancelada: 'border-[var(--danger)] bg-[var(--danger-soft)] text-[var(--danger)]',

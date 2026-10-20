@@ -55,20 +55,23 @@
   --brand-primary-dark:  var(--primary-600);
 
   /* Semantic Colors */
-  --cx-background: #ffffff;
-  --cx-surface: #f8fafc;
-  --cx-foreground: #111827;
-  --cx-border: #e5e7eb;
+  /* Paleta legada apontando para os tokens (tokens.css é a fonte). Cada uma
+     tinha o seu cinza — #f8fafc azulado aqui, #F7F7F8 lá, creme no cromo — e
+     o tema claro saía com três climas na mesma tela. */
+  --cx-background: var(--canvas);
+  --cx-surface: var(--surface-2);
+  --cx-foreground: var(--fg);
+  --cx-border: var(--border);
   --cx-accent: var(--primary-500);
 
   /* Text Colors */
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
+  --text-primary: var(--fg);
+  --text-secondary: var(--fg-muted);
   --text-muted: #9ca3af;
 
   /* Border */
-  --border-default: #e5e7eb;
-  --border-subtle: #f3f4f6;
+  --border-default: var(--border);
+  --border-subtle: var(--surface-2);
   --border-focus: var(--brand-primary);
 
   /* Shadows */
@@ -84,19 +87,19 @@
   /* ============================================
      SEMANTIC COMPONENT TOKENS (light mode)
      ============================================ */
-  --fg-primary: #111827;
-  --fg-secondary: #6b7280;
+  --fg-primary: var(--fg);
+  --fg-secondary: var(--fg-muted);
   /* --fg-muted NÃO é redeclarado aqui: tokens.css (importado na linha 1) é o
      SSOT. O #9ca3af desta paleta legada vencia a cascata por vir depois com a
      mesma especificidade e dava 2,54:1 sobre branco — abaixo do mínimo AA de
      4,5:1. Como o tailwind.config mapeia `text-fg-muted` E `text-fg-muted-token`
      para a mesma variável, as duas convenções caíam juntas: 1.139 ocorrências
      em 86 arquivos. */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-card: #ffffff;
-  --bg-hover: #f3f4f6;
-  --bg-active: #e5e7eb;
+  --bg-primary: var(--surface);
+  --bg-secondary: var(--canvas);
+  --bg-card: var(--surface);
+  --bg-hover: var(--surface-2);
+  --bg-active: var(--border);
 }
 
 /* ============================================

@@ -52,7 +52,7 @@ const Progresso: React.FC<{ pct: number; rotulo: string }> = ({ pct, rotulo }) =
       className="h-2 min-w-0 flex-1 overflow-hidden rounded-pill bg-surface-2"
     >
       <div
-        className="h-full rounded-pill bg-brand transition-[width] duration-500"
+        className="h-full rounded-pill bg-brand-ink transition-[width] duration-500"
         style={{ width: `${Math.min(100, Math.max(0, pct))}%`, transitionTimingFunction: 'var(--mola)' }}
       />
     </div>

@@ -102,7 +102,7 @@ const Carimbos: React.FC<{ total: number; cheios: number }> = ({ total, cheios }
         className="h-3 w-full overflow-hidden rounded-pill bg-surface-2"
       >
         <span
-          className="block h-full rounded-pill bg-brand transition-[width] duration-300"
+          className="block h-full rounded-pill bg-brand-ink transition-[width] duration-300"
           style={{ width: `${(cheios / total) * 100}%` }}
         />
       </div>

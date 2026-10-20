@@ -410,7 +410,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                   <span
                     aria-hidden
                     className={cn(
-                      'absolute left-0 top-1/2 w-[3px] -translate-y-1/2 rounded-pill bg-brand',
+                      'absolute left-0 top-1/2 w-[3px] -translate-y-1/2 rounded-pill bg-brand-ink',
                       'transition-[height,opacity] duration-300',
                       estaAtiva ? 'h-5 opacity-100' : 'h-0 opacity-0'
                     )}
@@ -473,7 +473,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ sections, className }) => {
                 <span
                   aria-hidden
                   className={cn(
-                    'absolute left-0 top-1/2 w-[3px] -translate-y-1/2 rounded-pill bg-brand',
+                    'absolute left-0 top-1/2 w-[3px] -translate-y-1/2 rounded-pill bg-brand-ink',
                     'transition-[height,opacity] duration-300',
                     estaAtiva ? 'h-5 opacity-100' : 'h-0 opacity-0'
                   )}

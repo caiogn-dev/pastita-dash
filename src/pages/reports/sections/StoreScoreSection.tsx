@@ -20,7 +20,7 @@ interface StoreScoreReport {
 const LEVEL_META: Record<StoreScoreReport['level'], { label: string; emoji: string; color: string }> = {
   bronze: { label: 'Bronze', emoji: '🥉', color: '#cd7f32' },
   prata: { label: 'Prata', emoji: '🥈', color: '#9ca3af' },
-  ouro: { label: 'Ouro', emoji: '🥇', color: 'var(--brand)' },
+  ouro: { label: 'Ouro', emoji: '🥇', color: 'var(--brand-ink)' },
   diamante: { label: 'Diamante', emoji: '💎', color: '#38bdf8' },
 };
 

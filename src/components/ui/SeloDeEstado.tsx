@@ -11,7 +11,7 @@ export interface SeloDeEstadoProps {
 }
 
 const PONTO: Record<BadgeTone, string> = {
-  brand: 'bg-brand',
+  brand: 'bg-brand-ink',
   success: 'bg-[var(--success)]',
   warning: 'bg-[var(--warning)]',
   danger: 'bg-[var(--danger)]',

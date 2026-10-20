@@ -101,7 +101,7 @@ export const AccountMenu: React.FC = () => {
                   onClick={close}
                   className={({ isActive }) =>
                     `flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
-                      isActive ? 'bg-brand text-[var(--brand-strong)] font-medium' : 'text-fg-token hover:bg-surface-2'
+                      isActive ? 'bg-brand text-on-brand font-medium' : 'text-fg-token hover:bg-surface-2'
                     }`
                   }
                 >

@@ -36,6 +36,14 @@ describe('OrdersPage — identidade única', () => {
     expect(pagina).toContain('tomDoPrazo');
   });
 
+  // 20/10: o card atrasado pulsava inteiro (animate-pulse = opacidade 50–100%
+  // em laço). Com cinco pedidos velhos o quadro todo piscava e o texto de
+  // TODOS os cards ficava ilegível metade do tempo. A borda e o selo de prazo
+  // já dizem "atrasado"; o card fica parado.
+  it('card atrasado não pisca', () => {
+    expect(pagina).not.toMatch(/'animate-pulse'/);
+  });
+
   it('nada em caixa alta, sem branco fixo, sem gradiente', () => {
     expect(pagina).not.toMatch(/\buppercase\b/);
     expect(pagina).not.toMatch(/ATRASADO/);

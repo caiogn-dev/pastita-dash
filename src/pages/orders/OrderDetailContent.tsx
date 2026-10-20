@@ -935,7 +935,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                       type="button"
                       onClick={handleGenerateCharge}
                       disabled={generatingCharge}
-                      className="flex-1 rounded-lg bg-[var(--brand)] px-3 py-2 text-xs font-semibold text-brand-strong transition hover:bg-[var(--brand-hover)] disabled:opacity-60"
+                      className="flex-1 rounded-lg bg-[var(--brand)] px-3 py-2 text-xs font-semibold text-on-brand transition hover:bg-[var(--brand-hover)] disabled:opacity-60"
                     >
                       {generatingCharge ? 'Gerando…' : 'Gerar cobrança PIX'}
                     </button>
@@ -1130,7 +1130,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
             <button
               onClick={() => handleAction(nextAction.action)}
               disabled={!!actionLoading}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--brand)] px-6 py-2.5 text-sm font-semibold text-brand-strong transition hover:bg-[var(--brand-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--brand)] px-6 py-2.5 text-sm font-semibold text-on-brand transition hover:bg-[var(--brand-hover)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {actionLoading === nextAction.action ? (
                 <>

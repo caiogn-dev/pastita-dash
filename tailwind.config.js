@@ -5,6 +5,10 @@ const config = {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   darkMode: 'class',
+  // `overline` é a NOSSA classe de rótulo de seção (src/index.css). O Tailwind
+  // tem um utilitário com o mesmo nome (text-decoration: overline), e os dois
+  // se somavam: todo rótulo do painel saía com um traço em cima.
+  blocklist: ['overline'],
   theme: {
     extend: {
       // A cor padrão de borda do Tailwind é um cinza claro (#e5e7eb). Toda

@@ -206,7 +206,6 @@ const OrderCardBase: React.FC<CardProps> = ({
         superficie-alta cursor-pointer border-2 text-fg-token p-2.5
         ${isDragging ? 'shadow-flutuante ring-2 ring-brand' : ''}
         ${isUpdating ? 'opacity-70' : ''}
-        ${urgency === 'critical' && !isSuccess && !isUpdating ? 'animate-pulse' : ''}
         ${urgencyBorder}
       `}
     >

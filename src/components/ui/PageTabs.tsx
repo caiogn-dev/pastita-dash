@@ -147,7 +147,7 @@ export const PageTabs: React.FC<PageTabsProps> = ({
               {aba.rotulo}
               {aba.mudou && (
                 <>
-                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-brand" />
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-brand-ink" />
                   <span className="sr-only">(alterado, não salvo)</span>
                 </>
               )}

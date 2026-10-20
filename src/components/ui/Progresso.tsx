@@ -23,7 +23,7 @@ export const Progresso: React.FC<ProgressoProps> = ({ pct, rotulo, mostrarValor 
         aria-label={rotulo}
         className="h-2 min-w-0 flex-1 overflow-hidden rounded-pill bg-surface-2"
       >
-        <div className="h-full rounded-pill bg-brand transition-[width] duration-500" style={{ width: `${valor}%` }} />
+        <div className="h-full rounded-pill bg-brand-ink transition-[width] duration-500" style={{ width: `${valor}%` }} />
       </div>
       {mostrarValor && <span className="text-caption tabular-nums text-fg-muted-token">{valor}%</span>}
     </div>

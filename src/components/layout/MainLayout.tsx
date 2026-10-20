@@ -50,7 +50,9 @@ const Casca: React.FC<{
     <div className={`relative flex ${classeDeAltura(alturaFixa)} bg-bg-secondary text-fg-primary`}>
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0"
+        // Só no escuro: lá o brilho de ouro dá profundidade ao carvão. No
+        // claro virava uma mancha bege no canto da tela.
+        className="pointer-events-none fixed inset-0 hidden dark:block"
         style={{
           background:
             'radial-gradient(circle at top right, color-mix(in srgb, var(--brand) 8%, transparent), transparent 55%)',
