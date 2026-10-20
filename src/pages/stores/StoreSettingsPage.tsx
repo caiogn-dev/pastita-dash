@@ -8,6 +8,7 @@ import {
   MapPinIcon,
   TruckIcon,
   ClockIcon,
+  PauseCircleIcon,
   ChartBarIcon,
   StarIcon,
   ArrowPathIcon,
@@ -56,8 +57,12 @@ const DAYS = [
   { key: 'sunday',    label: 'Domingo' },
 ];
 
-type DayHours = { is_open: boolean; open: string; close: string };
-type OperatingHours = Record<string, DayHours>;
+import {
+  lerPausas, pausaParaGravar, pausasQueValem, problemaDaPausa, problemaDosTurnos, turnosDoDia,
+  type DayHours, type OperatingHours, type Pausa,
+} from './horarios';
+import { HorariosDaSemana } from './HorariosDaSemana';
+import { PausasProgramadas } from './PausasProgramadas';
 
 const DEFAULT_HOURS: DayHours = { is_open: true, open: '08:00', close: '22:00' };
 
@@ -104,11 +109,12 @@ const CAMPOS_DO_RASTREIO: (keyof StoreMetaTracking)[] = [
 interface Salvo {
   form: FormDaLoja;
   horas: OperatingHours;
+  pausas: Pausa[];
   avaliacao: string;
   rastreio: StoreMetaTracking;
 }
 
-const SALVO_VAZIO: Salvo = { form: FORM_VAZIO, horas: {}, avaliacao: '', rastreio: defaultMetaTracking };
+const SALVO_VAZIO: Salvo = { form: FORM_VAZIO, horas: {}, pausas: [], avaliacao: '', rastreio: defaultMetaTracking };
 
 const iguais = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -137,6 +143,7 @@ export const StoreSettingsPage: React.FC = () => {
   const [salvo, setSalvo] = useState<Salvo>(SALVO_VAZIO);
   const [storeForm, setStoreForm] = useState<FormDaLoja>(FORM_VAZIO);
   const [operatingHours, setOperatingHours] = useState<OperatingHours>({});
+  const [pausas, setPausas] = useState<Pausa[]>([]);
   const [metaTracking, setMetaTracking] = useState<StoreMetaTracking>(defaultMetaTracking);
   const [googleReviewUrl, setGoogleReviewUrl] = useState('');
   const [erros, setErros] = useState<{ latitude?: string | null; longitude?: string | null; prazo?: string | null }>({});
@@ -214,9 +221,11 @@ export const StoreSettingsPage: React.FC = () => {
       const avaliacao = String((data.metadata || {}).google_review_url || '');
       const rastreio = { ...tracking, meta_capi_access_token: '' };
 
-      setSalvo({ form, horas, avaliacao, rastreio });
+      const pausasSalvas = lerPausas(data.metadata as Record<string, unknown>);
+      setSalvo({ form, horas, pausas: pausasSalvas, avaliacao, rastreio });
       setStoreForm(form);
       setOperatingHours(horas);
+      setPausas(pausasSalvas);
       setGoogleReviewUrl(avaliacao);
       setMetaTracking(rastreio);
       setErros({});
@@ -241,12 +250,13 @@ export const StoreSettingsPage: React.FC = () => {
   const mudouNoLocal = CAMPOS_DO_LOCAL.filter((k) => storeForm[k] !== salvo.form[k]);
   const mudouNoPrazo = CAMPOS_DO_PRAZO.filter((k) => storeForm[k] !== salvo.form[k]);
   const diasMudados = DAYS.filter((d) => !iguais(operatingHours[d.key], salvo.horas[d.key]));
+  const pausasMudaram = !iguais(pausas, salvo.pausas);
   const avaliacaoMudou = googleReviewUrl.trim() !== salvo.avaliacao.trim();
   const rastreioMudado = CAMPOS_DO_RASTREIO.filter((k) => metaTracking[k] !== salvo.rastreio[k]).length
     + (metaTracking.meta_capi_access_token?.trim() ? 1 : 0);
 
   const quantidade = mudouNaLoja.length + mudouNoLocal.length + mudouNoPrazo.length + diasMudados.length
-    + (avaliacaoMudou ? 1 : 0) + rastreioMudado;
+    + (avaliacaoMudou ? 1 : 0) + (pausasMudaram ? 1 : 0) + rastreioMudado;
 
   // Sair da página com alteração pendente perde o que foi digitado.
   useEffect(() => {
@@ -259,6 +269,7 @@ export const StoreSettingsPage: React.FC = () => {
   const descartar = () => {
     setStoreForm(salvo.form);
     setOperatingHours(salvo.horas);
+    setPausas(salvo.pausas);
     setGoogleReviewUrl(salvo.avaliacao);
     setMetaTracking(salvo.rastreio);
     setErros({});
@@ -283,6 +294,21 @@ export const StoreSettingsPage: React.FC = () => {
       setErros(novosErros);
       if (novosErros.latitude || novosErros.longitude) {
         toast.error('Confira a localização antes de salvar.');
+        return;
+      }
+    }
+
+    if (diasMudados.length) {
+      const ruim = diasMudados.find((d) => operatingHours[d.key]?.is_open && problemaDosTurnos(turnosDoDia(operatingHours[d.key])));
+      if (ruim) {
+        toast.error(`${ruim.label}: ${problemaDosTurnos(turnosDoDia(operatingHours[ruim.key]))}`);
+        return;
+      }
+    }
+    if (pausasMudaram) {
+      const erroDaPausa = pausas.map(problemaDaPausa).find(Boolean);
+      if (erroDaPausa) {
+        toast.error(erroDaPausa);
         return;
       }
     }
@@ -322,6 +348,11 @@ export const StoreSettingsPage: React.FC = () => {
       }
     }
     if (diasMudados.length) payload.operating_hours = operatingHours;
+    if (pausasMudaram) {
+      // Vencidas saem: o dono não precisa faxinar o que já passou.
+      metadata.pausas = pausasQueValem(pausas, new Date()).map(pausaParaGravar);
+      mexeuNoMetadata = true;
+    }
     if (avaliacaoMudou) {
       metadata.google_review_url = googleReviewUrl.trim();
       mexeuNoMetadata = true;
@@ -602,54 +633,14 @@ export const StoreSettingsPage: React.FC = () => {
             <ClockIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
             Horários de funcionamento
           </h2>
-          <ul className="divide-y divide-border-token">
-            {DAYS.map(day => {
-              const h = operatingHours[day.key] || DEFAULT_HOURS;
-              const mudar = (parcial: Partial<DayHours>) =>
-                setOperatingHours(prev => ({ ...prev, [day.key]: { ...h, ...parcial } }));
-              return (
-                <li key={day.key} className="flex min-h-[52px] items-center gap-3 py-2">
-                  <button
-                    type="button"
-                    aria-pressed={h.is_open}
-                    onClick={() => mudar({ is_open: !h.is_open })}
-                    className={cn(
-                      'w-24 shrink-0 rounded px-2 py-1.5 text-xs font-semibold transition-colors',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
-                      h.is_open
-                        ? 'bg-brand-soft text-brand-ink hover:bg-brand-soft/80'
-                        : 'bg-surface-2 text-fg-muted-token hover:bg-surface-2/80'
-                    )}
-                  >
-                    {day.label}
-                  </button>
-                  {h.is_open ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="time"
-                        size="sm"
-                        aria-label={`${day.label}: abre`}
-                        className="w-28"
-                        value={h.open}
-                        onChange={e => mudar({ open: e.target.value })}
-                      />
-                      <span className="text-sm text-fg-muted-token">até</span>
-                      <Input
-                        type="time"
-                        size="sm"
-                        aria-label={`${day.label}: fecha`}
-                        className="w-28"
-                        value={h.close}
-                        onChange={e => mudar({ close: e.target.value })}
-                      />
-                    </div>
-                  ) : (
-                    <span className="text-sm text-fg-muted-token">Fechado</span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+          <HorariosDaSemana dias={DAYS} horas={operatingHours} padrao={DEFAULT_HOURS} onChange={setOperatingHours} />
+        </Card>
+        <Card className="p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-fg-token">
+            <PauseCircleIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
+            Pausas programadas
+          </h2>
+          <PausasProgramadas pausas={pausas} onChange={setPausas} />
         </Card>
         {store?.id && (
           <TempoDePreparoSection
