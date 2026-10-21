@@ -14,6 +14,7 @@
  * problema — pular para a última aba com erro faria o usuário voltar.
  */
 import type { StoreProductInput as ProductInput } from '../../services/storesApi';
+import { problemaDasRegras } from './regrasDeVenda';
 
 export type AbaDoProduto = 'basic' | 'pricing' | 'inventory' | 'variants' | 'media' | 'seo' | 'nutrition';
 
@@ -65,6 +66,9 @@ export function validarProduto(dados: ProductInput): ErroDeProduto[] {
       mensagem: 'O estoque não pode ser negativo.',
     });
   }
+
+  const regra = problemaDasRegras(dados.regras_de_venda);
+  if (regra) erros.push({ aba: 'inventory', campo: 'regras_de_venda', mensagem: regra });
 
   return erros.sort((a, b) => ORDEM.indexOf(a.aba) - ORDEM.indexOf(b.aba));
 }

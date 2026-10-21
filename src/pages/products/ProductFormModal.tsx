@@ -11,6 +11,8 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { validarProduto, type AbaDoProduto, type ErroDeProduto } from './validarProduto';
+import { regrasParaGravar } from './regrasDeVenda';
+import RegrasDeVendaCampos from './RegrasDeVendaCampos';
 import { FormChecklist, FormSummary, ChoiceCards, FormStepper, StringListField } from '../../components/ui';
 import { Card, Button, KpiGrid } from '../../components/ui';
 import { Modal } from '../../components/common';
@@ -133,6 +135,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     compare_at_price: undefined,
     promo_price: undefined,
     promo_weekday: undefined,
+    regras_de_venda: {},
     cost_price: undefined,
     category: null,
     product_type: null,
@@ -166,6 +169,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         compare_at_price: p.compare_at_price,
         promo_price: p.promo_price ?? undefined,
         promo_weekday: p.promo_weekday ?? undefined,
+        regras_de_venda: p.regras_de_venda ?? {},
         cost_price: p.cost_price,
         category: p.category ?? null,
         product_type: p.product_type ?? null,
@@ -197,6 +201,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         barcode: '',
         price: 0,
         compare_at_price: undefined,
+        regras_de_venda: {},
         cost_price: undefined,
         category: initialCategory,
         product_type: null,
@@ -257,11 +262,12 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     setSaving(true);
     try {
       const targetProduct = effectiveProduct && 'id' in effectiveProduct ? effectiveProduct as Product : null;
+      const dados = { ...formData, regras_de_venda: regrasParaGravar(formData.regras_de_venda) };
       if (targetProduct) {
-        await storesApi.updateProduct(targetProduct.id, formData);
+        await storesApi.updateProduct(targetProduct.id, dados);
         toast.success('Produto atualizado!');
       } else {
-        await storesApi.createProduct(formData);
+        await storesApi.createProduct(dados);
         toast.success('Produto criado!');
       }
       onSaved();
@@ -1024,6 +1030,11 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     descricao: 'Saiu do cardápio de vez. O histórico de pedidos é mantido.',
                   },
                 ]}
+              />
+
+              <RegrasDeVendaCampos
+                valor={formData.regras_de_venda ?? {}}
+                onChange={(regras_de_venda) => setFormData((prev) => ({ ...prev, regras_de_venda }))}
               />
             </div>
           )}

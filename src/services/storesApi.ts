@@ -294,6 +294,8 @@ export interface StoreProduct {
   promo_price?: number | null;
   /** 0=segunda … 6=domingo, igual a `datetime.weekday()` no backend. */
   promo_weekday?: number | null;
+  /** Dia/horário de venda, só retirada, mínimo/máximo por pedido. {} = sem regra. */
+  regras_de_venda?: import('../pages/products/regrasDeVenda').RegrasDeVenda;
   /** Preço que o cliente paga HOJE — o backend já aplicou a regra do dia.
    *  Quem MOSTRA ou COBRA preço lê daqui, não de `price`. */
   preco_vigente?: number | string | null;
@@ -348,6 +350,8 @@ export interface StoreProductInput {
   promo_price?: number | null;
   /** 0=segunda … 6=domingo, igual a `datetime.weekday()` no backend. */
   promo_weekday?: number | null;
+  /** Dia/horário de venda, só retirada, mínimo/máximo por pedido. {} = sem regra. */
+  regras_de_venda?: import('../pages/products/regrasDeVenda').RegrasDeVenda;
   /** Preço que o cliente paga HOJE — o backend já aplicou a regra do dia.
    *  Quem MOSTRA ou COBRA preço lê daqui, não de `price`. */
   preco_vigente?: number | string | null;

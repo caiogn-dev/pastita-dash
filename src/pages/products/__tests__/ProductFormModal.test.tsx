@@ -266,3 +266,47 @@ describe('promoção semanal', () => {
     expect(screen.queryByText(/precisa ser menor/i)).not.toBeInTheDocument();
   });
 });
+
+describe('regras de venda (do Prefiro)', () => {
+  const abrir = (produto = flat[0]) => {
+    render(
+      <ProductFormModal
+        isOpen
+        product={produto}
+        categories={[]}
+        flatProducts={flat}
+        onClose={jest.fn()}
+        onSaved={jest.fn()}
+        storeId="store1"
+      />
+    );
+    fireEvent.click(screen.getByText('Estoque'));
+  };
+
+  it('almoço de segunda a sexta, 11h–15h, mínimo 2: grava só o que tem efeito', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const api = require('../../../services/storesApi').default;
+    api.updateProduct.mockResolvedValue({});
+    abrir();
+    fireEvent.click(screen.getByRole('button', { name: 'Sáb' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dom' }));
+    fireEvent.change(screen.getByLabelText('Vende das'), { target: { value: '11:00' } });
+    fireEvent.change(screen.getByLabelText('Até'), { target: { value: '15:00' } });
+    fireEvent.change(screen.getByLabelText('Mínimo por pedido'), { target: { value: '2' } });
+    fireEvent.submit(document.querySelector('form')!);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(api.updateProduct).toHaveBeenCalledWith('p1', expect.objectContaining({
+      regras_de_venda: { dias: [0, 1, 2, 3, 4], de: '11:00', ate: '15:00', minimo: 2 },
+    }));
+  });
+
+  it('horário pela metade não salva', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const api = require('../../../services/storesApi').default;
+    api.updateProduct.mockClear();
+    abrir();
+    fireEvent.change(screen.getByLabelText('Vende das'), { target: { value: '11:00' } });
+    fireEvent.submit(document.querySelector('form')!);
+    expect(api.updateProduct).not.toHaveBeenCalled();
+  });
+});

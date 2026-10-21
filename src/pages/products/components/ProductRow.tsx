@@ -7,6 +7,7 @@ import type { Product } from '../../../services/products';
 import { InlineStockStepper } from './InlineStockStepper';
 import { InlinePriceField } from './InlinePriceField';
 import { StatusToggle, FeaturedToggle } from './InlineToggle';
+import { resumoDasRegras, type RegrasDeVenda } from '../regrasDeVenda';
 
 export type RowMenuAction = 'edit' | 'duplicate' | 'delete';
 interface Props {
@@ -25,12 +26,16 @@ const ProductRowBase: React.FC<Props> = ({ product, onOpen, onStock, onPrice, on
     data: { type: 'product', category: product.category ?? null },
   });
   const style = { transform: CSS.Transform.toString(transform), transition };
+  const regras = resumoDasRegras((product as { regras_de_venda?: RegrasDeVenda }).regras_de_venda);
   const img = (product as any).main_image_url || product.image_url || product.image;
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-3 border-b px-3 py-2">
       <button {...attributes} {...listeners} aria-label="arrastar" className="cursor-grab text-fg-muted-token"><GripVertical size={16} /></button>
       {img ? <img src={img} alt="" className="h-10 w-10 rounded object-cover" loading="lazy" decoding="async" /> : <div className="h-10 w-10 rounded bg-surface-muted-token" />}
-      <button className="flex-1 text-left" onClick={() => onOpen(product)}>{product.name}</button>
+      <button className="min-w-0 flex-1 text-left" onClick={() => onOpen(product)}>
+        {product.name}
+        {regras && <span className="ml-2 text-xs text-fg-muted-token">{regras}</span>}
+      </button>
       {product.track_stock && <InlineStockStepper value={product.stock_quantity} onChange={(q) => onStock(product.id, q)} />}
       <InlinePriceField value={product.price} onCommit={(v) => onPrice(product.id, v)} />
       <StatusToggle active={product.status === 'active'} nome={product.name} onChange={(a) => onStatus(product.id, a)} />
