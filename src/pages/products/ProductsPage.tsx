@@ -259,7 +259,7 @@ export const ProductsPage: React.FC = () => {
   //
   // ANTES do return antecipado: hook depois de `if (…) return` muda a ordem
   // de chamada entre renders e o React quebra — foi o que aconteceu aqui.
-  const insights = useMemo(() => insightsDeCardapio(products as never), [products]);
+  const insights = useMemo(() => insightsDeCardapio(products as never, categories), [products, categories]);
 
   // Sem dados de produtos (nunca chegaram) — `productsQuery.data` fica undefined
   // e `products` continua []. Sem tratar isso, a tela mostrava as categorias sem

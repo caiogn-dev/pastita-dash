@@ -29,6 +29,15 @@ export interface ProdutoDoCardapio {
   image_url?: string | null;
   main_image?: string | null;
   main_image_url?: string | null;
+  category?: string | null;
+  featured?: boolean;
+  tags?: string[];
+}
+
+/** O mínimo da categoria para saber se o produto aparece na vitrine. */
+export interface CategoriaDoCardapio {
+  id: string;
+  is_active?: boolean;
 }
 
 export interface InsightDeCardapio {
@@ -55,7 +64,8 @@ function ativo(p: ProdutoDoCardapio): boolean {
 }
 
 export function insightsDeCardapio(
-  produtos: ProdutoDoCardapio[] | null | undefined
+  produtos: ProdutoDoCardapio[] | null | undefined,
+  categorias?: CategoriaDoCardapio[] | null,
 ): InsightDeCardapio[] {
   if (!produtos?.length) return [];
 
@@ -139,6 +149,27 @@ export function insightsDeCardapio(
       valor: `${Math.round((pausados.length / produtos.length) * 100)}% do cardápio`,
       recomendacao: 'reative os que voltaram ou remova o que não volta mais',
     });
+  }
+
+  // Órfão: ativo, mas a vitrine só monta seção a partir de categoria ATIVA
+  // (cardapidex-web secoesDoCatalogo). Sem categoria, ou numa desligada, o
+  // item some do cardápio sem ninguém perceber. Destaque escapa (aparece no
+  // topo) e ingrediente vive dentro do montador — os dois não são órfãos.
+  if (categorias) {
+    const ativas = new Set(categorias.filter((c) => c.is_active !== false).map((c) => c.id));
+    const orfaos = ativos.filter(
+      (p) => !p.featured && !(p.tags ?? []).includes('ingrediente') && !(p.category && ativas.has(p.category)),
+    );
+    if (orfaos.length > 0) {
+      insights.push({
+        chave: 'orfaos',
+        direcao: 'baixa',
+        titulo: `${orfaos.length} ${orfaos.length > 1 ? 'itens ativos não aparecem' : 'item ativo não aparece'} no cardápio`,
+        valor: orfaos.slice(0, 3).map((p) => p.name).join(', ') + (orfaos.length > 3 ? '…' : ''),
+        recomendacao: 'estão sem categoria ou numa categoria desligada — mova para uma categoria ativa',
+        produtoId: orfaos.length === 1 ? orfaos[0].id : undefined,
+      });
+    }
   }
 
   return insights;

@@ -175,3 +175,30 @@ describe('foto: o campo que o backend realmente usa', () => {
     expect(alertaDeFoto([semNada])).toBeDefined();
   });
 });
+
+describe('órfãos: ativos que a vitrine não mostra', () => {
+  const cats = [{ id: 'saladas', is_active: true }, { id: 'velha', is_active: false }];
+
+  it('acusa sem categoria e categoria desligada', () => {
+    const r = insightsDeCardapio([
+      p({ name: 'Salada', category: 'saladas' }),
+      p({ name: 'Solto', category: null }),
+      p({ name: 'Antigo', category: 'velha' }),
+    ], cats).find((i) => i.chave === 'orfaos');
+    expect(r?.titulo).toBe('2 itens ativos não aparecem no cardápio');
+    expect(r?.valor).toBe('Solto, Antigo');
+  });
+
+  it('destaque, ingrediente e pausado não contam', () => {
+    const r = insightsDeCardapio([
+      p({ name: 'Topo', category: null, featured: true }),
+      p({ name: 'Rúcula', category: null, tags: ['ingrediente'] }),
+      p({ name: 'Pausado', category: null, is_active: false }),
+    ], cats);
+    expect(r.find((i) => i.chave === 'orfaos')).toBeUndefined();
+  });
+
+  it('sem categorias carregadas não acusa nada', () => {
+    expect(insightsDeCardapio([p({ category: null })]).find((i) => i.chave === 'orfaos')).toBeUndefined();
+  });
+});
