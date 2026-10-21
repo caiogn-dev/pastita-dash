@@ -44,6 +44,12 @@ export const RecuperacaoPage: React.FC = () => {
 
   useEffect(() => { void carregar(); }, [carregar]);
 
+  const antes = dados?.anterior;
+  const comparar = (agora: number, anterior?: number) =>
+    anterior === undefined
+      ? undefined
+      : { variacaoPct: anterior ? ((agora - anterior) / anterior) * 100 : null, rotulo: `vs ${dias} dias antes` };
+
   const indicadores = dados ? [
     {
       label: 'Oportunidade perdida',
@@ -55,17 +61,20 @@ export const RecuperacaoPage: React.FC = () => {
       label: 'Carrinhos abandonados',
       value: dados.abandonados,
       definicao: `Carrinhos que receberam lembrete. Ticket médio de ${formatCurrency(dados.ticket_medio)}.`,
+      comparativo: comparar(dados.abandonados, antes?.abandonados),
     },
     {
       label: 'Voltaram e compraram',
       value: dados.recuperados,
       definicao: `${dados.taxa_de_recuperacao}% dos abandonados fizeram pedido depois do lembrete.`,
+      comparativo: comparar(dados.recuperados, antes?.recuperados),
       tone: 'success' as const,
     },
     {
       label: 'Valor recuperado',
       value: formatCurrency(dados.valor_recuperado),
       definicao: 'O que essas pessoas gastaram no pedido que veio depois.',
+      comparativo: comparar(dados.valor_recuperado, antes?.valor_recuperado),
       tone: 'success' as const,
     },
   ] : [];

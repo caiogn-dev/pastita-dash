@@ -19,6 +19,8 @@ export interface PainelDeRecuperacao {
   oportunidade_perdida: number;
   /** Carrinhos com itens e SEM telefone: o lembrete não tem para onde ir. */
   sem_telefone: number;
+  /** A mesma janela, logo antes — para o "vs período anterior". */
+  anterior?: Pick<PainelDeRecuperacao, 'abandonados' | 'valor_abandonado' | 'recuperados' | 'valor_recuperado' | 'taxa_de_recuperacao'>;
 }
 
 export const recuperacaoService = {

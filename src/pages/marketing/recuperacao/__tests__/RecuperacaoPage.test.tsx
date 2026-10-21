@@ -65,3 +65,12 @@ it('falha de carga não vira "nada aconteceu"', async () => {
 
   expect(await screen.findByRole('alert')).toHaveTextContent(/não foi possível/i);
 });
+
+it('compara com a mesma janela logo antes (do Prefiro)', async () => {
+  painel.mockResolvedValue({ ...DADOS, anterior: { abandonados: 10, valor_abandonado: 900, recuperados: 2, valor_recuperado: 120, taxa_de_recuperacao: 20 } });
+
+  tela();
+
+  expect((await screen.findAllByText(/vs 30 dias antes/)).length).toBe(3);
+  expect(screen.getByText(/100/)).toBeInTheDocument(); // R$ 120 → R$ 240
+});
