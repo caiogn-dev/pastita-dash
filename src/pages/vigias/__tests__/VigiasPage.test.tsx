@@ -127,6 +127,15 @@ describe('VigiasPage', () => {
     await waitFor(() => expect(salvar).toHaveBeenCalledWith('ce-saladas', { telefone: '63988887777' }));
   });
 
+  it('e-mail que recebe a cópia é gravado ao sair do campo (do Prefiro)', async () => {
+    painel.mockResolvedValue(base({ telefone: '' }));
+    renderizar();
+    const campo = await screen.findByLabelText('E-mail que recebe (opcional)');
+    fireEvent.change(campo, { target: { value: ' dono@loja.com ' } });
+    fireEvent.blur(campo);
+    await waitFor(() => expect(salvar).toHaveBeenCalledWith('ce-saladas', { email: 'dono@loja.com' }));
+  });
+
   it('erro de validação do servidor volta ao estado anterior e diz o motivo', async () => {
     salvar.mockRejectedValue({ response: { data: { error: 'Confira os campos.', campos: { telefone: 'Use DDD + número, ex.: (63) 99999-0000.' } } } });
     painel.mockResolvedValue(base({ telefone: '' }));

@@ -93,10 +93,12 @@ export const VigiasPage: React.FC = () => {
   const previa = useQuery({ queryKey: ['vigias-previa', loja], queryFn: () => vigiasService.previa(loja), enabled: !!loja });
 
   const [telefone, setTelefone] = useState('');
+  const [email, setEmail] = useState('');
   const [horas, setHoras] = useState({ hora_resumo: '08:00', hora_alerta: '12:30' });
   useEffect(() => {
     if (!painel.data) return;
     setTelefone(formatarTelefone(painel.data.config.telefone));
+    setEmail(painel.data.config.email ?? '');
     setHoras({ hora_resumo: painel.data.config.hora_resumo, hora_alerta: painel.data.config.hora_alerta });
   }, [painel.data]);
 
@@ -170,6 +172,11 @@ export const VigiasPage: React.FC = () => {
     const digitos = telefone.replace(/\D/g, '');
     if (digitos === config.telefone.replace(/^55/, '') || digitos === config.telefone) return;
     salvar.mutate({ telefone: digitos });
+  };
+
+  const gravarEmail = () => {
+    if (!config || email.trim().toLowerCase() === (config.email ?? '')) return;
+    salvar.mutate({ email: email.trim() });
   };
 
   const gravarHora = (campo: 'hora_resumo' | 'hora_alerta') => {
@@ -274,6 +281,14 @@ export const VigiasPage: React.FC = () => {
                     value={telefone}
                     onChange={(e) => setTelefone(e.target.value)}
                     onBlur={gravarTelefone}
+                  />
+                  <Input
+                    label="E-mail que recebe (opcional)"
+                    type="email"
+                    placeholder="voce@loja.com.br"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onBlur={gravarEmail}
                   />
                   <div className="grid grid-cols-2 gap-3">
                     <Input

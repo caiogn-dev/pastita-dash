@@ -13,6 +13,8 @@ export interface ConfigDosVigias {
   pausado: boolean;
   pausado_em: string | null;
   telefone: string;
+  /** Cópia do resumo por e-mail, com todos os avisos (do Prefiro). '' = desligado. */
+  email?: string;
   hora_resumo: string;
   hora_alerta: string;
   /** 0 = segunda … 6 = domingo. */
