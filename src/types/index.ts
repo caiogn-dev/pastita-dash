@@ -386,6 +386,9 @@ export interface Order {
   delivery_method?: 'delivery' | 'pickup' | 'digital';
   delivery_provider?: 'none' | 'toca' | 'uber';
   uber_delivery_request_id?: string | null;
+  /** Quem levou (atribuído no pedido) — ranking em Equipe e entregas. */
+  entregador?: string | null;
+  entregador_nome?: string | null;
   uber_driver_id?: string | null;
   uber_driver_name?: string;
   uber_driver_phone?: string;

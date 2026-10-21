@@ -43,6 +43,7 @@ import { Button, Modal, PageLoading } from '../../components/common';
 import { OrderDeliveryModal } from '../../components/OrderDeliveryModal';
 import { ordersService, paymentsService, getErrorMessage } from '../../services';
 import NotaFiscalPedido from './NotaFiscalPedido';
+import { EntregadorDoPedido } from '../../components/orders/EntregadorDoPedido';
 import { Order, Payment, OrderComboItem } from '../../types';
 import { linhasDasEscolhas } from '../../utils/escolhasDoCombo';
 
@@ -1091,6 +1092,15 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
 
             {/* Some sozinho em loja sem emissão configurada. */}
             <NotaFiscalPedido orderId={order.id} storeSlug={store?.slug || undefined} variant="barra" />
+
+            {order.delivery_method === 'delivery' && !isCancelled && store?.slug && (
+              <EntregadorDoPedido
+                storeSlug={store.slug}
+                pedidoId={order.id}
+                atual={order.entregador}
+                atualNome={order.entregador_nome}
+              />
+            )}
 
             {order.delivery_method === 'delivery' && !isCancelled && !isCompleted && (
               <button
