@@ -88,4 +88,41 @@ describe('Indicações — vazio enganoso', () => {
       expect(screen.queryByText('Não foi possível carregar as indicações')).toBeNull(),
     );
   });
+
+  it('retry da loja anterior em voo NÃO sobrescreve a loja atual (sem vazamento entre lojas)', async () => {
+    // O caminho do bug (P1 do Codex): a loja A falha, o usuário clica "Tentar
+    // novamente" (busca de retry em voo) e TROCA para a loja B antes de a
+    // resposta de A chegar. Como o botão descarta o cleanup de `carregar`, sem o
+    // guarda monotônico a resposta tardia de A sobrescrevia a lista da loja B —
+    // vazando indicações de um tenant no painel de outro.
+    let resolverRetryA!: (v: unknown) => void;
+    const respostaA = {
+      indicacoes: [{ ...linha, id: 'A', indicador_nome: 'Divulgador da loja A' }],
+      por_indicador: [{ phone: '5563900000001', nome: 'Divulgador da loja A', total_indicados: 9, total_creditado: '9.00' }],
+    };
+    const respostaB = {
+      indicacoes: [{ ...linha, id: 'B', indicador_nome: 'Divulgador da loja B' }],
+      por_indicador: [{ phone: '5563900000002', nome: 'Divulgador da loja B', total_indicados: 1, total_creditado: '1.00' }],
+    };
+    (cashbackService.indicacoes as jest.Mock)
+      .mockRejectedValueOnce(new Error('offline'))                              // loja A: cai
+      .mockImplementationOnce(() => new Promise((res) => { resolverRetryA = res; })) // retry da A: pendente
+      .mockResolvedValueOnce(respostaB);                                       // loja B: responde já
+
+    const { rerender } = render(
+      <MemoryRouter><IndicacoesCard storeSlug="loja-a" /></MemoryRouter>,
+    );
+    // A caiu → erro; clica "Tentar novamente" (retry fica pendente).
+    fireEvent.click(await screen.findByRole('button', { name: /tentar novamente/i }));
+    // Troca para a loja B antes de o retry de A responder.
+    rerender(<MemoryRouter><IndicacoesCard storeSlug="loja-b" /></MemoryRouter>);
+    expect(await screen.findByText('Divulgador da loja B')).toBeInTheDocument();
+
+    // Agora o retry de A responde, atrasado. Não pode aparecer.
+    resolverRetryA(respostaA);
+    await waitFor(() =>
+      expect(screen.getByText('Divulgador da loja B')).toBeInTheDocument(),
+    );
+    expect(screen.queryByText('Divulgador da loja A')).toBeNull();
+  });
 });

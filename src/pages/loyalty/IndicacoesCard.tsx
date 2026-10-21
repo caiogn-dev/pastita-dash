@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Card, EmptyState, FalhaAoCarregar, RankedList, type RankedItem } from '../../components/ui';
 import { ShareIcon } from '@heroicons/react/24/outline';
 import { formatCurrency } from '../../utils/formatters';
@@ -39,24 +39,33 @@ export const IndicacoesCard: React.FC<{ storeSlug: string }> = ({ storeSlug }) =
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(false);
 
+  // Guarda monotônica contra resposta obsoleta. Não dá para usar um `vivo` de
+  // fechamento aqui: o retry chama `carregar` como callback de evento
+  // (`onTentarDeNovo`) e DESCARTA o retorno, então o cleanup de uma busca de
+  // retry nunca rodaria — e uma resposta tardia da loja anterior sobrescreveria
+  // a loja já trocada, vazando indicações de um tenant no painel de outro. Com
+  // o ref, só a busca mais recente aplica, venha ela do efeito ou do botão.
+  const requisicaoRef = useRef(0);
+
   const carregar = useCallback(() => {
-    let vivo = true;
+    const req = ++requisicaoRef.current;
     setCarregando(true);
     setErro(false);
     cashbackService.indicacoes(storeSlug)
       .then((d) => {
-        if (!vivo) return;
+        if (req !== requisicaoRef.current) return; // busca superada (ex.: troca de loja)
         setLinhas(d.indicacoes || []);
         setPorIndicador(ordenarIndicadores(d.por_indicador || []));
       })
       // Sem o flag, a falha ficava muda e a lista vazia virava o vazio
       // CONFIANTE "Nenhuma indicação ainda" — dizendo à loja que ninguém
       // indicou quando foi a busca que caiu (o "vazio enganoso").
-      .catch(() => { if (vivo) setErro(true); })
-      .finally(() => { if (vivo) setCarregando(false); });
-    return () => { vivo = false; };
+      .catch(() => { if (req === requisicaoRef.current) setErro(true); })
+      .finally(() => { if (req === requisicaoRef.current) setCarregando(false); });
   }, [storeSlug]);
 
+  // Ao trocar de loja, `carregar` roda de novo e incrementa `requisicaoRef`,
+  // superando sozinho qualquer busca anterior em voo — não precisa de cleanup.
   useEffect(() => carregar(), [carregar]);
 
   if (carregando) {
