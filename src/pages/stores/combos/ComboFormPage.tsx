@@ -8,7 +8,7 @@
  * Usa o ComboEditor (tela única com prévia) e envia a foto depois de salvar.
  */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { ArrowLeftIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Button, PageShell } from '../../../components/ui';
@@ -25,6 +25,7 @@ import storesApi, {
   uploadComboImage,
 } from '../../../services/storesApi';
 import logger from '../../../services/logger';
+import { comboDaSugestao, type SugestaoDeCombo } from '../../../services/ajudasDoCadastro';
 import { getErrorMessage } from '../../../services/api';
 
 export const ComboFormPage: React.FC = () => {
@@ -57,6 +58,9 @@ export const ComboFormPage: React.FC = () => {
   // ponto de partida de um combo NOVO.
   const [params] = useSearchParams();
   const origemId = !comboId ? params.get('de') : null;
+  // "Montar" numa sugestão da lista chega aqui com os dois produtos e o preço.
+  const estadoDaRota = useLocation().state as { sugestao?: SugestaoDeCombo } | null;
+  const sugestao = !comboId ? estadoDaRota?.sugestao : undefined;
 
   const loadData = useCallback(async () => {
     if (!storeId) {
@@ -72,7 +76,9 @@ export const ComboFormPage: React.FC = () => {
       ]);
 
       setProducts(productsRes.results || []);
-      setCombo(comboRes ? (origemId ? { ...comboRes, name: `${comboRes.name} (cópia)` } : comboRes) : null);
+      setCombo(comboRes
+        ? (origemId ? { ...comboRes, name: `${comboRes.name} (cópia)` } : comboRes)
+        : sugestao ? (comboDaSugestao(sugestao) as StoreCombo) : null);
     } catch (err) {
       logger.error('Error loading data:', err);
       toast.error('Erro ao carregar dados');
@@ -80,7 +86,7 @@ export const ComboFormPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [storeId, storeSlug, comboId, origemId, navigate]);
+  }, [storeId, storeSlug, comboId, origemId, sugestao, navigate]);
 
   useEffect(() => {
     loadData();

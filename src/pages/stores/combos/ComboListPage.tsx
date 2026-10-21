@@ -29,6 +29,7 @@ import storesApi, {
   deleteCombo,
 } from '../../../services/storesApi';
 import logger from '../../../services/logger';
+import SugestoesDeCombos from './SugestoesDeCombos';
 
 export const ComboListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -160,6 +161,10 @@ export const ComboListPage: React.FC = () => {
         </div>
       }
     >
+      <SugestoesDeCombos
+        storeSlug={storeSlug}
+        onMontar={(sugestao) => navigate(`/stores/${storeSlug}/combos/new`, { state: { sugestao } })}
+      />
 
       <ComboList
         combos={combos}

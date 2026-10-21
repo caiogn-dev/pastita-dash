@@ -34,8 +34,9 @@ export function validarProduto(dados: ProductInput): ErroDeProduto[] {
     erros.push({ aba: 'basic', campo: 'name', mensagem: 'O nome do produto é obrigatório.' });
   }
 
+  // Rascunho fica fora do cardápio: o preço pode vir depois, antes de ativar.
   const preco = Number(dados.price);
-  if (!Number.isFinite(preco) || preco <= 0) {
+  if (dados.status !== 'draft' && (!Number.isFinite(preco) || preco <= 0)) {
     erros.push({
       aba: 'pricing',
       campo: 'price',

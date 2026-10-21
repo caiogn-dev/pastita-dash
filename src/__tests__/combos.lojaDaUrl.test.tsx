@@ -3,6 +3,10 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import '@testing-library/jest-dom';
 
+// A lista de combos busca "compram juntos" direto pela API.
+jest.mock('../services/ajudasDoCadastro', () => ({
+  ajudasDoCadastro: { sugestoesDeCombos: jest.fn().mockResolvedValue([]) },
+}));
 jest.mock('../hooks', () => ({
   useStore: () => ({
     storeId: 'store-ce',

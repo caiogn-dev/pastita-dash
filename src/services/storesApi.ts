@@ -311,7 +311,7 @@ export interface StoreProduct {
   is_in_stock: boolean;
   paused_until?: string | null;
   is_paused?: boolean;
-  status: 'active' | 'inactive' | 'out_of_stock' | 'discontinued';
+  status: 'active' | 'inactive' | 'out_of_stock' | 'discontinued' | 'draft';
   featured: boolean;
   main_image?: string;
   main_image_url?: string;

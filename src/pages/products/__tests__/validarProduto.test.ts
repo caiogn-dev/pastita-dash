@@ -40,6 +40,11 @@ describe('validarProduto', () => {
     expect(erro.campo).toBe('price');
   });
 
+  it('rascunho dispensa o preço, mas não o nome', () => {
+    expect(validarProduto({ name: 'Prato novo', price: 0, status: 'draft' } as never)).toEqual([]);
+    expect(validarProduto({ name: '', price: 0, status: 'draft' } as never).map((e) => e.campo)).toEqual(['name']);
+  });
+
   it('preço negativo também é inválido', () => {
     expect(validarProduto({ ...ok, price: -5 } as never)).toHaveLength(1);
   });

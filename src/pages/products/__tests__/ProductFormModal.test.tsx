@@ -1,7 +1,13 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ProductFormModal } from '../ProductFormModal';
+import storesApi from '../../../services/storesApi';
 
+jest.mock('../../../services/api', () => ({
+  __esModule: true,
+  default: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
+  getErrorMessage: (e: { response?: { data?: { error?: string } } }) => e?.response?.data?.error ?? String(e),
+}));
 // Mock heavy deps
 jest.mock('../../../services/storesApi', () => ({
   __esModule: true,
@@ -308,5 +314,21 @@ describe('regras de venda (do Prefiro)', () => {
     fireEvent.change(screen.getByLabelText('Vende das'), { target: { value: '11:00' } });
     fireEvent.submit(document.querySelector('form')!);
     expect(api.updateProduct).not.toHaveBeenCalled();
+  });
+});
+
+describe('ProductFormModal — rascunho', () => {
+  it('Salvar rascunho grava só com o nome, como draft e sem preço', async () => {
+    const api = storesApi as unknown as Record<string, jest.Mock>;
+    api.createProduct.mockClear();
+    api.createProduct.mockResolvedValue({});
+    render(
+      <ProductFormModal isOpen product={null} categories={[]} flatProducts={[]}
+        onClose={jest.fn()} onSaved={jest.fn()} storeId="store1" />
+    );
+    fireEvent.change(screen.getByPlaceholderText('Ex: Rondelli 4 Queijos'), { target: { value: 'Prato novo' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar rascunho' }));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(api.createProduct).toHaveBeenCalledWith(expect.objectContaining({ name: 'Prato novo', status: 'draft' }));
   });
 });

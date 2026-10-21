@@ -34,6 +34,9 @@ const ProductRowBase: React.FC<Props> = ({ product, onOpen, onStock, onPrice, on
       {img ? <img src={img} alt="" className="h-10 w-10 rounded object-cover" loading="lazy" decoding="async" /> : <div className="h-10 w-10 rounded bg-surface-muted-token" />}
       <button className="min-w-0 flex-1 text-left" onClick={() => onOpen(product)}>
         {product.name}
+        {product.status === 'draft' && (
+          <span className="ml-2 rounded bg-surface-2 px-1.5 py-0.5 text-xs text-fg-muted-token">Rascunho</span>
+        )}
         {regras && <span className="ml-2 text-xs text-fg-muted-token">{regras}</span>}
       </button>
       {product.track_stock && <InlineStockStepper value={product.stock_quantity} onChange={(q) => onStock(product.id, q)} />}

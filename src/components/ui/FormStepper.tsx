@@ -61,6 +61,9 @@ export interface FormStepperProps {
    * navegação, então não cabe na trilha nem substitui o primário.
    */
   acoesExtras?: React.ReactNode;
+  /** Como `acoesExtras`, mas em todo passo: "Salvar rascunho" serve justamente
+   *  para quem parou no meio. */
+  acoesEmTodoPasso?: React.ReactNode;
   concluindo?: boolean;
   /**
    * Passo atual controlado pelo pai.
@@ -107,6 +110,7 @@ export const FormStepper: React.FC<FormStepperProps> = ({
   aoBloquear,
   onCancelar,
   acoesExtras,
+  acoesEmTodoPasso,
   concluindo = false,
   passoAtivo,
   onMudarPasso,
@@ -225,6 +229,7 @@ export const FormStepper: React.FC<FormStepperProps> = ({
               {rotuloVoltar}
             </Button>
           )}
+          {acoesEmTodoPasso}
           {ultimo && acoesExtras}
           {ultimo ? (
             <Button

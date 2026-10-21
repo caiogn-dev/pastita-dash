@@ -22,6 +22,7 @@ import VariantsManager from '../../components/products/VariantsManager';
 // no preço — inclusive nos testes do formulário.
 const ReceitaDoProduto = lazy(() => import('../nutrition/ReceitaDoProduto'));
 import DescriptionEditor from './DescriptionEditor';
+import MelhorarComIa from './MelhorarComIa';
 import { SelosDoProduto, lerSelos, gravarSelos, sugestoesDeSelos } from './SelosDoProduto';
 import storesApi, {
   StoreProduct as Product,
@@ -59,6 +60,7 @@ const ROTULO_STATUS: Record<string, string> = {
   inactive: 'Pausado',
   out_of_stock: 'Sem estoque',
   discontinued: 'Descontinuado',
+  draft: 'Rascunho',
 };
 
 /** `attributes` é JSON livre: alguém vai salvar string onde devia ser lista. */
@@ -243,15 +245,16 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     setImagePreview(URL.createObjectURL(file));
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent, comoRascunho = false) => {
     e?.preventDefault();
+    const formulario: ProductInput = comoRascunho ? { ...formData, status: 'draft' } : formData;
 
     // Um erro precisa ser um LUGAR, não uma mensagem que some em 4s. A
     // validação devolve a aba, então pulamos para ela e a marcamos — antes o
     // toast "Preço deve ser maior que zero" aparecia sobre a aba Mídia, onde
     // não existe campo de preço, e o usuário concluía que salvar estava
     // quebrado.
-    const erros = validarProduto(formData);
+    const erros = validarProduto(formulario);
     setErrosPorAba(erros);
     if (erros.length > 0) {
       setActiveTab(erros[0].aba);
@@ -262,13 +265,13 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     setSaving(true);
     try {
       const targetProduct = effectiveProduct && 'id' in effectiveProduct ? effectiveProduct as Product : null;
-      const dados = { ...formData, regras_de_venda: regrasParaGravar(formData.regras_de_venda) };
+      const dados = { ...formulario, regras_de_venda: regrasParaGravar(formulario.regras_de_venda) };
       if (targetProduct) {
         await storesApi.updateProduct(targetProduct.id, dados);
         toast.success('Produto atualizado!');
       } else {
         await storesApi.createProduct(dados);
-        toast.success('Produto criado!');
+        toast.success(comoRascunho ? 'Rascunho salvo' : 'Produto criado!');
       }
       onSaved();
 
@@ -541,6 +544,13 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
             setErrosPorAba(pendencias);
             toast.error(erro.mensagem);
           }}
+          // Rascunho (do Prefiro): guarda o que já tem — nome basta — e fica
+          // fora do cardápio até o dono ativar. Só na criação.
+          acoesEmTodoPasso={!isCurrentlyEditing ? (
+            <Button type="button" variant="ghost" disabled={saving} onClick={() => handleSubmit(undefined, true)}>
+              Salvar rascunho
+            </Button>
+          ) : undefined}
           acoesExtras={
             // "Salvar e criar outro" só na criação: quem monta cardápio
             // cadastra trinta itens seguidos. Editando, você veio mexer NESTE
@@ -684,6 +694,18 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   rows={5}
                   placeholder={'Massa artesanal de *500g*, serve _2 pessoas_.\n\nAcompanha:\n- Molho da casa\n- Queijo ralado\n\nModo de preparo: aqueça por 10 min'}
                 />
+                <div className="mt-2">
+                  <MelhorarComIa
+                    nome={formData.name || ''}
+                    descricao={formData.description || ''}
+                    categoria={categories.find((c) => c.id === formData.category)?.name}
+                    onUsar={({ descricao, descricao_curta }) => setFormData((prev) => ({
+                      ...prev,
+                      description: descricao,
+                      short_description: descricao_curta || prev.short_description,
+                    }))}
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -1029,6 +1051,11 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     titulo: 'Descontinuado',
                     descricao: 'Saiu do cardápio de vez. O histórico de pedidos é mantido.',
                   },
+                  // Só aparece para quem já está em rascunho: criar um é pelo
+                  // botão "Salvar rascunho", não escolhendo aqui.
+                  ...(formData.status === 'draft' || effectiveProduct?.status === 'draft'
+                    ? [{ valor: 'draft', titulo: 'Rascunho', descricao: 'Fora do cardápio até você ativar.' }]
+                    : []),
                 ]}
               />
 
