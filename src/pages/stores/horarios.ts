@@ -113,3 +113,41 @@ export function problemaDaPausa(p: Pausa): string | null {
   if (p.motivo.trim().length > MOTIVO_MAX) return `O motivo pode ter até ${MOTIVO_MAX} letras.`;
   return null;
 }
+
+// ── Agendamento ──────────────────────────────────────────────────────────
+// Contrato do server2 (`services/agendamento.py`):
+//   metadata.agendamento = { intervalo: 30|60|90|120, antecedencia: minutos }
+// As faixas que o cliente vê saem dos turnos do dia nesse intervalo; a sobra
+// do turno vira uma faixa menor (08–17 de 2 em 2 h termina em 16–17).
+
+export interface Agendamento { intervalo: number; antecedencia: number }
+
+export const AGENDAMENTO_PADRAO: Agendamento = { intervalo: 60, antecedencia: 60 };
+export const INTERVALOS = [30, 60, 90, 120];
+export const ANTECEDENCIAS = [30, 60, 120, 180];
+
+export function lerAgendamento(metadata?: Record<string, unknown> | null): Agendamento {
+  const bruto = (metadata?.agendamento ?? {}) as Partial<Agendamento>;
+  return {
+    intervalo: INTERVALOS.includes(Number(bruto.intervalo)) ? Number(bruto.intervalo) : AGENDAMENTO_PADRAO.intervalo,
+    antecedencia: Number.isInteger(bruto.antecedencia) && Number(bruto.antecedencia) >= 0
+      ? Number(bruto.antecedencia) : AGENDAMENTO_PADRAO.antecedencia,
+  };
+}
+
+const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+
+/** Prévia do painel: as faixas de um dia como o cliente vai vê-las. */
+export function faixasDoDia(dia: DayHours | undefined, intervalo: number): string[] {
+  if (!dia?.is_open) return [];
+  const faixas: string[] = [];
+  for (const t of turnosDoDia(dia)) {
+    const abre = minutos(t.open);
+    const fecha = minutos(t.close);
+    if (abre === null || fecha === null || abre >= fecha) continue;
+    for (let inicio = abre; inicio < fecha; inicio = Math.min(inicio + intervalo, fecha)) {
+      faixas.push(`${hhmm(inicio)}–${hhmm(Math.min(inicio + intervalo, fecha))}`);
+    }
+  }
+  return faixas;
+}

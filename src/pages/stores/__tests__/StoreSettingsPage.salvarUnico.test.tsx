@@ -3,7 +3,7 @@
  * na página — mexia-se no horário e no nome, salvava-se um, e o outro se
  * perdia ao trocar de aba. Agora a barra de alterações junta tudo.
  */
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -171,5 +171,27 @@ describe('Configurações: um salvar só', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
     expect(await screen.findByText(/0 a 600 minutos/i)).toBeInTheDocument();
     expect(api.updateStore).not.toHaveBeenCalled();
+  });
+});
+
+describe('Configurações: agendamento (21/10)', () => {
+  it('intervalo de 30 min entra no mesmo salvar, no metadata, sem perder o resto', async () => {
+    (api.getStore as jest.Mock).mockResolvedValue({
+      ...loja,
+      operating_hours: { monday: { open: '08:00', close: '17:00', is_open: true } },
+    });
+    montar('/stores/ce-saladas/settings?aba=entrega');
+    const previa = await screen.findByTestId('previa-agendamento');
+    expect(previa).toHaveTextContent('16:00–17:00');
+    expect(previa).not.toHaveTextContent('18:00');
+
+    fireEvent.click(within(screen.getByRole('radiogroup', { name: 'Cada horário dura' })).getByRole('radio', { name: '30 min' }));
+    expect(previa).toHaveTextContent('16:30–17:00');
+    expect(screen.getByRole('region', { name: /alterações não salvas/i })).toHaveTextContent('1 alteração');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(api.updateStore).toHaveBeenCalledTimes(1));
+    const [, payload] = (api.updateStore as jest.Mock).mock.calls[0];
+    expect(payload.metadata).toEqual({ google_review_url: '', outro: 1, agendamento: { intervalo: 30, antecedencia: 60 } });
   });
 });

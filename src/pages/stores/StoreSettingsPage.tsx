@@ -46,6 +46,7 @@ import { SalvarJunto, useSalvarJunto } from './salvarJunto';
 import CaixaDinheiroSection from './CaixaDinheiroSection';
 import AvisoFilaHumanaSection from './AvisoFilaHumanaSection';
 import { LocalizacaoNoGoogle } from './LocalizacaoNoGoogle';
+import AgendamentoCampos from './AgendamentoCampos';
 
 const DAYS = [
   { key: 'monday',    label: 'Segunda' },
@@ -58,6 +59,7 @@ const DAYS = [
 ];
 
 import {
+  AGENDAMENTO_PADRAO, lerAgendamento, type Agendamento,
   lerPausas, pausaParaGravar, pausasQueValem, problemaDaPausa, problemaDosTurnos, turnosDoDia,
   type DayHours, type OperatingHours, type Pausa,
 } from './horarios';
@@ -120,9 +122,12 @@ interface Salvo {
   pausas: Pausa[];
   avaliacao: string;
   rastreio: StoreMetaTracking;
+  agendamento: Agendamento;
 }
 
-const SALVO_VAZIO: Salvo = { form: FORM_VAZIO, horas: {}, pausas: [], avaliacao: '', rastreio: defaultMetaTracking };
+const SALVO_VAZIO: Salvo = {
+  form: FORM_VAZIO, horas: {}, pausas: [], avaliacao: '', rastreio: defaultMetaTracking, agendamento: AGENDAMENTO_PADRAO,
+};
 
 const iguais = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -152,6 +157,7 @@ export const StoreSettingsPage: React.FC = () => {
   const [storeForm, setStoreForm] = useState<FormDaLoja>(FORM_VAZIO);
   const [operatingHours, setOperatingHours] = useState<OperatingHours>({});
   const [pausas, setPausas] = useState<Pausa[]>([]);
+  const [agendamento, setAgendamento] = useState<Agendamento>(AGENDAMENTO_PADRAO);
   const [metaTracking, setMetaTracking] = useState<StoreMetaTracking>(defaultMetaTracking);
   const [googleReviewUrl, setGoogleReviewUrl] = useState('');
   const [erros, setErros] = useState<{ latitude?: string | null; longitude?: string | null; prazo?: string | null; preparo?: string | null }>({});
@@ -231,7 +237,9 @@ export const StoreSettingsPage: React.FC = () => {
       const rastreio = { ...tracking, meta_capi_access_token: '' };
 
       const pausasSalvas = lerPausas(data.metadata as Record<string, unknown>);
-      setSalvo({ form, horas, pausas: pausasSalvas, avaliacao, rastreio });
+      const agendamentoSalvo = lerAgendamento(data.metadata as Record<string, unknown>);
+      setSalvo({ form, horas, pausas: pausasSalvas, avaliacao, rastreio, agendamento: agendamentoSalvo });
+      setAgendamento(agendamentoSalvo);
       setStoreForm(form);
       setOperatingHours(horas);
       setPausas(pausasSalvas);
@@ -261,6 +269,7 @@ export const StoreSettingsPage: React.FC = () => {
   const preparoMudou = storeForm.tempo_preparo !== salvo.form.tempo_preparo;
   const diasMudados = DAYS.filter((d) => !iguais(operatingHours[d.key], salvo.horas[d.key]));
   const pausasMudaram = !iguais(pausas, salvo.pausas);
+  const agendamentoMudou = !iguais(agendamento, salvo.agendamento);
   const avaliacaoMudou = googleReviewUrl.trim() !== salvo.avaliacao.trim();
   const rastreioMudado = CAMPOS_DO_RASTREIO.filter((k) => metaTracking[k] !== salvo.rastreio[k]).length
     + (metaTracking.meta_capi_access_token?.trim() ? 1 : 0);
@@ -270,7 +279,7 @@ export const StoreSettingsPage: React.FC = () => {
   const juntas = useSalvarJunto();
 
   const quantidade = juntas.mudancas + mudouNaLoja.length + mudouNoLocal.length + mudouNoPrazo.length + diasMudados.length
-    + (preparoMudou ? 1 : 0)    + (avaliacaoMudou ? 1 : 0) + (pausasMudaram ? 1 : 0) + rastreioMudado;
+    + (preparoMudou ? 1 : 0) + (agendamentoMudou ? 1 : 0) + (avaliacaoMudou ? 1 : 0) + (pausasMudaram ? 1 : 0) + rastreioMudado;
 
   // Sair da página com alteração pendente perde o que foi digitado.
   useEffect(() => {
@@ -284,6 +293,7 @@ export const StoreSettingsPage: React.FC = () => {
     setStoreForm(salvo.form);
     setOperatingHours(salvo.horas);
     setPausas(salvo.pausas);
+    setAgendamento(salvo.agendamento);
     setGoogleReviewUrl(salvo.avaliacao);
     setMetaTracking(salvo.rastreio);
     setErros({});
@@ -384,6 +394,10 @@ export const StoreSettingsPage: React.FC = () => {
       metadata.pausas = pausasQueValem(pausas, new Date()).map(pausaParaGravar);
       mexeuNoMetadata = true;
     }
+    if (agendamentoMudou) {
+      metadata.agendamento = agendamento;
+      mexeuNoMetadata = true;
+    }
     if (avaliacaoMudou) {
       metadata.google_review_url = googleReviewUrl.trim();
       mexeuNoMetadata = true;
@@ -475,7 +489,7 @@ export const StoreSettingsPage: React.FC = () => {
         ariaLabel="Seções das configurações da loja"
         abas={[
           { id: 'loja', rotulo: 'Loja', icone: BuildingStorefrontIcon, mudou: mudouNaLoja.length + mudouNoLocal.length > 0 },
-          { id: 'entrega', rotulo: 'Entrega e horários', icone: ClockIcon, mudou: diasMudados.length + mudouNoPrazo.length > 0 || preparoMudou },
+          { id: 'entrega', rotulo: 'Entrega e horários', icone: ClockIcon, mudou: diasMudados.length + mudouNoPrazo.length > 0 || preparoMudou || agendamentoMudou },
           { id: 'rastreamento', rotulo: 'Rastreamento', icone: ChartBarIcon, mudou: rastreioMudado > 0 },
           { id: 'avaliacoes', rotulo: 'Avaliações', icone: StarIcon, mudou: avaliacaoMudou },
           { id: 'recebimento', rotulo: 'Recebimento', icone: BanknotesIcon, mudou: juntas.mudouEm('vale-pagarme', 'vale-por-link', 'acrescimo-do-vale') },
@@ -693,6 +707,7 @@ export const StoreSettingsPage: React.FC = () => {
             </Campo>
           </div>
         </Card>
+        <AgendamentoCampos valor={agendamento} onChange={setAgendamento} horas={operatingHours} />
               </>
             )}
 
