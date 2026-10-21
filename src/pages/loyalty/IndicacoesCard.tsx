@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Card, EmptyState, RankedList, type RankedItem } from '../../components/ui';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Card, EmptyState, FalhaAoCarregar, RankedList, type RankedItem } from '../../components/ui';
 import { ShareIcon } from '@heroicons/react/24/outline';
 import { formatCurrency } from '../../utils/formatters';
 import { cashbackService } from '../../services/cashback';
@@ -37,23 +37,42 @@ export const IndicacoesCard: React.FC<{ storeSlug: string }> = ({ storeSlug }) =
   const [linhas, setLinhas] = useState<IndicacaoRow[]>([]);
   const [porIndicador, setPorIndicador] = useState<IndicadorAgregado[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(false);
 
-  useEffect(() => {
+  const carregar = useCallback(() => {
     let vivo = true;
     setCarregando(true);
+    setErro(false);
     cashbackService.indicacoes(storeSlug)
       .then((d) => {
         if (!vivo) return;
         setLinhas(d.indicacoes || []);
         setPorIndicador(ordenarIndicadores(d.por_indicador || []));
       })
-      .catch(() => { /* aba secundária: falha aqui não derruba a página */ })
+      // Sem o flag, a falha ficava muda e a lista vazia virava o vazio
+      // CONFIANTE "Nenhuma indicação ainda" — dizendo à loja que ninguém
+      // indicou quando foi a busca que caiu (o "vazio enganoso").
+      .catch(() => { if (vivo) setErro(true); })
       .finally(() => { if (vivo) setCarregando(false); });
     return () => { vivo = false; };
   }, [storeSlug]);
 
+  useEffect(() => carregar(), [carregar]);
+
   if (carregando) {
     return <Card title="Indicações"><div className="h-24 animate-pulse rounded bg-surface-2" /></Card>;
+  }
+
+  // Falha SEM dado em cache: erro acionável no lugar do vazio enganoso.
+  if (erro && !linhas.length) {
+    return (
+      <Card title="Indicações">
+        <FalhaAoCarregar
+          titulo="Não foi possível carregar as indicações"
+          onTentarDeNovo={carregar}
+        />
+      </Card>
+    );
   }
 
   if (!linhas.length) {
