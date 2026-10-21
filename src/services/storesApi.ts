@@ -1409,6 +1409,12 @@ export const getCustomers = async (params?: {
   }
 };
 
+/** A lista que o lojista está vendo (aba + busca) como planilha CSV. */
+export const exportarClientes = async (params: { store: string; search?: string; segmento?: string }): Promise<Blob> => {
+  const response = await api.get(`${BASE_URL}/customers/exportar/`, { params, responseType: 'blob' });
+  return response.data;
+};
+
 /**
  * Segmentos de CRM, agregados pelo backend com a régua junto.
  *

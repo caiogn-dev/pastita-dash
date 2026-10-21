@@ -27,7 +27,8 @@ import { insightsDeClientes } from './insightsDeClientes';
 import { abasDeSegmento, regraDoSegmento, segmentoDaUrl, type Segmento } from './abasDeSegmento';
 import { rotuloDeDias, rotuloDePerfil, type TomDeCrm } from './rotulosDeCrm';
 import { getErrorMessage } from '../../services';
-import { StoreCustomer, StoreCustomerAddress, createCustomer, deleteCustomer, getCustomer, updateCustomer } from '../../services/storesApi';
+import { StoreCustomer, StoreCustomerAddress, createCustomer, deleteCustomer, exportarClientes, getCustomer, updateCustomer } from '../../services/storesApi';
+import { downloadBlob } from '../../services/reports';
 import { useStore, useDebounce } from '../../hooks';
 import { useCustomers } from '../../hooks/queries/useCustomers';
 import { useCustomerStats } from '../../hooks/queries/useCustomerStats';
@@ -999,6 +1000,24 @@ export const CustomersPage: React.FC = () => {
 
   const storeQuery = storeSlug || storeId;
 
+  // Exporta o que está na tela: a aba e a busca vão junto.
+  const [exportando, setExportando] = useState(false);
+  const exportar = async () => {
+    if (!storeQuery) return;
+    setExportando(true);
+    try {
+      const params: { store: string; search?: string; segmento?: string } = { store: storeQuery };
+      if (debouncedSearch) params.search = debouncedSearch;
+      const seg = segmentoDaUrl(searchParams);
+      if (seg !== 'todos') params.segmento = seg;
+      downloadBlob(await exportarClientes(params), `clientes-${params.segmento ?? 'todos'}.csv`);
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setExportando(false);
+    }
+  };
+
   // Aba de segmento na URL, como a busca: o link "107 em risco" do topo
   // chega aqui já filtrado e sobrevive ao F5.
   const segmento = segmentoDaUrl(searchParams);
@@ -1133,6 +1152,9 @@ export const CustomersPage: React.FC = () => {
             disabled={refreshing}
           >
             <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button variant="outline" onClick={exportar} disabled={exportando || !storeQuery}>
+            {exportando ? 'Exportando…' : 'Exportar'}
           </Button>
           <Button onClick={() => { setEditingCustomer(null); setFormOpen(true); }}>
             Novo cliente
