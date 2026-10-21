@@ -781,7 +781,9 @@ export const StoreSettingsPage: React.FC = () => {
                 deles as alterações que a barra conta, e desmontar ao trocar de
                 aba jogaria fora o que foi digitado sem aviso. */}
             {store?.id && (
-              <div hidden={aba !== 'recebimento'} className="flex flex-col gap-6">
+              // Classe, não o atributo `hidden`: `flex` vence o display:none do
+              // atributo, e o Recebimento aparecia embaixo de TODAS as abas (21/10).
+              <div className={aba === 'recebimento' ? 'flex flex-col gap-6' : 'hidden'} data-aba="recebimento">
                 <RecebimentoSection
                   storeId={store.id}
                   usaGatewayDaPlataforma={Boolean(
@@ -808,7 +810,7 @@ export const StoreSettingsPage: React.FC = () => {
             )}
 
             {store?.id && (
-              <div hidden={aba !== 'fiscal'}>
+              <div className={aba === 'fiscal' ? undefined : 'hidden'} data-aba="fiscal">
                 <NotaFiscalSection storeId={store.id} />
               </div>
             )}

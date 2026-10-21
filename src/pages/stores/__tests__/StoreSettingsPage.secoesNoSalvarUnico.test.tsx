@@ -102,4 +102,20 @@ describe('Configurações: seções de fora da loja no salvar único', () => {
     expect(volus).not.toBeChecked();
     expect(barra()).toBeNull();
   });
+
+  // 21/10: o atributo `hidden` perdia para a classe `flex` no navegador (o jsdom
+  // não aplica CSS, então o teste passava) e o Mercado Pago/vale aparecia
+  // embaixo de Avaliações, Rastreamento… Esconder tem que ser por classe.
+  it('Recebimento e Nota fiscal só aparecem na aba deles', async () => {
+    const { container } = montar();
+    await screen.findByLabelText('Acréscimo (%)');
+    const recebimento = container.querySelector('[data-aba="recebimento"]')!;
+    const fiscal = container.querySelector('[data-aba="fiscal"]')!;
+    expect(recebimento).not.toHaveClass('hidden');
+    expect(fiscal).toHaveClass('hidden');
+    fireEvent.click(screen.getByRole('tab', { name: /Avaliações/i }));
+    expect(recebimento).toHaveClass('hidden');
+    expect(recebimento).not.toHaveClass('flex');
+    expect(fiscal).toHaveClass('hidden');
+  });
 });
