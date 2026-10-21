@@ -5,6 +5,7 @@ import { Card, Button, Input } from '../../components/ui';
 import { paymentsService, type BandeiraDeVale, type DadosDoGateway } from '../../services/payments';
 import AleloNoVale from './AleloNoVale';
 import logger from '../../services/logger';
+import { useParteDoSalvar } from './salvarJunto';
 
 type Bandeira = BandeiraDeVale;
 
@@ -59,6 +60,8 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
   const [aceitaVale, setAceitaVale] = useState(true);
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
+  /** O que está gravado — para saber o que mudou e voltar no Descartar. */
+  const [base, setBase] = useState({ publica: '', marcadas: [] as string[], aceitaVale: true });
 
   // O catálogo é a fonte única; o painel só desenha o que o backend conhece.
   useEffect(() => {
@@ -84,6 +87,11 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
       setMarcadas(pagarme.configuration?.voucher_brands || []);
       setAceitaVale(pagarme.is_enabled !== false);
       setJaTemSegredo(Boolean(pagarme.tem_credencial));
+      setBase({
+        publica: pagarme.public_key || '',
+        marcadas: pagarme.configuration?.voucher_brands || [],
+        aceitaVale: pagarme.is_enabled !== false,
+      });
     }).catch((erroGateway) => {
       // lista vazia é estado válido: loja ainda não configurou vale
       logger.error('Erro ao carregar gateway de vale da loja:', erroGateway);
@@ -103,20 +111,21 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
       (atuais.includes(valor) ? atuais.filter((x) => x !== valor) : [...atuais, valor]));
   }, []);
 
-  const salvar = useCallback(async () => {
-    setErro('');
+  const validar = () => {
     // Desligando, a bandeira nao importa — a exigencia existe para nao ligar o
     // vale no cardapio sem nada para o cliente escolher.
-    if (aceitaVale && marcadas.length === 0) {
-      setErro('Marque ao menos uma bandeira para começar a receber com vale.');
-      return;
-    }
+    const problema = aceitaVale && marcadas.length === 0
+      ? 'Marque ao menos uma bandeira para começar a receber com vale.'
+      : null;
+    setErro(problema || '');
+    return problema;
+  };
+
+  const gravar = async () => {
     // Ordem do catálogo do backend, não a ordem de clique do lojista.
     const ordenadas = catalogo
       .map((b) => b.value)
       .filter((v) => marcadas.includes(v));
-
-    setSalvando(true);
     try {
       // 🚨 `is_sandbox` só entra quando o segredo foi REDIGITADO.
       //
@@ -145,13 +154,44 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
         const criado = await paymentsService.createGateway(corpo);
         setGatewayId(criado.id);
       }
+      if (secreta) setJaTemSegredo(true);
+      setSecreta('');
+      setBase({ publica, marcadas: ordenadas, aceitaVale });
     } catch (erroSalvar) {
       logger.error('Erro ao salvar gateway de vale:', erroSalvar);
       setErro('Não consegui salvar. Confira as chaves e tente de novo.');
+      throw erroSalvar;
+    }
+  };
+
+  const marcadasMudaram = marcadas.length !== base.marcadas.length
+    || marcadas.some((v) => !base.marcadas.includes(v));
+  const noSalvarUnico = useParteDoSalvar('vale-pagarme', {
+    mudancas: [publica !== base.publica, marcadasMudaram, aceitaVale !== base.aceitaVale, Boolean(secreta)]
+      .filter(Boolean).length,
+    validar,
+    salvar: gravar,
+    descartar: () => {
+      setPublica(base.publica);
+      setMarcadas(base.marcadas);
+      setAceitaVale(base.aceitaVale);
+      setSecreta('');
+      setErro('');
+    },
+  });
+
+  // Só fora do salvar único (seção usada sozinha).
+  const salvar = async () => {
+    if (validar()) return;
+    setSalvando(true);
+    try {
+      await gravar();
+    } catch {
+      // motivo já está na tela
     } finally {
       setSalvando(false);
     }
-  }, [aceitaVale, catalogo, gatewayId, marcadas, publica, secreta, storeId]);
+  };
 
   return (
     <Card className="p-6">
@@ -262,9 +302,11 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
           </p>
         )}
 
-        <Button onClick={salvar} disabled={salvando}>
-          {salvando ? 'Salvando...' : 'Salvar'}
-        </Button>
+        {!noSalvarUnico && (
+          <Button onClick={salvar} disabled={salvando}>
+            {salvando ? 'Salvando...' : 'Salvar'}
+          </Button>
+        )}
       </div>
 
       {daCielo.length > 0 && <AleloNoVale storeId={storeId} bandeiras={daCielo} />}

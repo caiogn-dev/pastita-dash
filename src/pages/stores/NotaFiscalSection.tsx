@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { Card, Button } from '../../components/ui';
 import { getConfigFiscal, updateConfigFiscal, type ConfigFiscal } from '../../services/storesApi';
 import logger from '../../services/logger';
+import { useParteDoSalvar } from './salvarJunto';
 
 interface NotaFiscalSectionProps {
   storeId: string;
@@ -29,6 +30,12 @@ const VAZIO: ConfigFiscal = {
   cert_password_configurado: false,
 };
 
+/** O que esta tela edita — o resto da config (flags de "configurado") só se lê. */
+const EDITAVEIS = [
+  'habilitado', 'provider', 'ambiente', 'cnpj', 'inscricao_estadual', 'uf',
+  'serie', 'csosn', 'ncm_padrao', 'cfop_padrao', 'csc_id',
+] as const;
+
 /** CNPJ legível enquanto digita; o backend guarda só os dígitos. */
 const mascararCnpj = (valor: string) =>
   valor
@@ -53,12 +60,17 @@ export const NotaFiscalSection: React.FC<NotaFiscalSectionProps> = ({ storeId })
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [token, setToken] = useState('');
+  /** Como está gravada — base do "mudou" e do Descartar. */
+  const [salva, setSalva] = useState<ConfigFiscal>(VAZIO);
+  const [erro, setErro] = useState('');
 
   const carregar = useCallback(async () => {
     if (!storeId) return;
     setCarregando(true);
     try {
-      setConfig(await getConfigFiscal(storeId));
+      const atual = await getConfigFiscal(storeId);
+      setConfig(atual);
+      setSalva(atual);
     } catch (erro) {
       logger.error('Erro ao carregar configuração fiscal:', erro);
     } finally {
@@ -70,33 +82,40 @@ export const NotaFiscalSection: React.FC<NotaFiscalSectionProps> = ({ storeId })
     carregar();
   }, [carregar]);
 
+  const gravar = async () => {
+    setErro('');
+    try {
+      const atualizada = await updateConfigFiscal(storeId, {
+        ...Object.fromEntries(EDITAVEIS.map((k) => [k, config[k]])),
+        // token em branco = manter o que já está salvo (a tela nunca o exibe)
+        ...(token.trim() ? { focus_token: token.trim() } : {}),
+      } as Partial<ConfigFiscal>);
+      setConfig(atualizada);
+      setSalva(atualizada);
+      setToken('');
+    } catch (falha: unknown) {
+      const detalhes = (falha as { response?: { data?: { error?: { details?: Record<string, string[]> } } } })
+        ?.response?.data?.error?.details;
+      setErro(detalhes && Object.values(detalhes)[0]?.[0] || 'Não foi possível salvar a configuração fiscal');
+      logger.error('Erro ao salvar configuração fiscal:', falha);
+      throw falha;
+    }
+  };
+
+  const noSalvarUnico = useParteDoSalvar('nota-fiscal', {
+    mudancas: EDITAVEIS.filter((k) => config[k] !== salva[k]).length + (token.trim() ? 1 : 0),
+    salvar: gravar,
+    descartar: () => { setConfig(salva); setToken(''); setErro(''); },
+  });
+
+  // Só fora do salvar único (seção usada sozinha).
   const salvar = async () => {
     setSalvando(true);
     try {
-      const atualizada = await updateConfigFiscal(storeId, {
-        habilitado: config.habilitado,
-        provider: config.provider,
-        ambiente: config.ambiente,
-        cnpj: config.cnpj,
-        inscricao_estadual: config.inscricao_estadual,
-        uf: config.uf,
-        serie: config.serie,
-        csosn: config.csosn,
-        ncm_padrao: config.ncm_padrao,
-        cfop_padrao: config.cfop_padrao,
-        csc_id: config.csc_id,
-        // token em branco = manter o que já está salvo (a tela nunca o exibe)
-        ...(token.trim() ? { focus_token: token.trim() } : {}),
-      });
-      setConfig(atualizada);
-      setToken('');
+      await gravar();
       toast.success('Configuração fiscal salva');
-    } catch (erro: unknown) {
-      const detalhes = (erro as { response?: { data?: { error?: { details?: Record<string, string[]> } } } })
-        ?.response?.data?.error?.details;
-      const primeira = detalhes && Object.values(detalhes)[0]?.[0];
-      toast.error(primeira || 'Não foi possível salvar a configuração fiscal');
-      logger.error('Erro ao salvar configuração fiscal:', erro);
+    } catch {
+      // motivo já está na tela
     } finally {
       setSalvando(false);
     }
@@ -244,9 +263,12 @@ export const NotaFiscalSection: React.FC<NotaFiscalSectionProps> = ({ storeId })
         </div>
       )}
 
-      <Button onClick={salvar} disabled={salvando} className="mt-6 w-full justify-center">
-        {salvando ? 'Salvando...' : 'Salvar configuração fiscal'}
-      </Button>
+      {erro && <p role="alert" className="mt-4 text-sm text-danger-token">{erro}</p>}
+      {!noSalvarUnico && (
+        <Button onClick={salvar} disabled={salvando} className="mt-6 w-full justify-center">
+          {salvando ? 'Salvando...' : 'Salvar configuração fiscal'}
+        </Button>
+      )}
     </Card>
   );
 };

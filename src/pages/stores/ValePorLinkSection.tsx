@@ -5,6 +5,7 @@ import { Card, Button } from '../../components/ui';
 import { paymentsService } from '../../services/payments';
 import { updateStore } from '../../services/storesApi';
 import logger from '../../services/logger';
+import { useParteDoSalvar } from './salvarJunto';
 
 interface Bandeira {
   value: string;
@@ -60,22 +61,39 @@ export const ValePorLinkSection: React.FC<ValePorLinkSectionProps> = ({
       (atuais.includes(valor) ? atuais.filter((x) => x !== valor) : [...atuais, valor]));
   }, []);
 
-  const salvar = useCallback(async () => {
-    setErro('');
-    setSalvando(true);
+  const gravar = async () => {
     try {
       // Campo próprio, nunca o `metadata` inteiro: o painel não sabe tudo o
       // que mora lá, e mandar o dicionário completo apagaria o resto.
       const ordenadas = catalogo.map((b) => b.value).filter((v) => marcadas.includes(v));
       await updateStore(storeId, { vale_por_link_brands: ordenadas } as never);
-      setSalvo(true);
     } catch (e) {
       logger.error('Erro ao salvar bandeiras sem integração:', e);
       setErro('Não consegui salvar. Tente de novo.');
+      throw e;
+    }
+  };
+
+  const mudou = marcadas.length !== ligadas.length || marcadas.some((v) => !ligadas.includes(v));
+  const noSalvarUnico = useParteDoSalvar('vale-por-link', {
+    mudancas: mudou ? 1 : 0,
+    salvar: async () => { setErro(''); await gravar(); },
+    descartar: () => { setMarcadas(ligadas); setErro(''); },
+  });
+
+  // Só fora do salvar único (seção usada sozinha).
+  const salvar = async () => {
+    setErro('');
+    setSalvando(true);
+    try {
+      await gravar();
+      setSalvo(true);
+    } catch {
+      // motivo já está na tela
     } finally {
       setSalvando(false);
     }
-  }, [catalogo, marcadas, storeId]);
+  };
 
   const semWhatsapp = !String(whatsapp || '').trim();
 
@@ -125,9 +143,11 @@ export const ValePorLinkSection: React.FC<ValePorLinkSectionProps> = ({
         <p role="status" className="mt-3 text-sm text-fg-muted-token">Salvo.</p>
       )}
 
-      <Button className="mt-4" onClick={salvar} disabled={salvando}>
-        {salvando ? 'Salvando...' : 'Salvar'}
-      </Button>
+      {!noSalvarUnico && (
+        <Button className="mt-4" onClick={salvar} disabled={salvando}>
+          {salvando ? 'Salvando...' : 'Salvar'}
+        </Button>
+      )}
     </Card>
   );
 };

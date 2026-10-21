@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ReceiptPercentIcon } from '@heroicons/react/24/outline';
 
 import { Card, Button, Input } from '../../components/ui';
 import { updateStore } from '../../services/storesApi';
 import logger from '../../services/logger';
+import { useParteDoSalvar } from './salvarJunto';
 
 interface AcrescimoDoValeSectionProps {
   storeId: string;
@@ -33,27 +34,47 @@ export const AcrescimoDoValeSection: React.FC<AcrescimoDoValeSectionProps> = ({
   useEffect(() => { setValor(percentualAtual ? String(percentualAtual) : ''); }, [percentualAtual]);
 
   const numero = Number(String(valor).replace(',', '.'));
+  const limpo = String(valor).trim();
+  const pct = limpo === '' ? 0 : Number(limpo.replace(',', '.'));
+  const invalido = !Number.isFinite(pct) || pct < 0 || pct > 100;
 
-  const salvar = useCallback(async () => {
-    setErro('');
-    setSalvo(false);
-    const limpo = String(valor).trim();
-    const pct = limpo === '' ? 0 : Number(limpo.replace(',', '.'));
-    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
-      setErro('Use um número entre 0 e 100.');
-      return;
-    }
-    setSalvando(true);
+  const validar = () => {
+    const problema = invalido ? 'Use um número entre 0 e 100.' : null;
+    setErro(problema || '');
+    return problema;
+  };
+
+  const gravar = async () => {
     try {
       await updateStore(storeId, { voucher_fee_percent: pct } as never);
-      setSalvo(true);
     } catch (e) {
       logger.error('Erro ao salvar acréscimo do vale:', e);
       setErro('Não consegui salvar. Tente de novo.');
+      throw e;
+    }
+  };
+
+  const noSalvarUnico = useParteDoSalvar('acrescimo-do-vale', {
+    mudancas: invalido || pct !== percentualAtual ? 1 : 0,
+    validar,
+    salvar: gravar,
+    descartar: () => { setValor(percentualAtual ? String(percentualAtual) : ''); setErro(''); },
+  });
+
+  // Só fora do salvar único (seção usada sozinha).
+  const salvar = async () => {
+    setSalvo(false);
+    if (validar()) return;
+    setSalvando(true);
+    try {
+      await gravar();
+      setSalvo(true);
+    } catch {
+      // motivo já está na tela
     } finally {
       setSalvando(false);
     }
-  }, [storeId, valor]);
+  };
 
   const exemplo = Number.isFinite(numero) && numero > 0 && numero <= 100
     ? (Math.floor(5000 * numero / 100) / 100).toFixed(2).replace('.', ',')
@@ -87,9 +108,11 @@ export const AcrescimoDoValeSection: React.FC<AcrescimoDoValeSectionProps> = ({
       {erro && <p role="alert" className="mt-3 text-sm text-danger-500">{erro}</p>}
       {salvo && !erro && <p role="status" className="mt-3 text-sm text-fg-muted-token">Salvo.</p>}
 
-      <Button className="mt-4" onClick={salvar} disabled={salvando}>
-        {salvando ? 'Salvando...' : 'Salvar'}
-      </Button>
+      {!noSalvarUnico && (
+        <Button className="mt-4" onClick={salvar} disabled={salvando}>
+          {salvando ? 'Salvando...' : 'Salvar'}
+        </Button>
+      )}
     </Card>
   );
 };

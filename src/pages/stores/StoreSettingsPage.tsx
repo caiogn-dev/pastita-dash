@@ -42,6 +42,7 @@ import VoucherSection from './VoucherSection';
 import ValePorLinkSection from './ValePorLinkSection';
 import AcrescimoDoValeSection from './AcrescimoDoValeSection';
 import NotaFiscalSection from './NotaFiscalSection';
+import { SalvarJunto, useSalvarJunto } from './salvarJunto';
 import CaixaDinheiroSection from './CaixaDinheiroSection';
 import AvisoFilaHumanaSection from './AvisoFilaHumanaSection';
 import { LocalizacaoNoGoogle } from './LocalizacaoNoGoogle';
@@ -264,7 +265,11 @@ export const StoreSettingsPage: React.FC = () => {
   const rastreioMudado = CAMPOS_DO_RASTREIO.filter((k) => metaTracking[k] !== salvo.rastreio[k]).length
     + (metaTracking.meta_capi_access_token?.trim() ? 1 : 0);
 
-  const quantidade = mudouNaLoja.length + mudouNoLocal.length + mudouNoPrazo.length + diasMudados.length
+  // Vale, vale por QR Code, acréscimo e nota fiscal gravam fora da loja, cada
+  // uma no seu endpoint — mas entram na mesma barra e no mesmo Salvar.
+  const juntas = useSalvarJunto();
+
+  const quantidade = juntas.mudancas + mudouNaLoja.length + mudouNoLocal.length + mudouNoPrazo.length + diasMudados.length
     + (preparoMudou ? 1 : 0)    + (avaliacaoMudou ? 1 : 0) + (pausasMudaram ? 1 : 0) + rastreioMudado;
 
   // Sair da página com alteração pendente perde o que foi digitado.
@@ -282,6 +287,7 @@ export const StoreSettingsPage: React.FC = () => {
     setGoogleReviewUrl(salvo.avaliacao);
     setMetaTracking(salvo.rastreio);
     setErros({});
+    juntas.descartar();
   };
 
   /**
@@ -294,6 +300,12 @@ export const StoreSettingsPage: React.FC = () => {
    */
   const salvar = async () => {
     if (!effectiveStoreId) return;
+
+    const erroDasSecoes = juntas.validar();
+    if (erroDasSecoes) {
+      toast.error(erroDasSecoes);
+      return;
+    }
 
     if (mudouNoLocal.length) {
       const novosErros = {
@@ -397,6 +409,7 @@ export const StoreSettingsPage: React.FC = () => {
         }
         await updateStoreMetaTracking(effectiveStoreId, dados);
       }
+      await juntas.salvar();
       toast.success(quantidade === 1 ? 'Alteração salva' : `${quantidade} alterações salvas`);
       await loadStore(true);
     } catch (error) {
@@ -456,6 +469,7 @@ export const StoreSettingsPage: React.FC = () => {
 
       {/* Molde Configurações: seções à esquerda, conteúdo ao lado, um salvar.
           Sete abas numa linha já passavam da largura e escondiam as últimas. */}
+      <SalvarJunto registro={juntas.registro}>
       <PageTabs
         lateral
         ariaLabel="Seções das configurações da loja"
@@ -464,8 +478,8 @@ export const StoreSettingsPage: React.FC = () => {
           { id: 'entrega', rotulo: 'Entrega e horários', icone: ClockIcon, mudou: diasMudados.length + mudouNoPrazo.length > 0 || preparoMudou },
           { id: 'rastreamento', rotulo: 'Rastreamento', icone: ChartBarIcon, mudou: rastreioMudado > 0 },
           { id: 'avaliacoes', rotulo: 'Avaliações', icone: StarIcon, mudou: avaliacaoMudou },
-          { id: 'recebimento', rotulo: 'Recebimento', icone: BanknotesIcon },
-          { id: 'fiscal', rotulo: 'Nota fiscal', icone: DocumentTextIcon },
+          { id: 'recebimento', rotulo: 'Recebimento', icone: BanknotesIcon, mudou: juntas.mudouEm('vale-pagarme', 'vale-por-link', 'acrescimo-do-vale') },
+          { id: 'fiscal', rotulo: 'Nota fiscal', icone: DocumentTextIcon, mudou: juntas.mudouEm('nota-fiscal') },
           { id: 'atendimento', rotulo: 'Atendimento', icone: ChatBubbleLeftRightIcon },
         ]}
       >
@@ -748,8 +762,11 @@ export const StoreSettingsPage: React.FC = () => {
               </Card>
             )}
 
-            {aba === 'recebimento' && store?.id && (
-              <>
+            {/* Recebimento e Nota fiscal ficam montados, só escondidos: são
+                deles as alterações que a barra conta, e desmontar ao trocar de
+                aba jogaria fora o que foi digitado sem aviso. */}
+            {store?.id && (
+              <div hidden={aba !== 'recebimento'} className="flex flex-col gap-6">
                 <RecebimentoSection
                   storeId={store.id}
                   usaGatewayDaPlataforma={Boolean(
@@ -772,11 +789,13 @@ export const StoreSettingsPage: React.FC = () => {
                   ) || 0}
                 />
                 <CaixaDinheiroSection loja={store} onSalvo={setStore} />
-              </>
+              </div>
             )}
 
-            {aba === 'fiscal' && store?.id && (
-              <NotaFiscalSection storeId={store.id} />
+            {store?.id && (
+              <div hidden={aba !== 'fiscal'}>
+                <NotaFiscalSection storeId={store.id} />
+              </div>
             )}
 
             {aba === 'atendimento' && store?.id && (
@@ -805,6 +824,7 @@ export const StoreSettingsPage: React.FC = () => {
           </div>
         )}
       </PageTabs>
+      </SalvarJunto>
 
       <BarraDeAlteracoes
         quantidade={quantidade}
