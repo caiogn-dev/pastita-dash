@@ -4,6 +4,8 @@ import { MemoryRouter } from 'react-router-dom';
 import type { Order } from '../../../types';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
+// api.ts falha ao carregar sem VITE_API_URL; a tela só precisa do módulo.
+jest.mock('../../../services/api', () => ({ __esModule: true, default: { get: jest.fn(() => Promise.reject(new Error('sem api'))), post: jest.fn(() => Promise.reject(new Error('sem api'))), put: jest.fn(), patch: jest.fn(), delete: jest.fn() }, getErrorMessage: (e: unknown) => String(e) }));
 jest.mock('react-hot-toast', () => ({
   __esModule: true,
   default: { success: jest.fn(), error: jest.fn() },

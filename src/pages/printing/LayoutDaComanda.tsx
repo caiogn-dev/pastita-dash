@@ -261,10 +261,10 @@ const LayoutDaComandaPage: React.FC = () => {
         </div>
 
         <div className="lg:sticky lg:top-4 lg:self-start">
-          <div className="overflow-x-auto rounded-lg border border-border-token bg-surface-sunken p-4">
+          <div className="overflow-x-auto bg-surface-sunken rounded-lg border border-border-token p-4">
             <div
               data-testid="previa-papel"
-              className="mx-auto bg-white p-3 font-mono text-[12px] text-black shadow"
+              className="mx-auto bg-white p-3 font-mono text-xs text-black shadow"
               style={{ width: `${colunas}ch`, boxSizing: 'content-box' }}
             >
               {linhas.map((l, i) => (

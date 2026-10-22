@@ -558,7 +558,31 @@ export const useOrderPrint = () => {
     }, 300);
   }, []);
 
-  return { printOrder };
+  /** Imprime um HTML pronto (comanda montada no servidor) no mesmo iframe. */
+  const printHtml = useCallback((html: string) => {
+    if (!printFrameRef.current) {
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'absolute';
+      iframe.style.top = '-9999px';
+      iframe.style.left = '-9999px';
+      iframe.style.width = '80mm';
+      iframe.style.height = '0';
+      document.body.appendChild(iframe);
+      printFrameRef.current = iframe;
+    }
+    const iframe = printFrameRef.current;
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) return;
+    doc.open();
+    doc.write(html);
+    doc.close();
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    }, 300);
+  }, []);
+
+  return { printOrder, printHtml };
 };
 
 // Auto-print settings storage key

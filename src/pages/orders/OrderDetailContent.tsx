@@ -68,6 +68,8 @@ const parseAddress = (addr: string | Record<string, unknown> | undefined): Recor
   return addr as Record<string, string>;
 };
 import { useOrderPrint } from '../../components/orders/OrderPrint';
+import { getLayoutDaComanda, previaDaComanda } from '../../services/printing';
+import { htmlDaComanda, layoutDaCozinha } from '../../utils/comandaHtml';
 import { EditOrderDrawer } from '../../components/orders/EditOrderDrawer';
 import { RegistrarPagamentoModal } from '../../components/orders/RegistrarPagamentoModal';
 import { CancelarPedidoModal } from '../../components/orders/CancelarPedidoModal';
@@ -222,7 +224,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
   onNestedOpenChange,
 }) => {
   const id = orderId;
-  const { printOrder } = useOrderPrint();
+  const { printOrder, printHtml } = useOrderPrint();
   const { store } = useStore();
 
   const [order, setOrder] = useState<Order | null>(null);
@@ -258,6 +260,21 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
       hidePrices,
       preparo,
     });
+    // Mesmo papel do print agent: o layout salvo em Impressoras → Layout da
+    // comanda. O desenho antigo do navegador só entra se o servidor falhar.
+    if (store?.slug) {
+      try {
+        const template = preparo ? 'prep_ticket' : 'kitchen_ticket';
+        const layout = hidePrices ? layoutDaCozinha((await getLayoutDaComanda(store.slug)).data) : undefined;
+        const { data } = await previaDaComanda(store.slug, layout, { pedido_id: order.id, template });
+        if (data.linhas?.length) {
+          printHtml(htmlDaComanda(data.linhas, data.colunas));
+          return;
+        }
+      } catch {
+        // cai no desenho local abaixo
+      }
+    }
     try {
       const freshOrder = id ? await ordersService.getOrder(id) : order;
       printOrder(freshOrder as any, printOpts(freshOrder));

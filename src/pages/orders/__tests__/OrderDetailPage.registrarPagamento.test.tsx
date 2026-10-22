@@ -2,6 +2,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import type { Order } from '../../../types';
 
+// api.ts falha ao carregar sem VITE_API_URL; a tela só precisa do módulo.
+jest.mock('../../../services/api', () => ({ __esModule: true, default: { get: jest.fn(() => Promise.reject(new Error('sem api'))), post: jest.fn(() => Promise.reject(new Error('sem api'))), put: jest.fn(), patch: jest.fn(), delete: jest.fn() }, getErrorMessage: (e: unknown) => String(e) }));
 jest.mock('react-router-dom', () => ({
   __esModule: true,
   useParams: () => ({ id: 'o1', storeId: 'loja-1' }),

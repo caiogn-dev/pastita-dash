@@ -4,6 +4,8 @@ import type { Order, Payment } from '../../../types';
 
 // ---- Mocks (antes dos imports do componente) ----
 const mockNavigate = jest.fn();
+// api.ts falha ao carregar sem VITE_API_URL; a tela só precisa do módulo.
+jest.mock('../../../services/api', () => ({ __esModule: true, default: { get: jest.fn(() => Promise.reject(new Error('sem api'))), post: jest.fn(() => Promise.reject(new Error('sem api'))), put: jest.fn(), patch: jest.fn(), delete: jest.fn() }, getErrorMessage: (e: unknown) => String(e) }));
 jest.mock('react-router-dom', () => ({
   __esModule: true,
   useParams: () => ({ id: 'o1', storeId: 'loja-1' }),
@@ -36,9 +38,18 @@ jest.mock('../../../hooks', () => ({
   useStore: () => ({ store: { id: 'loja-1', name: 'Loja Teste', slug: 'loja-1' }, stores: [{ id: 'loja-1', slug: 'loja-1', name: 'Loja Teste' }] }),
 }));
 
+const mockPrintOrder = jest.fn();
+const mockPrintHtml = jest.fn();
 jest.mock('../../../components/orders/OrderPrint', () => ({
   __esModule: true,
-  useOrderPrint: () => ({ printOrder: jest.fn() }),
+  useOrderPrint: () => ({ printOrder: mockPrintOrder, printHtml: mockPrintHtml }),
+}));
+const mockPrevia = jest.fn();
+const mockGetLayout = jest.fn();
+jest.mock('../../../services/printing', () => ({
+  __esModule: true,
+  previaDaComanda: (...a: unknown[]) => mockPrevia(...a),
+  getLayoutDaComanda: (...a: unknown[]) => mockGetLayout(...a),
 }));
 jest.mock('../../../components/OrderDeliveryModal', () => ({ __esModule: true, OrderDeliveryModal: () => null }));
 jest.mock('../../../components/orders/EditOrderDrawer', () => ({ __esModule: true, EditOrderDrawer: () => null }));
@@ -281,5 +292,39 @@ describe('OrderDetailPage — cancelar pedido entregue', () => {
     render(<OrderDetailPage />);
     await screen.findByRole('button', { name: /Fidelidade/ });
     expect(screen.queryByRole('button', { name: 'Cancelar pedido' })).not.toBeInTheDocument();
+  });
+});
+
+describe('OrderDetailPage — imprimir usa o layout da comanda do servidor', () => {
+  it('"Pedido" desenha as linhas do servidor para este pedido', async () => {
+    mockGetOrder.mockResolvedValue(baseOrder);
+    mockPrevia.mockResolvedValue({ data: { linhas: [{ texto: 'COBRAR  R$ 50,00' }], colunas: 48 } });
+    render(<OrderDetailPage />);
+    fireEvent.click(await screen.findByRole('button', { name: /Pedido/ }));
+    await waitFor(() => expect(mockPrintHtml).toHaveBeenCalled());
+    expect(mockPrevia).toHaveBeenCalledWith('loja-1', undefined, { pedido_id: 'o1', template: 'kitchen_ticket' });
+    expect(mockPrintHtml.mock.calls[0][0]).toContain('COBRAR  R$ 50,00');
+    expect(mockPrintOrder).not.toHaveBeenCalled();
+  });
+
+  it('"Cozinha" manda o layout sem preços', async () => {
+    mockGetOrder.mockResolvedValue(baseOrder);
+    mockGetLayout.mockResolvedValue({ data: { versao: 1, blocos: [{ id: 'totais', ligado: true }], separador: 'tracejado', colunas: 48, vias: 1, itens_grandes: false, precos_nos_itens: true, mensagem: '' } });
+    mockPrevia.mockResolvedValue({ data: { linhas: [{ texto: '1 x Salada' }], colunas: 48 } });
+    render(<OrderDetailPage />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Cozinha' }));
+    await waitFor(() => expect(mockPrintHtml).toHaveBeenCalled());
+    const layout = mockPrevia.mock.calls[0][1];
+    expect(layout.precos_nos_itens).toBe(false);
+    expect(layout.blocos[0].ligado).toBe(false);
+  });
+
+  it('servidor fora: cai no desenho do navegador', async () => {
+    mockGetOrder.mockResolvedValue(baseOrder);
+    mockPrevia.mockRejectedValue(new Error('502'));
+    render(<OrderDetailPage />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Preparo' }));
+    await waitFor(() => expect(mockPrintOrder).toHaveBeenCalled());
+    expect(mockPrintHtml).not.toHaveBeenCalled();
   });
 });

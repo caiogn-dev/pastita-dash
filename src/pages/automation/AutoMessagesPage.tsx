@@ -293,7 +293,7 @@ const AutoMessagesPage: React.FC = () => {
   if (semPerfil) {
     return (
       <PageShell titulo="Mensagens prontas">
-        <p className="text-sm text-fg-muted-token">Esta loja ainda não tem o atendimento automático configurado.</p>
+        <p className="text-sm text-fg-muted-token">Atendimento automático ainda não configurado</p>
       </PageShell>
     );
   }
