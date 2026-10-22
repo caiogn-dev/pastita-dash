@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   PrinterIcon,
+  DocumentTextIcon,
   PlusIcon,
   ArrowPathIcon,
   KeyIcon,
@@ -239,6 +240,9 @@ const PrintSettingsPage: React.FC = () => {
       titulo="Impressão automática"
       acoes={
         <div className="flex gap-2">
+        <Link to="comanda">
+          <Button variant="outline" leftIcon={<DocumentTextIcon className="w-4 h-4" />}>Layout da comanda</Button>
+        </Link>
         <Button variant="ghost" onClick={loadData} disabled={loading} leftIcon={<ArrowPathIcon className="w-4 h-4" />}>
         {loading ? 'Atualizando…' : 'Atualizar'}
         </Button>

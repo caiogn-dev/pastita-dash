@@ -246,3 +246,46 @@ export const calibracaoDoAgente = (agent: Pick<PrintAgent, 'metadata'>): Calibra
   const meta = (agent.metadata || {}) as { calibracao?: Calibracao };
   return meta.calibracao || {};
 };
+
+// ── Layout da comanda (montada no servidor) ─────────────────────────────────
+
+export type IdDoBloco =
+  | 'cabecalho' | 'numero' | 'pagamento' | 'cliente' | 'endereco' | 'avisos'
+  | 'itens' | 'totais' | 'observacao' | 'mensagem' | 'codigo_barras';
+
+export interface BlocoDaComanda { id: IdDoBloco | string; ligado: boolean }
+
+export interface LayoutDaComanda {
+  versao: number;
+  blocos: BlocoDaComanda[];
+  separador: 'tracejado' | 'linha' | 'espaco';
+  colunas: 48 | 32;
+  vias: 1 | 2;
+  itens_grandes: boolean;
+  precos_nos_itens: boolean;
+  mensagem: string;
+}
+
+export interface LinhaDaComanda {
+  texto: string;
+  alinhar?: 'esquerda' | 'centro' | 'direita';
+  negrito?: boolean;
+  altura_dupla?: boolean;
+  largura_dupla?: boolean;
+  invertido?: boolean;
+  tipo?: 'texto' | 'separador' | 'codigo_barras' | 'corte' | 'espaco';
+}
+
+export interface PreviaDaComanda { linhas: LinhaDaComanda[]; colunas: number; pedido?: string }
+
+export const getLayoutDaComanda = (storeSlug: string) =>
+  api.get<LayoutDaComanda>(`/stores/${storeSlug}/comanda/layout/`);
+
+export const salvarLayoutDaComanda = (storeSlug: string, layout: LayoutDaComanda) =>
+  api.put<LayoutDaComanda>(`/stores/${storeSlug}/comanda/layout/`, layout);
+
+export const previaDaComanda = (storeSlug: string, layout?: LayoutDaComanda, extras?: { pedido_id?: string; template?: string }) =>
+  api.post<PreviaDaComanda>(`/stores/${storeSlug}/comanda/previa/`, { layout, ...extras });
+
+export const imprimirTesteDaComanda = (storeSlug: string, layout?: LayoutDaComanda) =>
+  api.post<{ id?: string }>(`/stores/${storeSlug}/comanda/imprimir-teste/`, { layout });

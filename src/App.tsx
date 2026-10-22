@@ -94,6 +94,7 @@ const WhatsAppTemplatesPage = lazy(() => import('./pages/marketing/whatsapp/What
 // Delivery Pages
 const DeliveryZonesPage = lazy(() => import('./pages/delivery/DeliveryZonesPage').then(m => ({ default: m.default || m.DeliveryZonesPage })));
 const PrintSettingsPage = lazy(() => import('./pages/printing/PrintSettingsPage'));
+const LayoutDaComandaPage = lazy(() => import('./pages/printing/LayoutDaComanda'));
 const CashPage = lazy(() => import('./pages/cash/CashPage'));
 const PdvBalcaoPage = lazy(() => import('./pages/pdv/PdvBalcaoPage'));
 const EtiquetasPage = lazy(() => import('./pages/pdv/EtiquetasPage'));
@@ -293,6 +294,7 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId/storefront" element={<PageBoundary><StorefrontPage /></PageBoundary>} />
         <Route path="stores/:storeId/delivery" element={<PageBoundary><DeliveryZonesPage /></PageBoundary>} />
         <Route path="stores/:storeId/printing" element={<PageBoundary><PrintSettingsPage /></PageBoundary>} />
+        <Route path="stores/:storeId/printing/comanda" element={<PageBoundary><LayoutDaComandaPage /></PageBoundary>} />
         <Route path="stores/:storeId/notas-fiscais" element={<PageBoundary><NotasFiscaisPage /></PageBoundary>} />
         <Route path="stores/:storeId/cash" element={<PageBoundary><CashPage /></PageBoundary>} />
         <Route path="stores/:storeId/pdv" element={<PageBoundary><PdvBalcaoPage /></PageBoundary>} />
