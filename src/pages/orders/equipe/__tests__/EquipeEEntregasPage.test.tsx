@@ -40,9 +40,10 @@ beforeEach(() => {
 
 it('mostra o ranking dos dois lados e as entregas sem entregador', async () => {
   tela();
-  expect(await screen.findByText('42')).toBeInTheDocument();
-  expect(screen.getByText('18 min')).toBeInTheDocument();
-  expect(screen.getByText('Ana')).toBeInTheDocument();
+  // Tabela desenha a tabela (desktop) e o cartão (celular): o valor aparece nos dois.
+  expect((await screen.findAllByText('42')).length).toBeGreaterThan(0);
+  expect(screen.getAllByText('18 min').length).toBeGreaterThan(0);
+  expect(screen.getAllByText('Ana').length).toBeGreaterThan(0);
   expect(screen.getByText(/5 entregas ficaram sem entregador/)).toBeInTheDocument();
 });
 

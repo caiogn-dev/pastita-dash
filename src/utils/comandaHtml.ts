@@ -27,34 +27,42 @@ export const layoutDaCozinha = (layout: LayoutDaComanda): LayoutDaComanda => ({
     b.id === 'totais' || b.id === 'pagamento' ? { ...b, ligado: false } : b),
 });
 
-const linhaHtml = (l: LinhaDaComanda, colunas: number): string => {
+// "TOTAL            R$ 80,91": rótulo e valor que o servidor alinhou com espaços.
+const DUAS_COLUNAS = /^(.*\S)\s{2,}(\S.*)$/;
+
+const linhaHtml = (l: LinhaDaComanda): string => {
   if (l.tipo === 'corte') return '<div class="corte"></div>';
   if (l.tipo === 'espaco') return '<div class="l">&nbsp;</div>';
   // O número do pedido já está no papel; barras falsas no navegador não leem.
   if (l.tipo === 'codigo_barras') return '';
-  const sx = l.largura_dupla ? 2 : 1;
-  const sy = l.altura_dupla ? 2 : 1;
-  const classes = ['l', l.invertido && 'inv', l.negrito && 'b'].filter(Boolean).join(' ');
-  const texto = escapar(l.texto) || '&nbsp;';
+  const grande = l.altura_dupla || l.largura_dupla;
+  const classes = ['l', l.invertido && 'inv', l.negrito && 'b', grande && 'g'].filter(Boolean).join(' ');
   const alinhar = ALINHAR[l.alinhar ?? 'esquerda'];
-  if (sx === 1 && sy === 1) return `<div class="${classes}" style="text-align:${alinhar}">${texto}</div>`;
-  return `<div class="${classes}" style="height:${1.25 * sy}em"><div class="esc" style="width:${colunas / sx}ch;text-align:${alinhar};transform:scale(${sx},${sy})">${texto}</div></div>`;
+  if (!grande) return `<div class="${classes}" style="text-align:${alinhar}">${escapar(l.texto) || '&nbsp;'}</div>`;
+  // Letra grande sem `transform`: o Chrome imprime trecho transformado como
+  // imagem (borrado na térmica). Fonte maior de verdade, e o par rótulo/valor
+  // vira duas pontas em vez de espaços que estouravam a largura.
+  const par = l.texto.trim().match(DUAS_COLUNAS);
+  if (par) return `<div class="${classes} par"><span>${escapar(par[1])}</span><span>${escapar(par[2])}</span></div>`;
+  return `<div class="${classes}" style="text-align:${alinhar}">${escapar(l.texto.trim()) || '&nbsp;'}</div>`;
 };
 
 export const htmlDaComanda = (linhas: LinhaDaComanda[], colunas: number): string => {
-  // Bobina de 80 mm imprime ~72 mm; 58 mm imprime ~48 mm. Courier: 1ch = 0,6em.
+  // Bobina de 80 mm imprime ~72 mm; 58 mm imprime ~48 mm. Monoespaçada: 1ch = 0,6em (Courier; Consolas é mais estreita e sobra).
   const util = colunas <= 32 ? 48 : 72;
   const fonte = (util / (colunas * 0.6)).toFixed(2);
   return `<!doctype html>
 <html><head><meta charset="utf-8"><title>Comanda</title><style>
-@page { size: ${colunas <= 32 ? 58 : 80}mm auto; margin: 3mm 2mm; }
+@page { margin: 0; }
 html, body { margin: 0; padding: 0; background: #fff; }
-body { font-family: 'Courier New', Courier, monospace; color: #000; }
-.papel { width: ${colunas}ch; font-size: ${fonte}mm; }
-.l { white-space: pre; line-height: 1.25; min-height: 1.25em; overflow: hidden; }
-.esc { white-space: pre; transform-origin: 0 0; }
-.b { font-weight: 700; }
-.inv { background: #000; color: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { font-family: Consolas, 'Lucida Console', 'Courier New', monospace; color: #000; -webkit-font-smoothing: none; }
+.papel { width: ${util}mm; padding: 2mm ${colunas <= 32 ? 3 : 4}mm; font-size: ${fonte}mm; font-weight: 600; }
+.l { white-space: pre; line-height: 1.3; min-height: 1.3em; overflow: hidden; }
+.g { white-space: pre-wrap; font-size: 1.6em; line-height: 1.15; font-weight: 800; }
+.par { display: flex; justify-content: space-between; align-items: baseline; gap: .6em; }
+.par span:last-child { white-space: nowrap; }
+.b { font-weight: 800; }
+.inv { background: #000; color: #fff; padding: 0 .3em; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .corte { page-break-after: always; break-after: page; height: 4mm; }
-</style></head><body><div class="papel">${linhas.map((l) => linhaHtml(l, colunas)).join('')}</div></body></html>`;
+</style></head><body><div class="papel">${linhas.map(linhaHtml).join('')}</div></body></html>`;
 };

@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { getErrorMessage } from '../../services';
+import { Select } from '../ui';
 import { operacaoService, type Entregador } from '../../services/operacao';
 
 interface Props {
@@ -42,20 +43,19 @@ export const EntregadorDoPedido: React.FC<Props> = ({ storeSlug, pedidoId, atual
     }
   };
 
+  const semCadastro = atual && !opcoes.some((e) => e.id === atual)
+    ? [{ valor: atual, rotulo: atualNome ?? 'Entregador' }]
+    : [];
+
   return (
-    <label className="inline-flex items-center gap-1.5 rounded-lg border border-border-token px-2 py-1 text-xs font-medium text-fg-token">
-      <span className="text-fg-muted-token">Entregador</span>
-      <select
-        aria-label="Entregador"
-        value={escolhido}
-        onChange={(e) => mudar(e.target.value)}
-        className="bg-transparent py-1 text-xs text-fg-token focus:outline-none"
-      >
-        <option value="">—</option>
-        {opcoes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-        {atual && !opcoes.some((e) => e.id === atual) && <option value={atual}>{atualNome ?? 'Entregador'}</option>}
-      </select>
-    </label>
+    <Select
+      rotuloOculto="Entregador"
+      vazio="Entregador…"
+      valor={escolhido}
+      onMudar={mudar}
+      opcoes={[...opcoes.map((e) => ({ valor: e.id, rotulo: e.nome })), ...semCadastro]}
+      className="w-40"
+    />
   );
 };
 

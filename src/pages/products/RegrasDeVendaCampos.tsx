@@ -1,8 +1,7 @@
 import React from 'react';
+import { Campo, Input, Switch } from '../../components/ui';
 import { DIAS_CURTOS, type RegrasDeVenda } from './regrasDeVenda';
 
-const CAMPO =
-  'w-full px-3 py-2 border border-border-token rounded bg-surface text-fg-token focus:ring-2 focus:ring-brand';
 const TODOS = [0, 1, 2, 3, 4, 5, 6];
 
 interface Props {
@@ -42,41 +41,32 @@ export const RegrasDeVendaCampos: React.FC<Props> = ({ valor, onChange }) => {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div>
-          <label className="mb-1 block text-xs font-medium text-fg-token" htmlFor="venda-de">Vende das</label>
-          <input id="venda-de" type="time" className={CAMPO} value={valor.de ?? ''} onChange={(e) => mudar({ de: e.target.value })} />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-fg-token" htmlFor="venda-ate">Até</label>
-          <input id="venda-ate" type="time" className={CAMPO} value={valor.ate ?? ''} onChange={(e) => mudar({ ate: e.target.value })} />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-fg-token" htmlFor="venda-minimo">Mínimo por pedido</label>
-          <input
-            id="venda-minimo" type="number" inputMode="numeric" min={1} max={999} placeholder="1"
-            className={`${CAMPO} tabular-nums`} value={valor.minimo ?? ''}
+        <Campo rotulo="Vende das">
+          <Input type="time" value={valor.de ?? ''} onChange={(e) => mudar({ de: e.target.value })} />
+        </Campo>
+        <Campo rotulo="Até">
+          <Input type="time" value={valor.ate ?? ''} onChange={(e) => mudar({ ate: e.target.value })} />
+        </Campo>
+        <Campo rotulo="Mínimo por pedido">
+          <Input
+            type="number" inputMode="numeric" min={1} max={999} placeholder="1"
+            className="tabular-nums" value={valor.minimo ?? ''}
             onChange={(e) => mudar({ minimo: numero(e.target.value) })}
           />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-fg-token" htmlFor="venda-maximo">Máximo por pedido</label>
-          <input
-            id="venda-maximo" type="number" inputMode="numeric" min={1} max={999} placeholder="Sem limite"
-            className={`${CAMPO} tabular-nums`} value={valor.maximo ?? ''}
+        </Campo>
+        <Campo rotulo="Máximo por pedido">
+          <Input
+            type="number" inputMode="numeric" min={1} max={999} placeholder="Sem limite"
+            className="tabular-nums" value={valor.maximo ?? ''}
             onChange={(e) => mudar({ maximo: numero(e.target.value) })}
           />
-        </div>
+        </Campo>
       </div>
 
-      <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={!!valor.so_retirada}
-          onChange={(e) => mudar({ so_retirada: e.target.checked })}
-          className="rounded border-border-token text-brand-ink focus:ring-brand"
-        />
+      <div className="flex items-center gap-2">
+        <Switch ligado={!!valor.so_retirada} onMudar={(v) => mudar({ so_retirada: v })} rotulo="Só retirada na loja" />
         <span className="text-sm">Só retirada na loja</span>
-      </label>
+      </div>
     </fieldset>
   );
 };

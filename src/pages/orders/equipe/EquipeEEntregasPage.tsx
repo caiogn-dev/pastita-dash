@@ -8,7 +8,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
-import { Button, Card, EmptyState, Input, PageShell } from '../../../components/ui';
+import { Button, Card, EmptyState, Input, PageShell, Tabela } from '../../../components/ui';
 import { useStore } from '../../../hooks/useStore';
 import { getErrorMessage } from '../../../services';
 import { operacaoService, type Entregador, type RankingDaOperacao } from '../../../services/operacao';
@@ -20,8 +20,6 @@ const PERIODOS = [
   { dias: 90, rotulo: '90 dias' },
 ];
 
-const TH = 'pb-2 px-2 text-xs font-semibold uppercase tracking-wide text-fg-muted-token';
-const TD = 'py-2 px-2 text-fg-token tabular-nums';
 
 export const EquipeEEntregasPage: React.FC = () => {
   const { store } = useStore();
@@ -113,26 +111,17 @@ export const EquipeEEntregasPage: React.FC = () => {
                 descricao="Escolha o entregador no pedido e o ranking aparece aqui."
               />
             ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className={`${TH} text-left`}>Entregador</th>
-                    <th className={`${TH} text-right`}>Entregas</th>
-                    <th className={`${TH} text-right`}>Na rua</th>
-                    <th className={`${TH} text-right`}>Frete</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ranking.entregadores.map((e) => (
-                    <tr key={e.id} className="border-t border-border-token">
-                      <td className={`${TD} font-medium`}>{e.nome}</td>
-                      <td className={`${TD} text-right`}>{e.entregas}</td>
-                      <td className={`${TD} text-right`}>{e.minutos_medios == null ? '—' : `${e.minutos_medios} min`}</td>
-                      <td className={`${TD} text-right`}>{formatCurrency(e.frete)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <Tabela
+                itens={ranking.entregadores}
+                chave={(e) => String(e.id)}
+                rotuloDaLinha={(e) => e.nome}
+                colunas={[
+                  { chave: 'nome', cabecalho: 'Entregador', render: (e) => <span className="font-medium">{e.nome}</span> },
+                  { chave: 'entregas', cabecalho: 'Entregas', alinhamento: 'direita', render: (e) => e.entregas },
+                  { chave: 'rua', cabecalho: 'Na rua', alinhamento: 'direita', render: (e) => (e.minutos_medios == null ? '—' : `${e.minutos_medios} min`) },
+                  { chave: 'frete', cabecalho: 'Frete', alinhamento: 'direita', render: (e) => formatCurrency(e.frete) },
+                ]}
+              />
             )}
             {ranking.sem_entregador > 0 && (
               <p className="mt-3 text-sm text-fg-muted-token">
@@ -149,24 +138,16 @@ export const EquipeEEntregasPage: React.FC = () => {
                 descricao="Pedido do balcão ou lançado à mão conta para quem o lançou."
               />
             ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className={`${TH} text-left`}>Atendente</th>
-                    <th className={`${TH} text-right`}>Pedidos</th>
-                    <th className={`${TH} text-right`}>Vendido</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ranking.atendentes.map((a) => (
-                    <tr key={a.id} className="border-t border-border-token">
-                      <td className={`${TD} font-medium`}>{a.nome}</td>
-                      <td className={`${TD} text-right`}>{a.pedidos}</td>
-                      <td className={`${TD} text-right`}>{formatCurrency(a.faturado)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <Tabela
+                itens={ranking.atendentes}
+                chave={(a) => String(a.id)}
+                rotuloDaLinha={(a) => a.nome}
+                colunas={[
+                  { chave: 'nome', cabecalho: 'Atendente', render: (a) => <span className="font-medium">{a.nome}</span> },
+                  { chave: 'pedidos', cabecalho: 'Pedidos', alinhamento: 'direita', render: (a) => a.pedidos },
+                  { chave: 'vendido', cabecalho: 'Vendido', alinhamento: 'direita', render: (a) => formatCurrency(a.faturado) },
+                ]}
+              />
             )}
           </Card>
 
