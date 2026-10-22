@@ -13,7 +13,7 @@ import {
   ArrowUpTrayIcon, UsersIcon, HandRaisedIcon,
   ArrowPathIcon,
   ArrowTrendingUpIcon,
-  BellAlertIcon, CurrencyDollarIcon,
+  BellAlertIcon, CurrencyDollarIcon, TruckIcon,
 } from '@heroicons/react/24/outline';
 
 export interface NavItem {
@@ -154,6 +154,8 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
       items: [
         { name: 'Histórico',   href: storeHref('orders/historico'), icon: ClipboardDocumentListIcon },
         { name: 'Avaliações',  href: '/avaliacoes',                 icon: StarIcon },
+        // Entregadores (cadastro + ranking) e atendentes; antes só por um botão no Histórico.
+        { name: 'Equipe e entregas', href: '/pedidos/equipe',       icon: TruckIcon, tambem: ['entregador', 'motoboy', 'atendente', 'ranking'] },
       ],
     },
     {

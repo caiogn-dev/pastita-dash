@@ -34,4 +34,7 @@ export const operacaoService = {
   /** Cliente, endereço, CEP, mapa e o que cobrar — montado no servidor. */
   mensagem: async (slug: string, pedidoId: string): Promise<{ texto: string; whatsapp: string }> =>
     (await api.get(`/stores/${slug}/pedidos/${pedidoId}/entregador/`)).data,
+  /** Manda pelo WhatsApp da loja (API). 409 = sem janela de 24 h, sem telefone… (motivo em `detail`). */
+  enviar: async (slug: string, pedidoId: string): Promise<{ enviado: boolean; para: string }> =>
+    (await api.post(`/stores/${slug}/pedidos/${pedidoId}/entregador/enviar/`)).data,
 };

@@ -21,6 +21,7 @@ interface Props {
 export const EntregadorDoPedido: React.FC<Props> = ({ storeSlug, pedidoId, atual = null, atualNome = null }) => {
   const [lista, setLista] = useState<Entregador[]>([]);
   const [escolhido, setEscolhido] = useState<string>(atual ?? '');
+  const [enviando, setEnviando] = useState(false);
 
   useEffect(() => { setEscolhido(atual ?? ''); }, [atual, pedidoId]);
 
@@ -49,17 +50,16 @@ export const EntregadorDoPedido: React.FC<Props> = ({ storeSlug, pedidoId, atual
     ? [{ valor: atual, rotulo: atualNome ?? 'Entregador' }]
     : [];
 
-  // A janela abre no clique (síncrono): aberta depois do `await`, o
-  // navegador a trata como pop-up e bloqueia.
   const enviar = async () => {
-    const janela = window.open('', '_blank');
+    if (enviando) return;
+    setEnviando(true);
     try {
-      const { whatsapp } = await operacaoService.mensagem(storeSlug, pedidoId);
-      if (janela) janela.location.href = whatsapp;
-      else window.location.assign(whatsapp);
+      const { para } = await operacaoService.enviar(storeSlug, pedidoId);
+      toast.success(`Enviado para ${para}`);
     } catch (e) {
-      janela?.close();
       toast.error(getErrorMessage(e));
+    } finally {
+      setEnviando(false);
     }
   };
 
@@ -84,8 +84,8 @@ export const EntregadorDoPedido: React.FC<Props> = ({ storeSlug, pedidoId, atual
         opcoes={[...opcoes.map((e) => ({ valor: e.id, rotulo: e.nome })), ...semCadastro]}
         className="w-40"
       />
-      <button type="button" onClick={enviar} className={botao} title="Enviar ao entregador no WhatsApp" aria-label="Enviar ao entregador no WhatsApp">
-        <PaperAirplaneIcon className="h-4 w-4" />
+      <button type="button" onClick={enviar} disabled={!escolhido || enviando} className={`${botao} disabled:opacity-50`} title="Enviar ao entregador no WhatsApp" aria-label="Enviar ao entregador no WhatsApp">
+        <PaperAirplaneIcon className={`h-4 w-4 ${enviando ? 'animate-pulse' : ''}`} />
       </button>
       <button type="button" onClick={copiar} className={botao} title="Copiar mensagem" aria-label="Copiar mensagem">
         <ClipboardDocumentIcon className="h-4 w-4" />
