@@ -297,16 +297,20 @@ describe('OrderDetailPage — cancelar pedido entregue', () => {
   });
 });
 
-describe('OrderDetailPage — imprimir usa o layout da comanda do servidor', () => {
-  it('"Pedido" desenha as linhas do servidor para este pedido', async () => {
+const abrirMenu = async () => fireEvent.click(await screen.findByRole('button', { name: 'Outras vias de impressão' }));
+
+describe('OrderDetailPage — imprimir pelo navegador usa o layout do servidor', () => {
+  it('"Pedido completo" desenha as linhas do servidor para este pedido', async () => {
     mockGetOrder.mockResolvedValue(baseOrder);
     mockPrevia.mockResolvedValue({ data: { linhas: [{ texto: 'COBRAR  R$ 50,00' }], colunas: 48 } });
     render(<OrderDetailPage />);
-    fireEvent.click(await screen.findByRole('button', { name: /Pedido/ }));
+    await abrirMenu();
+    fireEvent.click(screen.getAllByRole('menuitem', { name: 'Pedido completo' })[1]);
     await waitFor(() => expect(mockPrintHtml).toHaveBeenCalled());
     expect(mockPrevia).toHaveBeenCalledWith('loja-1', undefined, { pedido_id: 'o1', template: 'kitchen_ticket' });
     expect(mockPrintHtml.mock.calls[0][0]).toContain('COBRAR  R$ 50,00');
     expect(mockPrintOrder).not.toHaveBeenCalled();
+    expect(mockNoAgente).not.toHaveBeenCalled();
   });
 
   it('"Cozinha" manda o layout sem preços', async () => {
@@ -314,32 +318,46 @@ describe('OrderDetailPage — imprimir usa o layout da comanda do servidor', () 
     mockGetLayout.mockResolvedValue({ data: { versao: 1, blocos: [{ id: 'totais', ligado: true }], separador: 'tracejado', colunas: 48, vias: 1, itens_grandes: false, precos_nos_itens: true, mensagem: '' } });
     mockPrevia.mockResolvedValue({ data: { linhas: [{ texto: '1 x Salada' }], colunas: 48 } });
     render(<OrderDetailPage />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Cozinha' }));
+    await abrirMenu();
+    fireEvent.click(screen.getAllByRole('menuitem', { name: 'Cozinha (sem preços)' })[1]);
     await waitFor(() => expect(mockPrintHtml).toHaveBeenCalled());
     const layout = mockPrevia.mock.calls[0][1];
     expect(layout.precos_nos_itens).toBe(false);
     expect(layout.blocos[0].ligado).toBe(false);
   });
 
-  it('servidor fora: cai no desenho do navegador', async () => {
+  it('servidor fora: cai no desenho antigo do navegador', async () => {
     mockGetOrder.mockResolvedValue(baseOrder);
     mockPrevia.mockRejectedValue(new Error('502'));
     render(<OrderDetailPage />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Preparo' }));
+    await abrirMenu();
+    fireEvent.click(screen.getAllByRole('menuitem', { name: 'Preparo (montagem)' })[1]);
     await waitFor(() => expect(mockPrintOrder).toHaveBeenCalled());
     expect(mockPrintHtml).not.toHaveBeenCalled();
   });
 });
 
-describe('OrderDetailPage — Imprimir rápido (print agent)', () => {
-  it('manda o pedido para a impressora da loja, sem abrir o navegador', async () => {
+describe('OrderDetailPage — Imprimir (print agent)', () => {
+  it('o clique principal manda o pedido para a impressora da loja', async () => {
     mockGetOrder.mockResolvedValue(baseOrder);
     mockNoAgente.mockResolvedValue({ data: { id: 'j1' } });
     render(<OrderDetailPage />);
-    fireEvent.click(await screen.findByRole('button', { name: /Imprimir rápido/ }));
-    await waitFor(() => expect(mockNoAgente).toHaveBeenCalledWith('loja-1', 'o1'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Imprimir' }));
+    await waitFor(() => expect(mockNoAgente).toHaveBeenCalledWith('loja-1', 'o1', undefined));
     expect(mockPrintHtml).not.toHaveBeenCalled();
     expect(mockPrintOrder).not.toHaveBeenCalled();
+  });
+
+  it('cozinha e preparo também vão para a impressora pelo menu', async () => {
+    mockGetOrder.mockResolvedValue(baseOrder);
+    mockNoAgente.mockResolvedValue({ data: { id: 'j1' } });
+    render(<OrderDetailPage />);
+    await abrirMenu();
+    fireEvent.click(screen.getAllByRole('menuitem', { name: 'Cozinha (sem preços)' })[0]);
+    await waitFor(() => expect(mockNoAgente).toHaveBeenCalledWith('loja-1', 'o1', { cozinha: true }));
+    await abrirMenu();
+    fireEvent.click(screen.getAllByRole('menuitem', { name: 'Preparo (montagem)' })[0]);
+    await waitFor(() => expect(mockNoAgente).toHaveBeenCalledWith('loja-1', 'o1', { template: 'prep_ticket' }));
   });
 
   it('sem impressora conectada, imprime pelo navegador', async () => {
@@ -347,7 +365,7 @@ describe('OrderDetailPage — Imprimir rápido (print agent)', () => {
     mockNoAgente.mockRejectedValue({ response: { status: 409 } });
     mockPrevia.mockResolvedValue({ data: { linhas: [{ texto: 'X' }], colunas: 48 } });
     render(<OrderDetailPage />);
-    fireEvent.click(await screen.findByRole('button', { name: /Imprimir rápido/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Imprimir' }));
     await waitFor(() => expect(mockPrintHtml).toHaveBeenCalled());
   });
 });

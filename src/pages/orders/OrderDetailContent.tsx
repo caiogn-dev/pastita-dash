@@ -23,7 +23,6 @@ import {
   TruckIcon,
   HomeIcon,
   XMarkIcon,
-  PrinterIcon,
   ChevronDownIcon,
   BellIcon,
   BellSlashIcon,
@@ -35,7 +34,6 @@ import {
   BuildingStorefrontIcon,
   GlobeAltIcon,
   ExclamationTriangleIcon,
-  BoltIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -69,6 +67,7 @@ const parseAddress = (addr: string | Record<string, unknown> | undefined): Recor
   return addr as Record<string, string>;
 };
 import { useOrderPrint } from '../../components/orders/OrderPrint';
+import { BotaoDeImprimir, type DestinoDeImpressao, type ViaDeImpressao } from '../../components/orders/BotaoDeImprimir';
 import { getLayoutDaComanda, imprimirNoAgente, previaDaComanda } from '../../services/printing';
 import { htmlDaComanda, layoutDaCozinha } from '../../utils/comandaHtml';
 import { EditOrderDrawer } from '../../components/orders/EditOrderDrawer';
@@ -284,19 +283,27 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
     }
   };
 
-  // Direto na impressora da loja (print agent), sem o diálogo do navegador.
-  // Sem impressora conectada, cai na impressão pelo navegador.
+  // Clique principal: direto na impressora da loja (print agent), sem o
+  // diálogo do navegador. Sem impressora conectada, cai no navegador.
   const [imprimindoRapido, setImprimindoRapido] = useState(false);
-  const handleQuickPrint = async () => {
-    if (!order || !store?.slug || imprimindoRapido) return;
+  const imprimir = async (via: ViaDeImpressao, destino: DestinoDeImpressao) => {
+    const cozinha = via !== 'pedido';
+    const preparo = via === 'preparo';
+    if (destino === 'navegador' || !store?.slug) {
+      await handlePrint(cozinha, preparo);
+      return;
+    }
+    if (!order || imprimindoRapido) return;
     setImprimindoRapido(true);
     try {
-      await imprimirNoAgente(store.slug, order.id);
+      await imprimirNoAgente(store.slug, order.id, preparo
+        ? { template: 'prep_ticket' }
+        : cozinha ? { cozinha: true } : undefined);
       toast.success('Enviado para a impressora');
     } catch (err) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       toast.error(status === 409 ? 'Nenhuma impressora conectada — abrindo pelo navegador' : 'Não foi possível enviar — abrindo pelo navegador');
-      await handlePrint(false);
+      await handlePrint(cozinha, preparo);
     } finally {
       setImprimindoRapido(false);
     }
@@ -1093,40 +1100,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
             uma camada. */}
         <div className="sticky bottom-0 z-20 -mx-4 flex flex-wrap items-center justify-between gap-3 border-t border-border-token bg-surface px-4 py-3 shadow-[0_-8px_16px_-12px_rgba(0,0,0,0.6)] sm:-mx-6 sm:px-6">
           <div className="flex flex-wrap items-center gap-1.5">
-            {/* Três impressões numa fileira, não três botões de largura total:
-                é uma escolha, não três decisões. */}
-            <Button
-              size="sm"
-              onClick={handleQuickPrint}
-              isLoading={imprimindoRapido}
-              leftIcon={<BoltIcon className="h-4 w-4" />}
-              title="Direto na impressora da loja"
-            >
-              Imprimir rápido
-            </Button>
-            <span className="inline-flex overflow-hidden rounded-lg border border-border-token">
-              <button
-                onClick={() => handlePrint(false)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-fg-token transition hover:bg-surface-2"
-              >
-                <PrinterIcon className="h-4 w-4" />
-                Pedido
-              </button>
-              <button
-                onClick={() => handlePrint(true)}
-                title="Comanda sem preços, para a cozinha"
-                className="border-l border-border-token px-3 py-2 text-xs font-medium text-fg-token transition hover:bg-surface-2"
-              >
-                Cozinha
-              </button>
-              <button
-                onClick={() => handlePrint(true, true)}
-                title="Via de montagem, com a composição de cada item"
-                className="border-l border-border-token px-3 py-2 text-xs font-medium text-fg-token transition hover:bg-surface-2"
-              >
-                Preparo
-              </button>
-            </span>
+            <BotaoDeImprimir onImprimir={imprimir} ocupado={imprimindoRapido} />
 
             <button
               onClick={() => setEditing(true)}
