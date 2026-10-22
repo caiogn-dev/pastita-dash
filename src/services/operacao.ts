@@ -31,4 +31,7 @@ export const operacaoService = {
     (await api.patch(`/stores/${slug}/entregadores/${id}/`, dados)).data,
   atribuir: async (slug: string, pedidoId: string, entregador: string | null): Promise<{ entregador: string | null; entregador_nome: string | null }> =>
     (await api.post(`/stores/${slug}/pedidos/${pedidoId}/entregador/`, { entregador })).data,
+  /** Cliente, endereço, CEP, mapa e o que cobrar — montado no servidor. */
+  mensagem: async (slug: string, pedidoId: string): Promise<{ texto: string; whatsapp: string }> =>
+    (await api.get(`/stores/${slug}/pedidos/${pedidoId}/entregador/`)).data,
 };

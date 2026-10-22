@@ -53,5 +53,6 @@ it('cadastra entregador', async () => {
   fireEvent.change(await screen.findByLabelText('Nome'), { target: { value: 'Carlos' } });
   fireEvent.click(screen.getByRole('button', { name: 'Adicionar entregador' }));
   await waitFor(() => expect(criarEntregador).toHaveBeenCalledWith('ce-saladas', { nome: 'Carlos', telefone: '' }));
-  expect(await screen.findByRole('button', { name: 'Carlos' })).toBeInTheDocument();
+  expect((await screen.findAllByText('Carlos')).length).toBeGreaterThan(0);
+  expect(screen.getAllByRole('switch', { name: 'Carlos ativo' }).length).toBeGreaterThan(0);
 });

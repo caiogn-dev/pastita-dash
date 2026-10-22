@@ -8,7 +8,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
-import { Button, Card, EmptyState, Input, PageShell, Tabela } from '../../../components/ui';
+import { Button, Card, EmptyState, Input, PageShell, Switch, Tabela } from '../../../components/ui';
 import { useStore } from '../../../hooks/useStore';
 import { getErrorMessage } from '../../../services';
 import { operacaoService, type Entregador, type RankingDaOperacao } from '../../../services/operacao';
@@ -118,7 +118,7 @@ export const EquipeEEntregasPage: React.FC = () => {
                 colunas={[
                   { chave: 'nome', cabecalho: 'Entregador', render: (e) => <span className="font-medium">{e.nome}</span> },
                   { chave: 'entregas', cabecalho: 'Entregas', alinhamento: 'direita', render: (e) => e.entregas },
-                  { chave: 'rua', cabecalho: 'Na rua', alinhamento: 'direita', render: (e) => (e.minutos_medios == null ? '—' : `${e.minutos_medios} min`) },
+                  { chave: 'rua', cabecalho: 'Tempo de entrega', alinhamento: 'direita', render: (e) => (e.minutos_medios == null ? '—' : `${e.minutos_medios} min`) },
                   { chave: 'frete', cabecalho: 'Frete', alinhamento: 'direita', render: (e) => formatCurrency(e.frete) },
                 ]}
               />
@@ -153,29 +153,30 @@ export const EquipeEEntregasPage: React.FC = () => {
 
           <Card className="p-5 lg:col-span-2">
             <h2 className="mb-3 text-lg font-semibold text-fg-token">Quem entrega</h2>
-            <ul className="mb-4 flex flex-wrap gap-2">
-              {entregadores.map((e) => (
-                <li key={e.id}>
-                  <button
-                    type="button"
-                    aria-pressed={e.is_active}
-                    onClick={() => alternar(e)}
-                    title={e.is_active ? 'Desligar' : 'Religar'}
-                    className={`rounded-full border px-3 py-1 text-sm ${
-                      e.is_active ? 'border-border-token text-fg-token' : 'border-dashed border-border-token text-fg-muted-token line-through'
-                    }`}
-                  >
-                    {e.nome}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            {entregadores.length > 0 && (
+              <div className="mb-4">
+                <Tabela
+                  itens={entregadores}
+                  chave={(e) => e.id}
+                  rotuloDaLinha={(e) => e.nome}
+                  classeDaLinha={(e) => (e.is_active ? '' : 'opacity-60')}
+                  colunas={[
+                    { chave: 'nome', cabecalho: 'Nome', render: (e) => <span className="font-medium">{e.nome}</span> },
+                    { chave: 'telefone', cabecalho: 'WhatsApp', render: (e) => e.telefone || '—' },
+                    {
+                      chave: 'ativo', cabecalho: 'Ativo', alinhamento: 'direita',
+                      render: (e) => <Switch ligado={e.is_active} onMudar={() => alternar(e)} rotulo={`${e.nome} ativo`} />,
+                    },
+                  ]}
+                />
+              </div>
+            )}
             <form onSubmit={cadastrar} className="flex flex-wrap items-end gap-3">
               <div className="w-56 max-sm:w-full">
                 <Input label="Nome" value={nome} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNome(e.target.value)} />
               </div>
               <div className="w-44 max-sm:w-full">
-                <Input label="Telefone" inputMode="tel" value={telefone} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTelefone(e.target.value)} />
+                <Input label="WhatsApp" inputMode="tel" placeholder="(63) 99999-0000" value={telefone} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTelefone(e.target.value)} />
               </div>
               <Button type="submit" disabled={salvando || !nome.trim()}>Adicionar entregador</Button>
             </form>
