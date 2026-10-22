@@ -46,8 +46,10 @@ jest.mock('../../../components/orders/OrderPrint', () => ({
 }));
 const mockPrevia = jest.fn();
 const mockGetLayout = jest.fn();
+const mockNoAgente = jest.fn();
 jest.mock('../../../services/printing', () => ({
   __esModule: true,
+  imprimirNoAgente: (...a: unknown[]) => mockNoAgente(...a),
   previaDaComanda: (...a: unknown[]) => mockPrevia(...a),
   getLayoutDaComanda: (...a: unknown[]) => mockGetLayout(...a),
 }));
@@ -326,5 +328,26 @@ describe('OrderDetailPage — imprimir usa o layout da comanda do servidor', () 
     fireEvent.click(await screen.findByRole('button', { name: 'Preparo' }));
     await waitFor(() => expect(mockPrintOrder).toHaveBeenCalled());
     expect(mockPrintHtml).not.toHaveBeenCalled();
+  });
+});
+
+describe('OrderDetailPage — Imprimir rápido (print agent)', () => {
+  it('manda o pedido para a impressora da loja, sem abrir o navegador', async () => {
+    mockGetOrder.mockResolvedValue(baseOrder);
+    mockNoAgente.mockResolvedValue({ data: { id: 'j1' } });
+    render(<OrderDetailPage />);
+    fireEvent.click(await screen.findByRole('button', { name: /Imprimir rápido/ }));
+    await waitFor(() => expect(mockNoAgente).toHaveBeenCalledWith('loja-1', 'o1'));
+    expect(mockPrintHtml).not.toHaveBeenCalled();
+    expect(mockPrintOrder).not.toHaveBeenCalled();
+  });
+
+  it('sem impressora conectada, imprime pelo navegador', async () => {
+    mockGetOrder.mockResolvedValue(baseOrder);
+    mockNoAgente.mockRejectedValue({ response: { status: 409 } });
+    mockPrevia.mockResolvedValue({ data: { linhas: [{ texto: 'X' }], colunas: 48 } });
+    render(<OrderDetailPage />);
+    fireEvent.click(await screen.findByRole('button', { name: /Imprimir rápido/ }));
+    await waitFor(() => expect(mockPrintHtml).toHaveBeenCalled());
   });
 });

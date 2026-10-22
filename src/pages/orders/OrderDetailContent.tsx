@@ -35,6 +35,7 @@ import {
   BuildingStorefrontIcon,
   GlobeAltIcon,
   ExclamationTriangleIcon,
+  BoltIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -68,7 +69,7 @@ const parseAddress = (addr: string | Record<string, unknown> | undefined): Recor
   return addr as Record<string, string>;
 };
 import { useOrderPrint } from '../../components/orders/OrderPrint';
-import { getLayoutDaComanda, previaDaComanda } from '../../services/printing';
+import { getLayoutDaComanda, imprimirNoAgente, previaDaComanda } from '../../services/printing';
 import { htmlDaComanda, layoutDaCozinha } from '../../utils/comandaHtml';
 import { EditOrderDrawer } from '../../components/orders/EditOrderDrawer';
 import { RegistrarPagamentoModal } from '../../components/orders/RegistrarPagamentoModal';
@@ -280,6 +281,24 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
       printOrder(freshOrder as any, printOpts(freshOrder));
     } catch {
       printOrder(order as any, printOpts(order));
+    }
+  };
+
+  // Direto na impressora da loja (print agent), sem o diálogo do navegador.
+  // Sem impressora conectada, cai na impressão pelo navegador.
+  const [imprimindoRapido, setImprimindoRapido] = useState(false);
+  const handleQuickPrint = async () => {
+    if (!order || !store?.slug || imprimindoRapido) return;
+    setImprimindoRapido(true);
+    try {
+      await imprimirNoAgente(store.slug, order.id);
+      toast.success('Enviado para a impressora');
+    } catch (err) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      toast.error(status === 409 ? 'Nenhuma impressora conectada — abrindo pelo navegador' : 'Não foi possível enviar — abrindo pelo navegador');
+      await handlePrint(false);
+    } finally {
+      setImprimindoRapido(false);
     }
   };
 
@@ -1076,6 +1095,15 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
           <div className="flex flex-wrap items-center gap-1.5">
             {/* Três impressões numa fileira, não três botões de largura total:
                 é uma escolha, não três decisões. */}
+            <Button
+              size="sm"
+              onClick={handleQuickPrint}
+              isLoading={imprimindoRapido}
+              leftIcon={<BoltIcon className="h-4 w-4" />}
+              title="Direto na impressora da loja"
+            >
+              Imprimir rápido
+            </Button>
             <span className="inline-flex overflow-hidden rounded-lg border border-border-token">
               <button
                 onClick={() => handlePrint(false)}

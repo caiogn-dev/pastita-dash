@@ -289,3 +289,7 @@ export const previaDaComanda = (storeSlug: string, layout?: LayoutDaComanda, ext
 
 export const imprimirTesteDaComanda = (storeSlug: string, layout?: LayoutDaComanda) =>
   api.post<{ id?: string }>(`/stores/${storeSlug}/comanda/imprimir-teste/`, { layout });
+
+/** "Imprimir rápido": manda o pedido direto para o print agent da loja (409 = nenhum conectado). */
+export const imprimirNoAgente = (storeSlug: string, pedidoId: string, extras?: { template?: string; cozinha?: boolean }) =>
+  api.post<{ id: string }>(`/stores/${storeSlug}/comanda/imprimir/`, { pedido_id: pedidoId, ...extras });
