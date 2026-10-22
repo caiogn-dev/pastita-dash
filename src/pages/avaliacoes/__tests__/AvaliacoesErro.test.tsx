@@ -32,9 +32,10 @@ jest.mock('../../../services/reports', () => ({
   __esModule: true,
   getAnalyticsReport: (...a: unknown[]) => relatorio(...a),
 }));
+let lojaAtual: { slug?: string } | null = { slug: 'ce-saladas' };
 jest.mock('../../../hooks/useStore', () => ({
   __esModule: true,
-  useStore: () => ({ store: { slug: 'ce-saladas' }, isStoreSelected: true }),
+  useStore: () => ({ store: lojaAtual, isStoreSelected: true }),
 }));
 jest.mock('react-hot-toast', () => ({
   __esModule: true,
@@ -58,9 +59,11 @@ const LISTA = [
   },
 ];
 
-const tela = () => render(<MemoryRouter><AvaliacoesPage /></MemoryRouter>);
+const ui = () => <MemoryRouter><AvaliacoesPage /></MemoryRouter>;
+const tela = () => render(ui());
 
 beforeEach(() => {
+  lojaAtual = { slug: 'ce-saladas' };
   listar.mockReset().mockResolvedValue(LISTA);
   relatorio.mockReset().mockResolvedValue(RESUMO);
   toastError.mockReset();
@@ -101,4 +104,23 @@ it('falha ao ATUALIZAR mantém a lista na tela e avisa pelo toast', async () => 
   await waitFor(() => expect(toastError).toHaveBeenCalled());
   expect(screen.getByText('Demorou demais')).toBeInTheDocument();
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});
+
+it('trocar de loja NÃO deixa a loja anterior ser tratada como cache (vazamento entre lojas)', async () => {
+  const { rerender } = render(ui());
+
+  // Loja A carrega normal.
+  await screen.findByText('Demorou demais');
+
+  // Troca para a loja B, cuja busca cai.
+  lojaAtual = { slug: 'outra-loja' };
+  listar.mockReset().mockRejectedValue(new Error('rede caiu'));
+  relatorio.mockReset().mockRejectedValue(new Error('rede caiu'));
+  rerender(ui());
+
+  // A falha da loja B mostra o erro acionável — e NÃO reexibe a avaliação da
+  // loja A como se fosse cache válido da loja B.
+  const alerta = await screen.findByRole('alert');
+  expect(alerta).toHaveTextContent('Não foi possível carregar as avaliações');
+  expect(screen.queryByText('Demorou demais')).not.toBeInTheDocument();
 });

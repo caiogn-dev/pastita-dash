@@ -116,6 +116,16 @@ export const AvaliacoesPage: React.FC = () => {
     }
   }, [slug, nota]);
 
+  // Troca de loja: lista/resumo/erro em memória são da loja ANTERIOR. Zera tudo
+  // para a nova loja não herdar avaliações de outra — e para uma falha na nova
+  // loja não ser classificada como "cache válido" (vazamento entre lojas).
+  useEffect(() => {
+    listaRef.current = null;
+    setLista(null);
+    setResumo(null);
+    setErro(false);
+  }, [slug]);
+
   useEffect(() => { void carregar(); }, [carregar]);
 
   const leitura = useMemo(() => leituraDeAvaliacoes(resumo ?? undefined), [resumo]);
