@@ -156,12 +156,29 @@ export const useOrderPrint = () => {
     // De onde veio o desconto (cupom com código, resgate com o item grátis).
     // Pedido antigo sem a lista: a linha somada de sempre.
     const descontos = Array.isArray(pedido.descontos) ? pedido.descontos : [];
-    const linhasDeDesconto = descontos.length > 0
-      ? descontos.map((d) => {
-        const rotulo = d.tipo === 'fidelidade' && d.item ? `Resgate fidelidade: ${d.item}` : d.rotulo;
-        return `<div class="tot"><span>${escapeHtml(rotulo)}</span><span>- ${formatMoney(Number(d.valor))}</span></div>`;
-      }).join('')
-      : (discount > 0 ? `<div class="tot"><span>Desconto</span><span>- ${formatMoney(discount)}</span></div>` : '');
+    // O código do cupom nunca some: se a lista não o trouxe, entra no rótulo
+    // da linha somada ou numa linha própria (mesma regra do print agent).
+    const cupom = String(pedido.coupon_code || '').trim();
+    const paresDeDesconto: Array<[string, string]> = descontos.length > 0
+      ? descontos.map((d) => [
+        d.tipo === 'fidelidade' && d.item ? `Resgate fidelidade: ${d.item}` : d.rotulo,
+        `- ${formatMoney(Number(d.valor))}`,
+      ])
+      : (discount > 0 ? [['Desconto', `- ${formatMoney(discount)}`]] : []);
+    if (cupom && !paresDeDesconto.some(([rotulo]) => rotulo.includes(cupom))) {
+      if (paresDeDesconto.length === 1 && paresDeDesconto[0][0] === 'Desconto') paresDeDesconto[0][0] = `Cupom ${cupom}`;
+      else paresDeDesconto.push([`Cupom ${cupom}`, '']);
+    }
+    const linhasDeDesconto = paresDeDesconto
+      .map(([rotulo, valor]) => `<div class="tot"><span>${escapeHtml(rotulo)}</span><span>${valor}</span></div>`)
+      .join('');
+
+    // Qual pedido do cliente na loja é este (só vem no detalhe do pedido).
+    const nDoCliente = Number(pedido.pedidos_do_cliente);
+    const pedidoDoClienteHtml = !Number.isInteger(nDoCliente) || nDoCliente < 1 ? ''
+      : nDoCliente === 1
+        ? '<div class="pedidos novo">1º PEDIDO - CLIENTE NOVO</div>'
+        : `<div class="pedidos">${nDoCliente}º PEDIDO</div>`;
 
     const storeName = options?.storeName || (pedido as unknown as { store_name?: string }).store_name || 'LOJA';
     const storePhone = options?.storePhone || '';
@@ -373,8 +390,11 @@ export const useOrderPrint = () => {
 
           /* O que se lê de longe vai pro centro. A margem esquerda fica
              reservada para uma coisa só: a lista de itens. */
-          .who { text-align: center; margin: 8px 0; }
-          .who .nome { font-size: 14px; font-weight: 900; text-transform: uppercase; }
+          .who { text-align: center; margin: 8px 0; padding-top: 7px; border-top: 1px dashed #000; }
+          .who .nome { font-size: 17px; font-weight: 900; text-transform: uppercase; line-height: 1.15; }
+          .who .pedidos { font-size: 12px; font-weight: 900; margin: 2px 0 3px; }
+          /* Cliente novo: invertido, para a loja caprichar. */
+          .who .pedidos.novo { display: inline-block; background: #000; color: #fff; padding: 1px 6px; }
           .who .tel  { font-size: 12px; font-weight: 700; }
           .who .end  { font-size: 11px; font-weight: 700; }
 
@@ -487,6 +507,7 @@ export const useOrderPrint = () => {
         <div class="who">
           <div class="nome">${escapeHtml(pedido.customer_name || (pedidoAny.cliente_nome as string) || '')}</div>
           <div class="tel">${escapeHtml(pedido.customer_phone || (pedidoAny.cliente_telefone as string) || '')}</div>
+          ${pedidoDoClienteHtml}
           ${getDeliveryMethod() === 'RETIRADA'
             ? '<div class="end">RETIRADA NO LOCAL</div>'
             : addressLines.map((line) => `<div class="end">${escapeHtml(line)}</div>`).join('')}
