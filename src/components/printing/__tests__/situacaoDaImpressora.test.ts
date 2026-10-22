@@ -32,3 +32,21 @@ describe('rótulo e tom da situação', () => {
     expect(TOM_DA_SITUACAO.impressora_indisponivel).toBe('danger');
   });
 });
+
+import { agenteConectado } from '../situacaoDaImpressora';
+
+describe('agenteConectado', () => {
+  const recente = new Date().toISOString();
+  it('sem contato nunca conectou', () => {
+    expect(agenteConectado({ last_seen_at: null, is_online: true })).toBe(false);
+  });
+  it('usa a situação do vigia quando existe', () => {
+    expect(agenteConectado({ last_seen_at: recente, situacao: 'offline' })).toBe(false);
+    expect(agenteConectado({ last_seen_at: recente, situacao: 'ok' })).toBe(true);
+    expect(agenteConectado({ last_seen_at: recente, situacao: 'impressora_indisponivel' })).toBe(true);
+  });
+  it('backend antigo: vale is_online', () => {
+    expect(agenteConectado({ last_seen_at: recente, is_online: true })).toBe(true);
+    expect(agenteConectado({ last_seen_at: recente, is_online: false })).toBe(false);
+  });
+});

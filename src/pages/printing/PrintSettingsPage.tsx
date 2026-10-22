@@ -39,6 +39,7 @@ import {
   LayoutDeEtiqueta,
 } from '../../services/printing';
 import { PageShell, Tabela, RowActions } from '../../components/ui';
+import AssistenteDeInstalacao from './AssistenteDeInstalacao';
 import {
   ROTULO_DA_SITUACAO,
   TOM_DA_SITUACAO,
@@ -80,6 +81,7 @@ const PrintSettingsPage: React.FC = () => {
   const [jobs, setJobs] = useState<PrintJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [assistenteAberto, setAssistenteAberto] = useState(false);
   const [newAgentName, setNewAgentName] = useState('');
   const [newPrinterName, setNewPrinterName] = useState('');
   const [newStation, setNewStation] = useState('kitchen');
@@ -246,7 +248,10 @@ const PrintSettingsPage: React.FC = () => {
         <Button variant="ghost" onClick={loadData} disabled={loading} leftIcon={<ArrowPathIcon className="w-4 h-4" />}>
         {loading ? 'Atualizando…' : 'Atualizar'}
         </Button>
-        <Button onClick={() => setIsCreateOpen(true)} leftIcon={<PlusIcon className="w-4 h-4" />}>
+        <Button onClick={() => setAssistenteAberto(true)} leftIcon={<PrinterIcon className="w-4 h-4" />}>
+        Instalar impressora
+        </Button>
+        <Button variant="outline" onClick={() => setIsCreateOpen(true)} leftIcon={<PlusIcon className="w-4 h-4" />}>
         Novo computador
         </Button>
         </div>
@@ -266,6 +271,7 @@ const PrintSettingsPage: React.FC = () => {
             descricao:
               'Crie um computador aqui e cole a chave no programa de impressão instalado nele.',
             icone: <PrinterIcon className="h-12 w-12" />,
+            acao: <Button onClick={() => setAssistenteAberto(true)} leftIcon={<PrinterIcon className="w-4 h-4" />}>Instalar impressora</Button>,
           }}
           colunas={[
             {
@@ -541,6 +547,13 @@ const PrintSettingsPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+      <AssistenteDeInstalacao
+        aberto={assistenteAberto}
+        onClose={() => setAssistenteAberto(false)}
+        storeSlug={storeId ?? ''}
+        storeUuid={store?.id}
+        onMudou={loadData}
+      />
       {ConfirmDialog}
     </PageShell>
   );

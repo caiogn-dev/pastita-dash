@@ -49,3 +49,14 @@ export function desdeQuando(iso: string | null | undefined, agora = new Date()):
   const dia = quando.toLocaleDateString('pt-BR', { timeZone: FUSO_DE_NEGOCIO, day: '2-digit', month: '2-digit' });
   return `${dia} ${hora}`;
 }
+
+/**
+ * O computador está falando com o painel? Mesma leitura da tela: a situação
+ * do vigia manda (só `offline` é sem sinal; impressora com defeito é um
+ * computador conectado); backend antigo cai no online/offline de sempre.
+ * Nunca ter dado sinal (`last_seen_at` vazio) é não conectado.
+ */
+export function agenteConectado(a: { last_seen_at?: string | null; is_online?: boolean; situacao?: string }): boolean {
+  if (!a.last_seen_at) return false;
+  return a.situacao ? a.situacao !== 'offline' : Boolean(a.is_online);
+}
