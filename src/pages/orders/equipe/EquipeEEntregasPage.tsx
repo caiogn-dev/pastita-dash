@@ -7,6 +7,7 @@
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 
 import { Button, Card, EmptyState, Input, PageShell, Switch, Tabela } from '../../../components/ui';
 import { useStore } from '../../../hooks/useStore';
@@ -131,7 +132,13 @@ export const EquipeEEntregasPage: React.FC = () => {
           </Card>
 
           <Card className="p-5">
-            <h2 className="mb-3 text-lg font-semibold text-fg-token">Atendentes</h2>
+            <div className="mb-3 flex items-baseline justify-between gap-2">
+              <h2 className="text-lg font-semibold text-fg-token">Atendentes</h2>
+              {/* Incluir e remover quem tem login mora em Colaboradores. */}
+              <Link to="/colaboradores" className="text-sm font-medium text-fg-token underline-offset-2 hover:underline">
+                Gerenciar equipe
+              </Link>
+            </div>
             {ranking.atendentes.length === 0 ? (
               <EmptyState
                 titulo="Nenhum pedido lançado no painel no período"

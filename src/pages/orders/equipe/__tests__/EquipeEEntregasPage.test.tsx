@@ -45,6 +45,7 @@ it('mostra o ranking dos dois lados e as entregas sem entregador', async () => {
   expect(screen.getAllByText('18 min').length).toBeGreaterThan(0);
   expect(screen.getAllByText('Ana').length).toBeGreaterThan(0);
   expect(screen.getByText(/5 entregas ficaram sem entregador/)).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Gerenciar equipe' })).toHaveAttribute('href', '/colaboradores');
 });
 
 it('cadastra entregador', async () => {
