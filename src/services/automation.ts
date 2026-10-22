@@ -17,6 +17,7 @@ import {
 export const companyProfileService = {
   list: async (params?: {
     account_id?: string;
+    store_slug?: string;
     business_type?: string;
     page?: number;
     page_size?: number;
@@ -267,29 +268,6 @@ export const sessionStatusLabels: Record<string, string> = {
 };
 
 // Message variables available for templates
-export const messageVariables = [
-  { key: 'customer_name', description: 'Nome do cliente' },
-  { key: 'phone_number', description: 'Telefone do cliente' },
-  { key: 'cart_total', description: 'Valor do carrinho' },
-  { key: 'cart_items', description: 'Itens do carrinho' },
-  { key: 'cart_item_count', description: 'Quantidade de itens no carrinho' },
-  { key: 'order_number', description: 'Número do pedido' },
-  { key: 'order_status', description: 'Status do pedido' },
-  { key: 'amount', description: 'Valor do pagamento' },
-  { key: 'pix_code', description: 'Código PIX copia e cola' },
-  { key: 'time_remaining', description: 'Tempo restante (ex: 30 minutos)' },
-  { key: 'tracking_code', description: 'Código de rastreio' },
-  { key: 'delivery_estimate', description: 'Previsão de entrega' },
-  { key: 'delivery_address', description: 'Endereço de entrega' },
-  { key: 'company_name', description: 'Nome da empresa' },
-  { key: 'store_name', description: 'Nome da loja' },
-  { key: 'website_url', description: 'URL do site' },
-  { key: 'menu_url', description: 'URL do cardápio' },
-  { key: 'business_hours_today', description: 'Horário de hoje' },
-  { key: 'discount_code', description: 'Código de desconto' },
-  { key: 'discount_percentage', description: 'Porcentagem de desconto' },
-];
-
 // Intent type labels
 export const intentTypeLabels: Record<string, string> = {
   greeting: 'Saudação',

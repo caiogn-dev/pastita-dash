@@ -171,6 +171,9 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
         { name: 'Avisos automáticos', href: '/whatsapp/avisos',              icon: BellAlertIcon },
         // Texto que o atendente repete o dia todo, a um "/" de distância no chat.
         { name: 'Respostas rápidas', href: '/atendimento/respostas-rapidas', icon: ChatBubbleBottomCenterTextIcon },
+        // Boas-vindas, fora do horário, lembretes: o que o bot manda sozinho.
+        // Antes só se chegava por Modelos de mensagem → Editar (22/10).
+        { name: 'Mensagens prontas', href: '/atendimento/mensagens-prontas', icon: DocumentTextIcon, tambem: ['mensagens automáticas', 'fora do horário'] },
         // Onde a IA falhou + fatos da loja + respostas ensinadas: o contexto do bot.
         { name: 'Ensinar o bot', href: '/atendimento/ensinar-o-bot', icon: AcademicCapIcon },
         // Fora do menu em 03/10 (rotas de pé), por uso nos logs de 16 dias:

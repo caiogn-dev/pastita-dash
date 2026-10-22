@@ -644,6 +644,8 @@ export interface CompanyProfile {
   business_type?: string;
   website_url?: string;
   menu_url?: string;
+  /** Calculado no server2: o que {website_url}/{menu_url} viram. */
+  link_do_cardapio?: string;
   order_url?: string;
   // Automation settings
   auto_reply_enabled?: boolean;

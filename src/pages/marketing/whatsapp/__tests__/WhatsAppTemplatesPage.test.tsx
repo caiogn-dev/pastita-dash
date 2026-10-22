@@ -50,7 +50,7 @@ it('os avisos de status mostrados são os que a loja envia, com o botão de edit
   expect(within(avisos).getByText('Pedido em Preparo')).toBeInTheDocument();
   expect(within(avisos).queryByText('Boas-vindas')).not.toBeInTheDocument();
   expect(within(avisos).getByRole('link', { name: /Editar/ })).toHaveAttribute(
-    'href', '/automation/companies/perfil-ce/messages',
+    'href', '/atendimento/mensagens-prontas',
   );
 
   await userEvent.click(within(avisos).getByRole('button', { name: /Pedido em Preparo/ }));

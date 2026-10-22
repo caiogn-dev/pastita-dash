@@ -6,7 +6,7 @@
  * Switch do kit. Antes: verde cru no botão "Criar", ícone de check como
  * interruptor e campos nativos à mão no formulário.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   PlusIcon,
@@ -18,14 +18,16 @@ import {
   autoMessageService,
   companyProfileService,
   eventTypeLabels,
-  messageVariables,
 } from '../../services/automation';
+import { useStore } from '../../hooks/useStore';
+import { exemploDeVariaveis, previaDaMensagem, variaveisDoEvento } from '../../utils/variaveisDeMensagem';
 import { AutoMessage, CompanyProfile, AutoMessageEventType, CreateAutoMessage } from '../../types';
 import { Loading as LoadingSpinner } from '../../components/common/Loading';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '../../components/ui/modal';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '../../hooks';
 import {
+  Aviso,
   Button,
   Input,
   NumberField,
@@ -39,7 +41,13 @@ import {
 } from '../../components/ui';
 
 const AutoMessagesPage: React.FC = () => {
-  const { companyId } = useParams<{ companyId: string }>();
+  // Pelo menu (Atendimento → Mensagens prontas) não há id na URL: o perfil é
+  // o da loja selecionada. A rota antiga com id continua funcionando.
+  const { companyId: idDaRota } = useParams<{ companyId: string }>();
+  const { storeSlug } = useStore();
+  const [companyId, setCompanyId] = useState<string | undefined>(idDaRota);
+  const [semPerfil, setSemPerfil] = useState(false);
+  const textoRef = useRef<HTMLTextAreaElement>(null);
   const [ConfirmDialog, confirm] = useConfirm();
   const [company, setCompany] = useState<CompanyProfile | null>(null);
   const [messages, setMessages] = useState<AutoMessage[]>([]);
@@ -64,6 +72,39 @@ const AutoMessagesPage: React.FC = () => {
   });
 
   useEffect(() => {
+    if (idDaRota) {
+      setCompanyId(idDaRota);
+      return undefined;
+    }
+    if (!storeSlug) return undefined;
+    let vivo = true;
+    setCompanyId(undefined);
+    setSemPerfil(false);
+    companyProfileService
+      .list({ store_slug: storeSlug })
+      .then((resposta) => {
+        if (!vivo) return;
+        const perfil = resposta.results?.[0];
+        if (perfil) setCompanyId(perfil.id);
+        else {
+          setSemPerfil(true);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!vivo) return;
+        toast.error('Erro ao carregar dados');
+        setLoading(false);
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [idDaRota, storeSlug]);
+
+  useEffect(() => {
+    // Sem perfil resolvido não busca: a lista sem company_id traria as
+    // mensagens de todas as lojas que o usuário enxerga.
+    if (!companyId) return;
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId]);
@@ -71,9 +112,8 @@ const AutoMessagesPage: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const params: Record<string, string | undefined> = companyId ? { company_id: companyId } : {};
       const [messagesData, companyData] = await Promise.all([
-        autoMessageService.list(params),
+        autoMessageService.list({ company_id: companyId }),
         companyId ? companyProfileService.get(companyId) : Promise.resolve(null),
       ]);
       setCompany(companyData);
@@ -207,12 +247,25 @@ const AutoMessagesPage: React.FC = () => {
     resetForm();
   };
 
+  // Entra onde o cursor está, não no fim do texto.
   const insertVariable = (variable: string) => {
+    const campo = textoRef.current;
+    const trecho = `{${variable}}`;
+    const texto = formData.message_text;
+    const inicio = campo?.selectionStart ?? texto.length;
+    const fim = campo?.selectionEnd ?? texto.length;
     setFormData(prev => ({
       ...prev,
-      message_text: prev.message_text + `{${variable}}`,
+      message_text: texto.slice(0, inicio) + trecho + texto.slice(fim),
     }));
+    requestAnimationFrame(() => {
+      if (!campo) return;
+      campo.focus();
+      campo.setSelectionRange(inicio + trecho.length, inicio + trecho.length);
+    });
   };
+
+  const previa = previaDaMensagem(formData.message_text, formData.event_type, exemploDeVariaveis(company));
 
   const addButton = () => {
     setFormData(prev => ({
@@ -237,6 +290,14 @@ const AutoMessagesPage: React.FC = () => {
     }));
   };
 
+  if (semPerfil) {
+    return (
+      <PageShell titulo="Mensagens prontas">
+        <p className="text-sm text-fg-muted-token">Esta loja ainda não tem o atendimento automático configurado.</p>
+      </PageShell>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -256,12 +317,15 @@ const AutoMessagesPage: React.FC = () => {
 
   return (
     <PageShell
-      trilha={[
+      trilha={idDaRota ? [
         { rotulo: 'Automação', href: '/automation/companies' },
         { rotulo: company?.company_name || 'Perfil', href: `/automation/companies/${companyId}` },
-        { rotulo: 'Mensagens automáticas' },
+        { rotulo: 'Mensagens prontas' },
+      ] : [
+        { rotulo: 'Atendimento' },
+        { rotulo: 'Mensagens prontas' },
       ]}
-      titulo="Mensagens automáticas"
+      titulo="Mensagens prontas"
      
       acoes={
         <Button
@@ -378,6 +442,7 @@ const AutoMessagesPage: React.FC = () => {
 
             <div>
               <Textarea
+                ref={textoRef}
                 label="Texto da mensagem"
                 rows={5}
                 value={formData.message_text}
@@ -385,9 +450,9 @@ const AutoMessagesPage: React.FC = () => {
                 required
               />
               <div className="mt-2">
-                <p className="mb-1 text-xs text-fg-muted-token">Variáveis disponíveis:</p>
+                <p className="mb-1 text-xs text-fg-muted-token">Variáveis</p>
                 <div className="flex flex-wrap gap-1">
-                  {messageVariables.map((v) => (
+                  {variaveisDoEvento(formData.event_type).map((v) => (
                     <Button
                       key={v.key}
                       type="button"
@@ -401,6 +466,22 @@ const AutoMessagesPage: React.FC = () => {
                   ))}
                 </div>
               </div>
+              {previa.desconhecidas.length > 0 && (
+                <Aviso tom="atencao" titulo="Variável que esta mensagem não preenche" className="mt-3">
+                  {previa.desconhecidas.map((c) => `{${c}}`).join(', ')} chegaria assim ao cliente.
+                </Aviso>
+              )}
+              {formData.message_text.trim() && (
+                <div className="mt-3">
+                  <p className="mb-1 text-xs text-fg-muted-token">Prévia</p>
+                  <div
+                    data-testid="previa-da-mensagem"
+                    className="whitespace-pre-wrap rounded-md bg-surface-2 p-3 text-sm text-fg-token"
+                  >
+                    {previa.texto}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">

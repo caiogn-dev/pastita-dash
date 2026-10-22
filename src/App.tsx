@@ -249,6 +249,7 @@ const AppContent: React.FC = () => {
         <Route path="automation/companies/new" element={<PageBoundary><CompanyProfileDetailPage /></PageBoundary>} />
         <Route path="automation/companies/:id" element={<PageBoundary><CompanyProfileDetailPage /></PageBoundary>} />
         <Route path="automation/messages" element={<PageBoundary><AutoMessagesPage /></PageBoundary>} />
+        <Route path="atendimento/mensagens-prontas" element={<PageBoundary><AutoMessagesPage /></PageBoundary>} />
         <Route path="automation/companies/:companyId/messages" element={<PageBoundary><AutoMessagesPage /></PageBoundary>} />
         <Route path="automation/sessions" element={<PageBoundary><CustomerSessionsPage /></PageBoundary>} />
         <Route path="automation/logs" element={<PageBoundary><AutomationLogsPage /></PageBoundary>} />
