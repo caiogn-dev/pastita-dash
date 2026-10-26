@@ -59,3 +59,12 @@ describe('OrdersPage — identidade única', () => {
     expect(pagina).toContain('superficie');
   });
 });
+
+describe('cifrão do card (26/10)', () => {
+  // Marcava PAGO num clique, sem forma nem valor — o detalhe do pedido já
+  // pedia os dois. O mesmo gesto agora abre o mesmo modal.
+  it('não marca pago direto: abre o Registrar pagamento', () => {
+    expect(pagina).not.toContain('markOrderPaid(');
+    expect(pagina).toContain('<RegistrarPagamentoModal');
+  });
+});

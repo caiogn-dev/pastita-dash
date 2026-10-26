@@ -54,12 +54,12 @@ import {
 import {
   getOrders,
   updateOrderStatus,
-  markOrderPaid,
   cancelOrder,
   StoreOrder,
 } from '../../services/storesApi';
 import { useStore, useOrderDetailModal } from '../../hooks';
 import { CancelarPedidoModal } from '../../components/orders/CancelarPedidoModal';
+import { RegistrarPagamentoModal } from '../../components/orders/RegistrarPagamentoModal';
 import { useRealTimeOrders } from '../../hooks/useRealTimeOrders';
 import { getErrorMessage } from '../../services';
 import { useRootStore, resolveStoreKey } from '../../stores/rootStore';
@@ -147,7 +147,6 @@ const BOTAO_ICONE =
 interface CardProps {
   order: StoreOrder;
   advancing: boolean;
-  paying: boolean;
   cancelling: boolean;
   isUpdating?: boolean;
   isSuccess?: boolean;
@@ -161,7 +160,7 @@ interface CardProps {
 }
 
 const OrderCardBase: React.FC<CardProps> = ({
-  order, advancing, paying, cancelling, isUpdating, isSuccess, isDragging,
+  order, advancing, cancelling, isUpdating, isSuccess, isDragging,
   onAdvance, onPay, onCancel, onDetail, onUberClick, storeSlug,
 }) => {
   const [, setTick] = useState(0);
@@ -325,12 +324,12 @@ const OrderCardBase: React.FC<CardProps> = ({
         {hasPendingPayment && (
           <button
             onClick={() => onPay(order)}
-            disabled={paying || isUpdating}
+            disabled={isUpdating}
             title="Lançar pagamento"
             aria-label="Lançar pagamento"
             className={BOTAO_ICONE}
           >
-            {paying ? <ArrowPathIcon className="h-3 w-3 animate-spin" aria-hidden /> : <CurrencyDollarIcon className="h-3.5 w-3.5" aria-hidden />}
+            <CurrencyDollarIcon className="h-3.5 w-3.5" aria-hidden />
           </button>
         )}
 
@@ -478,7 +477,7 @@ export const OrdersPage: React.FC = () => {
   const [localStates, setLocalStates] = useState<Map<string, LocalState>>(new Map());
   const [successIds, setSuccessIds] = useState<Set<string>>(new Set());
   const [advancingId, setAdvancingId] = useState<string | null>(null);
-  const [payingId, setPayingId] = useState<string | null>(null);
+
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   // WebSocket real-time sync
@@ -560,19 +559,10 @@ export const OrdersPage: React.FC = () => {
     }
   }, [patchOrder]);
 
-  const handlePay = useCallback(async (order: StoreOrder) => {
-    setPayingId(order.id);
-    try {
-      await markOrderPaid(order.id);
-      patchOrder(order.id, { payment_status: 'paid' });
-      toast.success(`Pagamento lançado #${order.order_number}`);
-    } catch (err) {
-      console.error('[OrdersPage] handlePay:', err);
-      toast.error(getErrorMessage(err) || 'Erro ao lançar pagamento');
-    } finally {
-      setPayingId(null);
-    }
-  }, [patchOrder]);
+  // O cifrão marcava PAGO num clique, sem forma nem valor. Agora abre o mesmo
+  // "Registrar pagamento" do detalhe: o dono diz como e quanto.
+  const [pedidoAPagar, setPedidoAPagar] = useState<StoreOrder | null>(null);
+  const handlePay = useCallback((order: StoreOrder) => setPedidoAPagar(order), []);
 
   // Cancelar pede o motivo (CancelarPedidoModal): 0 dos 37 cancelados em
   // 30 dias tinham motivo quando isto era um "tem certeza?".
@@ -912,7 +902,6 @@ export const OrdersPage: React.FC = () => {
                           id={order.id}
                           order={order}
                           advancing={advancingId === order.id}
-                          paying={payingId === order.id}
                           cancelling={cancellingId === order.id}
                           isUpdating={localStates.get(order.id)?.isPending}
                           isSuccess={successIds.has(order.id)}
@@ -953,12 +942,28 @@ export const OrdersPage: React.FC = () => {
           <div className="rotate-2 scale-105 shadow-2xl opacity-90">
             <OrderCard
               order={activeOrder}
-              advancing={false} paying={false} cancelling={false} isDragging
+              advancing={false} cancelling={false} isDragging
               onAdvance={() => {}} onPay={() => {}} onCancel={() => {}} onDetail={() => {}}
             />
           </div>
         ) : null}
       </DragOverlay>
+      {pedidoAPagar && (
+        <RegistrarPagamentoModal
+          isOpen
+          order={pedidoAPagar}
+          onClose={() => setPedidoAPagar(null)}
+          onRegistrado={(atualizado) => {
+            patchOrder(pedidoAPagar.id, {
+              payment_status: atualizado.payment_status,
+              amount_paid: atualizado.amount_paid,
+              amount_due: atualizado.amount_due,
+            } as Partial<StoreOrder>);
+            setPedidoAPagar(null);
+          }}
+        />
+      )}
+
       <CancelarPedidoModal
         open={pedidoACancelar !== null}
         orderNumber={pedidoACancelar?.order_number ?? ''}
