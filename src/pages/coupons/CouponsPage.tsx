@@ -6,6 +6,7 @@ import { formatCurrency } from '../../utils/formatters';
 import {
   PlusIcon,
   PencilIcon,
+  MegaphoneIcon,
   TrashIcon,
   TagIcon,
   ArrowLeftIcon,
@@ -38,6 +39,9 @@ import { insightsDeCupons } from './insightsDeCupons';
 import { couponsService, Coupon, CreateCoupon, UpdateCoupon, CouponStats } from '../../services/coupons';
 import { getCategories, StoreCategory } from '../../services/storesApi';
 import { useStore } from '../../hooks';
+import { textoDeDivulgacao } from './divulgacaoDoCupom';
+import { buildStorefrontUrl } from '../../utils/storefrontUrl';
+import { copyToClipboard } from '../../utils/clipboard';
 // Direto do arquivo: o barrel `hooks` é mockado inteiro nos testes da tela.
 import { useConfirm } from '../../hooks/useConfirm';
 
@@ -380,6 +384,13 @@ export const CouponsPage: React.FC = () => {
     }
   };
 
+  const divulgar = async (coupon: Coupon) => {
+    const loja = stores.find((s) => s.id === storeId);
+    const texto = textoDeDivulgacao(coupon, buildStorefrontUrl(loja));
+    if (await copyToClipboard(texto)) toast.success('Texto copiado: cole no WhatsApp ou no Instagram');
+    else toast.error('Não foi possível copiar');
+  };
+
   const formatDiscount = (coupon: Coupon) => {
     if (coupon.discount_type === 'percentage') {
       return `${coupon.discount_value}%`;
@@ -584,6 +595,11 @@ export const CouponsPage: React.FC = () => {
                         rotulo: 'Editar',
                         icone: <PencilIcon className="h-4 w-4" />,
                         onClick: () => irParaCupom(c.id),
+                      },
+                      {
+                        rotulo: 'Copiar divulgação',
+                        icone: <MegaphoneIcon className="h-4 w-4" />,
+                        onClick: () => divulgar(c),
                       },
                       {
                         rotulo: c.is_active ? 'Desativar' : 'Ativar',
