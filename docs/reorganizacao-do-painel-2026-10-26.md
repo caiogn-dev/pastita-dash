@@ -11,7 +11,7 @@ DIREITO COMO UM SENIOR PO". Aprovou as 4 fases e apagar as telas órfãs ("sim e
 - Links 404 corrigidos; Tela da cozinha com saída; cifrão do card abre Registrar pagamento;
   texto do Caixa (esperado já soma dinheiro).
 
-## Fase 2 — cada configuração no seu lugar
+## Fase 2 — NO AR (eede4310) — cada configuração no seu lugar
 | Configuração | Hoje | Vai para |
 |---|---|---|
 | Mercado Pago, vale Pagar.me/QR, acréscimo, caixa | Geral → Recebimento | Configurações → Pagamentos |
@@ -24,14 +24,14 @@ DIREITO COMO UM SENIOR PO". Aprovou as 4 fases e apagar as telas órfãs ("sim e
 | Nota fiscal (config) | Geral → Nota fiscal | Financeiro → Notas fiscais |
 | Horários/turnos/pausas/agendamento/preparo | Geral → Entrega e horários | Geral → Horários |
 
-## Fase 3 — família de mensagens
+## Fase 3 — NO AR (merge 22e73feb) — família de mensagens
 - Avisos automáticos = Mensagens prontas + Avisos enviados (abas Textos / Enviados).
 - Modelos de mensagem = modelos da Meta (status, sincronizar); sai data/whatsappTemplates.ts.
 - Recuperador recebe o texto/liga-desliga dos lembretes de carrinho.
 - Chat: sai "Criar Pedido" do painel Ferramentas e a aba "Todas" do inbox; "Templates" → "Modelos".
 - Ensinar o bot: "Respostas ensinadas" → "Exemplos de resposta"; Conversão do bot vira aba "Resultado".
 
-## Fase 4 — equipe e limpeza
+## Fase 4 — NO AR (b962848f, 00b2f499, f42207fb) — equipe e limpeza
 - Cadastro de entregadores → Configurações (junto de Colaboradores); ranking → Relatórios › Operação.
 - Vigias no menu (Relatórios).
 - Todas as lojas / StoreDetailPage sem abas e atalhos que repetem o menu; desativar com confirmação.
