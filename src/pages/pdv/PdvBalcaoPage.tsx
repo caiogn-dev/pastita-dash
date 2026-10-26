@@ -12,6 +12,7 @@ import { BuscaManualDeProduto } from './BuscaManualDeProduto';
 import { Loading } from '../../components/common';
 import { useBarcodeScanner } from '../../hooks/useBarcodeScanner';
 import { GradeDeProdutos } from './GradeDeProdutos';
+import { EstadoDoCaixa } from './EstadoDoCaixa';
 import {
   getStores, getProducts, updateProduct, getCustomers,
   StoreProduct, StoreCustomer,
@@ -443,6 +444,7 @@ const PdvBalcaoPage: React.FC = () => {
           <span className="h-2 w-2 rounded-full bg-success-token" aria-hidden /> Leitor pronto
           {storeCount > 1 && <span>· {storeCount} lojas</span>}
           <span className="hidden sm:inline">· F2 buscar · F9 finalizar</span>
+          {storeId && <EstadoDoCaixa loja={storeId} />}
         </span>
       }
     >

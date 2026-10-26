@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { ArrowDownTrayIcon, ArrowUpTrayIcon, ExclamationTriangleIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -15,6 +15,7 @@ import {
 } from '../../services/cash';
 import { formatCurrency } from '../../utils/formatters';
 import { caixaAbertoDesde } from './caixaEsquecido';
+import { useConfirm } from '../../hooks/useConfirm';
 
 
 const CashPage: React.FC = () => {
@@ -30,6 +31,7 @@ const CashPage: React.FC = () => {
   const [countedAmount, setCountedAmount] = useState('');
   const [closeNotes, setCloseNotes] = useState('');
   const campoContadoRef = useRef<HTMLInputElement>(null);
+  const [ConfirmDialog, confirmar] = useConfirm();
 
   /** Leva ao fechamento que já existe nesta tela: rola até ele e põe o cursor no valor contado. */
   const irParaFechamento = () => {
@@ -87,7 +89,22 @@ const CashPage: React.FC = () => {
   };
 
   const handleClose = async () => {
-    if (!storeId || busy || !countedAmount) return;
+    if (!storeId || busy || !countedAmount || !session) return;
+    // Fechar não tem volta: mostra a quebra que vai ficar registrada antes de
+    // gravar (26/10 — um clique fechava o caixa do dia).
+    const quebra = Number(countedAmount) - Number(session.expected_cash);
+    const resumo = Math.abs(quebra) < 0.005
+      ? 'O contado bate com o esperado.'
+      : quebra < 0
+        ? `Faltam ${formatCurrency(-quebra)} em relação ao esperado.`
+        : `Sobram ${formatCurrency(quebra)} em relação ao esperado.`;
+    const ok = await confirmar({
+      title: `Fechar o caixa com ${formatCurrency(Number(countedAmount))}?`,
+      message: `${resumo} Depois de fechado, o caixa não reabre.`,
+      confirmText: 'Fechar o caixa',
+      variant: quebra < -0.005 ? 'danger' : 'warning',
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const res = await closeCashSession(storeId, countedAmount, closeNotes);
@@ -108,6 +125,11 @@ const CashPage: React.FC = () => {
   return (
     <PageShell
       titulo="Caixa"
+      acoes={
+        <Link to="/analytics/operacao" className="text-sm font-medium text-brand hover:underline">
+          Fechamentos anteriores
+        </Link>
+      }
     >
       {session && caixaAbertoDesde(session.opened_at) && (
         <div
@@ -311,6 +333,7 @@ const CashPage: React.FC = () => {
           </div>
         </>
       )}
+      {ConfirmDialog}
     </PageShell>
   );
 };

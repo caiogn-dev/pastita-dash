@@ -79,7 +79,20 @@ describe('CashPage', () => {
     fireEvent.change(screen.getByLabelText(/valor contado/i), { target: { value: '95' } });
     fireEvent.click(screen.getByRole('button', { name: /fechar caixa/i }));
 
+    // Fechar não tem volta: antes de gravar, mostra a quebra que vai ficar
+    // registrada (26/10 — um clique fechava o caixa do dia).
+    expect(mocked.closeCashSession).not.toHaveBeenCalled();
+    expect(await screen.findByText(/faltam R\$\s?5,00/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar o caixa' }));
+
     await waitFor(() => expect(mocked.closeCashSession).toHaveBeenCalledWith('loja-x', '95', ''));
+  });
+
+  it('leva aos fechamentos anteriores', async () => {
+    mocked.getCurrentCashSession.mockRejectedValue({ response: { status: 404 } });
+    renderPage();
+    const link = await screen.findByRole('link', { name: /fechamentos anteriores/i });
+    expect(link).toHaveAttribute('href', '/analytics/operacao');
   });
 
   describe('caixa esquecido aberto', () => {

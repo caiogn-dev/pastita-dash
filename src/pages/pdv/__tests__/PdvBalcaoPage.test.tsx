@@ -12,6 +12,9 @@ jest.mock('../../../services/storesApi', () => ({
   updateProduct: jest.fn(),
   getCustomers: jest.fn(),
 }));
+jest.mock('../../../services/cash', () => ({
+  getCurrentCashSession: jest.fn(() => Promise.resolve({ data: { status: 'open' } })),
+}));
 jest.mock('../../../services/orders', () => ({
   ordersService: {
     createOrder: jest.fn(),
