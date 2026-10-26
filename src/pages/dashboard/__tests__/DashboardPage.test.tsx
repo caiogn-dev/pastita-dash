@@ -151,3 +151,23 @@ describe('DashboardPage — estado de erro no carregamento', () => {
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
   });
 });
+
+describe('Início sem repetição (26/10)', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('sem faixa "Acesso rápido" (o menu já é por tarefa) e pendente não vira 4º bloco', async () => {
+    mockedApi.getOrders.mockResolvedValue(okOrders as never);
+    mockedApi.getOrderStats.mockResolvedValue({ total_orders: 3, today_revenue: 0, by_status: { pending: 2, preparing: 1 } } as never);
+    mockedDash.getOverview.mockResolvedValue({ conversations: { by_status: { open: 4 } }, orders: { by_status: {} } } as never);
+
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/nenhum pedido ainda/i)).toBeInTheDocument());
+
+    expect(screen.queryByRole('navigation', { name: /acesso rápido/i })).toBeNull();
+    // Pendente e conversa sem resposta já são cartões clicáveis no topo; o
+    // "Precisa de você" fica para o que não aparece em outro lugar.
+    expect(screen.queryByText(/aguardando confirmação/i)).toBeNull();
+    expect(screen.queryByText(/clientes? esperando resposta/i)).toBeNull();
+    expect(screen.queryByText(/pedidos? em preparo/i)).toBeNull();
+  });
+});

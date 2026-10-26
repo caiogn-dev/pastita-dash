@@ -298,9 +298,6 @@ export const DashboardPage: React.FC = () => {
   }
 
   const maxPipeline = Math.max(...PIPELINE.map((s) => pipelineCounts[s.key] || 0), 1);
-  // Preparando + a caminho: o que já saiu da fila de confirmação mas ainda não
-  // chegou. É a carga da cozinha e da entrega agora.
-  const emPreparo = (pipelineCounts.preparing || 0) + (pipelineCounts.out_for_delivery || 0);
   const saude = estadoDeSaude(projectHealth?.status);
   const perdidas = projectHealth?.automation.pipeline.dropped ?? 0;
   const comentarios = (avaliacoes?.recent ?? []).filter((r) => r.comment?.trim()).slice(0, 2);
@@ -345,34 +342,6 @@ export const DashboardPage: React.FC = () => {
           onTentarDeNovo={loadData}
         />
       )}
-
-      {/* ── Acesso rápido ──
-          As sete telas que o dono abre todo dia. Chegar em qualquer uma delas
-          pelo menu custa achar a seção, abrir e clicar — e a home é justamente
-          onde ele ainda não decidiu para onde vai. Aqui é um clique.
-          Não é duplicata do menu: o menu é COMPLETO e organizado por taxonomia
-          nossa; isto é CURADO por frequência de uso real. */}
-      <nav aria-label="Acesso rápido" className="flex flex-wrap gap-2">
-        {[
-          { rotulo: 'Pedidos', href: `/stores/${storeRoute}/orders` },
-          { rotulo: 'Cardápio', href: `/stores/${storeRoute}/products` },
-          { rotulo: 'WhatsApp', href: '/inbox/whatsapp' },
-          { rotulo: 'Clientes', href: `/stores/${storeRoute}/customers` },
-          { rotulo: 'Cupons', href: `/stores/${storeRoute}/coupons` },
-          { rotulo: 'Relatórios', href: '/analytics' },
-          { rotulo: 'Link na Bio', href: `/stores/${storeRoute}/link-bio` },
-        ].map((a) => (
-          <Button
-            key={a.href}
-            size="sm"
-            variant="outline"
-            className="rounded-pill font-medium text-fg-muted-token hover:border-brand hover:text-fg-token"
-            onClick={() => navigate(a.href)}
-          >
-            {a.rotulo}
-          </Button>
-        ))}
-      </nav>
 
       {/* ── Números do dia ──
           Cada número diz o que ELE conta. "Receita hoje R$ 1.557" já foi
@@ -596,45 +565,15 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* ── Precisa de você ──
-          Era uma barra só, para uma coisa só: pedidos pendentes. Tudo o mais
-          que trava o dia — conversa sem resposta, pedido parado na cozinha —
-          o dono só descobria abrindo a tela certa por conta própria.
-
-          Fila de trabalho: cada linha diz o QUE está parado, QUANTO, e leva
-          direto ao recorte. Sem linha nenhuma, a seção some — é o sinal de que
-          não há nada esperando, e vale mais que um "tudo certo" decorativo. */}
+          Só o que NÃO aparece em outro bloco da tela (26/10): pedido pendente
+          estava em 4 lugares (cartão, tabela, pipeline e aqui) e conversa sem
+          resposta em 2. Os cartões do topo já são clicáveis e mudam de tom;
+          aqui ficam os alertas de saúde. Sem linha, a seção some. */}
       {!kpisLoading && (
         <InsightList
           titulo="Precisa de você"
           tom="alerta"
           itens={[
-            pendingCount > 0 && {
-              direcao: 'alta' as const,
-              titulo: `${pendingCount} pedido${pendingCount > 1 ? 's' : ''} aguardando confirmação`,
-              valor: String(pendingCount),
-              recomendacao: 'o cliente já pagou e está esperando',
-              acao: {
-                rotulo: 'Ver pendentes',
-                onClick: () => navigate(`/stores/${storeRoute}/orders?status=pending`),
-              },
-            },
-            emPreparo > 0 && {
-              direcao: 'estavel' as const,
-              titulo: `${emPreparo} pedido${emPreparo > 1 ? 's' : ''} em preparo`,
-              valor: String(emPreparo),
-              recomendacao: 'acompanhe na cozinha',
-              acao: {
-                rotulo: 'Abrir cozinha',
-                onClick: () => navigate(`/stores/${storeRoute}/kds`),
-              },
-            },
-            conversationsOpen > 0 && {
-              direcao: 'alta' as const,
-              titulo: `${conversationsOpen} cliente${conversationsOpen > 1 ? 's' : ''} esperando resposta`,
-              valor: String(conversationsOpen),
-              recomendacao: 'falaram por último e ninguém respondeu',
-              acao: { rotulo: 'Abrir inbox', onClick: () => navigate('/inbox/whatsapp') },
-            },
             ...itensDeSaude(alertasDeSaude, storeRoute, navigate),
           ].filter(Boolean) as React.ComponentProps<typeof InsightList>['itens']}
         />
