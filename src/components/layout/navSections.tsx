@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   HomeIcon, DevicePhoneMobileIcon, ChatBubbleLeftRightIcon,
-  ShoppingCartIcon, CreditCardIcon, Cog6ToothIcon,
+  CreditCardIcon, Cog6ToothIcon,
   ChatBubbleBottomCenterTextIcon, AcademicCapIcon, SunIcon, UserGroupIcon, TagIcon, Squares2X2Icon, BuildingStorefrontIcon,
   MegaphoneIcon, DocumentTextIcon, ClockIcon, PresentationChartLineIcon, StarIcon, RectangleGroupIcon,
   QrCodeIcon, GiftIcon, LinkIcon, BeakerIcon,
@@ -13,7 +13,7 @@ import {
   ArrowUpTrayIcon, UsersIcon, HandRaisedIcon,
   ArrowPathIcon,
   ArrowTrendingUpIcon,
-  BellAlertIcon, CurrencyDollarIcon, TruckIcon,
+  BellAlertIcon, CurrencyDollarIcon, TruckIcon, MapPinIcon,
 } from '@heroicons/react/24/outline';
 
 export interface NavItem {
@@ -104,64 +104,72 @@ export interface BuildNavSectionsOpts {
  * Single source of truth for the dashboard top-nav IA.
  * Account-level links (Todas as Lojas, Integrações, Preferências, Plano) are
  * intentionally NOT here — they live in the avatar menu (AccountMenu.tsx).
+ *
+ * Arquitetura de 26/10. O menu tinha crescido uma tela por vez, cada uma onde
+ * coube no dia: link de pagamento no Balcão, cupom e fidelidade em Cardápio,
+ * cozinha e expedição no Balcão, avaliações em Pedidos, a impressora da
+ * comanda dentro de Etiquetas. Agora cada seção responde UMA pergunta:
+ *
+ *   Pedidos      — por onde o pedido passa (histórico → cozinha → saída → rua)
+ *   Atendimento  — a conversa com o cliente, e o que o bot diz sozinho
+ *   Balcão       — a venda presencial e a gaveta
+ *   Financeiro   — cobrar fora do pedido e faturar
+ *   Cardápio     — o que se vende
+ *   Etiquetas    — a bancada da etiqueta
+ *   Clientes     — quem compra, o que achou, o que o faz voltar
+ *   Marketing    — o que chama gente (desconto, campanha, vitrine na bio)
+ *   Relatórios   — o que mede
+ *   Configurações— como a loja funciona (inclusive impressora e equipe)
  */
 export function buildNavSections({ storeHref, unreadBadge, automationEnabled, caixaEnabled = true }: BuildNavSectionsOpts): NavSection[] {
-  // Marketing e Automação são features avançadas: ficam sob o mesmo gate para
-  // manter a coluna focada em operação (pedidos/cardápio/atendimento).
+  // Cupom e link na bio valem para toda loja. As telas que disparam WhatsApp
+  // (recuperador, promoção do dia, campanha, Instagram, modelos da Meta) só
+  // aparecem com WhatsApp conectado — antes o gate escondia Marketing inteiro.
   const marketing: NavSection = {
     grupo: 'Crescimento',
     label: 'Marketing',
     icon: MegaphoneIcon,
     items: [
-      // Primeiro da lista de propósito: é a única tela de marketing que fala
-      // do dinheiro que já está na mesa, sem precisar criar nada.
-      { name: 'Recuperador de vendas', href: '/marketing/recuperacao',      icon: ArrowPathIcon },
-      // A oferta do dia sai sozinha, com o card do dia da semana.
-      { name: 'Promoção do dia',     href: '/marketing/promocao-do-dia',    icon: SunIcon },
-      { name: 'Campanha WhatsApp',   href: '/marketing/whatsapp',           icon: DevicePhoneMobileIcon },
-      // Promoção de comentário no Instagram: a loja responde no direct quem
-      // comentar na publicação. Entra no menu junto das outras campanhas
-      // porque é a mesma decisão do dono — "como eu chamo gente hoje?".
-      { name: 'Promoção no Instagram', href: '/marketing/instagram',        icon: MegaphoneIcon },
-      { name: 'Modelos de mensagem', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
-      // Fora do menu em 03/10 (rotas de pé): 'Campanha por e-mail'
-      // (/marketing/email/campaigns) e 'E-mails automáticos'
-      // (/marketing/automations) — 4 chamadas cada em 16 dias de log.
-      // 'Assinantes' (/marketing/subscribers) saiu do menu: o modelo Subscriber
-      // está em 0 e nada o alimenta. O público real de campanha vive em
-      // EmailRecipient (136) e StoreCustomer (100) — a tela ficaria vazia para
-      // sempre, não por falta de uso, mas por olhar a tabela errada. A rota
-      // segue de pé; volta ao menu quando apontar para o público de verdade.
+      { name: 'Cupons',      href: storeHref('coupons'),  icon: TicketIcon, tambem: ['desconto'] },
+      ...(automationEnabled ? [
+        // A única tela de marketing que fala do dinheiro que já está na mesa.
+        { name: 'Recuperador de vendas', href: '/marketing/recuperacao',      icon: ArrowPathIcon },
+        { name: 'Promoção do dia',     href: '/marketing/promocao-do-dia',    icon: SunIcon },
+        { name: 'Campanha WhatsApp',   href: '/marketing/whatsapp',           icon: DevicePhoneMobileIcon },
+        { name: 'Promoção no Instagram', href: '/marketing/instagram',        icon: MegaphoneIcon },
+        // Modelo aprovado pela Meta: o que fura a janela de 24 h (131047).
+        { name: 'Modelos de mensagem', href: '/marketing/whatsapp/templates', icon: DocumentTextIcon },
+      ] : []),
+      { name: 'Link na Bio', href: storeHref('link-bio'), icon: GlobeAltIcon },
+      // Fora do menu (rotas de pé): 'Campanha por e-mail', 'E-mails
+      // automáticos' (4 chamadas cada em 16 dias, 03/10) e 'Assinantes'
+      // (modelo Subscriber em 0; o público real vive em StoreCustomer).
     ],
   };
 
-  // 'Automação' saiu do menu em 03/10 (rotas de pé): Agentes de IA (3
-  // chamadas em 16 dias de log), Respostas automáticas (4), Mensagens
-  // automáticas (8) e Conversas da IA (3). O agente de IA não roda em
-  // produção; o que o lojista usa do bot mora em Atendimento → Ensinar o bot.
+  // 'Automação' saiu do menu em 03/10 (rotas de pé): Agentes de IA, Respostas
+  // automáticas, Mensagens automáticas e Conversas da IA — 3 a 8 chamadas em
+  // 16 dias. O que o lojista usa do bot mora em Atendimento.
 
   return [
     // ── Operação: o que se toca durante o expediente ──────────────────────
     { grupo: 'Operação', label: 'Início', icon: HomeIcon, href: '/', items: [] },
     {
-      // A operação ao vivo mora no botão "Central de Pedidos" da barra do
-      // topo, que abre em aba própria e fica ligada o expediente inteiro;
-      // repetir aqui daria dois caminhos com comportamentos diferentes para a
-      // mesma tela. Ficam o histórico e o que o cliente achou dele.
+      // O quadro ao vivo mora no botão "Central de Pedidos" da barra do topo
+      // (aba própria, ligada o expediente inteiro). Aqui fica o resto do
+      // caminho do pedido, na ordem em que ele anda.
       grupo: 'Operação',
       label: 'Pedidos',
       icon: ClipboardDocumentListIcon,
       items: [
-        { name: 'Histórico',   href: storeHref('orders/historico'), icon: ClipboardDocumentListIcon },
-        { name: 'Avaliações',  href: '/avaliacoes',                 icon: StarIcon },
-        // Entregadores (cadastro + ranking) e atendentes; antes só por um botão no Histórico.
-        { name: 'Equipe e entregas', href: '/pedidos/equipe',       icon: TruckIcon, tambem: ['entregador', 'motoboy', 'atendente', 'ranking'] },
+        { name: 'Histórico',         href: storeHref('orders/historico'), icon: ClipboardDocumentListIcon },
+        { name: 'Tela da cozinha',   href: storeHref('kds'),       icon: FireIcon, tambem: ['kds', 'cozinha'] },
+        // Bipar o código de barras da comanda avança o pedido para a saída.
+        { name: 'Expedição',         href: storeHref('expedicao'), icon: ArchiveBoxArrowDownIcon },
+        { name: 'Equipe e entregas', href: '/pedidos/equipe',      icon: TruckIcon, tambem: ['entregador', 'motoboy', 'atendente', 'ranking'] },
       ],
     },
     {
-      // Atendimento era um item solto ("Chat") enquanto fila humana, sessões e
-      // insights viviam espalhados dentro de Automação — três telas sobre a
-      // MESMA conversa em dois lugares distantes.
       grupo: 'Operação',
       label: 'Atendimento',
       icon: ChatBubbleLeftRightIcon,
@@ -169,93 +177,80 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
       items: [
         { name: 'Conversas',    href: '/inbox/whatsapp',                     icon: ChatBubbleLeftRightIcon },
         { name: 'Esperando atendente', href: '/whatsapp/handover',           icon: HandRaisedIcon, tambem: ['fila humana', 'handover'] },
-        // O que a loja mandou sozinha (status, lembretes, avaliação) e se chegou.
-        { name: 'Avisos automáticos', href: '/whatsapp/avisos',              icon: BellAlertIcon },
         // Texto que o atendente repete o dia todo, a um "/" de distância no chat.
         { name: 'Respostas rápidas', href: '/atendimento/respostas-rapidas', icon: ChatBubbleBottomCenterTextIcon },
-        // Boas-vindas, fora do horário, lembretes: o que o bot manda sozinho.
-        // Antes só se chegava por Modelos de mensagem → Editar (22/10).
-        { name: 'Mensagens prontas', href: '/atendimento/mensagens-prontas', icon: DocumentTextIcon, tambem: ['mensagens automáticas', 'fora do horário'] },
-        // Onde a IA falhou + fatos da loja + respostas ensinadas: o contexto do bot.
-        { name: 'Ensinar o bot', href: '/atendimento/ensinar-o-bot', icon: AcademicCapIcon },
-        // Fora do menu em 03/10 (rotas de pé), por uso nos logs de 16 dias:
-        // Conversão do bot (3 chamadas), Sessões (2) e Insights (8).
+        { name: 'Ensinar o bot', href: '/atendimento/ensinar-o-bot',         icon: AcademicCapIcon },
+        // O que o bot manda sozinho: o texto (prontas) e o registro (avisos).
+        { name: 'Mensagens prontas', href: '/atendimento/mensagens-prontas', icon: DocumentTextIcon, tambem: ['mensagens automáticas', 'fora do horário', 'boas-vindas'] },
+        { name: 'Avisos enviados', href: '/whatsapp/avisos',                 icon: BellAlertIcon, tambem: ['avisos automáticos'] },
       ],
     },
     {
-      // "PDV" carregava etiqueta, impressora e KDS junto com a venda. Aqui
-      // fica só o dinheiro entrando no balcão.
       grupo: 'Operação',
       label: 'Balcão',
       icon: QrCodeIcon,
       items: [
-        { name: 'Venda no balcão',   href: storeHref('pdv'),  icon: QrCodeIcon },
+        { name: 'Venda no balcão', href: storeHref('pdv'), icon: QrCodeIcon, tambem: ['pdv'] },
         ...(caixaEnabled ? [{ name: 'Caixa', href: storeHref('cash'), icon: BanknotesIcon }] : []),
-        { name: 'Link de pagamento', href: '/payments/link',  icon: LinkIcon },
-        { name: 'Tela da cozinha',   href: storeHref('kds'),  icon: FireIcon, tambem: ['kds', 'cozinha'] },
-        // Bipar o código de barras da comanda avança o pedido para a saída.
-        { name: 'Expedição',         href: storeHref('expedicao'), icon: ArchiveBoxArrowDownIcon },
       ],
     },
-
     {
-      // A nota fiscal só existia como botão dentro de cada pedido: não havia
-      // lista do que saiu, nem onde registrar para quem a nota é emitida.
+      // Link de pagamento morava no Balcão, mas é cobrança à distância, sem
+      // pedido: é dinheiro, como a nota fiscal.
       grupo: 'Operação',
       label: 'Financeiro',
       icon: CurrencyDollarIcon,
       items: [
-        { name: 'Notas fiscais', href: storeHref('notas-fiscais'), icon: DocumentTextIcon },
+        { name: 'Link de pagamento', href: '/payments/link',            icon: LinkIcon, tambem: ['cobrança', 'cobrar'] },
+        { name: 'Notas fiscais',     href: storeHref('notas-fiscais'),  icon: DocumentTextIcon, tambem: ['nf-e', 'nfc-e'] },
       ],
     },
 
-    // ── Catálogo: o que a loja vende e o que sai impresso ────────────────
+    // ── Catálogo: o que a loja vende e o que sai na etiqueta ─────────────
     {
       grupo: 'Catálogo',
       label: 'Cardápio',
       icon: Squares2X2Icon,
       items: [
-        // Implantação custa 7,9 h por cliente e a maior fatia é digitar
-        // produto por produto. Sem item de menu, a tela não existe.
+        { name: 'Produtos', href: storeHref('products'), icon: CubeIcon },
+        { name: 'Combos',   href: storeHref('combos'),   icon: RectangleGroupIcon },
+        // Implantação: usado na primeira semana, depois quase nunca.
         { name: 'Importar planilha', href: '/cardapio/importar', icon: ArrowUpTrayIcon },
-        { name: 'Produtos',    href: storeHref('products'), icon: CubeIcon },
-        { name: 'Combos',      href: storeHref('combos'),   icon: RectangleGroupIcon },
-        { name: 'Cupons',      href: storeHref('coupons'),  icon: TicketIcon },
-        { name: 'Fidelidade',  href: storeHref('fidelidade'), icon: GiftIcon },
-        { name: 'Link na Bio', href: storeHref('link-bio'), icon: GlobeAltIcon },
       ],
     },
     {
-      // A bancada: o dado nutricional alimenta a etiqueta, que sai na
-      // impressora. Estavam em três lugares diferentes do menu.
       grupo: 'Catálogo',
       label: 'Etiquetas',
       icon: TagIcon,
       items: [
-        { name: 'Tabela nutricional',  href: storeHref('ingredientes'), icon: BeakerIcon, tambem: ['ingredientes', 'taco', 'anvisa'] },
-        { name: 'Imprimir etiquetas',  href: storeHref('etiquetas'),    icon: TagIcon },
-        { name: 'Impressoras',         href: storeHref('printing'),     icon: PrinterIcon },
+        { name: 'Tabela nutricional', href: storeHref('ingredientes'), icon: BeakerIcon, tambem: ['ingredientes', 'taco', 'anvisa'] },
+        { name: 'Imprimir etiquetas', href: storeHref('etiquetas'),    icon: TagIcon },
       ],
     },
 
-    // ── Crescimento: o que faz voltar e o que mede ───────────────────────
-    { grupo: 'Crescimento', label: 'Clientes', icon: UserGroupIcon, href: storeHref('customers'), items: [] },
+    // ── Crescimento: quem compra, o que chama gente, o que mede ──────────
+    {
+      grupo: 'Crescimento',
+      label: 'Clientes',
+      icon: UserGroupIcon,
+      items: [
+        { name: 'Lista de clientes', href: storeHref('customers'),  icon: UserGroupIcon, tambem: ['clientes'] },
+        { name: 'Avaliações',        href: '/avaliacoes',           icon: StarIcon },
+        { name: 'Fidelidade',        href: storeHref('fidelidade'), icon: GiftIcon, tambem: ['carimbo', 'cartão fidelidade'] },
+      ],
+    },
+    marketing,
     {
       grupo: 'Crescimento',
       label: 'Relatórios',
       icon: PresentationChartLineIcon,
-      // Os quatro relatórios eram DEZ abas numa faixa de duas camadas dentro
-      // da própria página — uma segunda navegação por cima desta. Agora são
-      // destinos de verdade: entram na coluna, têm URL e voltam no histórico.
       items: [
-        { name: 'Visão geral',        href: '/analytics/visao-geral', icon: ChartBarIcon },
-        { name: 'Vendas',             href: '/analytics/vendas',      icon: ArrowTrendingUpIcon },
-        { name: 'Clientes',           href: '/analytics/clientes',    icon: UsersIcon },
-        { name: 'Operação',           href: '/analytics/operacao',    icon: ClockIcon },
-        // 'Metas e Conquistas' (/conquistas) fora do menu em 03/10: 2 chamadas em 16 dias.
+        { name: 'Visão geral', href: '/analytics/visao-geral', icon: ChartBarIcon },
+        { name: 'Vendas',      href: '/analytics/vendas',      icon: ArrowTrendingUpIcon },
+        { name: 'Clientes',    href: '/analytics/clientes',    icon: UsersIcon },
+        { name: 'Operação',    href: '/analytics/operacao',    icon: ClockIcon },
       ],
     },
-    ...(automationEnabled ? [marketing] : []),
 
     // ── Ajustes ──────────────────────────────────────────────────────────
     {
@@ -263,18 +258,13 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
       label: 'Configurações',
       icon: Cog6ToothIcon,
       items: [
-        { name: 'Geral',      href: storeHref('settings'),   icon: Cog6ToothIcon },
-        { name: 'Entrega',    href: storeHref('delivery'),   icon: ShoppingCartIcon },
-        // Era "Storefront": inglês e jargão. O lojista procura "aparência".
+        { name: 'Geral',      href: storeHref('settings'),   icon: Cog6ToothIcon, tambem: ['horário', 'turnos'] },
+        { name: 'Entrega',    href: storeHref('delivery'),   icon: MapPinIcon, tambem: ['frete', 'zonas', 'raio'] },
+        { name: 'Pagamentos', href: storeHref('payments'),   icon: CreditCardIcon, tambem: ['mercado pago', 'pix'] },
         { name: 'Aparência da loja', href: storeHref('aparencia'), icon: BuildingStorefrontIcon, tambem: ['storefront', 'vitrine', 'cores', 'logo', 'capa', 'tema'] },
-        { name: 'Pagamentos', href: storeHref('payments'),   icon: CreditCardIcon },
-        // Existia CRUD de equipe desde junho e nenhuma tela: o endpoint
-        // pedia o id do usuário (e como UUID, enquanto a chave é inteira),
-        // então nunca criou ninguém. Corrigido em 22/09 — agora convida-se
-        // pelo celular.
-        { name: 'Colaboradores', href: '/colaboradores', icon: UsersIcon },
-        // Os diagnósticos (/whatsapp/diagnostics, /whatsapp/debug) saíram do
-        // menu em 03/10: são ferramenta de suporte, não produto do lojista.
+        // Saiu de Etiquetas: a mesma tela configura a COMANDA do pedido.
+        { name: 'Impressoras e comanda', href: storeHref('printing'), icon: PrinterIcon, tambem: ['impressora', 'comanda', 'print agent'] },
+        { name: 'Colaboradores', href: '/colaboradores', icon: UsersIcon, tambem: ['equipe', 'atendente', 'remover'] },
       ],
     },
   ];

@@ -73,9 +73,9 @@ describe('Sidebar', () => {
 
   it('o item atual é marcado com aria-current', () => {
     // O kanban saiu do menu (mora na navbar, em aba própria), então usamos
-    // Clientes — um link direto qualquer serve para o contrato do aria-current.
-    renderizar('/stores/minha-loja/customers');
-    expect(screen.getByRole('link', { name: /Clientes/ })).toHaveAttribute(
+    // Início — o link direto que sobrou (Clientes virou seção em 26/10).
+    renderizar('/');
+    expect(screen.getByRole('link', { name: /^Início/ })).toHaveAttribute(
       'aria-current',
       'page'
     );
@@ -184,7 +184,7 @@ describe('Sidebar', () => {
     // continua no accessible name, senão leitor de tela vê só ícones mudos.
     renderizar('/stores/minha-loja/orders');
     fireEvent.click(screen.getByRole('button', { name: /recolher menu/i }));
-    // "Pedidos" virou seção (Central + Histórico); Clientes segue link direto.
-    expect(screen.getByRole('link', { name: /Clientes/ })).toBeInTheDocument();
+    // Início é o link direto que sobrou (Pedidos e Clientes viraram seção).
+    expect(screen.getByRole('link', { name: /Início/ })).toBeInTheDocument();
   });
 });

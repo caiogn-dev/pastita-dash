@@ -18,7 +18,7 @@ const sections = buildNavSections({
 describe('trilhaDoCaminho', () => {
   it('item dentro de seção devolve seção + item', () => {
     const trilha = trilhaDoCaminho(sections, '/stores/minha-loja/link-bio');
-    expect(trilha.map((t) => t.rotulo)).toEqual(['Cardápio', 'Link na Bio']);
+    expect(trilha.map((t) => t.rotulo)).toEqual(['Marketing', 'Link na Bio']);
   });
 
   it('o último elo não é clicável — é onde você está', () => {
@@ -26,9 +26,9 @@ describe('trilhaDoCaminho', () => {
     expect(trilha[trilha.length - 1].href).toBeUndefined();
   });
 
-  it('seção que é link direto devolve um elo só', () => {
+  it('Clientes virou seção (26/10): a lista ganha o segundo elo', () => {
     const trilha = trilhaDoCaminho(sections, '/stores/minha-loja/customers');
-    expect(trilha.map((t) => t.rotulo)).toEqual(['Clientes']);
+    expect(trilha.map((t) => t.rotulo)).toEqual(['Clientes', 'Lista de clientes']);
   });
 
   it('caminho desconhecido devolve trilha vazia em vez de inventar', () => {
@@ -40,7 +40,7 @@ describe('trilhaDoCaminho', () => {
     // /link-bio/editar continua sendo "Cardápio › Link na Bio" — a sub-rota
     // não vira seção nova.
     const trilha = trilhaDoCaminho(sections, '/stores/minha-loja/link-bio/editar');
-    expect(trilha.map((t) => t.rotulo)).toEqual(['Cardápio', 'Link na Bio']);
+    expect(trilha.map((t) => t.rotulo)).toEqual(['Marketing', 'Link na Bio']);
   });
 
   it('a raiz não gera trilha', () => {

@@ -30,28 +30,65 @@ it('itens da mesma seção não repetem ícone entre si', () => {
   }
 });
 
-describe('agrupamento que o dono pediu', () => {
-  it('TACO, Etiquetas e Impressoras moram juntas — é a mesma bancada', () => {
-    const bancada = acha('Etiquetas');
-    expect(bancada.items.map((i) => i.href)).toEqual([
-      '/stores/loja-x/ingredientes',
-      '/stores/loja-x/etiquetas',
-      '/stores/loja-x/printing',
+describe('arquitetura por tarefa (26/10): cada tela mora onde o lojista a procura', () => {
+  /**
+   * O menu cresceu uma tela por vez, cada uma onde coube no dia: link de
+   * pagamento no Balcão, cupom e fidelidade dentro de Cardápio, cozinha e
+   * expedição no Balcão, avaliações em Pedidos, impressora (que imprime a
+   * COMANDA) dentro de Etiquetas. A régua agora é uma pergunta por seção.
+   */
+  const hrefs = (label: string, auto = true) => acha(label, auto).items.map((i) => i.href);
+
+  it('Pedidos segue o caminho do pedido: histórico → cozinha → expedição → entrega', () => {
+    expect(hrefs('Pedidos')).toEqual([
+      '/stores/loja-x/orders/historico',
+      '/stores/loja-x/kds',
+      '/stores/loja-x/expedicao',
+      '/pedidos/equipe',
     ]);
   });
 
-  it('o PDV volta a ser só a venda no balcão', () => {
-    const pdv = acha('Balcão');
-    const nomes = pdv.items.map((i) => i.name);
-    expect(nomes).not.toContain('Etiquetas');
-    expect(nomes).not.toContain('Impressão');
-    expect(pdv.items.map((i) => i.href)).toEqual([
-      '/stores/loja-x/pdv',
-      '/stores/loja-x/cash',
-      '/payments/link',
-      '/stores/loja-x/kds',
-      // Expedição: bipar a comanda leva o pedido à saída — é balcão, não venda.
-      '/stores/loja-x/expedicao',
+  it('Balcão é só a venda presencial e a gaveta', () => {
+    expect(hrefs('Balcão')).toEqual(['/stores/loja-x/pdv', '/stores/loja-x/cash']);
+  });
+
+  it('Financeiro junta cobrar e faturar: link de pagamento e notas fiscais', () => {
+    expect(acha('Financeiro').items.map((i) => [i.name, i.href])).toEqual([
+      ['Link de pagamento', '/payments/link'],
+      ['Notas fiscais', '/stores/loja-x/notas-fiscais'],
+    ]);
+  });
+
+  it('Cardápio é só o que se vende; importar planilha fica por último (é implantação)', () => {
+    expect(hrefs('Cardápio')).toEqual([
+      '/stores/loja-x/products',
+      '/stores/loja-x/combos',
+      '/cardapio/importar',
+    ]);
+  });
+
+  it('Etiquetas é a bancada da etiqueta: tabela nutricional e impressão', () => {
+    expect(hrefs('Etiquetas')).toEqual(['/stores/loja-x/ingredientes', '/stores/loja-x/etiquetas']);
+  });
+
+  it('Clientes junta quem compra, o que acharam e o que os faz voltar', () => {
+    expect(hrefs('Clientes')).toEqual([
+      '/stores/loja-x/customers',
+      '/avaliacoes',
+      '/stores/loja-x/fidelidade',
+    ]);
+  });
+
+  it('Marketing existe para toda loja (cupom e link na bio); WhatsApp só com WhatsApp', () => {
+    expect(hrefs('Marketing', false)).toEqual(['/stores/loja-x/coupons', '/stores/loja-x/link-bio']);
+    expect(hrefs('Marketing', true)).toEqual([
+      '/stores/loja-x/coupons',
+      '/marketing/recuperacao',
+      '/marketing/promocao-do-dia',
+      '/marketing/whatsapp',
+      '/marketing/instagram',
+      '/marketing/whatsapp/templates',
+      '/stores/loja-x/link-bio',
     ]);
   });
 });
@@ -62,15 +99,15 @@ describe('agrupamento que o dono pediu', () => {
 // com as rotas de pé. Ver navSections.enxuto.test.ts.
 
 describe('atendimento deixa de ser um item solto', () => {
-  it('junta conversas, fila humana, avisos automáticos, respostas rápidas e ensinar o bot', () => {
+  it('primeiro o que se usa conversando, depois o que o bot manda sozinho', () => {
     const at = acha('Atendimento');
     expect(at.items.map((i) => i.href)).toEqual([
       '/inbox/whatsapp',
       '/whatsapp/handover',
-      '/whatsapp/avisos',
       '/atendimento/respostas-rapidas',
-      '/atendimento/mensagens-prontas',
       '/atendimento/ensinar-o-bot',
+      '/atendimento/mensagens-prontas',
+      '/whatsapp/avisos',
     ]);
   });
 
@@ -81,22 +118,28 @@ describe('atendimento deixa de ser um item solto', () => {
   });
 });
 
-it('sem automação habilitada, Marketing e Automação somem — o resto fica', () => {
+it('sem automação habilitada, as telas de WhatsApp do Marketing somem — o resto fica', () => {
   const labels = secoes(false).map((s) => s.label);
-  expect(labels).not.toContain('Marketing');
   expect(labels).not.toContain('Automação');
+  const hrefs = todosItens(false).map((i) => i.href);
+  expect(hrefs).not.toContain('/marketing/whatsapp');
+  expect(hrefs).not.toContain('/marketing/recuperacao');
   expect(labels).toEqual(expect.arrayContaining(['Início', 'Pedidos', 'Atendimento', 'Balcão', 'Cardápio']));
 });
 
-it('Configurações mantém Geral/Entrega/Aparência da loja/Pagamentos e Colaboradores', () => {
-  // Colaboradores entrou em 22/09: o CRUD de equipe existia desde junho sem
-  // nenhuma tela, e sem item de menu uma tela nova não existe para o lojista.
+it('Configurações: a loja, a entrega, o dinheiro, a vitrine, o equipamento e as pessoas', () => {
+  // Colaboradores entrou em 22/09. Impressoras saiu de Etiquetas em 26/10: a
+  // mesma tela configura a COMANDA do pedido — morar na bancada de etiqueta
+  // escondia o layout da comanda de quem só imprime pedido.
   const cfg = acha('Configurações');
-  expect(cfg.items.map((i) => i.name)).toEqual([
-    'Geral', 'Entrega', 'Aparência da loja', 'Pagamentos', 'Colaboradores',
+  expect(cfg.items.map((i) => [i.name, i.href])).toEqual([
+    ['Geral', '/stores/loja-x/settings'],
+    ['Entrega', '/stores/loja-x/delivery'],
+    ['Pagamentos', '/stores/loja-x/payments'],
+    ['Aparência da loja', '/stores/loja-x/aparencia'],
+    ['Impressoras e comanda', '/stores/loja-x/printing'],
+    ['Colaboradores', '/colaboradores'],
   ]);
-  expect(cfg.items[0].href).toBe('/stores/loja-x/settings');
-  expect(cfg.items[2].href).toBe('/stores/loja-x/aparencia');
 });
 
 it('nenhum link de conta no menu — eles vivem no menu do avatar', () => {
@@ -150,14 +193,6 @@ describe('Caixa só aparece para quem usa dinheiro vivo', () => {
   it('loja que desligou "Uso caixa com dinheiro vivo" não vê o Caixa', () => {
     expect(temCaixa({ caixaEnabled: false })).toBe(false);
   });
-});
-
-it('Financeiro leva às Notas fiscais', () => {
-  // A nota só existia como botão dentro do pedido: sem lista, sem onde
-  // registrar o destinatário. Agora é destino, com URL.
-  expect(acha('Financeiro').items.map((i) => [i.name, i.href])).toEqual([
-    ['Notas fiscais', '/stores/loja-x/notas-fiscais'],
-  ]);
 });
 
 it('menu sem sigla nem inglês: KDS, TACO, Fila humana e Storefront ganharam nome de balcão', () => {

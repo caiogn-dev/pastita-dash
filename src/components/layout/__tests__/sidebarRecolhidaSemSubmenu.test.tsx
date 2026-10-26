@@ -40,12 +40,12 @@ beforeEach(() => {
 it('recolhida numa página de grupo, os filhos não ficam empilhados na coluna', () => {
   renderizar('/stores/minha-loja/coupons');
   expect(screen.queryByRole('link', { name: /Cupons/ })).not.toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /Cardápio/ })).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.getByRole('button', { name: /Marketing/ })).toHaveAttribute('aria-expanded', 'false');
 });
 
 it('a seção da página continua marcada como ativa', () => {
   renderizar('/stores/minha-loja/coupons');
-  expect(screen.getByRole('button', { name: /Cardápio/ }).className).toMatch(/bg-brand-soft/);
+  expect(screen.getByRole('button', { name: /Marketing/ }).className).toMatch(/bg-brand-soft/);
 });
 
 it('ao espiar, o grupo da página já aparece aberto e com o item marcado', () => {

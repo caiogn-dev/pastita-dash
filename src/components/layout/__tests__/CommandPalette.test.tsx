@@ -58,7 +58,7 @@ describe('CommandPalette', () => {
     // Quem usa a paleta descobre onde a tela fica, em vez de aprender a evitar
     // o menu. Os dois caminhos se reforçam.
     renderizar();
-    expect(screen.getByRole('option', { name: /Cardápio.*Link na Bio|Link na Bio.*Cardápio/ })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /Marketing.*Link na Bio|Link na Bio.*Marketing/ })).toBeInTheDocument();
   });
 
   it('busca ignora acento e caixa', () => {

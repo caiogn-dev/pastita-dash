@@ -174,7 +174,7 @@ const LayoutDaComandaPage: React.FC = () => {
     }
   };
 
-  const trilha = [{ rotulo: 'Impressão', href: `/stores/${storeId}/printing` }, { rotulo: 'Layout da comanda' }];
+  const trilha = [{ rotulo: 'Configurações' }, { rotulo: 'Impressoras e comanda', href: `/stores/${storeId}/printing` }, { rotulo: 'Layout da comanda' }];
 
   if (falhou) {
     return (
