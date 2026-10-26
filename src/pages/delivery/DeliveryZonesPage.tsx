@@ -12,7 +12,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { Input, Modal, Loading } from '../../components/common';
-import { Card, Button, Badge, StatCard, PageShell, RowActions, Tabela, SearchInput, Select } from '../../components/ui';
+import { Aviso, Card, Button, Badge, StatCard, PageShell, RowActions, Tabela, SearchInput, Select } from '../../components/ui';
 import DeliveryZonesMap, { COR_DA_PROMO, corDoAnel } from '../../components/maps/DeliveryZonesMap';
 import { zonasParaCirculos } from '../../components/maps/zonasParaCirculos';
 import {
@@ -303,15 +303,14 @@ export const DeliveryZonesPage: React.FC = () => {
     return <Loading />;
   }
 
+  // Faixas por km passam por cima da fórmula, e nenhuma loja usava (0 de 9 em
+  // 26/10). A seção só aparece para quem tem faixa — ou está procurando uma.
+  const temFaixas =
+    zones.length > 0 || (stats?.total ?? 0) > 0 || Boolean(search) ||
+    filterActive !== undefined || erroAoCarregar;
+
   return (
-    <PageShell
-      titulo="Entrega"
-      acoes={
-        <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="w-5 h-5" />}>
-          Nova faixa
-        </Button>
-      }
-    >
+    <PageShell titulo="Entrega">
       {(storeSlug || storeId) && <ComoOClienteRecebe loja={(storeSlug || storeId)!} />}
 
       {/* Store Location Card - Read Only */}
@@ -482,6 +481,23 @@ export const DeliveryZonesPage: React.FC = () => {
         />
       )}
 
+      {/* Ordem da tela = ordem do servidor (26/10): a zona de preço fixo vale
+          ANTES da fórmula; o frete grátis vem por último e zera o resultado.
+          As zonas resolvem as exceções (condomínio longe, portaria demorada). */}
+      {storeId && (
+        <ZonasDePrecoFixoCard
+          key={storeId}
+          metadataAtual={storeMetadata}
+          categorias={categoriasDaLoja}
+          onSalvar={async (fixedPriceZones) => {
+            const atual = storeMetadata ?? {};
+            const novo = { ...atual, fixed_price_zones: fixedPriceZones };
+            await updateStore(storeId, { metadata: novo });
+            setStoreMetadata(novo);
+          }}
+        />
+      )}
+
       {/* A promoção vem logo abaixo do preço porque ela SOBRESCREVE o preço:
           quem lê a fórmula precisa ver, na mesma rolagem, que existe um raio
           onde ela não vale. */}
@@ -501,24 +517,12 @@ export const DeliveryZonesPage: React.FC = () => {
         <SimuladorDeFreteCard key={storeSlug} storeSlug={storeSlug} metadataAtual={storeMetadata ?? {}} />
       )}
 
-      {/* As faixas por km resolvem a cidade; as zonas abaixo resolvem as
-          exceções (condomínio longe, prédio com portaria demorada). O recurso
-          já existia no backend e ninguém conseguia ligar sem editar JSON no
-          banco — por isso nenhuma loja tinha uma zona sequer. */}
-      {storeId && (
-        <ZonasDePrecoFixoCard
-          key={storeId}
-          metadataAtual={storeMetadata}
-          categorias={categoriasDaLoja}
-          onSalvar={async (fixedPriceZones) => {
-            const atual = storeMetadata ?? {};
-            const novo = { ...atual, fixed_price_zones: fixedPriceZones };
-            await updateStore(storeId, { metadata: novo });
-            setStoreMetadata(novo);
-          }}
-        />
-      )}
-
+      {temFaixas && (
+        <>
+          <Aviso
+            tom="atencao"
+            titulo="Faixas por distância valem no lugar da fórmula"
+          />
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-3 max-lg:grid-cols-2 gap-3 md:gap-4">
@@ -669,6 +673,8 @@ export const DeliveryZonesPage: React.FC = () => {
           },
         ]}
       />
+        </>
+      )}
 
       {/* Create/Edit Modal */}
       <Modal

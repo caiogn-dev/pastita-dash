@@ -139,13 +139,18 @@ describe('DeliveryZonesPage — vazio enganoso nas faixas de entrega', () => {
     expect(screen.getByText('Nenhuma faixa cadastrada')).toBeInTheDocument();
   });
 
-  it('busca que DEU CERTO e veio vazia mantém o "Nenhuma faixa cadastrada"', async () => {
-    // O vazio legítimo continua valendo: sem falha, zero faixa é zero faixa.
+  it('loja sem faixa nenhuma: a seção de faixas some e "Nova faixa" sai do topo (26/10)', async () => {
+    // Nenhuma loja usava faixas (0 de 9) e elas passam por cima da fórmula:
+    // oferecer "Nova faixa" como ação principal empurrava para o mecanismo
+    // que desliga o preço que o dono configurou.
     mockedService.getZones.mockResolvedValue(paginaDeZonas([]));
 
     renderPage();
 
-    expect(await screen.findByText('Nenhuma faixa cadastrada')).toBeInTheDocument();
+    await waitFor(() => expect(mockedService.getZones).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByText('Carregando…')).toBeNull());
+    expect(screen.queryByText('Nenhuma faixa cadastrada')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Nova faixa' })).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
   });
 });
