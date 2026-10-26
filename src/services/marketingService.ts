@@ -820,15 +820,20 @@ export const subscribersApi = {
           `${BASE_URL}/subscribers/`, 
           { params }
         );
-        return Array.isArray(response.data) 
-          ? response.data 
+        return Array.isArray(response.data)
+          ? response.data
           : response.data.results || [];
       } catch {
-        return [];
+        // Os DOIS endpoints caíram: propagar a falha em vez de devolver [].
+        // Devolver lista vazia aqui faz a base de clientes mostrar "0 contatos"
+        // com confiança quando, na verdade, a busca caiu — o vazio enganoso,
+        // nascido na camada de serviço. Propagando, o chamador distingue
+        // "vazio de verdade" de "vazio porque caiu" e avisa o lojista.
+        throw error;
       }
     }
   },
-  
+
   async count(storeId: string, status?: string): Promise<number> {
     try {
       const params: Record<string, string> = { store: storeId };
