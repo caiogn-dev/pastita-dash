@@ -38,12 +38,6 @@ const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then(m =
 const SubscriptionManagementPage = lazy(() => import('./pages/plano/SubscriptionManagementPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
-// Agents Pages (Langchain AI)
-const AgentsPage = lazy(() => import('./pages/agents').then(m => ({ default: m.AgentsPage })));
-const AgentDetailPage = lazy(() => import('./pages/agents').then(m => ({ default: m.AgentDetailPage })));
-const AgentCreatePage = lazy(() => import('./pages/agents').then(m => ({ default: m.AgentCreatePage })));
-const AgentTestPage = lazy(() => import('./pages/agents').then(m => ({ default: m.AgentTestPage })));
-
 // E-commerce Pages
 const CouponsPage = lazy(() => import('./pages/coupons').then(m => ({ default: m.CouponsPage })));
 const FidelidadePage = lazy(() => import('./pages/loyalty/FidelidadePage'));
@@ -53,23 +47,10 @@ const ComboListPage = lazy(() => import('./pages/stores/combos').then(m => ({ de
 const ComboFormPage = lazy(() => import('./pages/stores/combos').then(m => ({ default: m.ComboFormPage })));
 const CustomersPage = lazy(() => import('./pages/customers/CustomersPage').then(m => ({ default: m.CustomersPage })));
 
-// Automation Pages
-const CompanyProfilesPage = lazy(() => import('./pages/automation').then(m => ({ default: m.CompanyProfilesPage })));
-const CompanyProfileDetailPage = lazy(() => import('./pages/automation').then(m => ({ default: m.CompanyProfileDetailPage })));
-const AutoMessagesPage = lazy(() => import('./pages/automation').then(m => ({ default: m.AutoMessagesPage })));
-const CustomerSessionsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.CustomerSessionsPage })));
-const AutomationLogsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.AutomationLogsPage })));
-const ScheduledMessagesPage = lazy(() => import('./pages/automation').then(m => ({ default: m.ScheduledMessagesPage })));
-const ConversationInsightsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.ConversationInsightsPage })));
-
-// Intent Detection Pages (Novo Sistema)
-const IntentStatsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.IntentStatsPage })));
-
 // Analytics/Reports Pages
 const AnalyticsPage = lazy(() => import('./pages/reports').then(m => ({ default: m.AnalyticsPage })));
 const ColaboradoresPage = lazy(() => import('./pages/settings/equipe/ColaboradoresPage'));
 const ImportarCardapioPage = lazy(() => import('./pages/products/importar/ImportarCardapioPage'));
-const ConquistasPage = lazy(() => import('./pages/conquistas/ConquistasPage').then(m => ({ default: m.ConquistasPage })));
 
 // Stores Pages
 const StoresPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StoresPage })));
@@ -78,15 +59,8 @@ const StoreSettingsPage = lazy(() => import('./pages/stores').then(m => ({ defau
 const StorefrontPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StorefrontPage })));
 
 // Marketing Pages
-const SubscribersPage = lazy(() => import('./pages/marketing').then(m => ({ default: m.SubscribersPage })));
-// Páginas que existiam no código sem rota nenhuma — renderizavam em lugar
-// nenhum. Ver navSections.tsx: agora têm caminho no menu.
-const EmailAutomationsPage = lazy(() => import('./pages/marketing').then(m => ({ default: m.AutomationsPage })));
-const AgentFlowsPage = lazy(() => import('./pages/automation').then(m => ({ default: m.AgentFlowsPage })));
 const WebhookDiagnosticsPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.WebhookDiagnosticsPage })));
 const DebugDashboardPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.DebugDashboardPage })));
-const NewCampaignPage = lazy(() => import('./pages/marketing/email').then(m => ({ default: m.NewCampaignPage })));
-const CampaignsListPage = lazy(() => import('./pages/marketing/email').then(m => ({ default: m.CampaignsListPage })));
 const NewWhatsAppCampaignPage = lazy(() => import('./pages/marketing/whatsapp').then(m => ({ default: m.NewWhatsAppCampaignPage })));
 const WhatsAppCampaignsPage = lazy(() => import('./pages/marketing/whatsapp').then(m => ({ default: m.WhatsAppCampaignsPage })));
 const WhatsAppTemplatesPage = lazy(() => import('./pages/marketing/whatsapp/WhatsAppTemplatesPage').then(m => ({ default: m.default })));
@@ -225,13 +199,6 @@ const AppContent: React.FC = () => {
         <Route path="messages" element={<Navigate to="/inbox/whatsapp" replace />} />
         <Route path="conversations" element={<Navigate to="/inbox/whatsapp" replace />} />
         
-        {/* AI Agents Routes (Langchain) */}
-        <Route path="agents" element={<PageBoundary><AgentsPage /></PageBoundary>} />
-        <Route path="agents/new" element={<PageBoundary><AgentCreatePage /></PageBoundary>} />
-        <Route path="agents/:id" element={<PageBoundary><AgentDetailPage /></PageBoundary>} />
-        <Route path="agents/:id/test" element={<PageBoundary><AgentTestPage /></PageBoundary>} />
-        <Route path="agents/:id/conversations" element={<PageBoundary><AgentDetailPage /></PageBoundary>} />
-        
         {/* Settings */}
         <Route path="settings" element={<PageBoundary><SettingsPage /></PageBoundary>} />
 
@@ -243,29 +210,23 @@ const AppContent: React.FC = () => {
         {/* Link de pagamento avulso (Fase 3) */}
         <Route path="payments/link" element={<PageBoundary><PaymentLinkPage /></PageBoundary>} />
         
-        {/* Automation Routes */}
-        <Route path="automation/companies" element={<PageBoundary><CompanyProfilesPage /></PageBoundary>} />
-        <Route path="automation/companies/new" element={<PageBoundary><CompanyProfileDetailPage /></PageBoundary>} />
-        <Route path="automation/companies/:id" element={<PageBoundary><CompanyProfileDetailPage /></PageBoundary>} />
-        <Route path="automation/messages" element={<PageBoundary><AutoMessagesPage /></PageBoundary>} />
         {/* 26/10: Mensagens prontas + Avisos enviados = Avisos automáticos (abas). */}
         <Route path="atendimento/mensagens-prontas" element={<Navigate to="/atendimento/avisos-automaticos" replace />} />
-        <Route path="automation/companies/:companyId/messages" element={<PageBoundary><AutoMessagesPage /></PageBoundary>} />
-        <Route path="automation/sessions" element={<PageBoundary><CustomerSessionsPage /></PageBoundary>} />
-        <Route path="automation/logs" element={<PageBoundary><AutomationLogsPage /></PageBoundary>} />
-        <Route path="automation/scheduled" element={<PageBoundary><ScheduledMessagesPage /></PageBoundary>} />
-        <Route path="automation/conversation-insights" element={<PageBoundary><ConversationInsightsPage /></PageBoundary>} />
-        <Route path="automation/flows" element={<PageBoundary><AgentFlowsPage /></PageBoundary>} />
 
-        {/* Intent Detection Routes */}
-        <Route path="automation/intents" element={<Navigate to="/automation/intents/stats" replace />} />
-        <Route path="automation/intents/stats" element={<PageBoundary><IntentStatsPage /></PageBoundary>} />
-        
+        {/* 26/10: telas órfãs apagadas (fora do menu desde 03/10, sem uso medido).
+            O endereço salvo cai na tela que faz o trabalho hoje. */}
+        <Route path="agents/*" element={<Navigate to="/atendimento/ensinar-o-bot" replace />} />
+        <Route path="automation/companies/*" element={<Navigate to="/atendimento/avisos-automaticos" replace />} />
+        <Route path="automation/messages" element={<Navigate to="/atendimento/avisos-automaticos" replace />} />
+        <Route path="automation/*" element={<Navigate to="/inbox/whatsapp" replace />} />
+        <Route path="conquistas" element={<Navigate to="/analytics" replace />} />
+        <Route path="marketing/subscribers" element={<Navigate to="/marketing/whatsapp" replace />} />
+        <Route path="marketing/automations" element={<Navigate to="/marketing/whatsapp" replace />} />
+        <Route path="marketing/email/*" element={<Navigate to="/marketing/whatsapp" replace />} />
         {/* Analytics/Reports Routes */}
         <Route path="analytics" element={<Navigate to="/analytics/visao-geral" replace />} />
         <Route path="analytics/:relatorio" element={<PageBoundary><AnalyticsPage /></PageBoundary>} />
         <Route path="vigias" element={<PageBoundary><VigiasPage /></PageBoundary>} />
-        <Route path="conquistas" element={<PageBoundary><ConquistasPage /></PageBoundary>} />
         <Route path="reports" element={<Navigate to="/analytics" replace />} />
         <Route path="colaboradores" element={<PageBoundary><ColaboradoresPage /></PageBoundary>} />
         <Route path="cardapio/importar" element={<PageBoundary><ImportarCardapioPage /></PageBoundary>} />
@@ -305,11 +266,6 @@ const AppContent: React.FC = () => {
         
         {/* Marketing Routes */}
         <Route path="marketing" element={<Navigate to="/marketing/whatsapp" replace />} />
-        <Route path="marketing/subscribers" element={<PageBoundary><SubscribersPage /></PageBoundary>} />
-        <Route path="marketing/automations" element={<PageBoundary><EmailAutomationsPage /></PageBoundary>} />
-        <Route path="marketing/email" element={<Navigate to="/marketing/email/campaigns" replace />} />
-        <Route path="marketing/email/campaigns" element={<PageBoundary><CampaignsListPage /></PageBoundary>} />
-        <Route path="marketing/email/new" element={<PageBoundary><NewCampaignPage /></PageBoundary>} />
         <Route path="marketing/whatsapp" element={<PageBoundary><WhatsAppCampaignsPage /></PageBoundary>} />
         <Route path="marketing/whatsapp/new" element={<PageBoundary><NewWhatsAppCampaignPage /></PageBoundary>} />
         <Route path="avaliacoes" element={<PageBoundary><AvaliacoesPage /></PageBoundary>} />

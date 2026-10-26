@@ -13,10 +13,7 @@ import { join } from 'path';
 import { describe, expect, it } from '@jest/globals';
 
 const PAGINAS = [
-  'marketing/AutomationsPage.tsx',
   'messenger/MessengerInbox.tsx',
-  'automation/AutoMessagesPage.tsx',
-  'automation/IntentStatsPage.tsx',
 ];
 
 const ler = (rel: string) => readFileSync(join(__dirname, '..', '..', rel), 'utf8');
@@ -74,7 +71,6 @@ describe.each(PAGINAS)('%s', (rel) => {
 
 describe('estado de coisa vem de SeloDeEstado + estados.ts', () => {
   it.each([
-    ['marketing/AutomationsPage.tsx', 'estadoDeAutomacao'],
     ['automation/TextosDosAvisos.tsx', 'estadoDeAutomacao'],
   ])('%s usa %s', (rel, mapa) => {
     const fonte = ler(rel);
@@ -83,7 +79,7 @@ describe('estado de coisa vem de SeloDeEstado + estados.ts', () => {
   });
 
   it('liga/desliga de automação é o Switch do kit', () => {
-    for (const rel of ['marketing/AutomationsPage.tsx', 'automation/TextosDosAvisos.tsx']) {
+    for (const rel of ['automation/TextosDosAvisos.tsx']) {
       expect(ler(rel)).toMatch(/<Switch\b/);
     }
   });
@@ -92,19 +88,5 @@ describe('estado de coisa vem de SeloDeEstado + estados.ts', () => {
 describe('chassi', () => {
   it.each(PAGINAS)('%s monta a página no PageShell', (rel) => {
     expect(ler(rel)).toMatch(/<PageShell\b/);
-  });
-
-  it('números de página são KpiGrid, não cartões à mão', () => {
-    for (const rel of ['automation/IntentStatsPage.tsx']) {
-      expect(ler(rel)).toMatch(/<KpiGrid\b/);
-    }
-  });
-
-  it('falha de carga das intenções é FalhaAoCarregar, não banner vermelho', () => {
-    expect(ler('automation/IntentStatsPage.tsx')).toMatch(/<FalhaAoCarregar\b/);
-  });
-
-  it('número formatado por utils/formatters, não toLocaleString solto', () => {
-    expect(ler('automation/IntentStatsPage.tsx')).not.toMatch(/toLocaleString\(|toFixed\(/);
   });
 });

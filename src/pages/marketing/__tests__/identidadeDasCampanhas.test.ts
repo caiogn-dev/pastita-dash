@@ -13,9 +13,7 @@ import { describe, expect, it } from '@jest/globals';
 
 const PAGINAS = [
   'whatsapp/WhatsAppCampaignsPage.tsx',
-  'email/CampaignsListPage.tsx',
   'whatsapp/WhatsAppTemplatesPage.tsx',
-  'MarketingPage.tsx',
 ];
 
 const ler = (rel: string) => readFileSync(join(__dirname, '..', rel), 'utf8');

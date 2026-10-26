@@ -1,5 +1,6 @@
 /**
- * As cinco telas que voltaram ao menu precisam MONTAR, não só rotear.
+ * As telas de diagnóstico precisam MONTAR, não só rotear (as outras três
+ * — e-mails automáticos, assinantes, fluxos — foram apagadas em 26/10).
  *
  * Em 12/ago descobri 5 páginas funcionais (2.335 linhas) sem rota nenhuma:
  * renderizavam em lugar nenhum. Religuei as rotas e conferi que os endpoints
@@ -71,9 +72,6 @@ describe('telas recuperadas montam sem explodir', () => {
   afterAll(() => erroDoConsole.mockRestore());
 
   it.each([
-    ['E-mails automáticos', () => import('../marketing/AutomationsPage')],
-    ['Assinantes',          () => import('../marketing/SubscribersPage')],
-    ['Fluxos do agente',    () => import('../automation/AgentFlowsPage')],
     ['Diagnóstico webhook', () => import('../whatsapp/WebhookDiagnosticsPage')],
     ['Diagnóstico do chat', () => import('../whatsapp/DebugDashboardPage')],
   ])('%s', async (_nome, carregar) => {
