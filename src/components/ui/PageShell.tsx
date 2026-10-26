@@ -36,10 +36,11 @@
  * mesma trilha, ações no mesmo canto. O quadro só encolhe o título, dispensa a
  * descrição e entrega ao conteúdo a altura que sobra.
  */
-import React from 'react';
+import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 
 import { cn } from '../../utils/cn';
+import { TrilhaAutomatica } from './trilhaAutomatica';
 
 export interface TrilhaItem {
   rotulo: string;
@@ -83,6 +84,9 @@ export const PageShell: React.FC<PageShellProps> = ({
   className,
   variante = 'documento',
 }) => {
+  // Sem trilha própria, vale a do menu (a casca entrega via contexto).
+  const automatica = useContext(TrilhaAutomatica);
+  if (!trilha?.length && automatica?.length) trilha = automatica;
   const temTrilha = Boolean(trilha && trilha.length > 0);
   const quadro = variante === 'quadro';
 

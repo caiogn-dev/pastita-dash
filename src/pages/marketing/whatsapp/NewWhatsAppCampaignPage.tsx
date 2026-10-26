@@ -834,8 +834,8 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
   const casca = (conteudo: React.ReactNode) => (
     <PageShell
       trilha={[
-        { rotulo: 'Campanhas', href: '/marketing' },
-        { rotulo: 'WhatsApp', href: '/marketing/whatsapp' },
+        { rotulo: 'Marketing' },
+        { rotulo: 'Campanha WhatsApp', href: '/marketing/whatsapp' },
         { rotulo: 'Nova campanha' },
       ]}
       titulo="Nova campanha de WhatsApp"

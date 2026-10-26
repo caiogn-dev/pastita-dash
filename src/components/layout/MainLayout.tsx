@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
 import { CommandPalette } from './CommandPalette';
 import { useNavSections } from './useNavSections';
+import { trilhaDoCaminho } from './navSections';
+import { TrilhaAutomatica } from '../ui/trilhaAutomatica';
 import { TrialBanner } from './TrialBanner';
 import { useIsMobileViewport } from '../../mobile/useIsMobileViewport';
 import { MobileShell } from '../../mobile/MobileShell';
@@ -30,6 +32,9 @@ const Casca: React.FC<{
 }) => {
   const sections = useNavSections();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  // A trilha de toda página sai do MESMO menu que desenha a coluna.
+  const trilha = useMemo(() => trilhaDoCaminho(sections, pathname), [sections, pathname]);
   const [paletaAberta, setPaletaAberta] = useState(false);
 
   // Ctrl+K / Cmd+K de qualquer lugar. O atalho vive na CASCA, não numa página:
@@ -68,7 +73,7 @@ const Casca: React.FC<{
       <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
         <Navbar semNavegacaoDesktop onAbrirBusca={() => setPaletaAberta(true)} />
         {comBanner && <TrialBanner />}
-        {children}
+        <TrilhaAutomatica.Provider value={trilha}>{children}</TrilhaAutomatica.Provider>
       </div>
       <CommandPalette
         aberto={paletaAberta}

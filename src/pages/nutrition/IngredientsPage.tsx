@@ -189,7 +189,6 @@ function IngredientesDaLoja() {
     <PageShell
       titulo="Tabela nutricional"
      
-      trilha={[{ rotulo: 'Produtos', href: `/stores/${storeId}/products` }, { rotulo: 'Tabela nutricional' }]}
       acoes={<Button onClick={() => abrir()}><PlusIcon className="h-5 w-5" />Novo ingrediente</Button>}
       filtros={filtros}
     >

@@ -321,7 +321,6 @@ export const WhatsAppCampaignsPage: React.FC = () => {
 
   return (
     <PageShell
-      trilha={[{ rotulo: 'Campanhas', href: '/marketing' }, { rotulo: 'WhatsApp' }]}
       titulo="Campanhas no WhatsApp"
      
       acoes={estado === 'lista' ? criar : undefined}

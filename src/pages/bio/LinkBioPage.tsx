@@ -346,7 +346,6 @@ const LinkBioPage: React.FC = () => {
   return (
     <PageShell
       variante="quadro"
-      trilha={[{ rotulo: 'Cardápio' }, { rotulo: 'Link na Bio' }]}
       titulo="Link na Bio"
       acoes={
         <div className="flex flex-wrap items-center gap-2">

@@ -321,10 +321,7 @@ const AutoMessagesPage: React.FC = () => {
         { rotulo: 'Automação', href: '/automation/companies' },
         { rotulo: company?.company_name || 'Perfil', href: `/automation/companies/${companyId}` },
         { rotulo: 'Mensagens prontas' },
-      ] : [
-        { rotulo: 'Atendimento' },
-        { rotulo: 'Mensagens prontas' },
-      ]}
+      ] : undefined}
       titulo="Mensagens prontas"
      
       acoes={

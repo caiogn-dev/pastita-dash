@@ -765,10 +765,6 @@ export const OrdersPage: React.FC = () => {
         <PageShell
           variante="quadro"
           titulo="Pedidos"
-          trilha={[
-            ...(storeQuery ? [{ rotulo: 'Loja', href: `/stores/${storeQuery}` }] : []),
-            { rotulo: 'Pedidos' },
-          ]}
           acoes={
             <>
               {/* O kanban só mostra a operação de agora. Quem chega aqui

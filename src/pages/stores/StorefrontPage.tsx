@@ -372,7 +372,6 @@ export const StorefrontPage: React.FC = () => {
   return (
     <PageShell
       variante="quadro"
-      trilha={[{ rotulo: 'Configurações' }, { rotulo: 'Aparência da loja' }]}
       titulo="Aparência da loja"
       acoes={
         <div className="flex flex-wrap items-center gap-1">

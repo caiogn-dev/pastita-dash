@@ -436,7 +436,6 @@ const FidelidadePage: React.FC = () => {
 
   return (
     <PageShell
-      trilha={[{ rotulo: 'Cardápio' }, { rotulo: 'Fidelidade' }]}
       titulo="Fidelidade & Cupons"
      
       selo={

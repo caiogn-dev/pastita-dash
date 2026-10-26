@@ -615,7 +615,6 @@ const AnalyticsPage: React.FC = () => {
 
   return (
     <PageShell
-      trilha={[{ rotulo: 'Relatórios' }, { rotulo: relatorio.titulo }]}
       titulo={relatorio.titulo}
       acoes={
         <>

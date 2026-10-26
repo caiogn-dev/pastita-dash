@@ -179,7 +179,6 @@ export const HistoricoPedidosPage: React.FC = () => {
   if (listaQuery.isError && listaQuery.data === undefined) {
     return (
       <PageShell
-        trilha={[{ rotulo: 'Pedidos', href: `/stores/${storeQuery}/orders` }, { rotulo: 'Histórico' }]}
         titulo="Histórico de pedidos"
         descricao="Todos os pedidos do período."
       >
@@ -209,7 +208,6 @@ export const HistoricoPedidosPage: React.FC = () => {
 
   return (
     <PageShell
-      trilha={[{ rotulo: 'Pedidos', href: `/stores/${storeQuery}/orders` }, { rotulo: 'Histórico' }]}
       titulo="Histórico de pedidos"
       acoes={
         <div className="flex flex-wrap items-center gap-2">

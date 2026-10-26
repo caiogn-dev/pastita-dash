@@ -464,7 +464,6 @@ export const StoreSettingsPage: React.FC = () => {
     // casca do app: a página tinha o próprio fundo e o próprio respiro, e
     // encostava diferente das outras. Quem espaça é o <main>.
     <PageShell
-      trilha={[{ rotulo: 'Configurações' }, { rotulo: 'Loja' }]}
       titulo="Configurações da Loja"
       className="mx-auto max-w-6xl"
     >

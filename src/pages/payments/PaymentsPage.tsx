@@ -305,7 +305,7 @@ export const PaymentsPage: React.FC = () => {
   // enganosos — mostra um estado de erro acionável com "Tentar novamente".
   if (statsFailed && ordersFailed) {
     return (
-      <PageShell trilha={[{ rotulo: 'PDV' }, { rotulo: 'Pagamentos' }]} titulo="Pagamentos">
+      <PageShell titulo="Pagamentos">
         <Card>
           <EmptyState
             icone={<ExclamationTriangleIcon className="w-8 h-8" aria-hidden />}
@@ -320,7 +320,6 @@ export const PaymentsPage: React.FC = () => {
 
   return (
     <PageShell
-      trilha={[{ rotulo: 'PDV' }, { rotulo: 'Pagamentos' }]}
       titulo="Pagamentos"
       // A descrição depende do stats agregado; se ele falhou sem cache, não
       // exibimos o "R$ 0,00 recebido" enganoso — ausência é melhor que zero

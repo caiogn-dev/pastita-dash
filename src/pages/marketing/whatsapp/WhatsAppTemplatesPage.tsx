@@ -144,7 +144,6 @@ const WhatsAppTemplatesPage: React.FC = () => {
 
   return (
     <PageShell
-      trilha={[{ rotulo: 'Campanhas', href: '/marketing' }, { rotulo: 'Modelos' }]}
       titulo="Modelos de mensagem"
      
       filtros={

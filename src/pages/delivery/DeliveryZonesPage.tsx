@@ -310,7 +310,6 @@ export const DeliveryZonesPage: React.FC = () => {
 
   return (
     <PageShell
-      trilha={[{ rotulo: 'Configurações' }, { rotulo: 'Zonas de Entrega' }]}
       titulo="Zonas de Entrega"
       acoes={
         <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="w-5 h-5" />}>
