@@ -37,6 +37,25 @@ const ExpedicaoPage: React.FC = () => {
   const focar = useCallback(() => campo.current?.focus(), []);
   useEffect(() => { focar(); }, [focar]);
 
+  // Quem está pronto esperando saída (26/10): antes a tela só mostrava o que
+  // acabou de ser bipado. Desfazer não existe de propósito — o servidor recusa
+  // voltar etapa porque o cliente já recebeu o aviso no WhatsApp.
+  const [prontos, setProntos] = useState<Order[]>([]);
+  const carregarProntos = useCallback(async () => {
+    if (!loja) return;
+    try {
+      const resposta = await getOrders({ store: loja, status: 'ready', ordering: 'created_at', page_size: 50 });
+      setProntos(resposta.results as unknown as Order[]);
+    } catch {
+      // A lista é apoio; a bipagem continua funcionando sem ela.
+    }
+  }, [loja]);
+  useEffect(() => {
+    void carregarProntos();
+    const id = window.setInterval(() => { void carregarProntos(); }, 30000);
+    return () => window.clearInterval(id);
+  }, [carregarProntos]);
+
   const registrar = (codigo: string, tipo: Registro['tipo'], texto: string) => {
     seq.current += 1;
     const quando = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -65,6 +84,7 @@ const ExpedicaoPage: React.FC = () => {
       }
       await updateOrderStatus(pedido.id, acao.status);
       registrar(codigo, 'ok', `${pedido.customer_name || 'Cliente'}: ${acao.rotulo}`);
+      void carregarProntos();
     } catch (erro) {
       registrar(codigo, 'erro', getErrorMessage(erro));
     } finally {
@@ -83,10 +103,7 @@ const ExpedicaoPage: React.FC = () => {
   const ultimo = registros[0];
 
   return (
-    <PageShell
-      titulo="Expedição"
-     
-    >
+    <PageShell titulo="Expedição">
       <form onSubmit={aoEnviar} className="max-w-xl" onClick={focar}>
         <label htmlFor="codigo-bipado" className="mb-2 flex items-center gap-2 text-sm font-medium text-fg-token">
           <QrCodeIcon className="h-5 w-5" />
@@ -130,6 +147,21 @@ const ExpedicaoPage: React.FC = () => {
             </li>
           ))}
         </ul>
+      )}
+
+      {prontos.length > 0 && (
+        <section className="mt-8 max-w-xl">
+          <h2 className="mb-2 text-sm font-semibold text-fg-token">Prontos para sair ({prontos.length})</h2>
+          <ul className="divide-y divide-border-token superficie">
+            {prontos.map((p) => (
+              <li key={p.id} className="flex items-baseline gap-3 px-4 py-2 text-sm">
+                <span className="font-mono">{p.order_number}</span>
+                <span className="flex-1 truncate text-fg-token">{p.customer_name || 'Cliente'}</span>
+                <span className="text-fg-muted-token">{p.delivery_method === 'pickup' ? 'Retirada' : 'Entrega'}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </PageShell>
   );
