@@ -8,8 +8,9 @@
 import React from 'react';
 import { act, render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { AvisosAutomaticosPage } from '../AvisosAutomaticosPage';
+import { AvisosEnviadosSecao } from '../AvisosEnviadosSecao';
 
+const mockEditarTexto = jest.fn();
 let mockLoja: { storeId: string | null; storeSlug: string | null; storeName: string | null; store: null };
 jest.mock('../../../hooks/useStore', () => ({
   __esModule: true,
@@ -39,10 +40,11 @@ const resposta = (itens = [item({})]) => ({
   itens,
 });
 
-const renderizar = () => render(<MemoryRouter><AvisosAutomaticosPage /></MemoryRouter>);
+const renderizar = () => render(<MemoryRouter><AvisosEnviadosSecao onEditarTexto={mockEditarTexto} /></MemoryRouter>);
 
 beforeEach(() => {
   getMensagensAutomaticas.mockReset();
+  mockEditarTexto.mockReset();
   mockLoja = { storeId: 'loja-1', storeSlug: 'ce-saladas', storeName: 'Cê Saladas', store: null };
 });
 
@@ -141,7 +143,7 @@ it('trocar de loja não mostra os avisos da loja anterior', async () => {
   // Nova loja selecionada; a busca da nova loja ainda não voltou.
   const responder = buscaPendente();
   mockLoja = { storeId: 'loja-2', storeSlug: 'outra-loja', storeName: 'Outra', store: null };
-  rerender(<MemoryRouter><AvisosAutomaticosPage /></MemoryRouter>);
+  rerender(<MemoryRouter><AvisosEnviadosSecao onEditarTexto={mockEditarTexto} /></MemoryRouter>);
 
   // O aviso da loja anterior some na hora (não pode vazar entre lojas) e a tela
   // volta a carregar.
@@ -192,7 +194,7 @@ it('resposta atrasada da loja anterior é descartada (não vaza entre lojas)', a
   // Troca para a loja 2; a loja 2 responde.
   getMensagensAutomaticas.mockResolvedValueOnce(resposta([item({ texto: 'Aviso da loja 2' })]));
   mockLoja = { storeId: 'loja-2', storeSlug: 'outra-loja', storeName: 'Outra', store: null };
-  rerender(<MemoryRouter><AvisosAutomaticosPage /></MemoryRouter>);
+  rerender(<MemoryRouter><AvisosEnviadosSecao onEditarTexto={mockEditarTexto} /></MemoryRouter>);
   expect(await screen.findByText('Aviso da loja 2')).toBeInTheDocument();
 
   // A resposta ATRASADA da loja 1 chega depois: não pode substituir a loja 2.
@@ -201,4 +203,33 @@ it('resposta atrasada da loja anterior é descartada (não vaza entre lojas)', a
   });
   expect(screen.queryByText('Aviso da loja 1')).not.toBeInTheDocument();
   expect(screen.getByText('Aviso da loja 2')).toBeInTheDocument();
+});
+
+describe('aviso que não chegou leva ao texto (26/10)', () => {
+  it('"Editar texto" no PIX que falhou abre o texto do lembrete de PIX', async () => {
+    getMensagensAutomaticas.mockResolvedValue(resposta([
+      item({ tipo: 'pix_reminder', rotulo: 'Lembrete de PIX', status: 'failed', erro: 'Não chegou' }),
+    ]));
+    renderizar();
+
+    fireEvent.click(await screen.findByRole('button', { name: /editar texto/i }));
+    expect(mockEditarTexto).toHaveBeenCalledWith('pix_reminder');
+  });
+
+  it('carrinho que falhou leva ao Recuperador, onde mora o lembrete', async () => {
+    getMensagensAutomaticas.mockResolvedValue(resposta([
+      item({ tipo: 'cart_reminder', rotulo: 'Carrinho do site', status: 'failed' }),
+    ]));
+    renderizar();
+
+    expect(await screen.findByRole('link', { name: /editar texto/i }))
+      .toHaveAttribute('href', '/marketing/recuperacao#lembretes-de-carrinho');
+  });
+
+  it('o que chegou não ganha "Editar texto"', async () => {
+    getMensagensAutomaticas.mockResolvedValue(resposta());
+    renderizar();
+    await screen.findByText('Seu pedido saiu para entrega');
+    expect(screen.queryByRole('button', { name: /editar texto/i })).not.toBeInTheDocument();
+  });
 });

@@ -637,6 +637,8 @@ export interface CompanyProfile {
   created_at: string;
   updated_at: string;
   // Account and API fields
+  /** Conta do WhatsApp da loja — de onde vêm os modelos da Meta. */
+  account?: string;
   account_phone?: string;
   external_api_key?: string;
   webhook_secret?: string;

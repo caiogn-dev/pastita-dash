@@ -332,7 +332,7 @@ export default function ConnectionsPage() {
                     {estado === 'funcionando' && (
                       <>
                         <Link to="/inbox/whatsapp" className={botaoPrimario}>Abrir conversas</Link>
-                        <Link to="/whatsapp/avisos" className={botaoSecundario}>Mensagens automáticas</Link>
+                        <Link to="/atendimento/avisos-automaticos" className={botaoSecundario}>Avisos automáticos</Link>
                       </>
                     )}
                     {estado !== 'pausado' && (

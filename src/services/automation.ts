@@ -204,43 +204,44 @@ export const automationLogService = {
 
 // Event type labels for display
 export const eventTypeLabels: Record<AutoMessageEventType, string> = {
-  // Welcome & General
+  // Em frase, não em Title Case (26/10): é o nome que o dono lê na tela.
+  // Conversa
   welcome: 'Boas-vindas',
-  menu: 'Cardápio/Catálogo',
-  business_hours: 'Horário de Funcionamento',
-  out_of_hours: 'Fora do Horário',
-  faq: 'Perguntas Frequentes',
-  // Cart
-  cart_created: 'Carrinho Criado',
-  cart_abandoned: 'Carrinho Abandonado',
-  cart_reminder: 'Lembrete de Carrinho',
-  cart_reminder_30: 'Lembrete Carrinho (30min)',
-  cart_reminder_2h: 'Lembrete Carrinho (2h)',
-  cart_reminder_24h: 'Lembrete Carrinho (24h)',
-  // Payment
-  pix_generated: 'PIX Gerado',
+  menu: 'Cardápio',
+  business_hours: 'Horário de funcionamento',
+  out_of_hours: 'Fora do horário',
+  faq: 'Perguntas frequentes',
+  // Carrinho
+  cart_created: 'Carrinho criado',
+  cart_abandoned: 'Carrinho abandonado',
+  cart_reminder: 'Lembrete de carrinho',
+  cart_reminder_30: 'Lembrete de carrinho (30 min)',
+  cart_reminder_2h: 'Lembrete de carrinho (2 h)',
+  cart_reminder_24h: 'Lembrete de carrinho (24 h)',
+  // Pagamento
+  pix_generated: 'PIX gerado',
   pix_reminder: 'Lembrete de PIX',
-  pix_expired: 'PIX Expirado',
-  payment_reminder_1: 'Lembrete Pagamento (30min)',
-  payment_reminder_2: 'Lembrete Pagamento (2h)',
-  payment_confirmed: 'Pagamento Confirmado',
-  payment_failed: 'Pagamento Falhou',
-  // Order Status
-  order_received: 'Pedido Recebido',
-  order_confirmed: 'Pedido Confirmado',
-  order_preparing: 'Pedido em Preparo',
-  order_ready: 'Pedido Pronto',
-  order_shipped: 'Pedido Enviado',
-  order_out_for_delivery: 'Saiu para Entrega',
-  order_delivered: 'Pedido Entregue',
-  order_cancelled: 'Pedido Cancelado',
-  // Feedback & Support
-  feedback_request: 'Solicitar Avaliação',
-  feedback_received: 'Avaliação Recebida',
-  human_handoff: 'Transferido para Humano',
-  human_assigned: 'Atendente Atribuído',
-  // Custom
-  custom: 'Personalizado',
+  pix_expired: 'PIX expirado',
+  payment_reminder_1: 'Lembrete de pagamento (30 min)',
+  payment_reminder_2: 'Lembrete de pagamento (2 h)',
+  payment_confirmed: 'Pagamento confirmado',
+  payment_failed: 'Pagamento recusado',
+  // Pedido
+  order_received: 'Pedido recebido',
+  order_confirmed: 'Pedido confirmado',
+  order_preparing: 'Pedido em preparo',
+  order_ready: 'Pedido pronto',
+  order_shipped: 'Pedido enviado',
+  order_out_for_delivery: 'Saiu para entrega',
+  order_delivered: 'Pedido entregue',
+  order_cancelled: 'Pedido cancelado',
+  // Avaliação e atendimento
+  feedback_request: 'Pedido de avaliação',
+  feedback_received: 'Avaliação recebida',
+  human_handoff: 'Passou para atendente',
+  human_assigned: 'Atendente assumiu',
+  // Livre
+  custom: 'Outro momento',
 };
 
 // Business type labels

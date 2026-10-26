@@ -76,7 +76,7 @@ describe.each(PAGINAS)('%s', (rel) => {
 describe('estado de coisa vem de SeloDeEstado + estados.ts', () => {
   it.each([
     ['marketing/AutomationsPage.tsx', 'estadoDeAutomacao'],
-    ['automation/AutoMessagesPage.tsx', 'estadoDeAutomacao'],
+    ['automation/TextosDosAvisos.tsx', 'estadoDeAutomacao'],
     ['conversations/ConversationsPage.tsx', 'estadoDeConversa'],
   ])('%s usa %s', (rel, mapa) => {
     const fonte = ler(rel);
@@ -85,7 +85,7 @@ describe('estado de coisa vem de SeloDeEstado + estados.ts', () => {
   });
 
   it('liga/desliga de automação é o Switch do kit', () => {
-    for (const rel of ['marketing/AutomationsPage.tsx', 'automation/AutoMessagesPage.tsx']) {
+    for (const rel of ['marketing/AutomationsPage.tsx', 'automation/TextosDosAvisos.tsx']) {
       expect(ler(rel)).toMatch(/<Switch\b/);
     }
   });
