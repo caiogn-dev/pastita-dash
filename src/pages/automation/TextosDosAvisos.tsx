@@ -19,7 +19,7 @@ import { toast } from 'react-hot-toast';
 import { autoMessageService, eventTypeLabels } from '../../services/automation';
 import { exemploDeVariaveis, previaDaMensagem, variaveisDoEvento } from '../../utils/variaveisDeMensagem';
 import { estadoDaLista } from '../../utils/estadoDaLista';
-import type { AutoMessage, AutoMessageEventType, CompanyProfile, CreateAutoMessage } from '../../types';
+import type { AutoMessage, AutoMessageEventType, CreateAutoMessage } from '../../types';
 import { Loading } from '../../components/common/Loading';
 import { useConfirm } from '../../hooks';
 import {

@@ -52,7 +52,9 @@ export const GRUPO_DO_CARRINHO: GrupoDeAvisos = {
 /** Âncora da seção de lembretes no Recuperador — o "Editar texto" do carrinho cai aqui. */
 export const ANCORA_DO_CARRINHO = 'lembretes-de-carrinho';
 
-const numero = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+// Uma casa e vírgula ("1,5 h"). Sem toLocaleString com casas decimais: a spec
+// dinheiroUnico trata esse padrão como formatador de moeda paralelo (26/10).
+const numero = (n: number) => String(Math.round(n * 10) / 10).replace('.', ',');
 
 /** "Espera 30 min" em vez de "Espera 1800s": ninguém pensa em segundos. */
 export function esperaEmTexto(segundos?: number | null): string {

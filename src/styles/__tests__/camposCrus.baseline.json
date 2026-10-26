@@ -4,7 +4,6 @@
   "components/agents/AgentChatTest.tsx": 1,
   "components/agents/AgentForm.tsx": 26,
   "components/chat/ChatToolsPanel.tsx": 13,
-  "components/chat/ContactInfoPanel.tsx": 1,
   "components/chat/MessageBubble.tsx": 1,
   "components/chat/MessageInput.tsx": 2,
   "components/chat/NewConversationModal.tsx": 6,

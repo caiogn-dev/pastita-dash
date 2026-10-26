@@ -11,6 +11,8 @@ import {
   BoltIcon,
   ArrowLeftIcon,
   ShoppingBagIcon,
+  CpuChipIcon,
+  UserIcon,
 } from '@heroicons/react/24/outline';
 import { ChatToolsPanel } from '../../components/chat/ChatToolsPanel';
 import { getErrorMessage } from '../../services';
@@ -31,7 +33,7 @@ import { useRootStore } from '../../stores/rootStore';
 import { MessageBubble, MessageBubbleProps } from '../../components/chat/MessageBubble';
 import { MediaViewer } from '../../components/chat/MediaViewer';
 import toast from 'react-hot-toast';
-import { EmptyState } from '../../components/ui';
+import { EmptyState, SeloDeEstado, estadoDeConversa } from '../../components/ui';
 import { formatPhone } from '../../utils/formatters';
 import { messagePreviewText } from '../../utils/messagePreview';
 import { formatConversationTime, formatDayLabel, isSameDay } from '../../utils/chatTime';
@@ -62,11 +64,6 @@ const messageToBubbleProps = (msg: Message): MessageBubbleProps => ({
   readAt: msg.read_at ?? undefined,
   errorMessage: msg.error_message,
 });
-
-const getStoreUrl = (metadata?: Record<string, unknown>) => {
-  const value = metadata?.website_url || metadata?.store_url || metadata?.public_url;
-  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
-};
 
 interface ConversationWithMessages extends Omit<Conversation, 'last_message'> {
   last_message?: Message | string;
@@ -135,7 +132,13 @@ const WhatsAppInboxPage: React.FC = () => {
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') ?? '');
-  const [listFilter, setListFilter] = useState<'all' | 'unread' | 'human' | 'auto'>('all');
+  const [listFilter, setListFilter] = useState<'all' | 'unread' | 'esperando' | 'auto'>('all');
+  // Quem espera resposta de uma pessoa: a MESMA fila da tela "Esperando
+  // atendente" (modo humano + o cliente escreveu depois da nossa última
+  // resposta). Até 26/10 o chip "Humano" contava toda conversa em modo humano
+  // e os dois números nunca batiam.
+  const [esperandoIds, setEsperandoIds] = useState<Set<string>>(() => new Set());
+  const [acaoDaConversa, setAcaoDaConversa] = useState<'resolve' | 'close' | 'reopen' | null>(null);
   const [sending, setSending] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [mediaViewer, setMediaViewer] = useState<{ url: string; type: string; fileName?: string } | null>(null);
@@ -582,6 +585,48 @@ const WhatsAppInboxPage: React.FC = () => {
   // Mensagem inbound chegou com o chat aberto → já está sendo lida agora;
   // persiste a leitura para o backend não acumular unread_count.
   const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+
+  // A fila muda quando uma conversa em modo humano recebe ou manda mensagem:
+  // é isso que a chave acompanha (o WebSocket atualiza a lista).
+  const chaveDaFila = conversations
+    .filter((c) => c.mode === 'human')
+    .map((c) => `${c.id}:${c.last_message_at ?? ''}:${c.last_message_preview ?? ''}`)
+    .join('|');
+  useEffect(() => {
+    let vivo = true;
+    const carregarFila = async () => {
+      try {
+        const fila = await conversationsService.getFilaHumana(storeSlug || undefined);
+        if (vivo) setEsperandoIds(new Set((fila.esperando ?? []).map((i) => i.id)));
+      } catch {
+        // Sem a fila o chip mostra zero; a lista e o chat seguem funcionando.
+      }
+    };
+    void carregarFila();
+    return () => { vivo = false; };
+  }, [storeSlug, chaveDaFila, lastMessage?.id]);
+
+  // Resolver/Fechar/Reabrir moravam só na aba "Todas" do inbox, que saiu em
+  // 26/10: agora ficam no cabeçalho do chat.
+  const mudarSituacao = async (acao: 'resolve' | 'close' | 'reopen') => {
+    if (!selectedConversation || acaoDaConversa) return;
+    setAcaoDaConversa(acao);
+    try {
+      const chamada = acao === 'resolve'
+        ? conversationsService.resolveConversation
+        : acao === 'close' ? conversationsService.closeConversation : conversationsService.reopenConversation;
+      const atualizada = await chamada(selectedConversation.id);
+      useChatStore.getState().updateConversation({
+        id: selectedConversation.id,
+        status: atualizada?.status ?? (acao === 'reopen' ? 'open' : acao === 'resolve' ? 'resolved' : 'closed'),
+      });
+      toast.success(acao === 'resolve' ? 'Conversa resolvida' : acao === 'close' ? 'Conversa encerrada' : 'Conversa reaberta');
+    } catch (error) {
+      toast.error(getErrorMessage(error) || 'Não foi possível mudar a conversa');
+    } finally {
+      setAcaoDaConversa(null);
+    }
+  };
   useEffect(() => {
     if (!selectedConversationId || !lastMessage) return;
     if (lastMessage.direction === 'inbound' && !document.hidden) {
@@ -663,10 +708,11 @@ const WhatsAppInboxPage: React.FC = () => {
 
   const unreadTotal = searchedConversations.filter((c) => (c.unread_count || 0) > 0).length;
   const humanTotal = searchedConversations.filter((c) => c.mode === 'human').length;
+  const esperandoTotal = searchedConversations.filter((c) => esperandoIds.has(c.id)).length;
 
   const filteredConversations = searchedConversations.filter((conv) => {
     if (listFilter === 'unread') return (conv.unread_count || 0) > 0;
-    if (listFilter === 'human') return conv.mode === 'human';
+    if (listFilter === 'esperando') return esperandoIds.has(conv.id);
     if (listFilter === 'auto') return conv.mode !== 'human';
     return true;
   });
@@ -697,8 +743,8 @@ const WhatsAppInboxPage: React.FC = () => {
             {([
               ['all', 'Todas', searchedConversations.length],
               ['unread', 'Não lidas', unreadTotal],
-              ['human', 'Humano', humanTotal],
-              ['auto', 'Bot', searchedConversations.length - humanTotal],
+              ['esperando', 'Esperando', esperandoTotal],
+              ['auto', 'Robô atende', searchedConversations.length - humanTotal],
             ] as const).map(([key, label, count]) => (
               <button
                 key={key}
@@ -772,8 +818,11 @@ const WhatsAppInboxPage: React.FC = () => {
                         {conversationPreview(conv)}
                       </p>
                       <span className="conversation-badges">
-                        <span className={`mode-badge ${conv.mode}`} title={conv.mode === 'auto' ? 'Bot' : 'Humano'}>
-                          {conv.mode === 'auto' ? '🤖' : '👤'}
+                        <span className={`mode-badge ${conv.mode}`} title={conv.mode === 'human' ? 'Você atende' : 'Robô atende'}>
+                          {conv.mode === 'human'
+                            ? <UserIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                            : <CpuChipIcon className="h-3.5 w-3.5" aria-hidden="true" />}
+                          <span className="sr-only">{conv.mode === 'human' ? 'Você atende' : 'Robô atende'}</span>
                         </span>
                         {hasUnread && (
                           <span className="unread-badge">{conv.unread_count}</span>
@@ -823,20 +872,62 @@ const WhatsAppInboxPage: React.FC = () => {
               <div className="chat-actions">
                 <div className="mode-selector" role="group" aria-label="Modo de atendimento">
                   <button
+                    type="button"
                     className={`mode-btn ${selectedConversation.mode === 'auto' ? 'active' : ''}`}
+                    aria-pressed={selectedConversation.mode !== 'human'}
                     onClick={handleSwitchToAuto}
-                    title="Bot responde automaticamente"
+                    title="O robô responde sozinho"
                   >
-                    🤖 Bot
+                    <CpuChipIcon className="h-4 w-4" aria-hidden="true" />
+                    Robô atende
                   </button>
                   <button
+                    type="button"
                     className={`mode-btn ${selectedConversation.mode === 'human' ? 'active' : ''}`}
+                    aria-pressed={selectedConversation.mode === 'human'}
                     onClick={handleSwitchToHuman}
-                    title="Você responde manualmente (bot pausado)"
+                    title="Você responde; o robô fica parado"
                   >
-                    👤 Humano
+                    <UserIcon className="h-4 w-4" aria-hidden="true" />
+                    Eu atendo
                   </button>
                 </div>
+                {selectedConversation.status === 'resolved' || selectedConversation.status === 'closed' ? (
+                  <>
+                    <SeloDeEstado tone={estadoDeConversa(selectedConversation.status).tone}>
+                      {estadoDeConversa(selectedConversation.status).rotulo}
+                    </SeloDeEstado>
+                    <button
+                      type="button"
+                      className="tools-toggle-btn"
+                      onClick={() => void mudarSituacao('reopen')}
+                      disabled={acaoDaConversa !== null}
+                    >
+                      <span>Reabrir</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="tools-toggle-btn"
+                      onClick={() => void mudarSituacao('resolve')}
+                      disabled={acaoDaConversa !== null}
+                      title="O assunto foi resolvido"
+                    >
+                      <span>Resolver</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="tools-toggle-btn"
+                      onClick={() => void mudarSituacao('close')}
+                      disabled={acaoDaConversa !== null}
+                      title="Encerrar sem resolver"
+                    >
+                      <span>Fechar</span>
+                    </button>
+                  </>
+                )}
                 <button
                   type="button"
                   className="tools-toggle-btn"
@@ -850,10 +941,10 @@ const WhatsAppInboxPage: React.FC = () => {
                 <button
                   className={`tools-toggle-btn ${activePanel === 'templates' ? 'active' : ''}`}
                   onClick={() => togglePanel('templates')}
-                  title="Templates"
+                  title="Modelos aprovados pela Meta"
                 >
                   <DocumentTextIcon className="w-4 h-4" />
-                  <span>Templates</span>
+                  <span>Modelos</span>
                 </button>
                 <button
                   className={`tools-toggle-btn ${activePanel === 'tools' ? 'active' : ''}`}
@@ -1012,13 +1103,7 @@ const WhatsAppInboxPage: React.FC = () => {
           storeId={storeId || undefined}
           storeSlug={storeSlug || undefined}
           storeName={storeName || undefined}
-          storeDescription={store?.description || undefined}
-          storeAddress={store?.address || undefined}
-          storeCity={store?.city || undefined}
-          storeState={store?.state || undefined}
-          storeUrl={getStoreUrl(store?.metadata)}
           conversation={selectedConversation}
-          onInsertText={(text) => setMessageText(text)}
           onSendMessage={handleDirectSend}
           onAfterSend={() => void loadMessages(selectedConversation.id)}
           onClose={() => setActivePanel(null)}

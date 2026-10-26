@@ -4,20 +4,18 @@ import {
   XMarkIcon,
   DocumentTextIcon,
   BoltIcon,
-  MagnifyingGlassIcon,
   ChevronDownIcon,
   ChevronUpIcon,
 } from '@heroicons/react/24/outline';
-import { whatsappTemplates, WhatsAppTemplate } from '../../data/whatsappTemplates';
 import { getErrorMessage, ordersService, productsService, whatsappService } from '../../services';
 import { Product } from '../../services/products';
-import { Order } from '../../types';
-import { parseCoords, type Coords } from '../orders/newOrder/parseCoords';
+import { parseCoords } from '../orders/newOrder/parseCoords';
+import { estadoDoModelo, resumoDoModelo, textoDoModelo } from '../../utils/modelosDaMeta';
 import { precoVigenteDoProduto } from '../../utils/precoVigente';
 import { formatCurrency } from '../../utils/formatters';
 
 type Tab = 'templates' | 'tools';
-type ToolId = 'route' | 'catalog' | 'order' | null;
+type ToolId = 'route' | 'catalog' | null;
 
 interface ConversationRef {
   contact_name?: string;
@@ -30,20 +28,14 @@ interface Props {
   storeId?: string;
   storeSlug?: string;
   storeName?: string;
-  storeDescription?: string;
-  storeAddress?: string;
-  storeCity?: string;
-  storeState?: string;
-  storeUrl?: string;
   conversation: ConversationRef;
-  onInsertText: (text: string) => void;
   onSendMessage: (text: string) => Promise<void>;
   onAfterSend?: () => void;
   onClose: () => void;
   defaultTab?: Tab;
 }
 
-interface OfficialTemplate {
+interface ModeloDaMeta {
   id: string;
   name: string;
   language?: string;
@@ -52,18 +44,7 @@ interface OfficialTemplate {
   components?: Array<Record<string, unknown>>;
 }
 
-function fillTemplate(content: string, vars: Record<string, string>): string {
-  return content.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] || `{{${key}}}`);
-}
-
-
 const onlyDigits = (value: string) => value.replace(/\D/g, '');
-
-
-const getBodyTextFromComponents = (components?: Array<Record<string, unknown>>) => {
-  const body = components?.find(c => String(c.type || '').toUpperCase() === 'BODY');
-  return typeof body?.text === 'string' ? body.text : '';
-};
 
 const extractTemplateVariables = (content: string) => {
   const matches = content.match(/\{\{\d+\}\}/g) || [];
@@ -78,185 +59,80 @@ const buildTemplateComponents = (variables: string[], values: Record<string, str
   }];
 };
 
-const compactLocation = (...parts: Array<string | null | undefined>) =>
-  parts.map(part => part?.trim()).filter(Boolean).join(' | ');
+// ─── Modelos ─────────────────────────────────────────────────────────────────
+//
+// 26/10: só os modelos da Meta. Os cinco textos fixos que moravam aqui
+// (boas-vindas, cupom, aniversário…) não eram modelo nenhum — não furavam a
+// janela de 24 h e duplicavam as Respostas rápidas. A linha de cada modelo
+// dizia "APPROVED · pt_BR · MARKETING"; agora diz em português.
 
-// ─── Templates Tab ───────────────────────────────────────────────────────────
-
-type TemplateCategory = 'all' | WhatsAppTemplate['category'];
-
-const CATEGORY_LABELS: Record<TemplateCategory, string> = {
-  all: 'Todos',
-  transactional: 'Transacional',
-  marketing: 'Marketing',
-  support: 'Suporte',
-};
-
-function TemplatesTab({
+function ModelosTab({
   accountId,
-  storeName,
-  storeDescription,
-  storeAddress,
-  storeCity,
-  storeState,
-  storeUrl,
   conversation,
-  onInsertText,
-  onSendMessage,
   onAfterSend,
 }: {
   accountId: string;
-  storeName?: string;
-  storeDescription?: string;
-  storeAddress?: string;
-  storeCity?: string;
-  storeState?: string;
-  storeUrl?: string;
   conversation: ConversationRef;
-  onInsertText: (text: string) => void;
-  onSendMessage: (text: string) => Promise<void>;
   onAfterSend?: () => void;
 }) {
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState<TemplateCategory>('all');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [officialExpandedId, setOfficialExpandedId] = useState<string | null>(null);
+  const [aberto, setAberto] = useState<string | null>(null);
   const [vars, setVars] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
-  const [officialTemplates, setOfficialTemplates] = useState<OfficialTemplate[]>([]);
-  const [isLoadingOfficial, setIsLoadingOfficial] = useState(false);
-  const storeLabel = storeName?.trim() || 'loja selecionada';
-  const storeLocation = compactLocation(storeAddress, compactLocation(storeCity, storeState)) || 'atendimento local';
-  const storeSpecialty = storeDescription?.trim() || 'produtos selecionados com carinho';
-  const orderChannel = storeUrl?.trim()
-    ? `Acesse: ${storeUrl.trim()}`
-    : 'Pode fazer seu pedido por aqui mesmo no WhatsApp.';
-
-  const getDefaultVar = (key: string) => {
-    switch (key) {
-      case 'nome':
-      case 'customer_name':
-      case 'first_name':
-        return conversation.contact_name || '';
-      case 'loja':
-      case 'store_name':
-        return storeLabel;
-      case 'especialidade':
-        return storeSpecialty;
-      case 'localizacao':
-        return storeLocation;
-      case 'canal_pedido':
-      case 'link':
-      case 'store_url':
-        return orderChannel;
-      default:
-        return '';
-    }
-  };
+  const [modelos, setModelos] = useState<ModeloDaMeta[]>([]);
+  const [carregando, setCarregando] = useState(false);
 
   useEffect(() => {
     if (!accountId) return;
-    setIsLoadingOfficial(true);
+    setCarregando(true);
     whatsappService.getTemplates(accountId)
       .then(response => {
         const data = response.data?.results || response.data || [];
-        setOfficialTemplates(Array.isArray(data) ? data : []);
+        setModelos(Array.isArray(data) ? data : []);
       })
-      .catch(() => setOfficialTemplates([]))
-      .finally(() => setIsLoadingOfficial(false));
+      .catch(() => setModelos([]))
+      .finally(() => setCarregando(false));
   }, [accountId]);
 
-  const filtered = useMemo(() => whatsappTemplates.filter(t => {
-    const matchCat = category === 'all' || t.category === category;
-    const matchSearch = !search ||
-      t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.description.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchSearch;
-  }), [search, category]);
-
-  const expandedTemplate = expandedId ? whatsappTemplates.find(t => t.id === expandedId) : null;
-
-  const handleExpand = (template: WhatsAppTemplate) => {
-    if (expandedId === template.id) {
-      setExpandedId(null);
+  const abrir = (modelo: ModeloDaMeta) => {
+    if (aberto === modelo.id) {
+      setAberto(null);
       setVars({});
       return;
     }
-    setExpandedId(template.id);
-    const initial: Record<string, string> = {};
-    template.variables.forEach(v => {
-      initial[v] = getDefaultVar(v);
-    });
-    setVars(initial);
-    setOfficialExpandedId(null);
-  };
-
-  const handleOfficialExpand = (template: OfficialTemplate) => {
-    if (officialExpandedId === template.id) {
-      setOfficialExpandedId(null);
-      setVars({});
-      return;
-    }
-    const body = getBodyTextFromComponents(template.components);
-    const variables = extractTemplateVariables(body);
+    const variables = extractTemplateVariables(textoDoModelo(modelo.components));
     const initial: Record<string, string> = {};
     variables.forEach(v => {
       initial[v] = v === '1' ? (conversation.contact_name || '') : '';
     });
-    setOfficialExpandedId(template.id);
-    setExpandedId(null);
+    setAberto(modelo.id);
     setVars(initial);
   };
 
-  const filledContent = expandedTemplate
-    ? fillTemplate(expandedTemplate.content, vars)
-    : '';
-
-  const officialTemplate = officialExpandedId
-    ? officialTemplates.find(t => t.id === officialExpandedId)
-    : null;
-  const officialBody = getBodyTextFromComponents(officialTemplate?.components);
-  const officialVariables = extractTemplateVariables(officialBody);
-  const filledOfficialBody = officialVariables.reduce(
+  const modelo = aberto ? modelos.find(t => t.id === aberto) : null;
+  const corpo = textoDoModelo(modelo?.components);
+  const variaveis = extractTemplateVariables(corpo);
+  const corpoPreenchido = variaveis.reduce(
     (text, key) => text.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), vars[key] || `{{${key}}}`),
-    officialBody
+    corpo
   );
 
-  const handleInsert = () => {
-    onInsertText(filledContent);
-    setExpandedId(null);
-  };
-
-  const handleSend = async () => {
-    if (!filledContent.trim()) return;
-    setSending(true);
-    try {
-      await onSendMessage(filledContent);
-      setExpandedId(null);
-    } catch (error) {
-      toast.error(getErrorMessage(error) || 'Erro ao enviar mensagem');
-    } finally {
-      setSending(false);
-    }
-  };
-
-  const handleSendOfficial = async () => {
-    if (!officialTemplate || sending) return;
+  const enviar = async () => {
+    if (!modelo || sending) return;
     setSending(true);
     try {
       await whatsappService.sendTemplate({
         account_id: accountId,
         to: conversation.phone_number,
-        template_name: officialTemplate.name,
-        language_code: officialTemplate.language || 'pt_BR',
-        components: buildTemplateComponents(officialVariables, vars),
+        template_name: modelo.name,
+        language_code: modelo.language || 'pt_BR',
+        components: buildTemplateComponents(variaveis, vars),
         metadata: {
           source: 'chat_window_templates',
-          template_id: officialTemplate.id,
+          template_id: modelo.id,
         },
       });
-      toast.success('Template enviado');
-      setOfficialExpandedId(null);
+      toast.success('Modelo enviado');
+      setAberto(null);
       onAfterSend?.();
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -267,27 +143,19 @@ function TemplatesTab({
 
   return (
     <div className="tools-tab-content">
-      <div className="tools-section-title">
-        <span>Templates oficiais</span>
-        <small>{isLoadingOfficial ? 'Carregando...' : `${officialTemplates.length} sincronizados`}</small>
-      </div>
-
       <div className="templates-list">
-        {officialTemplates.slice(0, 8).map(template => {
-          const isExpanded = officialExpandedId === template.id;
-          const body = getBodyTextFromComponents(template.components);
-          const variables = extractTemplateVariables(body);
+        {modelos.map(m => {
+          const isExpanded = aberto === m.id;
+          const aprovado = estadoDoModelo(m.status).rotulo === 'Aprovado';
           return (
-            <div key={template.id} className="template-card official">
+            <div key={m.id} className="template-card official">
               <button
                 className={`template-header ${isExpanded ? 'expanded' : ''}`}
-                onClick={() => handleOfficialExpand(template)}
+                onClick={() => abrir(m)}
               >
                 <div className="template-info">
-                  <span className="template-name">{template.name}</span>
-                  <span className="template-desc">
-                    {template.status || 'template'} · {template.language || 'pt_BR'} · {template.category || 'WhatsApp'}
-                  </span>
+                  <span className="template-name">{m.name}</span>
+                  <span className="template-desc">{resumoDoModelo(m)}</span>
                 </div>
                 {isExpanded
                   ? <ChevronUpIcon className="w-4 h-4 flex-shrink-0 text-fg-muted-token" />
@@ -296,12 +164,10 @@ function TemplatesTab({
 
               {isExpanded && (
                 <div className="template-form">
-                  <div className="template-preview">
-                    {filledOfficialBody || 'Template sem corpo de texto no payload sincronizado.'}
-                  </div>
-                  {variables.length > 0 && (
+                  {corpoPreenchido && <div className="template-preview">{corpoPreenchido}</div>}
+                  {variaveis.length > 0 && (
                     <div className="template-vars">
-                      {variables.map(v => (
+                      {variaveis.map(v => (
                         <div key={v} className="template-var">
                           <label>Variável {v}</label>
                           <input
@@ -313,106 +179,24 @@ function TemplatesTab({
                       ))}
                     </div>
                   )}
-                  <button
-                    className="tp-btn tp-btn-primary w-full"
-                    onClick={() => void handleSendOfficial()}
-                    disabled={sending}
-                  >
-                    {sending ? 'Enviando...' : 'Enviar template oficial'}
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-        {!isLoadingOfficial && officialTemplates.length === 0 && (
-          <p className="tools-empty compact">Nenhum template oficial sincronizado nesta conta.</p>
-        )}
-      </div>
-
-      <div className="tools-section-title">
-        <span>Respostas rápidas</span>
-        <small>editáveis antes de enviar</small>
-      </div>
-
-      <div className="tools-search">
-        <MagnifyingGlassIcon className="w-4 h-4" />
-        <input
-          placeholder="Buscar template..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-      </div>
-
-      <div className="tools-pills">
-        {(Object.keys(CATEGORY_LABELS) as TemplateCategory[]).map(c => (
-          <button
-            key={c}
-            className={`tool-pill ${category === c ? 'active' : ''}`}
-            onClick={() => setCategory(c)}
-          >
-            {CATEGORY_LABELS[c]}
-          </button>
-        ))}
-      </div>
-
-      <div className="templates-list">
-        {filtered.length === 0 && (
-          <p className="tools-empty">Nenhum template encontrado</p>
-        )}
-        {filtered.map(template => {
-          const isExpanded = expandedId === template.id;
-          return (
-            <div key={template.id} className="template-card">
-              <button
-                className={`template-header ${isExpanded ? 'expanded' : ''}`}
-                onClick={() => handleExpand(template)}
-              >
-                <div className="template-info">
-                  <span className="template-name">{template.name}</span>
-                  <span className="template-desc">{template.description}</span>
-                </div>
-                {isExpanded
-                  ? <ChevronUpIcon className="w-4 h-4 flex-shrink-0 text-fg-muted-token" />
-                  : <ChevronDownIcon className="w-4 h-4 flex-shrink-0 text-fg-muted-token" />}
-              </button>
-
-              {isExpanded && (
-                <div className="template-form">
-                  <div className="template-preview">{filledContent}</div>
-
-                  {template.variables.length > 0 && (
-                    <div className="template-vars">
-                      {template.variables.map(v => (
-                        <div key={v} className="template-var">
-                          <label>{v}</label>
-                          <input
-                            value={vars[v] || ''}
-                            placeholder={`{{${v}}}`}
-                            onChange={e => setVars(prev => ({ ...prev, [v]: e.target.value }))}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="template-actions">
-                    <button className="tp-btn tp-btn-secondary" onClick={handleInsert}>
-                      Inserir no chat
-                    </button>
+                  {aprovado && (
                     <button
-                      className="tp-btn tp-btn-primary"
-                      onClick={handleSend}
+                      className="tp-btn tp-btn-primary w-full"
+                      onClick={() => void enviar()}
                       disabled={sending}
                     >
-                      {sending ? '...' : 'Enviar agora'}
+                      {sending ? 'Enviando...' : 'Enviar modelo'}
                     </button>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
           );
         })}
+        {carregando && <p className="tools-empty compact">Carregando…</p>}
+        {!carregando && modelos.length === 0 && (
+          <p className="tools-empty compact">Nenhum modelo nesta conta.</p>
+        )}
       </div>
     </div>
   );
@@ -687,335 +471,11 @@ function CatalogTool({ accountId, storeId, storeName, conversation, onSendMessag
   );
 }
 
-// ─── Order Tool ───────────────────────────────────────────────────────────────
-
-interface OrderItem {
-  product_id?: string;
-  name: string;
-  qty: number;
-  price: string;
-}
-
-function OrderTool({ conversation, storeId, storeSlug, onSendMessage }: {
-  conversation: ConversationRef;
-  storeId?: string;
-  storeSlug?: string;
-  onSendMessage: (text: string) => Promise<void>;
-}) {
-  const [items, setItems] = useState<OrderItem[]>([{ name: '', qty: 1, price: '' }]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [notes, setNotes] = useState('');
-  const [deliveryAddress, setDeliveryAddress] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'pix' | 'cash'>('pix');
-  const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'delivery'>('pickup');
-  const [loadingProducts, setLoadingProducts] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
-  const [deliveryCoords, setDeliveryCoords] = useState<Coords | null>(null);
-  const [calculatingFee, setCalculatingFee] = useState(false);
-
-  // Calcula o frete pelo endereço (texto ou link do Maps colado) e guarda coords.
-  const calcularFrete = async (endereco: string, coords: Coords | null) => {
-    if (!storeSlug || !endereco.trim()) return;
-    setCalculatingFee(true);
-    try {
-      const data = await ordersService.calculateDeliveryFee(storeSlug, endereco.trim(), coords);
-      setDeliveryFee(data.fee ?? 0);
-      setDeliveryCoords(coords);
-    } catch (error) {
-      toast.error(getErrorMessage(error) || 'Erro ao calcular a taxa');
-      setDeliveryFee(null);
-      setDeliveryCoords(null);
-    } finally {
-      setCalculatingFee(false);
-    }
-  };
-
-  // Puxa a última localização que o cliente mandou no WhatsApp e calcula o frete.
-  const usarLocalizacao = async () => {
-    if (!storeSlug) return;
-    setCalculatingFee(true);
-    try {
-      const loc = await ordersService.getSharedLocation(storeSlug, { phone: onlyDigits(conversation.phone_number) });
-      if (!loc) { toast.error('Esse cliente não enviou localização no WhatsApp.'); return; }
-      const label = (loc.address || '').trim() || `Localização enviada (${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)})`;
-      setDeliveryAddress(label);
-      const data = await ordersService.calculateDeliveryFee(storeSlug, label, { lat: loc.lat, lng: loc.lng });
-      setDeliveryFee(data.fee ?? 0);
-      setDeliveryCoords({ lat: loc.lat, lng: loc.lng });
-    } catch (error) {
-      toast.error(getErrorMessage(error) || 'Erro ao puxar a localização');
-    } finally {
-      setCalculatingFee(false);
-    }
-  };
-
-  useEffect(() => {
-    setItems([{ name: '', qty: 1, price: '' }]);
-    setProducts([]);
-    setLoadError(null);
-    if (!storeId) return;
-    setLoadingProducts(true);
-    productsService.getProducts({ store: storeId, is_active: true, page_size: 80, ordering: 'name' })
-      .then(data => setProducts(data.results || []))
-      .catch(error => {
-        setProducts([]);
-        setLoadError(getErrorMessage(error));
-      })
-      .finally(() => setLoadingProducts(false));
-  }, [storeId]);
-
-  const addItem = () => setItems(prev => [...prev, { name: '', qty: 1, price: '' }]);
-
-  const removeItem = (i: number) =>
-    setItems(prev => prev.filter((_, idx) => idx !== i));
-
-  const updateItem = (i: number, field: keyof OrderItem, value: string | number) =>
-    setItems(prev => prev.map((item, idx) => idx === i ? { ...item, [field]: value } : item));
-
-  const selectProduct = (i: number, productId: string) => {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
-    setItems(prev => prev.map((item, idx) => idx === i ? {
-      ...item,
-      product_id: product.id,
-      name: product.name,
-      price: String(precoVigenteDoProduto(product)),
-    } : item));
-  };
-
-  const total = items.reduce((sum, item) => {
-    const price = parseFloat(item.price) || 0;
-    return sum + price * item.qty;
-  }, 0);
-
-  const buildSummary = () => {
-    const name = conversation.contact_name || conversation.phone_number;
-    const lines: string[] = [`🛒 *Resumo do Pedido — ${name}*\n`];
-    items.forEach(item => {
-      if (!item.name.trim()) return;
-      const price = parseFloat(item.price) || 0;
-      const subtotal = price * item.qty;
-      const priceStr = price > 0 ? ` — R$ ${subtotal.toFixed(2)}` : '';
-      lines.push(`• ${item.qty}x ${item.name.trim()}${priceStr}`);
-    });
-    if (total > 0) lines.push(`\n💰 *Total: R$ ${total.toFixed(2)}*`);
-    if (notes.trim()) lines.push(`📝 *Obs:* ${notes.trim()}`);
-    return lines.join('\n');
-  };
-
-  const hasSelectedProducts = items.some(i => i.product_id);
-
-  const handleSend = async () => {
-    if (!storeId || !hasSelectedProducts || sending) return;
-    setSending(true);
-    try {
-      await onSendMessage(buildSummary());
-      setItems([{ name: '', qty: 1, price: '' }]);
-      setNotes('');
-    } catch (error) {
-      toast.error(getErrorMessage(error) || 'Erro ao enviar resumo do pedido');
-    } finally {
-      setSending(false);
-    }
-  };
-
-  const handleCreateOrder = async () => {
-    const validItems = items.filter(item => item.product_id && item.qty > 0);
-    if (!storeId || !validItems.length || creating) return;
-    // Delivery sem taxa calculada nasce com frete 0 — mesma dor do PDV. Bloqueia.
-    if (deliveryMethod === 'delivery' && deliveryFee === null) {
-      toast.error('Calcule a taxa de entrega antes de criar o pedido.');
-      return;
-    }
-    setCreating(true);
-    try {
-      const order = await ordersService.createOrder({
-        store: storeSlug || storeId,
-        customer_name: conversation.contact_name || 'Cliente WhatsApp',
-        customer_phone: onlyDigits(conversation.phone_number),
-        // Sem email fabricado: o backend trata identidade interna sozinho e
-        // email sintético vazaria depois como "email do cliente" (regra server2).
-        delivery_method: deliveryMethod,
-        delivery_address: deliveryMethod !== 'delivery'
-          ? undefined
-          : deliveryCoords
-            ? { lat: deliveryCoords.lat, lng: deliveryCoords.lng, raw_address: deliveryAddress.trim() }
-            : deliveryAddress,
-        delivery_fee: deliveryMethod === 'delivery' ? (deliveryFee ?? 0) : 0,
-        payment_method: paymentMethod,
-        items: validItems.map(item => ({ product_id: item.product_id!, quantity: item.qty })),
-        notes,
-      }) as Order;
-      await onSendMessage(
-        `✅ *Pedido criado no painel!*\n\nPedido: *#${order.order_number || order.id}*\nTotal: *${formatCurrency(order.total)}*\nPagamento: *${paymentMethod === 'pix' ? 'PIX' : 'Dinheiro'}*\n\nVou acompanhar por aqui.`
-      );
-      setItems([{ name: '', qty: 1, price: '' }]);
-      setNotes('');
-      setDeliveryAddress('');
-      setDeliveryFee(null);
-      setDeliveryCoords(null);
-      toast.success('Pedido criado');
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  return (
-    <div className="quick-tool-body order-tool">
-      {!storeId && (
-        <p className="tools-empty compact">Selecione uma loja para carregar produtos reais e criar pedido.</p>
-      )}
-      {loadingProducts && (
-        <p className="tools-empty compact">Carregando produtos da loja...</p>
-      )}
-      {loadError && (
-        <p className="tools-empty compact">Erro ao carregar produtos: {loadError}</p>
-      )}
-      {!loadingProducts && storeId && products.length === 0 && (
-        <p className="tools-empty compact">Nenhum produto ativo encontrado para criar pedido nesta loja.</p>
-      )}
-      <div className="order-customer">
-        <span className="tool-label">Cliente:</span>
-        <span className="order-customer-name">
-          {conversation.contact_name || conversation.phone_number}
-        </span>
-      </div>
-
-      <div className="order-items">
-        <div className="tool-label-row">
-          <span className="tool-label">Itens</span>
-          <button className="btn-add-item" onClick={addItem} disabled={!storeId || products.length === 0}>
-            + Adicionar item
-          </button>
-        </div>
-        {items.map((item, i) => (
-          <div key={i} className="order-item-row">
-            <select
-              className="item-name"
-              value={item.product_id || ''}
-              onChange={e => selectProduct(i, e.target.value)}
-              disabled={!storeId || products.length === 0}
-            >
-              <option value="">Selecionar produto real</option>
-              {products.map(product => (
-                <option key={product.id} value={product.id}>
-                  {product.name} · {formatCurrency(precoVigenteDoProduto(product))}
-                </option>
-              ))}
-            </select>
-            <input
-              className="item-qty"
-              type="number"
-              min={1}
-              value={item.qty}
-              disabled={!item.product_id}
-              onChange={e => updateItem(i, 'qty', Math.max(1, parseInt(e.target.value) || 1))}
-            />
-            <input
-              className="item-price"
-              placeholder="R$"
-              value={item.price}
-              readOnly
-            />
-            {items.length > 1 && (
-              <button className="btn-remove-item" onClick={() => removeItem(i)}>×</button>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {total > 0 && (
-        <div className="order-total">
-          Total: <strong>R$ {total.toFixed(2)}</strong>
-        </div>
-      )}
-
-      <div className="order-notes">
-        <label className="tool-label">Observações</label>
-        <input
-          className="tool-input"
-          value={notes}
-          onChange={e => setNotes(e.target.value)}
-          placeholder="Sem cebola, entregar no portão..."
-        />
-      </div>
-
-      <div className="segmented-row">
-        <button className={`segment-btn ${deliveryMethod === 'pickup' ? 'active' : ''}`} onClick={() => setDeliveryMethod('pickup')}>Retirada</button>
-        <button className={`segment-btn ${deliveryMethod === 'delivery' ? 'active' : ''}`} onClick={() => setDeliveryMethod('delivery')}>Entrega</button>
-      </div>
-
-      {deliveryMethod === 'delivery' && (
-        <div className="order-notes">
-          <label className="tool-label">Endereço</label>
-          <button
-            type="button"
-            className="tp-btn tp-btn-secondary w-full"
-            onClick={() => void usarLocalizacao()}
-            disabled={calculatingFee}
-          >
-            📍 {calculatingFee ? 'Buscando...' : 'Usar localização enviada no WhatsApp'}
-          </button>
-          <input
-            className="tool-input"
-            value={deliveryAddress}
-            onChange={e => { setDeliveryAddress(e.target.value); setDeliveryFee(null); setDeliveryCoords(null); }}
-            onBlur={() => { if (deliveryAddress.trim() && deliveryFee === null && !calculatingFee) void calcularFrete(deliveryAddress, parseCoords(deliveryAddress)); }}
-            placeholder="Endereço, ou cole o link do Google Maps do cliente"
-          />
-          <button
-            type="button"
-            className="tp-btn tp-btn-secondary w-full"
-            onClick={() => void calcularFrete(deliveryAddress, parseCoords(deliveryAddress))}
-            disabled={!deliveryAddress.trim() || calculatingFee}
-          >
-            {calculatingFee ? 'Calculando...' : 'Calcular taxa'}
-          </button>
-          {deliveryFee !== null ? (
-            <div className="tool-result">
-              <strong>{formatCurrency(deliveryFee)}</strong>
-              <span>Taxa de entrega calculada</span>
-            </div>
-          ) : deliveryAddress.trim() ? (
-            <p className="tool-hint" style={{ color: '#d97706' }}>Calcule a taxa antes de criar o pedido.</p>
-          ) : null}
-        </div>
-      )}
-
-      <div className="segmented-row">
-        <button className={`segment-btn ${paymentMethod === 'pix' ? 'active' : ''}`} onClick={() => setPaymentMethod('pix')}>PIX</button>
-        <button className={`segment-btn ${paymentMethod === 'cash' ? 'active' : ''}`} onClick={() => setPaymentMethod('cash')}>Dinheiro</button>
-      </div>
-
-      <button
-        className="tp-btn tp-btn-secondary w-full"
-        onClick={() => void handleSend()}
-        disabled={!storeId || !hasSelectedProducts || sending}
-      >
-        {sending ? 'Enviando...' : 'Enviar resumo'}
-      </button>
-      <button
-        className="tp-btn tp-btn-primary w-full"
-        onClick={() => void handleCreateOrder()}
-        disabled={!storeId || !hasSelectedProducts || creating || (deliveryMethod === 'delivery' && !deliveryAddress.trim())}
-      >
-        {creating ? 'Criando...' : 'Criar pedido no painel'}
-      </button>
-    </div>
-  );
-}
-
 // ─── Tools Tab ────────────────────────────────────────────────────────────────
 
 const TOOLS = [
   { id: 'route' as const,   icon: '🗺️', name: 'Calcular Rota',   desc: 'Gere e envie um link do Google Maps' },
   { id: 'catalog' as const, icon: '📋', name: 'Catálogo',        desc: 'Envie o cardápio para o cliente' },
-  { id: 'order' as const,   icon: '🛒', name: 'Criar Pedido',    desc: 'Monte e envie um resumo de pedido' },
 ];
 
 function ToolsTab({ accountId, conversation, storeId, storeSlug, storeName, onSendMessage, onAfterSend }: {
@@ -1061,14 +521,6 @@ function ToolsTab({ accountId, conversation, storeId, storeSlug, storeName, onSe
                 onAfterSend={onAfterSend}
               />
             )}
-            {isActive && tool.id === 'order' && (
-              <OrderTool
-                conversation={conversation}
-                storeId={storeId}
-                storeSlug={storeSlug}
-                onSendMessage={onSendMessage}
-              />
-            )}
           </div>
         );
       })}
@@ -1083,13 +535,7 @@ export const ChatToolsPanel: React.FC<Props> = ({
   storeId,
   storeSlug,
   storeName,
-  storeDescription,
-  storeAddress,
-  storeCity,
-  storeState,
-  storeUrl,
   conversation,
-  onInsertText,
   onSendMessage,
   onAfterSend,
   onClose,
@@ -1106,7 +552,7 @@ export const ChatToolsPanel: React.FC<Props> = ({
             onClick={() => setTab('templates')}
           >
             <DocumentTextIcon className="w-4 h-4" />
-            Templates
+            Modelos
           </button>
           <button
             className={`tools-tab-btn ${tab === 'tools' ? 'active' : ''}`}
@@ -1123,17 +569,9 @@ export const ChatToolsPanel: React.FC<Props> = ({
 
       <div className="tools-panel-body">
         {tab === 'templates' ? (
-          <TemplatesTab
+          <ModelosTab
             accountId={accountId}
-            storeName={storeName}
-            storeDescription={storeDescription}
-            storeAddress={storeAddress}
-            storeCity={storeCity}
-            storeState={storeState}
-            storeUrl={storeUrl}
             conversation={conversation}
-            onInsertText={onInsertText}
-            onSendMessage={onSendMessage}
             onAfterSend={onAfterSend}
           />
         ) : (

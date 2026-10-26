@@ -222,8 +222,8 @@ const AppContent: React.FC = () => {
         {/* Inbox unificado — rotas antigas redirecionam para a aba correspondente */}
         <Route path="inbox" element={<PageBoundary><InboxPage /></PageBoundary>} />
         <Route path="inbox/:tab" element={<PageBoundary><InboxPage /></PageBoundary>} />
-        <Route path="messages" element={<Navigate to="/inbox/conversas" replace />} />
-        <Route path="conversations" element={<Navigate to="/inbox/conversas" replace />} />
+        <Route path="messages" element={<Navigate to="/inbox/whatsapp" replace />} />
+        <Route path="conversations" element={<Navigate to="/inbox/whatsapp" replace />} />
         
         {/* AI Agents Routes (Langchain) */}
         <Route path="agents" element={<PageBoundary><AgentsPage /></PageBoundary>} />

@@ -15,7 +15,6 @@ import { describe, expect, it } from '@jest/globals';
 const PAGINAS = [
   'marketing/AutomationsPage.tsx',
   'messenger/MessengerInbox.tsx',
-  'conversations/ConversationsPage.tsx',
   'automation/AutoMessagesPage.tsx',
   'automation/IntentStatsPage.tsx',
 ];
@@ -77,7 +76,6 @@ describe('estado de coisa vem de SeloDeEstado + estados.ts', () => {
   it.each([
     ['marketing/AutomationsPage.tsx', 'estadoDeAutomacao'],
     ['automation/TextosDosAvisos.tsx', 'estadoDeAutomacao'],
-    ['conversations/ConversationsPage.tsx', 'estadoDeConversa'],
   ])('%s usa %s', (rel, mapa) => {
     const fonte = ler(rel);
     expect(fonte).toMatch(/SeloDeEstado/);
@@ -97,7 +95,7 @@ describe('chassi', () => {
   });
 
   it('números de página são KpiGrid, não cartões à mão', () => {
-    for (const rel of ['conversations/ConversationsPage.tsx', 'automation/IntentStatsPage.tsx']) {
+    for (const rel of ['automation/IntentStatsPage.tsx']) {
       expect(ler(rel)).toMatch(/<KpiGrid\b/);
     }
   });
