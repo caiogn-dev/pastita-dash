@@ -1,55 +1,23 @@
 /**
- * Store Detail Page
- * 
- * Comprehensive store management page with tabs for:
- * - Overview/Dashboard
- * - Products
- * - Orders
- * - Coupons
- * - Delivery Zones
- * - Settings
+ * A página de uma loja (Todas as lojas → loja).
+ *
+ * Era uma terceira navegação (26/10): oito abas que só navegavam para telas
+ * do menu, "Ações rápidas" repetindo o menu, um "Editar" que abria um modal
+ * contendo um link, e "Desativar" sem confirmação — um clique tirava a loja
+ * do ar. Ficou o que só esta tela responde: como a loja está, onde ela fica,
+ * e ligar/desligar com confirmação.
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import {
-  Cog6ToothIcon,
-  CubeIcon,
-  ShoppingCartIcon,
-  TagIcon,
-  TruckIcon,
-  ChartBarIcon,
-  BuildingStorefrontIcon,
-  PencilIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-} from '@heroicons/react/24/outline';
+import { Cog6ToothIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Card, Button, Badge, Loading, Modal } from '../../components/common';
+import { Card, Button, Badge, Loading } from '../../components/common';
 import storesApi, { Store, StoreStats } from '../../services/storesApi';
 import { useRootStore } from '../../stores/rootStore';
 import logger from '../../services/logger';
 import { PageShell, KpiGrid } from '../../components/ui';
+import { useConfirm } from '../../hooks/useConfirm';
 import { formatCurrency } from '../../utils/formatters';
-
-type TabId = 'overview' | 'products' | 'combos' | 'orders' | 'coupons' | 'delivery' | 'settings' | 'storefront';
-
-interface Tab {
-  id: TabId;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  path?: string;
-}
-
-const TABS: Tab[] = [
-  { id: 'overview', label: 'Visão Geral', icon: ChartBarIcon },
-  { id: 'products', label: 'Produtos', icon: CubeIcon, path: 'products' },
-  { id: 'combos', label: 'Combos', icon: CubeIcon, path: 'combos' },
-  { id: 'orders', label: 'Pedidos', icon: ShoppingCartIcon, path: 'orders' },
-  { id: 'coupons', label: 'Cupons', icon: TagIcon, path: 'coupons' },
-  { id: 'delivery', label: 'Entrega', icon: TruckIcon, path: 'delivery' },
-  { id: 'settings', label: 'Configurações', icon: Cog6ToothIcon, path: 'settings' },
-  { id: 'storefront', label: 'Aparência da loja', icon: BuildingStorefrontIcon, path: 'aparencia' },
-];
 
 export const StoreDetailPage: React.FC = () => {
   const { storeId } = useParams<{ storeId: string }>();
@@ -59,8 +27,7 @@ export const StoreDetailPage: React.FC = () => {
   const [store, setStore] = useState<Store | null>(null);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [ConfirmDialog, confirmar] = useConfirm();
 
   const loadStore = useCallback(async () => {
     if (!storeId) return;
@@ -91,7 +58,16 @@ export const StoreDetailPage: React.FC = () => {
 
   const handleToggleStatus = async () => {
     if (!store) return;
-    
+    if (store.status === 'active') {
+      const ok = await confirmar({
+        title: `Desativar ${store.name}?`,
+        message: 'O cardápio sai do ar e a loja para de receber pedidos até ser ativada de novo.',
+        confirmText: 'Desativar loja',
+        variant: 'danger',
+      });
+      if (!ok) return;
+    }
+
     try {
       if (store.status === 'active') {
         await storesApi.deactivateStore(store.id);
@@ -104,14 +80,6 @@ export const StoreDetailPage: React.FC = () => {
     } catch (error) {
       logger.error('Failed to toggle store status:', error);
       toast.error('Erro ao alterar status');
-    }
-  };
-
-  const handleTabClick = (tab: Tab) => {
-    if (tab.path) {
-      navigate(`/stores/${storeId}/${tab.path}`);
-    } else {
-      setActiveTab(tab.id);
     }
   };
 
@@ -132,7 +100,7 @@ export const StoreDetailPage: React.FC = () => {
 
   return (
     <PageShell
-      trilha={[{ rotulo: 'Lojas', href: '/stores' }, { rotulo: store.name }]}
+      trilha={[{ rotulo: 'Todas as lojas', href: '/stores' }, { rotulo: store.name }]}
       titulo={store.name}
       selo={
         <Badge variant={store.status === 'active' ? 'success' : 'gray'}>
@@ -141,13 +109,13 @@ export const StoreDetailPage: React.FC = () => {
       }
       acoes={
         <>
-            <Button
-              variant="secondary"
-              onClick={() => setIsEditModalOpen(true)}
+            <Link
+              to={`/stores/${store.slug}/settings`}
+              className="inline-flex items-center gap-2 rounded-lg border border-border-token px-4 py-2 text-sm font-medium text-fg-token hover:bg-surface-2"
             >
-              <PencilIcon className="w-4 h-4 mr-2" />
-              Editar
-            </Button>
+              <Cog6ToothIcon className="h-4 w-4" aria-hidden />
+              Configurações da loja
+            </Link>
             <Button
               variant={store.status === 'active' ? 'danger' : 'primary'}
               onClick={handleToggleStatus}
@@ -202,95 +170,8 @@ export const StoreDetailPage: React.FC = () => {
         />
       )}
 
-      {/* Tabs */}
-      <div className="border-b border-border-token mb-6">
-        <nav className="flex gap-4 overflow-x-auto">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleTabClick(tab)}
-                className={`
-                  flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm whitespace-nowrap
-                  transition-colors duration-200
-                  ${isActive 
-                    ? 'border-primary-500 text-primary-600' 
-                    : 'border-transparent text-fg-muted-token hover:text-fg-token hover:border-border-token'}
-                `}
-              >
-                <Icon className="w-5 h-5" />
-                {tab.label}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'overview' && (
-        <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-6">
-          {/* Quick Actions */}
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Ações Rápidas</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <Link
-                to={`/stores/${storeId}/products`}
-                className="superficie-alta flex items-center gap-3 p-4"
-              >
-                <CubeIcon className="w-8 h-8 text-brand" />
-                <div>
-                  <p className="font-medium">Produtos</p>
-                  <p className="text-sm text-fg-muted-token">{store.products_count} itens</p>
-                </div>
-              </Link>
-              <Link
-                to={`/stores/${storeId}/orders`}
-                className="superficie-alta flex items-center gap-3 p-4"
-              >
-                <ShoppingCartIcon className="w-8 h-8 text-brand" />
-                <div>
-                  <p className="font-medium">Pedidos</p>
-                  <p className="text-sm text-fg-muted-token">{store.orders_count} pedidos</p>
-                </div>
-              </Link>
-              <Link
-                to={`/stores/${storeId}/combos`}
-                className="superficie-alta flex items-center gap-3 p-4"
-              >
-                <CubeIcon className="w-8 h-8 text-brand" />
-                <div>
-                  <p className="font-medium">Combos</p>
-                  <p className="text-sm text-fg-muted-token">Kits de produtos</p>
-                </div>
-              </Link>
-              <Link
-                to={`/stores/${storeId}/coupons`}
-                className="superficie-alta flex items-center gap-3 p-4"
-              >
-                <TagIcon className="w-8 h-8 text-brand" />
-                <div>
-                  <p className="font-medium">Cupons</p>
-                  <p className="text-sm text-fg-muted-token">Gerenciar descontos</p>
-                </div>
-              </Link>
-              <Link
-                to={`/stores/${storeId}/delivery`}
-                className="superficie-alta flex items-center gap-3 p-4"
-              >
-                <TruckIcon className="w-8 h-8 text-brand" />
-                <div>
-                  <p className="font-medium">Entrega</p>
-                  <p className="text-sm text-fg-muted-token">Zonas e taxas</p>
-                </div>
-              </Link>
-            </div>
-          </Card>
-
-          {/* Store Info */}
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Informações da Loja</h3>
+      <Card className="mt-6 p-6">
+            <h3 className="text-lg font-semibold mb-4">Onde a loja fica</h3>
             <div className="space-y-3">
               {store.email && (
                 <div>
@@ -321,35 +202,19 @@ export const StoreDetailPage: React.FC = () => {
                 </div>
               )}
               <div className="pt-3 border-t">
-                <p className="text-sm text-fg-muted-token">Configurações de Entrega</p>
-                <div className="flex gap-4 mt-1">
-                  <span className={`text-sm ${store.delivery_enabled ? 'text-success-token' : 'text-fg-muted-token'}`}>
-                    {store.delivery_enabled ? '✓ Delivery' : '✗ Delivery'}
-                  </span>
-                  <span className={`text-sm ${store.pickup_enabled ? 'text-success-token' : 'text-fg-muted-token'}`}>
-                    {store.pickup_enabled ? '✓ Retirada' : '✗ Retirada'}
-                  </span>
+                <p className="text-sm text-fg-muted-token">Como o cliente recebe</p>
+                <div className="flex gap-2 mt-1">
+                  <Badge variant={store.delivery_enabled ? 'success' : 'gray'}>
+                    {store.delivery_enabled ? 'Entrega ligada' : 'Entrega desligada'}
+                  </Badge>
+                  <Badge variant={store.pickup_enabled ? 'success' : 'gray'}>
+                    {store.pickup_enabled ? 'Retirada ligada' : 'Retirada desligada'}
+                  </Badge>
                 </div>
               </div>
             </div>
           </Card>
-        </div>
-      )}
-
-      {/* Edit Modal */}
-      <Modal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        title="Editar Loja"
-        size="lg"
-      >
-        <Link to={`/stores/${store.slug}/settings`} className="text-brand underline">Abrir configurações da loja</Link>
-        <div className="flex justify-end mt-4">
-          <Button onClick={() => setIsEditModalOpen(false)}>
-            Fechar
-          </Button>
-        </div>
-      </Modal>
+      {ConfirmDialog}
     </PageShell>
   );
 };
