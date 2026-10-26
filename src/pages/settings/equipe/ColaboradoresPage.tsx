@@ -7,6 +7,7 @@ import { PageShell } from '../../../components/ui';
 import { crmApi } from '../../../services/crmApi';
 import { getErrorMessage } from '../../../services';
 import { useStore } from '../../../hooks/useStore';
+import { EntregadoresSection } from './EntregadoresSection';
 import { useConfirm } from '../../../hooks/useConfirm';
 import type { TeamMember } from '../../../types/crm';
 import {
@@ -117,10 +118,7 @@ export const ColaboradoresPage: React.FC = () => {
   };
 
   return (
-    <PageShell
-      titulo="Colaboradores"
-     
-    >
+    <PageShell titulo="Equipe">
       <Card className="superficie p-4 sm:p-5">
         <form onSubmit={convidar} className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
           <Input
@@ -235,6 +233,9 @@ export const ColaboradoresPage: React.FC = () => {
           </ul>
         )}
       </div>
+      {/* Quem entrega também é equipe (26/10): o cadastro morava no fim de
+          um relatório, em Pedidos. */}
+      {storeSlug && <EntregadoresSection loja={storeSlug} />}
       {ConfirmDialog}
     </PageShell>
   );

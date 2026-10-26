@@ -2,7 +2,7 @@ import { RELATORIOS, relatorioPorSlug, relatorioDaVisao, type TabValue } from '.
 
 const TODAS_AS_VISOES: TabValue[] = [
   'overview', 'orders', 'products', 'stock',
-  'peaks', 'geo', 'operations', 'crm', 'finance', 'bot',
+  'peaks', 'geo', 'operations', 'team', 'crm', 'finance', 'bot',
 ];
 
 it('nenhuma visão se perde na reorganização', () => {

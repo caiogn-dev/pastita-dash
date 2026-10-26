@@ -1,5 +1,7 @@
 /**
- * Equipe e entregas: ranking por entregador e atendente + cadastro (do Prefiro).
+ * Ranking da equipe (entregadores e atendentes) — Relatórios › Operação ›
+ * Equipe desde 26/10. Antes era "Equipe e entregas" em Pedidos, misturando
+ * relatório com cadastro; o cadastro foi para Configurações → Equipe.
  */
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -24,9 +26,10 @@ jest.mock('../../../../hooks/useStore', () => ({
 }));
 jest.mock('react-hot-toast', () => ({ __esModule: true, default: { error: jest.fn(), success: jest.fn() } }));
 
-import EquipeEEntregasPage from '../EquipeEEntregasPage';
+import { EquipeSection, diasDoPeriodo } from '../EquipeSection';
 
-const tela = () => render(<MemoryRouter><EquipeEEntregasPage /></MemoryRouter>);
+const tela = (period: '7d' | '30d' | '90d' = '30d') =>
+  render(<MemoryRouter><EquipeSection range={{ period }} /></MemoryRouter>);
 
 beforeEach(() => {
   ranking.mockReset().mockResolvedValue({
@@ -48,12 +51,16 @@ it('mostra o ranking dos dois lados e as entregas sem entregador', async () => {
   expect(screen.getByRole('link', { name: 'Gerenciar equipe' })).toHaveAttribute('href', '/colaboradores');
 });
 
-it('cadastra entregador', async () => {
-  criarEntregador.mockResolvedValue({ id: 'e2', nome: 'Carlos', telefone: '', is_active: true });
-  tela();
-  fireEvent.change(await screen.findByLabelText('Nome'), { target: { value: 'Carlos' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Adicionar entregador' }));
-  await waitFor(() => expect(criarEntregador).toHaveBeenCalledWith('ce-saladas', { nome: 'Carlos', telefone: '' }));
-  expect((await screen.findAllByText('Carlos')).length).toBeGreaterThan(0);
-  expect(screen.getAllByRole('switch', { name: 'Carlos ativo' }).length).toBeGreaterThan(0);
+it('usa o período do relatório, não um seletor próprio', async () => {
+  tela('7d');
+  await screen.findAllByText('42');
+  expect(ranking).toHaveBeenCalledWith('ce-saladas', 7);
+  expect(screen.queryByRole('button', { name: '30 dias' })).toBeNull();
+});
+
+it('converte cada período do relatório em dias', () => {
+  expect(diasDoPeriodo({ period: 'hoje' })).toBe(1);
+  expect(diasDoPeriodo({ period: '90d' })).toBe(90);
+  expect(diasDoPeriodo({ period: '1y' })).toBe(365);
+  expect(diasDoPeriodo({ start_date: '2026-10-01', end_date: '2026-10-10' })).toBe(10);
 });

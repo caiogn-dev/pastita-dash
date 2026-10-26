@@ -39,12 +39,19 @@ describe('arquitetura por tarefa (26/10): cada tela mora onde o lojista a procur
    */
   const hrefs = (label: string, auto = true) => acha(label, auto).items.map((i) => i.href);
 
-  it('Pedidos segue o caminho do pedido: histórico → cozinha → expedição → entrega', () => {
+  it('Pedidos segue o caminho do pedido: histórico → cozinha → expedição', () => {
+    // 'Equipe e entregas' saiu (26/10): o ranking é Relatórios › Operação ›
+    // Equipe e o cadastro de entregadores é Configurações → Equipe.
     expect(hrefs('Pedidos')).toEqual([
       '/stores/loja-x/orders/historico',
       '/stores/loja-x/kds',
       '/stores/loja-x/expedicao',
-      '/pedidos/equipe',
+    ]);
+  });
+
+  it('Relatórios mede e vigia: os quatro relatórios e os Vigias', () => {
+    expect(hrefs('Relatórios')).toEqual([
+      '/analytics/visao-geral', '/analytics/vendas', '/analytics/clientes', '/analytics/operacao', '/vigias',
     ]);
   });
 
@@ -141,7 +148,7 @@ it('Configurações: a loja, a entrega, o dinheiro, a vitrine, o equipamento e a
     ['Pagamentos', '/stores/loja-x/payments'],
     ['Aparência da loja', '/stores/loja-x/aparencia'],
     ['Impressoras e comanda', '/stores/loja-x/printing'],
-    ['Colaboradores', '/colaboradores'],
+    ['Equipe', '/colaboradores'],
   ]);
 });
 

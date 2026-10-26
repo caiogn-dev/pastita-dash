@@ -46,7 +46,7 @@ it('rola a lista até o item ativo quando ele nasce abaixo da dobra', () => {
       <Sidebar sections={sections} />
     </MemoryRouter>
   );
-  expect(screen.getByRole('link', { name: /Colaboradores/ })).toHaveAttribute('aria-current', 'page');
+  expect(screen.getByRole('link', { name: /^Equipe/ })).toHaveAttribute('aria-current', 'page');
   expect(lista().scrollTop).toBeGreaterThanOrEqual(230);
 });
 

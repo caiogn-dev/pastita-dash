@@ -211,11 +211,6 @@ export const HistoricoPedidosPage: React.FC = () => {
       titulo="Histórico de pedidos"
       acoes={
         <div className="flex flex-wrap items-center gap-2">
-          {/* Ranking por entregador e atendente mora aqui, ao lado do que
-              ele resume — o menu tem teto de destinos. */}
-          <Button variant="outline" onClick={() => navigate('/pedidos/equipe')}>
-            Equipe e entregas
-          </Button>
           <Button
             variant="secondary"
             leftIcon={<ArrowDownTrayIcon className="h-4 w-4" />}

@@ -13,7 +13,7 @@ import {
   ArrowUpTrayIcon, UsersIcon, HandRaisedIcon,
   ArrowPathIcon,
   ArrowTrendingUpIcon,
-  BellAlertIcon, CurrencyDollarIcon, TruckIcon, MapPinIcon,
+  BellAlertIcon, CurrencyDollarIcon, MapPinIcon,
 } from '@heroicons/react/24/outline';
 
 export interface NavItem {
@@ -166,7 +166,6 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
         { name: 'Tela da cozinha',   href: storeHref('kds'),       icon: FireIcon, tambem: ['kds', 'cozinha'] },
         // Bipar o código de barras da comanda avança o pedido para a saída.
         { name: 'Expedição',         href: storeHref('expedicao'), icon: ArchiveBoxArrowDownIcon },
-        { name: 'Equipe e entregas', href: '/pedidos/equipe',      icon: TruckIcon, tambem: ['entregador', 'motoboy', 'atendente', 'ranking'] },
       ],
     },
     {
@@ -249,7 +248,10 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
         { name: 'Visão geral', href: '/analytics/visao-geral', icon: ChartBarIcon },
         { name: 'Vendas',      href: '/analytics/vendas',      icon: ArrowTrendingUpIcon },
         { name: 'Clientes',    href: '/analytics/clientes',    icon: UsersIcon },
-        { name: 'Operação',    href: '/analytics/operacao',    icon: ClockIcon },
+        { name: 'Operação',    href: '/analytics/operacao',    icon: ClockIcon, tambem: ['ranking', 'entregador', 'atendente', 'tempo de entrega'] },
+        // Avisos ao dono no WhatsApp quando um número sai do normal (16/10).
+        // Só se chegava pelo card do Início (26/10).
+        { name: 'Vigias',      href: '/vigias',                icon: BellAlertIcon, tambem: ['alertas', 'avisos ao dono'] },
       ],
     },
 
@@ -266,7 +268,8 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
         { name: 'Aparência da loja', href: storeHref('aparencia'), icon: BuildingStorefrontIcon, tambem: ['storefront', 'vitrine', 'cores', 'logo', 'capa', 'tema'] },
         // Saiu de Etiquetas: a mesma tela configura a COMANDA do pedido.
         { name: 'Impressoras e comanda', href: storeHref('printing'), icon: PrinterIcon, tambem: ['impressora', 'comanda', 'print agent'] },
-        { name: 'Colaboradores', href: '/colaboradores', icon: UsersIcon, tambem: ['equipe', 'atendente', 'remover'] },
+        // Quem tem login e quem entrega (26/10: entregadores saíram de Pedidos).
+        { name: 'Equipe', href: '/colaboradores', icon: UsersIcon, tambem: ['colaboradores', 'entregador', 'motoboy', 'remover'] },
       ],
     },
   ];

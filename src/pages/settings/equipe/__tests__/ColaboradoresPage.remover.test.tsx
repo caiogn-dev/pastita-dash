@@ -6,6 +6,8 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
+// Entregadores têm teste próprio (EntregadoresSection.test.tsx).
+jest.mock('../EntregadoresSection', () => ({ EntregadoresSection: () => null }));
 jest.mock('react-hot-toast', () => ({
   __esModule: true,
   default: Object.assign(jest.fn(), { success: jest.fn(), error: jest.fn() }),

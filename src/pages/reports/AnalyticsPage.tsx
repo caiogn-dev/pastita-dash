@@ -16,6 +16,7 @@ import { toCsv, downloadCsv } from '../../utils/csv';
 import { formatAxisCurrency, formatCurrency } from '../../utils/formatters';
 import { Aviso, Card, Button, Badge, StatCard, PageShell, KpiGrid } from '../../components/ui';
 import { relatorioPorSlug, type TabValue } from './relatorios';
+import { EquipeSection } from './sections/EquipeSection';
 import { TimeSeriesChart } from '../../components/reports/TimeSeriesChart';
 import { RankedList } from './sections/shared';
 import { useStore } from '../../hooks/useStore';
@@ -698,6 +699,7 @@ const AnalyticsPage: React.FC = () => {
       ))}
       {activeTab === 'geo' && (planLocked ? <UpgradeCard /> : <GeographySection range={range} enabled />)}
       {activeTab === 'operations' && (planLocked ? <UpgradeCard /> : <OperationsSection range={range} enabled />)}
+      {activeTab === 'team' && <EquipeSection range={range} />}
       {activeTab === 'crm' && (planLocked ? <UpgradeCard /> : (
         <div className="flex flex-col gap-6">
           {renderCustomersKpis()}

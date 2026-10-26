@@ -14,7 +14,7 @@
  */
 export type TabValue =
   | 'overview' | 'orders' | 'products' | 'stock'
-  | 'peaks' | 'geo' | 'operations' | 'crm' | 'finance' | 'bot';
+  | 'peaks' | 'geo' | 'operations' | 'team' | 'crm' | 'finance' | 'bot';
 
 export interface Relatorio {
   /** Segmento da URL: /analytics/<slug>. */
@@ -58,6 +58,8 @@ export const RELATORIOS: Relatorio[] = [
     descricao: 'Tempo de preparo, entrega, geografia e para onde vai o dinheiro em taxas.',
     visoes: [
       { value: 'operations', label: 'Tempos' },
+      // Ranking de entregadores e atendentes (era "Equipe e entregas", em Pedidos — 26/10).
+      { value: 'team', label: 'Equipe' },
       { value: 'geo', label: 'Geografia' },
       { value: 'finance', label: 'Taxas e cupons' },
     ],
