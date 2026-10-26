@@ -58,6 +58,7 @@ const AssistenteDeInstalacao: React.FC<Props> = ({ aberto, onClose, storeSlug, s
   const [agentes, setAgentes] = useState<PrintAgent[]>([]);
   const [modo, setModo] = useState<'novo' | 'existente'>('novo');
   const [nome, setNome] = useState('Caixa');
+  const [estacao, setEstacao] = useState('kitchen');
   const [existenteId, setExistenteId] = useState('');
   const [gerando, setGerando] = useState(false);
   const [chave, setChave] = useState<string | null>(null);
@@ -66,7 +67,7 @@ const AssistenteDeInstalacao: React.FC<Props> = ({ aberto, onClose, storeSlug, s
   const [testando, setTestando] = useState(false);
 
   const reiniciar = useCallback(() => {
-    setEtapa(0); setModo('novo'); setNome('Caixa'); setExistenteId('');
+    setEtapa(0); setModo('novo'); setNome('Caixa'); setEstacao('kitchen'); setExistenteId('');
     setChave(null); setAlvoId(null); setConectado(false); setGerando(false); setTestando(false);
   }, []);
 
@@ -103,7 +104,7 @@ const AssistenteDeInstalacao: React.FC<Props> = ({ aberto, onClose, storeSlug, s
       let slug = slugify(nome);
       if (slugsEmUso.includes(slug)) slug = `${slug}-${Date.now().toString(36)}`;
       const res = await createPrintAgent(storeSlug, {
-        store: storeUuid, name: nome.trim(), slug, printer_name: '', station: 'kitchen',
+        store: storeUuid, name: nome.trim(), slug, printer_name: '', station: estacao,
       });
       if (!res.data.api_key) throw new Error('sem chave');
       setChave(res.data.api_key); setAlvoId(res.data.id); setConectado(false); onMudou?.();
@@ -186,6 +187,12 @@ const AssistenteDeInstalacao: React.FC<Props> = ({ aberto, onClose, storeSlug, s
             {!chave && modo === 'novo' && (
               <>
                 <Input label="Nome do computador" value={nome} onChange={(e) => setNome(e.target.value)} />
+                <Select
+                  rotulo="O que ele imprime"
+                  opcoes={[{ valor: 'kitchen', rotulo: 'Comanda da cozinha' }, { valor: 'balcao', rotulo: 'Cupom do balcão (PDV)' }]}
+                  valor={estacao}
+                  onMudar={setEstacao}
+                />
                 <Button onClick={gerarNova} disabled={gerando || !nome.trim()} leftIcon={<KeyIcon className="h-4 w-4" />}>
                   {gerando ? 'Gerando…' : 'Gerar chave'}
                 </Button>

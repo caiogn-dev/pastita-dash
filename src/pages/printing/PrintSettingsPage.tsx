@@ -4,7 +4,6 @@ import { Link, useParams } from 'react-router-dom';
 import {
   PrinterIcon,
   DocumentTextIcon,
-  PlusIcon,
   ArrowPathIcon,
   KeyIcon,
   TrashIcon,
@@ -15,7 +14,7 @@ import {
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Card, Button, Badge, Input, Select } from '../../components/ui';
+import { Card, Button, Badge } from '../../components/ui';
 import { Modal } from '../../components/common';
 import { useConfirm } from '../../hooks/useConfirm';
 import { useStore } from '../../hooks/useStore';
@@ -24,7 +23,6 @@ import {
   PrintAgent,
   PrintJob,
   listPrintAgents,
-  createPrintAgent,
   updatePrintAgent,
   PAPEIS_DO_AGENTE,
   PapelDoAgente,
@@ -57,16 +55,6 @@ const JOB_STATUS_TONE: Record<string, 'success' | 'warning' | 'danger' | 'neutra
 const fmtDate = (iso: string | null) =>
   iso ? format(new Date(iso), "dd/MM HH:mm", { locale: ptBR }) : '—';
 
-/** Slug exigido pelo backend (SlugField sem default) — derivado do nome. */
-const slugify = (text: string) =>
-  text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 120) || 'agente';
-
 const STATION_LABELS: Record<string, string> = {
   kitchen: 'Cozinha (comanda)',
   balcao: 'Balcão (cupom)',
@@ -74,18 +62,13 @@ const STATION_LABELS: Record<string, string> = {
 
 const PrintSettingsPage: React.FC = () => {
   const { storeId } = useParams<{ storeId: string }>();
-  // UUID da loja selecionada — o create do agente exige a FK, não o slug
+  // UUID da loja selecionada — o assistente cria o agente com a FK, não o slug
   const { store } = useStore();
   const [agents, setAgents] = useState<PrintAgent[]>([]);
   const [ConfirmDialog, confirmAction] = useConfirm();
   const [jobs, setJobs] = useState<PrintJob[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [assistenteAberto, setAssistenteAberto] = useState(false);
-  const [newAgentName, setNewAgentName] = useState('');
-  const [newPrinterName, setNewPrinterName] = useState('');
-  const [newStation, setNewStation] = useState('kitchen');
-  const [creating, setCreating] = useState(false);
   // Chave exibida uma única vez após criar/rotacionar
   const [revealedKey, setRevealedKey] = useState<{ agentName: string; key: string } | null>(null);
 
@@ -113,38 +96,6 @@ const PrintSettingsPage: React.FC = () => {
     const interval = setInterval(loadData, 30000);
     return () => clearInterval(interval);
   }, [loadData]);
-
-  const handleCreate = async () => {
-    if (!storeId || !newAgentName.trim()) return;
-    if (!store?.id) {
-      toast.error('Selecione a loja no menu superior antes de criar o agente');
-      return;
-    }
-    setCreating(true);
-    try {
-      const res = await createPrintAgent(storeId, {
-        store: store.id,
-        name: newAgentName.trim(),
-        slug: slugify(newAgentName),
-        printer_name: newPrinterName.trim(),
-        station: newStation,
-      });
-      setIsCreateOpen(false);
-      setNewAgentName('');
-      setNewPrinterName('');
-      setNewStation('kitchen');
-      if (res.data.api_key) {
-        setRevealedKey({ agentName: res.data.name, key: res.data.api_key });
-      }
-      loadData();
-    } catch (err) {
-      // Mostra o motivo real da validação (ex.: campo faltando) em vez de erro genérico
-      const detail = (err as { response?: { data?: Record<string, unknown> } })?.response?.data;
-      toast.error(detail ? `Erro ao criar agente: ${JSON.stringify(detail)}` : 'Erro ao criar agente de impressão');
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const handleSelectPrinter = async (agent: PrintAgent, printerName: string) => {
     if (!storeId || !printerName) return;
@@ -250,9 +201,6 @@ const PrintSettingsPage: React.FC = () => {
         </Button>
         <Button onClick={() => setAssistenteAberto(true)} leftIcon={<PrinterIcon className="w-4 h-4" />}>
         Instalar impressora
-        </Button>
-        <Button variant="outline" onClick={() => setIsCreateOpen(true)} leftIcon={<PlusIcon className="w-4 h-4" />}>
-        Novo computador
         </Button>
         </div>
       }
@@ -506,27 +454,6 @@ const PrintSettingsPage: React.FC = () => {
           ]}
         />
       </Card>
-
-      {/* Modal de criação */}
-      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Novo computador com impressora">
-        <div className="flex flex-col gap-4">
-          <Input label="Nome" value={newAgentName} onChange={(e) => setNewAgentName(e.target.value)} placeholder="Caixa principal" />
-          <Select
-            rotulo="Estação"
-            opcoes={[{ valor: 'kitchen', rotulo: 'Cozinha — comanda' }, { valor: 'balcao', rotulo: 'Balcão — cupom do PDV' }]}
-            valor={newStation}
-            onMudar={setNewStation}
-            data-testid="print-agent-station"
-          />
-          <Input label="Impressora (opcional)" value={newPrinterName} onChange={(e) => setNewPrinterName(e.target.value)} placeholder="Detectada quando o programa conectar" />
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancelar</Button>
-            <Button onClick={handleCreate} disabled={creating || !newAgentName.trim()}>
-              {creating ? 'Criando…' : 'Criar agente'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
 
       {/* Modal da chave (exibida uma única vez) */}
       <Modal isOpen={Boolean(revealedKey)} onClose={() => setRevealedKey(null)} title="Chave de acesso — copie agora">

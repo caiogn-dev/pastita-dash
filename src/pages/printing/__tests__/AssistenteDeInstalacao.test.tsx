@@ -96,6 +96,15 @@ describe('Assistente de instalação da impressora', () => {
     expect(copiar).toHaveBeenCalledWith('CHAVE-SECRETA-123');
   });
 
+  it('computador novo escolhe a estação (o "Novo computador" duplicado saiu em 26/10)', async () => {
+    await abrirAssistente();
+    avancar();
+    fireEvent.change(screen.getByLabelText(/o que ele imprime/i), { target: { value: 'balcao' } });
+    await gerarChave();
+    expect(criarAgente).toHaveBeenCalledWith('loja-x', expect.objectContaining({ station: 'balcao' }));
+    expect(screen.queryByRole('button', { name: /novo computador/i })).toBeNull();
+  });
+
   it('reinstalar: escolhe o computador e gera nova chave', async () => {
     listarAgentes.mockResolvedValue({ data: [SEM_CONEXAO] });
     await abrirAssistente();
