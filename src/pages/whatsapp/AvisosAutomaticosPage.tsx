@@ -151,7 +151,7 @@ export const AvisosAutomaticosPage: React.FC = () => {
 
   return (
     <PageShell
-      titulo="Avisos automáticos"
+      titulo="Avisos enviados"
      
       filtros={(
         <label className="inline-flex items-center gap-2 text-sm text-fg-token">

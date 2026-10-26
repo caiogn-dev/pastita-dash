@@ -321,7 +321,7 @@ export const WhatsAppCampaignsPage: React.FC = () => {
 
   return (
     <PageShell
-      titulo="Campanhas no WhatsApp"
+      titulo="Campanha WhatsApp"
      
       acoes={estado === 'lista' ? criar : undefined}
     >

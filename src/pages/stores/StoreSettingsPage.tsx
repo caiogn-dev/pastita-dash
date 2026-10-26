@@ -464,7 +464,7 @@ export const StoreSettingsPage: React.FC = () => {
     // casca do app: a página tinha o próprio fundo e o próprio respiro, e
     // encostava diferente das outras. Quem espaça é o <main>.
     <PageShell
-      titulo="Configurações da Loja"
+      titulo="Geral"
       className="mx-auto max-w-6xl"
     >
 
@@ -639,7 +639,7 @@ export const StoreSettingsPage: React.FC = () => {
           {/* O PREÇO da entrega mora em Zonas de Entrega, não aqui: esta aba
               já teve uma terceira cópia da matemática do frete. */}
           <Link
-            to={effectiveStoreId ? `/stores/${effectiveStoreId}/delivery-zones` : '/delivery-zones'}
+            to={effectiveStoreId ? `/stores/${effectiveStoreId}/delivery` : '/stores'}
             className="mt-4 inline-flex items-center gap-2 rounded bg-brand-soft px-4 py-2 text-sm font-medium text-brand-ink transition-colors hover:bg-brand-soft/80"
           >
             <TruckIcon className="w-4 h-4" />

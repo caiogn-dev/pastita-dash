@@ -347,7 +347,7 @@ export const VigiasPage: React.FC = () => {
                   )}
                   {canal?.acao === 'conectar' && (
                     <div className="sm:col-span-2">
-                      <Link to="/settings" className="text-sm font-medium text-brand-ink underline-offset-2 hover:underline">
+                      <Link to="/connections" className="text-sm font-medium text-brand-ink underline-offset-2 hover:underline">
                         Conectar o WhatsApp
                       </Link>
                     </div>

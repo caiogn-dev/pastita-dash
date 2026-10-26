@@ -135,7 +135,7 @@ export const ImportarCardapioPage: React.FC = () => {
 
   return (
     <PageShell
-      titulo="Importar cardápio"
+      titulo="Importar planilha"
      
     >
       <PageTabs

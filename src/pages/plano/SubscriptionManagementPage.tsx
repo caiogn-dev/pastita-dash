@@ -235,7 +235,7 @@ export default function SubscriptionManagementPage() {
   return (
     <PageShell
       className="mx-auto max-w-4xl"
-      titulo="Assinatura"
+      titulo="Plano e cobrança"
     >
       {/* O estado da assinatura em uma frase — é a primeira coisa que se procura aqui. */}
       <p className="text-sm text-fg-muted-token">

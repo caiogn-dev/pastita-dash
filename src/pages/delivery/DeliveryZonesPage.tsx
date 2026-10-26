@@ -310,7 +310,7 @@ export const DeliveryZonesPage: React.FC = () => {
 
   return (
     <PageShell
-      titulo="Zonas de Entrega"
+      titulo="Entrega"
       acoes={
         <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="w-5 h-5" />}>
           Nova Faixa

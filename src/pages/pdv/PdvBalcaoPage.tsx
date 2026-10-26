@@ -437,7 +437,7 @@ const PdvBalcaoPage: React.FC = () => {
   return (
     <PageShell
       variante="quadro"
-      titulo="PDV Balcão"
+      titulo="Venda no balcão"
       filtros={
         <span className="inline-flex items-center gap-2 text-xs text-fg-muted-token" title="Bipe a qualquer momento: não precisa clicar antes">
           <span className="h-2 w-2 rounded-full bg-success-token" aria-hidden /> Leitor pronto

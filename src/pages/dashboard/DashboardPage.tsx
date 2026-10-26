@@ -666,7 +666,7 @@ export const DashboardPage: React.FC = () => {
             size="sm"
             variant="ghost"
             rightIcon={<ArrowRightIcon className="h-3.5 w-3.5" />}
-            onClick={() => navigate('/analytics?aba=avaliacoes')}
+            onClick={() => navigate('/avaliacoes')}
           >
             Ver todas
           </Button>

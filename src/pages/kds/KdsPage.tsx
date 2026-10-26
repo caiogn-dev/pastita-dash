@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { useRootStore, resolveStoreKey } from '../../stores/rootStore';
 import { useRealTimeOrders } from '../../hooks/useRealTimeOrders';
 import { updateOrderStatus, getOrders } from '../../services/storesApi';
@@ -42,6 +42,7 @@ const elapsedMinutes = (iso: string, now: number) =>
 /** KDS — tela de cozinha fullscreen com fonte grande e atualização em tempo real. */
 const KdsPage: React.FC = () => {
   const { storeId } = useParams<{ storeId: string }>();
+  const nomeDaLoja = useRootStore((st) => st.stores.find((l) => l.id === storeId || l.slug === storeId)?.name);
   const [now, setNow] = useState(() => Date.now());
   const [advancing, setAdvancing] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -120,9 +121,19 @@ const KdsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-canvas text-fg-token p-4">
       <header className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold uppercase tracking-widest text-fg-token">
-          Cozinha — {storeId}
-        </h1>
+        {/* Tela cheia, fora da casca: sem esta saída, quem chega pelo menu fica preso. */}
+        <div className="flex items-center gap-3">
+          <Link
+            to="/"
+            aria-label="Voltar ao painel"
+            className="rounded-lg border border-border-token p-2 text-fg-muted-token hover:bg-surface-2 hover:text-fg-token"
+          >
+            <ArrowLeftIcon className="h-5 w-5" />
+          </Link>
+          <h1 className="text-xl font-bold uppercase tracking-widest text-fg-token">
+            Cozinha{nomeDaLoja ? ` — ${nomeDaLoja}` : ''}
+          </h1>
+        </div>
         <span className="text-sm font-semibold text-fg-muted-token" aria-live="polite">
           {loading
             ? 'Carregando…'

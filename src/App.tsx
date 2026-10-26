@@ -77,7 +77,6 @@ const StoreSettingsPage = lazy(() => import('./pages/stores').then(m => ({ defau
 const StorefrontPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StorefrontPage })));
 
 // Marketing Pages
-const MarketingPage = lazy(() => import('./pages/marketing').then(m => ({ default: m.MarketingPage })));
 const SubscribersPage = lazy(() => import('./pages/marketing').then(m => ({ default: m.SubscribersPage })));
 // Páginas que existiam no código sem rota nenhuma — renderizavam em lugar
 // nenhum. Ver navSections.tsx: agora têm caminho no menu.
@@ -304,7 +303,7 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId/ingredientes" element={<PageBoundary><IngredientsPage /></PageBoundary>} />
         
         {/* Marketing Routes */}
-        <Route path="marketing" element={<PageBoundary><MarketingPage /></PageBoundary>} />
+        <Route path="marketing" element={<Navigate to="/marketing/whatsapp" replace />} />
         <Route path="marketing/subscribers" element={<PageBoundary><SubscribersPage /></PageBoundary>} />
         <Route path="marketing/automations" element={<PageBoundary><EmailAutomationsPage /></PageBoundary>} />
         <Route path="marketing/email" element={<Navigate to="/marketing/email/campaigns" replace />} />

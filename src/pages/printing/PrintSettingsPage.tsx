@@ -239,7 +239,7 @@ const PrintSettingsPage: React.FC = () => {
 
   return (
     <PageShell
-      titulo="Impressão automática"
+      titulo="Impressoras e comanda"
       acoes={
         <div className="flex gap-2">
         <Link to="comanda">

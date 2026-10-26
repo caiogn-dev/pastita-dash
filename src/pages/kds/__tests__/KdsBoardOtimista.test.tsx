@@ -10,6 +10,7 @@ import type { Store } from '../../../services/storesApi';
 jest.mock('react-router-dom', () => ({
   __esModule: true,
   useParams: () => ({ storeId: 'loja-1' }),
+  Link: ({ children, to, ...rest }: { children: unknown; to: string }) => <a href={to} {...rest}>{children as never}</a>,
 }));
 
 jest.mock('react-hot-toast', () => ({
@@ -124,4 +125,11 @@ it('o pedido avançado assume o novo status no quadro (otimista)', async () => {
   // Agora está "Pronto" → o botão do card vira o despacho (retirada → "Retirado").
   expect(await screen.findByRole('button', { name: 'Retirado' })).toBeInTheDocument();
   expect(screen.getByText('#1001')).toBeInTheDocument();
+});
+
+it('tela cheia tem saída para o painel e mostra o nome da loja, não o slug', async () => {
+  mockGetOrders.mockResolvedValue({ results: [] });
+  render(<KdsPage />);
+  expect(await screen.findByRole('link', { name: 'Voltar ao painel' })).toHaveAttribute('href', '/');
+  expect(screen.getByRole('heading', { level: 1 }).textContent).not.toContain('loja-1');
 });

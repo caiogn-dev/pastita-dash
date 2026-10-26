@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Store, Settings, Package, ShoppingCart, BarChart3, Zap } from 'lucide-react';
+import { Plus, Store, Settings, Package, ShoppingCart, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card, Button, Loading, Badge, Modal, Input } from '../../components/common';
 import logger from '../../services/logger';
@@ -248,14 +248,6 @@ const StoresPage: React.FC = () => {
                   >
                     <ShoppingCart className="w-4 h-4 mr-1" />
                     Pedidos
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => navigate(`/stores/${store.id}/analytics`)}
-                  >
-                    <BarChart3 className="w-4 h-4 mr-1" />
-                    Analytics
                   </Button>
 
                 </div>

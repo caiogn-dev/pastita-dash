@@ -193,7 +193,7 @@ const CashPage: React.FC = () => {
                   Esperado em caixa: {formatCurrency(session.expected_cash)}
                 </p>
                 <p className="text-xs text-fg-muted-token mt-0.5">
-                  Fundo + reforços − sangrias (vendas em dinheiro: confira no relatório de pedidos)
+                  Fundo + vendas em dinheiro + reforços − sangrias
                 </p>
               </div>
             </div>

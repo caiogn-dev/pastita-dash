@@ -436,7 +436,7 @@ const FidelidadePage: React.FC = () => {
 
   return (
     <PageShell
-      titulo="Fidelidade & Cupons"
+      titulo="Fidelidade"
      
       selo={
         <Badge tone={carimboGravado || cashbackGravado ? 'success' : 'neutral'}>

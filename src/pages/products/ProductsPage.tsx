@@ -323,7 +323,7 @@ export const ProductsPage: React.FC = () => {
 
   return (
     <PageShell
-      titulo="Cardápio"
+      titulo="Produtos"
       acoes={
         <AcoesDoCardapio
           reorderMode={reorderMode}

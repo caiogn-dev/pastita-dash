@@ -666,7 +666,7 @@ const EtiquetasPage: React.FC = () => {
 
   return (
     <PageShell
-      titulo="Etiquetas"
+      titulo="Imprimir etiquetas"
       acoes={
         <div className="flex flex-col items-stretch gap-2 sm:min-w-80">
           <div className="flex flex-wrap items-center gap-2">
