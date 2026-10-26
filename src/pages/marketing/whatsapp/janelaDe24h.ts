@@ -33,13 +33,13 @@ export function avisoDaJanela(resumo: ResumoDaJanela | null | undefined): string
   const { dentro, fora } = resumo;
   if (dentro === 0) {
     return `Ninguém está na janela de 24h neste horário — ${fora} ficariam de fora. `
-      + 'Neste caso só um template pago alcança a base.';
+      + 'Neste caso só um modelo pago alcança a base.';
   }
 
   const pessoas = dentro === 1 ? '1 cliente' : `${dentro} clientes`;
   const recebe = dentro === 1 ? 'recebe' : 'recebem';
   return `${pessoas} ${recebe} de graça neste horário; ${fora} ficam de fora `
-    + '(fora da janela de 24h, só com template pago).';
+    + '(fora da janela de 24h, só com modelo pago).';
 }
 
 /**

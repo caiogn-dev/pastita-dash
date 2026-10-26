@@ -23,7 +23,7 @@
  * travados por `__tests__/NewWhatsAppCampaignPage.envio.test.tsx`.
  */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeftIcon,
   DevicePhoneMobileIcon,
@@ -58,6 +58,7 @@ import logger from '../../../services/logger';
 import { avisoDaJanela, horarioParaConsulta, type ResumoDaJanela } from './janelaDe24h';
 import { LinhaDoDia } from '../../../components/campanhas/LinhaDoDia';
 import { horarioPermitido } from './linhaDoDia';
+import { categoriaDoModelo, idiomaDoModelo } from '../../../utils/modelosDaMeta';
 import { precoVigenteDoProduto } from '../../../utils/precoVigente';
 import { formatCurrency } from '../../../utils/formatters';
 import { cn } from '../../../utils/cn';
@@ -143,7 +144,7 @@ const PASSOS_DO_ASSISTENTE = PASSOS.map((passo) => ({
 const TIPOS_DE_MENSAGEM = [
   {
     valor: 'template' as const,
-    titulo: 'Template aprovado',
+    titulo: 'Modelo aprovado',
     descricao: 'Aprovado pela Meta. Chega para qualquer cliente da lista.',
     icone: DocumentTextIcon,
   },
@@ -160,14 +161,6 @@ const ROTULO_DA_ORIGEM: Record<string, string> = {
   order: 'Pedido',
   subscriber: 'Inscrito',
   session: 'Sessão',
-};
-
-/** A Meta devolve a categoria em caixa alta ("MARKETING"). */
-const categoriaLegivel = (categoria?: string) => {
-  const c = String(categoria || '').toLowerCase();
-  if (c === 'marketing') return 'Marketing';
-  if (c === 'utility') return 'Utilidade';
-  return c ? c.charAt(0).toUpperCase() + c.slice(1) : 'Sem categoria';
 };
 
 const templatesUteis = (lista: MessageTemplate[]) =>
@@ -189,6 +182,9 @@ const dataEHora = (valor: string) =>
 
 export const NewWhatsAppCampaignPage: React.FC = () => {
   const navigate = useNavigate();
+  // "Usar em campanha" em Modelos de mensagem chega com ?modelo=<id> (26/10).
+  const [params] = useSearchParams();
+  const modeloDaUrl = params.get('modelo');
   const { storeId, storeSlug, storeName } = useStore();
 
   // State
@@ -341,6 +337,15 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
     [accounts, formData.accountId]
   );
 
+  // Modelo pedido pela URL entra escolhido quando a lista chega — só uma vez,
+  // e só se o dono ainda não escolheu outro.
+  useEffect(() => {
+    if (!modeloDaUrl || formData.templateId) return;
+    const pedido = templates.find((t) => t.id === modeloDaUrl);
+    if (pedido) handleTemplateSelect(pedido);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modeloDaUrl, templates]);
+
   const selectedTemplate = useMemo(() =>
     templates.find(t => t.id === formData.templateId),
     [templates, formData.templateId]
@@ -417,10 +422,10 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       await whatsappService.syncTemplates(formData.accountId);
       const res = await whatsappService.getTemplates(formData.accountId);
       setTemplates(templatesUteis(res.data.results || []));
-      toast.success('Templates sincronizados');
+      toast.success('Modelos sincronizados');
     } catch (error) {
       logger.error('Failed to sync templates', error);
-      toast.error('Não deu para sincronizar os templates. Tente de novo.');
+      toast.error('Não deu para sincronizar os modelos. Tente de novo.');
     } finally {
       setSyncingTemplates(false);
     }
@@ -676,7 +681,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
     }
 
     if (formData.messageType === 'template' && !formData.templateId) {
-      toast.error('Selecione um template');
+      toast.error('Escolha um modelo');
       return;
     }
 
@@ -881,7 +886,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
         icone={<DevicePhoneMobileIcon className="h-10 w-10 text-fg-muted-token" aria-hidden />}
         titulo="Nenhuma conta de WhatsApp"
         descricao="Conecte um número para criar campanhas."
-        acao={<Button onClick={() => navigate('/accounts/new')}>Conectar número</Button>}
+        acao={<Button onClick={() => navigate('/connections')}>Conectar número</Button>}
       />
     );
   }
@@ -912,31 +917,35 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
       {formData.messageType === 'template' && (
         loadingTemplates ? (
           <div className="flex items-center gap-2 py-6 text-body text-fg-muted-token">
-            <Loading size="sm" rotulo="Carregando templates…" />
-            <span aria-hidden>Carregando templates…</span>
+            <Loading size="sm" rotulo="Carregando modelos…" />
+            <span aria-hidden>Carregando modelos…</span>
           </div>
         ) : templates.length === 0 ? (
           <div className="superficie flex flex-col items-center gap-2 p-6 text-center">
             <DocumentTextIcon className="h-8 w-8 text-fg-muted-token" aria-hidden />
-            <p className="text-body font-medium text-fg-token">Nenhum template aprovado nesta conta</p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-1"
-              isLoading={syncingTemplates}
-              onClick={handleSyncTemplates}
-            >
-              Sincronizar templates
-            </Button>
+            <p className="text-body font-medium text-fg-token">Nenhum modelo aprovado nesta conta</p>
+            <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                isLoading={syncingTemplates}
+                onClick={handleSyncTemplates}
+              >
+                Sincronizar modelos
+              </Button>
+              <Link to="/marketing/whatsapp/templates" className="text-sm font-medium text-brand-ink hover:underline">
+                Ver modelos
+              </Link>
+            </div>
           </div>
         ) : (
           <ChoiceCards
-            rotulo="Template"
-            descricao="Só aparecem os templates aprovados pela Meta."
+            rotulo="Modelo"
+            descricao="Só aparecem os modelos aprovados pela Meta."
             opcoes={templates.map((t) => ({
               valor: t.id,
               titulo: t.name,
-              descricao: `${categoriaLegivel(t.category)} · ${t.language}`,
+              descricao: `${categoriaDoModelo(t.category)} · ${idiomaDoModelo(t.language)}`,
             }))}
             valor={formData.templateId}
             onChange={(id) => {
@@ -1050,8 +1059,8 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
 
       {formData.messageType === 'template' && selectedTemplate && needsHeaderImage && (
         <CampoDeImagem
-          titulo="Imagem do template"
-          descricao="Vai no cabeçalho do template aprovado."
+          titulo="Imagem do modelo"
+          descricao="Vai no cabeçalho do modelo aprovado."
           previaUrl={mediaPreviewUrl}
           nomeDoArquivo={formData.mediaFilename || selectedMediaFile?.name}
           onEscolher={handleEscolherImagem}
@@ -1105,7 +1114,7 @@ export const NewWhatsAppCampaignPage: React.FC = () => {
     : <>Exemplo com o nome {NOME_DE_EXEMPLO}. Adicione destinatários para ver com um cliente real.</>;
 
   const textoVazioDaPrevia = formData.messageType === 'template'
-    ? 'Escolha um template. A mensagem aparece aqui.'
+    ? 'Escolha um modelo. A mensagem aparece aqui.'
     : 'A mensagem aparece aqui enquanto você escreve.';
 
   return casca(
