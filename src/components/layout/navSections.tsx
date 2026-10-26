@@ -179,9 +179,9 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
         // Texto que o atendente repete o dia todo, a um "/" de distância no chat.
         { name: 'Respostas rápidas', href: '/atendimento/respostas-rapidas', icon: ChatBubbleBottomCenterTextIcon },
         { name: 'Ensinar o bot', href: '/atendimento/ensinar-o-bot',         icon: AcademicCapIcon },
-        // O que o bot manda sozinho: o texto (prontas) e o registro (avisos).
-        { name: 'Mensagens prontas', href: '/atendimento/mensagens-prontas', icon: DocumentTextIcon, tambem: ['mensagens automáticas', 'fora do horário', 'boas-vindas'] },
-        { name: 'Avisos enviados', href: '/whatsapp/avisos',                 icon: BellAlertIcon, tambem: ['avisos automáticos'] },
+        // O que o bot manda sozinho: o texto e o registro, em abas da mesma
+        // tela desde 26/10 (eram "Mensagens prontas" e "Avisos enviados").
+        { name: 'Avisos automáticos', href: '/atendimento/avisos-automaticos', icon: BellAlertIcon, tambem: ['mensagens prontas', 'mensagens automáticas', 'fora do horário', 'boas-vindas', 'avisos enviados'] },
       ],
     },
     {

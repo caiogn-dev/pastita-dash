@@ -9,7 +9,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { NewWhatsAppCampaignPage } from '../NewWhatsAppCampaignPage';
 
 jest.mock('react-hot-toast', () => ({
@@ -145,6 +145,59 @@ describe('campanha de WhatsApp — prévia ao lado com números', () => {
 
     fireEvent.click(await screen.findByRole('radio', { name: /boas_vindas/i }));
     expect(within(previa()).getByText('Olá, Bruno, sentimos sua falta.')).toBeInTheDocument();
+  });
+
+  // 26/10: "Usar em campanha" em Modelos de mensagem chega com ?modelo=<id>.
+  it('chega com o modelo escolhido em Modelos de mensagem (?modelo=)', async () => {
+    whatsapp.getTemplates.mockResolvedValue({
+      data: {
+        results: [{
+          id: 't1', name: 'boas_vindas', language: 'pt_BR', category: 'MARKETING',
+          status: 'approved', account: 'acc-1',
+          components: [{ type: 'BODY', text: 'Olá, {{nome_cliente}}.' }],
+        }],
+      },
+    });
+    render(
+      <MemoryRouter initialEntries={['/marketing/whatsapp/new?modelo=t1']}>
+        <NewWhatsAppCampaignPage />
+      </MemoryRouter>,
+    );
+    await screen.findByRole('button', { name: /^conta 1/i });
+    avancar();
+    await adicionarContato('11999998888', 'Bruno');
+    avancar();
+
+    expect(await screen.findByRole('radio', { name: /boas_vindas/i })).toBeChecked();
+    expect(screen.getByRole('radio', { name: /modelo aprovado/i })).toBeInTheDocument();
+  });
+
+  it('sem modelo aprovado, oferece ver os modelos (sem "template" na tela)', async () => {
+    abrir();
+    await screen.findByRole('button', { name: /^conta 1/i });
+    avancar();
+    await adicionarContato('11999998888', 'Bruno');
+    avancar();
+
+    expect(await screen.findByText(/nenhum modelo aprovado/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /ver modelos/i })).toHaveAttribute('href', '/marketing/whatsapp/templates');
+    expect(screen.getByRole('button', { name: /sincronizar modelos/i })).toBeInTheDocument();
+    expect(screen.queryByText(/template/i)).not.toBeInTheDocument();
+  });
+
+  it('sem conta de WhatsApp, "Conectar número" leva a Conexões', async () => {
+    whatsapp.getAccounts.mockResolvedValue({ data: { results: [] } });
+    const Onde = () => <span data-testid="onde">{useLocation().pathname}</span>;
+    render(
+      <MemoryRouter initialEntries={['/marketing/whatsapp/new']}>
+        <Routes>
+          <Route path="/marketing/whatsapp/new" element={<NewWhatsAppCampaignPage />} />
+          <Route path="*" element={<Onde />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: /conectar número/i }));
+    expect(screen.getByTestId('onde')).toHaveTextContent('/connections');
   });
 
   it('o botão final diz para quantos clientes envia', async () => {

@@ -2,8 +2,8 @@
  * Promoção do dia: liga, escolhe hora e modo, sobe o card do dia, vê a prévia e o histórico.
  */
 import React from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 jest.mock('react-hot-toast', () => ({
@@ -19,9 +19,13 @@ jest.mock('../../../../services/promoDoDia', () => ({
   promoDoDiaService: { painel: (...a: unknown[]) => painel(...a), dispararAgora: (...a: unknown[]) => dispararAgora(...a) },
 }));
 const upload = jest.fn();
+const janela = jest.fn();
 jest.mock('../../../../services/campaigns', () => ({
   __esModule: true,
-  campaignsService: { uploadCampaignMedia: (...a: unknown[]) => upload(...a) },
+  campaignsService: {
+    uploadCampaignMedia: (...a: unknown[]) => upload(...a),
+    getJanelaDaAudiencia: (...a: unknown[]) => janela(...a),
+  },
 }));
 const salvarLoja = jest.fn();
 jest.mock('../../../../services/storesApi', () => ({
@@ -46,15 +50,23 @@ const PAINEL = {
   tem_whatsapp: true,
 };
 
+const Onde: React.FC = () => <span data-testid="onde">{useLocation().pathname}</span>;
+
 const renderizar = () => render(
   <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-    <MemoryRouter><PromocaoDoDiaPage /></MemoryRouter>
+    <MemoryRouter initialEntries={['/marketing/promocao-do-dia']}>
+      <Routes>
+        <Route path="/marketing/promocao-do-dia" element={<PromocaoDoDiaPage />} />
+        <Route path="*" element={<Onde />} />
+      </Routes>
+    </MemoryRouter>
   </QueryClientProvider>,
 );
 
 beforeEach(() => {
   jest.clearAllMocks();
   painel.mockResolvedValue(PAINEL);
+  janela.mockResolvedValue({ dentro: 37, fora: 120, janela_horas: 24, no_horario: 0, antecipados: 0, faixas: [] });
   mockLoja = { id: 's1', slug: 'loja-x', metadata: { x: 1 } };
   act(() => useRootStore.getState().setStores([mockLoja as never]));
   salvarLoja.mockImplementation(async (_id: string, dados: { metadata: Record<string, unknown> }) => ({ ...mockLoja, metadata: dados.metadata }));
@@ -91,8 +103,43 @@ describe('PromocaoDoDiaPage', () => {
     renderizar();
     await screen.findByAltText('Card do dia');
     fireEvent.click(screen.getByRole('button', { name: /enviar agora/i }));
+    const confirmacao = await screen.findByRole('dialog');
+    fireEvent.click(within(confirmacao).getByRole('button', { name: /^enviar$/i }));
     await waitFor(() => expect(dispararAgora).toHaveBeenCalledWith('loja-x'));
     expect(toast.error.mock.calls[0][0]).toMatch(/não há promoção/i);
+  });
+
+  // 26/10: um clique disparava para a lista inteira, sem dizer para quantos.
+  it('"Enviar agora" confirma dizendo para quantas pessoas vai', async () => {
+    renderizar();
+    await screen.findByAltText('Card do dia');
+    fireEvent.click(screen.getByRole('button', { name: /enviar agora/i }));
+
+    const confirmacao = await screen.findByRole('dialog');
+    await waitFor(() => expect(confirmacao).toHaveTextContent(/37 pessoas/));
+    fireEvent.click(within(confirmacao).getByRole('button', { name: /cancelar/i }));
+    expect(dispararAgora).not.toHaveBeenCalled();
+  });
+
+  it('sem WhatsApp, o aviso tem o botão de conectar', async () => {
+    painel.mockResolvedValue({ ...PAINEL, tem_whatsapp: false });
+    renderizar();
+    fireEvent.click(await screen.findByRole('button', { name: /conectar/i }));
+    expect(screen.getByTestId('onde')).toHaveTextContent('/connections');
+  });
+
+  it('sem promoção no dia, leva aos produtos', async () => {
+    painel.mockResolvedValue({ ...PAINEL, previa: null });
+    renderizar();
+    fireEvent.click(await screen.findByRole('button', { name: /abrir produtos/i }));
+    expect(screen.getByTestId('onde')).toHaveTextContent('/stores/loja-x/products');
+  });
+
+  it('pelo modelo sem modelo aprovado, oferece ver os modelos', async () => {
+    painel.mockResolvedValue({ ...PAINEL, modelos: [], config: { ...PAINEL.config, modo: 'modelo' } });
+    renderizar();
+    fireEvent.click(await screen.findByRole('button', { name: /ver modelos/i }));
+    expect(screen.getByTestId('onde')).toHaveTextContent('/marketing/whatsapp/templates');
   });
 });
 

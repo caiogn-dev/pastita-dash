@@ -8,12 +8,12 @@
 import { montarAbas, resolveInboxTab, rolagemDaAba } from '../inboxTabs';
 
 it('loja sem Instagram não vê a aba', () => {
-  expect(montarAbas({ temInstagram: false }).map((t) => t.id)).toEqual(['whatsapp', 'conversas']);
+  expect(montarAbas({ temInstagram: false }).map((t) => t.id)).toEqual(['whatsapp']);
 });
 
 it('loja com Instagram ganha a aba do direct', () => {
   expect(montarAbas({ temInstagram: true }).map((t) => t.id))
-    .toEqual(['whatsapp', 'instagram', 'conversas']);
+    .toEqual(['whatsapp', 'instagram']);
 });
 
 it('endereço /inbox/instagram só abre a aba quando a conta existe', () => {

@@ -84,6 +84,10 @@ describe('RespostasRapidasPage', () => {
 
     fireEvent.click(screen.getAllByRole('button', { name: /ações de \/troco/i })[0]);
     fireEvent.click(screen.getByRole('menuitem', { name: /remover/i }));
+    // 26/10: remover pergunta antes — um clique no menu apagava o atalho.
+    const confirmacao = await screen.findByRole('dialog');
+    expect(salvarLoja).toHaveBeenCalledTimes(1);
+    fireEvent.click(within(confirmacao).getByRole('button', { name: /^remover$/i }));
     await waitFor(() => expect(salvouCom().respostas_rapidas).toEqual([{ atalho: 'frete', texto: 'novo' }]));
   });
 

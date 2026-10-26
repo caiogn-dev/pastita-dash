@@ -16,7 +16,7 @@ jest.mock('../../../hooks/useStore', () => ({
   useStore: () => ({ storeId: 'uuid-1', storeSlug: 'loja-1', store: { id: 'uuid-1', slug: 'loja-1' } }),
 }));
 
-import { ConversaoDoBotPage, motivoDeAtendente } from '../ConversaoDoBotPage';
+import { ResultadoDoBotSecao, motivoDeAtendente } from '../ResultadoDoBotSecao';
 
 const DADOS = {
   dias: 30, conversas: 186, pedidos: 10, receita: '404.39', taxa: 5.4,
@@ -34,7 +34,7 @@ const DADOS = {
 
 const renderizar = () => render(
   <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-    <MemoryRouter><ConversaoDoBotPage /></MemoryRouter>
+    <MemoryRouter><ResultadoDoBotSecao /></MemoryRouter>
   </QueryClientProvider>,
 );
 
@@ -43,7 +43,7 @@ beforeEach(() => {
   buscar.mockResolvedValue(DADOS);
 });
 
-describe('ConversaoDoBotPage', () => {
+describe('ResultadoDoBotSecao', () => {
   it('mostra o funil, os motivos traduzidos e onde a venda parou', async () => {
     renderizar();
     expect(await screen.findByText('10 (5.4%)')).toBeInTheDocument();

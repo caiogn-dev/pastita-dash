@@ -14,6 +14,7 @@ jest.mock('react-hot-toast', () => ({
 const toast = jest.requireMock('react-hot-toast').default as jest.Mock & { success: jest.Mock; error: jest.Mock };
 
 const listarNaoEntendi = jest.fn();
+const buscarConversao = jest.fn();
 const ensinar = jest.fn();
 const conhecimento = { listar: jest.fn(), criar: jest.fn(), editar: jest.fn(), apagar: jest.fn() };
 jest.mock('../../../services/atendimentoBot', () => ({
@@ -22,6 +23,7 @@ jest.mock('../../../services/atendimentoBot', () => ({
     listarNaoEntendi: (...a: unknown[]) => listarNaoEntendi(...a),
     ensinar: (...a: unknown[]) => ensinar(...a),
   },
+  conversaoDoBotService: { buscar: (...a: unknown[]) => buscarConversao(...a) },
   conhecimentoService: {
     listar: (...a: unknown[]) => conhecimento.listar(...a),
     criar: (...a: unknown[]) => conhecimento.criar(...a),
@@ -85,7 +87,9 @@ describe('EnsinarOBotPage — aba Não entendeu', () => {
     await linha('tem caesar?');
     expect(screen.getByRole('tab', { name: /não entendeu/i })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tab', { name: /o que a loja sabe/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /respostas ensinadas/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /exemplos de resposta/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /resultado/i })).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: /respostas ensinadas/i })).not.toBeInTheDocument();
   });
 
   it('busca os últimos 7 dias da loja e mostra o total no topo', async () => {
@@ -233,7 +237,7 @@ describe('EnsinarOBotPage — aba O que a loja sabe', () => {
   });
 });
 
-describe('EnsinarOBotPage — aba Respostas ensinadas', () => {
+describe('EnsinarOBotPage — aba Exemplos de resposta', () => {
   it('lista o que foi ensinado e remove', async () => {
     conhecimento.listar.mockResolvedValue([
       { id: 'k1', topic: 'outro', example_input: 'aceita vr?', example_response: 'Aceitamos VR e VA.', is_active: true },
@@ -274,5 +278,16 @@ describe('EnsinarOBotPage — aba Respostas ensinadas', () => {
     fireEvent.change(within(dialogo).getByLabelText(/a ia responde/i), { target: { value: 'y' } });
     fireEvent.click(within(dialogo).getByRole('button', { name: /salvar resposta/i }));
     expect(await within(dialogo).findByRole('alert')).toHaveTextContent(/atendente de IA/i);
+  });
+});
+
+// 26/10: a "Conversão do bot" era uma tela órfã, fora do menu. Mede se o que
+// se ensina aqui funciona — mora aqui, na aba Resultado.
+describe('EnsinarOBotPage — aba Resultado', () => {
+  it('mostra a conversão do bot da loja', async () => {
+    buscarConversao.mockReturnValue(new Promise(() => undefined));
+    renderizar('resultado');
+    expect(screen.getByRole('tab', { name: /resultado/i })).toHaveAttribute('aria-selected', 'true');
+    await waitFor(() => expect(buscarConversao).toHaveBeenCalledWith({ store: 'loja-1', dias: 30 }));
   });
 });

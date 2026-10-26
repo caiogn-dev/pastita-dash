@@ -121,7 +121,6 @@ const InstagramCallbackPage = lazy(() => import('./pages/instagram/InstagramCall
 const AvisosAutomaticosPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.AvisosAutomaticosPage })));
 const RespostasRapidasPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.RespostasRapidasPage })));
 const EnsinarOBotPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.EnsinarOBotPage })));
-const ConversaoDoBotPage = lazy(() => import('./pages/whatsapp').then(m => ({ default: m.ConversaoDoBotPage })));
 
 // Protected Route wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -223,8 +222,8 @@ const AppContent: React.FC = () => {
         {/* Inbox unificado — rotas antigas redirecionam para a aba correspondente */}
         <Route path="inbox" element={<PageBoundary><InboxPage /></PageBoundary>} />
         <Route path="inbox/:tab" element={<PageBoundary><InboxPage /></PageBoundary>} />
-        <Route path="messages" element={<Navigate to="/inbox/conversas" replace />} />
-        <Route path="conversations" element={<Navigate to="/inbox/conversas" replace />} />
+        <Route path="messages" element={<Navigate to="/inbox/whatsapp" replace />} />
+        <Route path="conversations" element={<Navigate to="/inbox/whatsapp" replace />} />
         
         {/* AI Agents Routes (Langchain) */}
         <Route path="agents" element={<PageBoundary><AgentsPage /></PageBoundary>} />
@@ -249,7 +248,8 @@ const AppContent: React.FC = () => {
         <Route path="automation/companies/new" element={<PageBoundary><CompanyProfileDetailPage /></PageBoundary>} />
         <Route path="automation/companies/:id" element={<PageBoundary><CompanyProfileDetailPage /></PageBoundary>} />
         <Route path="automation/messages" element={<PageBoundary><AutoMessagesPage /></PageBoundary>} />
-        <Route path="atendimento/mensagens-prontas" element={<PageBoundary><AutoMessagesPage /></PageBoundary>} />
+        {/* 26/10: Mensagens prontas + Avisos enviados = Avisos automáticos (abas). */}
+        <Route path="atendimento/mensagens-prontas" element={<Navigate to="/atendimento/avisos-automaticos" replace />} />
         <Route path="automation/companies/:companyId/messages" element={<PageBoundary><AutoMessagesPage /></PageBoundary>} />
         <Route path="automation/sessions" element={<PageBoundary><CustomerSessionsPage /></PageBoundary>} />
         <Route path="automation/logs" element={<PageBoundary><AutomationLogsPage /></PageBoundary>} />
@@ -333,10 +333,12 @@ const AppContent: React.FC = () => {
         <Route path="whatsapp/diagnostics" element={<PageBoundary><WebhookDiagnosticsPage /></PageBoundary>} />
         <Route path="whatsapp/debug" element={<PageBoundary><DebugDashboardPage /></PageBoundary>} />
         <Route path="whatsapp/handover" element={<PageBoundary><HandoverRequestsPage /></PageBoundary>} />
-        <Route path="whatsapp/avisos" element={<PageBoundary><AvisosAutomaticosPage /></PageBoundary>} />
+        <Route path="whatsapp/avisos" element={<Navigate to="/atendimento/avisos-automaticos?aba=enviados" replace />} />
+        <Route path="atendimento/avisos-automaticos" element={<PageBoundary><AvisosAutomaticosPage /></PageBoundary>} />
         <Route path="atendimento/respostas-rapidas" element={<PageBoundary><RespostasRapidasPage /></PageBoundary>} />
         <Route path="atendimento/ensinar-o-bot" element={<PageBoundary><EnsinarOBotPage /></PageBoundary>} />
-        <Route path="atendimento/conversao-do-bot" element={<PageBoundary><ConversaoDoBotPage /></PageBoundary>} />
+        {/* 26/10: Conversão do bot virou a aba Resultado de Ensinar o bot. */}
+        <Route path="atendimento/conversao-do-bot" element={<Navigate to="/atendimento/ensinar-o-bot?aba=resultado" replace />} />
         {/* Link antigo da tela "O bot não entendeu" (26/09). */}
         <Route path="atendimento/nao-entendi" element={<PageBoundary><EnsinarOBotPage /></PageBoundary>} />
       </Route>

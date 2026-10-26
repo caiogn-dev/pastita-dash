@@ -23,6 +23,7 @@ import {
 } from '../../components/ui';
 import { updateStore } from '../../services/storesApi';
 import { useStore } from '../../hooks/useStore';
+import { useConfirm } from '../../hooks/useConfirm';
 import { useRootStore } from '../../stores/rootStore';
 import {
   CHAVE_RESPOSTAS_RAPIDAS,
@@ -47,6 +48,7 @@ export const RespostasRapidasPage: React.FC = () => {
   const [erroDoForm, setErroDoForm] = useState('');
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
+  const [ConfirmDialog, confirm] = useConfirm();
 
   useEffect(() => {
     const r = lerRespostasRapidas(store?.metadata);
@@ -95,8 +97,15 @@ export const RespostasRapidasPage: React.FC = () => {
     if (await gravar(nova)) setEdicao(null);
   };
 
-  const remover = (indice: number) => {
-    void gravar(respostas.filter((_, i) => i !== indice));
+  // 26/10: pergunta antes — um clique no menu da linha apagava o atalho.
+  const remover = async (indice: number) => {
+    const ok = await confirm({
+      title: 'Remover resposta',
+      message: `Remover /${respostas[indice].atalho}? O atalho some do chat.`,
+      confirmText: 'Remover',
+      variant: 'danger',
+    });
+    if (ok) void gravar(respostas.filter((_, i) => i !== indice));
   };
 
   const colunas: ColunaDaTabela<RespostaRapida & { indice: number }>[] = [
@@ -121,7 +130,7 @@ export const RespostasRapidasPage: React.FC = () => {
           rotulo={`Ações de /${r.atalho}`}
           acoes={[
             { rotulo: 'Editar', onClick: () => abrir(r.indice) },
-            { rotulo: 'Remover', onClick: () => remover(r.indice), destrutiva: true },
+            { rotulo: 'Remover', onClick: () => void remover(r.indice), destrutiva: true },
           ]}
         />
       ),
@@ -191,6 +200,7 @@ export const RespostasRapidasPage: React.FC = () => {
           </>
         )}
       </Modal>
+      {ConfirmDialog}
     </PageShell>
   );
 };

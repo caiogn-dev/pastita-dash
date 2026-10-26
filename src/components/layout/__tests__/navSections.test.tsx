@@ -116,9 +116,16 @@ describe('atendimento deixa de ser um item solto', () => {
       '/whatsapp/handover',
       '/atendimento/respostas-rapidas',
       '/atendimento/ensinar-o-bot',
-      '/atendimento/mensagens-prontas',
-      '/whatsapp/avisos',
+      '/atendimento/avisos-automaticos',
     ]);
+  });
+
+  // 26/10: texto (Mensagens prontas) e registro (Avisos enviados) viraram
+  // uma tela só, com abas. A busca do Ctrl+K ainda acha pelos nomes antigos.
+  it('Avisos automáticos é um item só, achável pelos nomes antigos', () => {
+    const item = acha('Atendimento').items.find((i) => i.href === '/atendimento/avisos-automaticos')!;
+    expect(item.name).toBe('Avisos automáticos');
+    expect(item.tambem).toEqual(expect.arrayContaining(['mensagens prontas', 'fora do horário', 'boas-vindas', 'avisos enviados']));
   });
 
   it('o badge de não lidas fica no Atendimento', () => {

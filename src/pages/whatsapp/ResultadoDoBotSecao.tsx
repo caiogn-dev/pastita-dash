@@ -1,5 +1,9 @@
 /**
- * Conversão do bot — quantas conversas viram pedido, e onde a venda parou.
+ * Resultado — quantas conversas do bot viram pedido, e onde a venda parou.
+ *
+ * 26/10: era a tela "Conversão do bot", órfã (fora do menu). Virou a aba
+ * Resultado de Ensinar o bot: é ali que o dono ensina, e é ali que ele vê se
+ * o que ensinou funcionou. A rota antiga redireciona para a aba.
  *
  * 28/09: o dono quis "usar IA para melhorar conversão". Medido: em 30 dias a
  * Cê Saladas teve 186 conversas, 10 pedidos pelo WhatsApp e 145 idas para
@@ -15,7 +19,6 @@ import {
   EmptyState,
   FalhaAoCarregar,
   KpiGrid,
-  PageShell,
   PeriodChips,
   RankedList,
   Secao,
@@ -61,7 +64,7 @@ const quando = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-B
   day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
 }) : '—');
 
-export const ConversaoDoBotPage: React.FC = () => {
+export const ResultadoDoBotSecao: React.FC = () => {
   const { storeId, storeSlug } = useStore();
   const [dias, setDias] = useState('30');
   const consulta = useQuery({
@@ -111,11 +114,8 @@ export const ConversaoDoBotPage: React.FC = () => {
   ];
 
   return (
-    <PageShell
-      titulo="Conversão do bot"
-     
-      filtros={<PeriodChips options={PERIODOS} value={dias} onChange={setDias} ariaLabel="Período" />}
-    >
+    <div className="flex flex-col gap-5">
+      <PeriodChips options={PERIODOS} value={dias} onChange={setDias} ariaLabel="Período" />
       {consulta.isError ? (
         <FalhaAoCarregar titulo="Não consegui carregar a conversão." onTentarDeNovo={() => void consulta.refetch()} />
       ) : d && (
@@ -159,7 +159,7 @@ export const ConversaoDoBotPage: React.FC = () => {
               {
                 label: 'O bot falhou',
                 value: d.bot_falhou,
-                definicao: 'Clientes que receberam desculpa, erro ou resposta genérica. Ensine na tela "Ensinar o bot".',
+                definicao: 'Clientes que receberam desculpa, erro ou resposta genérica. Ensine na aba "Não entendeu".',
                 tone: d.bot_falhou > 0 ? 'danger' : 'success',
               },
             ]}
@@ -237,8 +237,8 @@ export const ConversaoDoBotPage: React.FC = () => {
           </Secao>
         </>
       )}
-    </PageShell>
+    </div>
   );
 };
 
-export default ConversaoDoBotPage;
+export default ResultadoDoBotSecao;

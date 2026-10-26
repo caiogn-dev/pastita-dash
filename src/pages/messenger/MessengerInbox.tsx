@@ -158,10 +158,6 @@ export default function MessengerInbox() {
     setActivePanel(prev => prev === panel ? null : panel);
   }
 
-  function handleInsertText(text: string) {
-    setMessageText(text);
-  }
-
   const filtered = conversations.filter((c) => {
     const name = (c.participant_name || c.psid || '').toLowerCase();
     const rawContent = (c.last_message as any)?.content;
@@ -373,7 +369,6 @@ export default function MessengerInbox() {
             key={activePanel}
             accountId={(selectedConversation.account as string) || ''}
             conversation={selectedConversation as any}
-            onInsertText={handleInsertText}
             onSendMessage={handleToolsSend}
             onAfterSend={() => selectedConversation && void selectConversation(selectedConversation)}
             onClose={() => setActivePanel(null)}

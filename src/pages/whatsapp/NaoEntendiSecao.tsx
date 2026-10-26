@@ -223,7 +223,7 @@ export const NaoEntendiSecao: React.FC = () => {
         ) : estado === 'vazio' ? (
           <EmptyState
             titulo="O bot entendeu tudo"
-            descricao={`Nenhuma mensagem ficou sem resposta nos últimos ${dias} dias. Para dar mais contexto à IA, use as abas "O que a loja sabe" e "Respostas ensinadas".`}
+            descricao={`Nenhuma mensagem ficou sem resposta nos últimos ${dias} dias. Para dar mais contexto à IA, use as abas "O que a loja sabe" e "Exemplos de resposta".`}
           />
         ) : (
           <Tabela

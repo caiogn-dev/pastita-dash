@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 import { EmptyState, PageShell } from '../../../components/ui';
+import { useConfirm } from '../../../hooks/useConfirm';
 import { InstagramIcon } from '../../../components/brand/BrandIcons';
 import { instagramAccountService } from '../../../services/instagram';
 import {
@@ -124,6 +125,7 @@ export const PromocaoNoInstagramPage: React.FC = () => {
   const [promocoes, setPromocoes] = useState<PromocaoDeComentario[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [criando, setCriando] = useState(false);
+  const [ConfirmDialog, confirm] = useConfirm();
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -156,7 +158,16 @@ export const PromocaoNoInstagramPage: React.FC = () => {
     }
   };
 
+  // 26/10: pergunta antes — encerrar tira a promoção do ar e quem comentar
+  // depois não recebe mais nada.
   const encerrar = async (p: PromocaoDeComentario) => {
+    const ok = await confirm({
+      title: 'Encerrar promoção',
+      message: `Encerrar "${p.nome}"? Quem comentar depois não recebe mais a mensagem.`,
+      confirmText: 'Encerrar',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       await instagramCampanhasService.atualizar(p.id, { ativa: false });
       await carregar();
@@ -210,6 +221,7 @@ export const PromocaoNoInstagramPage: React.FC = () => {
           )}
         </div>
       )}
+      {ConfirmDialog}
     </PageShell>
   );
 };

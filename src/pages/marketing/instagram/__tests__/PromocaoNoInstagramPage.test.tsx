@@ -3,7 +3,7 @@
  * caminho para conectar. Com conta, a loja vê o placar de cada promoção.
  */
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 import PromocaoNoInstagramPage from '../PromocaoNoInstagramPage';
@@ -11,6 +11,7 @@ import PromocaoNoInstagramPage from '../PromocaoNoInstagramPage';
 const listarContas = jest.fn();
 const listarPromocoes = jest.fn();
 const placar = jest.fn();
+const atualizar = jest.fn();
 
 jest.mock('../../../../services/instagram', () => ({
   __esModule: true,
@@ -21,6 +22,7 @@ jest.mock('../../../../services/instagramCampanhas', () => ({
   instagramCampanhasService: {
     listar: (...a: unknown[]) => listarPromocoes(...a),
     placar: (...a: unknown[]) => placar(...a),
+    atualizar: (...a: unknown[]) => atualizar(...a),
   },
 }));
 jest.mock('react-hot-toast', () => ({
@@ -71,4 +73,22 @@ it('mostra a regra e o placar de cada promoção', async () => {
     .toBeInTheDocument();
   expect(await screen.findByText(/4 não escreveu a palavra da promoção/)).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Sortear' })).toBeInTheDocument();
+});
+
+// 26/10: "Encerrar" tirava a promoção do ar num clique, sem volta.
+it('encerrar pergunta antes', async () => {
+  listarPromocoes.mockResolvedValue([{
+    id: 'p1', account: 'a1', nome: 'Cupom de setembro', tipo: 'SORTEIO', media_id: 'm1',
+    palavra_chave: 'EU QUERO', exige_marcar_amigos: 0, exige_seguir: false,
+    mensagem_dm: 'oi', resposta_publica: '', comeca_em: null, termina_em: null,
+    ativa: true, participando: 1, no_ar: true, created_at: '2026-09-21T10:00:00Z',
+  }]);
+  atualizar.mockResolvedValue({});
+  tela();
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Encerrar' }));
+  const confirmacao = await screen.findByRole('dialog');
+  expect(atualizar).not.toHaveBeenCalled();
+  fireEvent.click(within(confirmacao).getByRole('button', { name: /^encerrar$/i }));
+  await waitFor(() => expect(atualizar).toHaveBeenCalledWith('p1', { ativa: false }));
 });

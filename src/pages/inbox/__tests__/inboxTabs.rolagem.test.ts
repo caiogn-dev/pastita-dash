@@ -21,10 +21,6 @@ describe('rolagem por aba do inbox', () => {
     expect(rolagemDaAba('whatsapp')).toBe('propria');
   });
 
-  it('a aba Todas rola no wrapper — senão fica cortada', () => {
-    expect(rolagemDaAba('conversas')).toBe('wrapper');
-  });
-
   it('toda aba declara sua rolagem — aba nova não entra sem decidir', () => {
     for (const t of INBOX_TABS) {
       expect(['propria', 'wrapper']).toContain(rolagemDaAba(t.id));

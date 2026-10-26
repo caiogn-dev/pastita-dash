@@ -8,11 +8,18 @@
  * "Oportunidade perdida" é o número que faz o dono agir: é o dinheiro que
  * ficou na mesa este mês. Por isso ele vem primeiro e em destaque, não no fim
  * de uma fileira de indicadores iguais.
+ *
+ * 26/10: o texto e o liga/desliga dos lembretes de carrinho saíram de
+ * "Mensagens prontas" e vieram para cá ("Lembretes de carrinho"), ao lado do
+ * resultado que eles produzem. Mesmo editor dos Avisos automáticos.
  */
 import React, { useCallback, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
 import { EmptyState, KpiGrid, PageShell } from '../../../components/ui';
 import { RecuperadorWhatsAppSecao } from './RecuperadorWhatsAppSecao';
+import { TextosDosAvisos } from '../../automation/TextosDosAvisos';
+import { ANCORA_DO_CARRINHO, GRUPO_DO_CARRINHO } from '../../automation/gruposDeAvisos';
 import { useStore } from '../../../hooks/useStore';
 import { recuperacaoService, type PainelDeRecuperacao } from '../../../services/recuperacao';
 import { formatCurrency } from '../../../utils/formatters';
@@ -29,6 +36,9 @@ export const RecuperacaoPage: React.FC = () => {
   const [dias, setDias] = useState(30);
   const [dados, setDados] = useState<PainelDeRecuperacao | null>(null);
   const [erro, setErro] = useState(false);
+  // "Editar texto" de um lembrete que não chegou (Avisos automáticos) chega
+  // com a âncora: rola até a seção.
+  const focoNoCarrinho = useLocation().hash === `#${ANCORA_DO_CARRINHO}`;
 
   const carregar = useCallback(async () => {
     if (!slug) return;
@@ -141,12 +151,16 @@ export const RecuperacaoPage: React.FC = () => {
                 {' '}{dados.recuperados === 1 ? 'gastou' : 'gastaram'}{' '}
                 <strong>{formatCurrency(dados.valor_recuperado)}</strong>.</>
             ) : (
-              <> Ninguém voltou a comprar ainda — vale rever o texto do lembrete.</>
+              <> Ninguém voltou a comprar ainda — vale{' '}
+                <a href={`#${ANCORA_DO_CARRINHO}`} className="font-semibold text-brand-ink underline">rever o texto do lembrete</a>.</>
             )}
           </p>
         </div>
       )}
       <RecuperadorWhatsAppSecao />
+      <div id={ANCORA_DO_CARRINHO} className="scroll-mt-4">
+        <TextosDosAvisos grupos={[GRUPO_DO_CARRINHO]} foco={focoNoCarrinho ? GRUPO_DO_CARRINHO.id : null} ocultarSemPerfil />
+      </div>
     </PageShell>
   );
 };

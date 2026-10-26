@@ -1,5 +1,5 @@
 /**
- * "Respostas ensinadas" — pergunta → resposta que o dono ensinou à IA.
+ * "Exemplos de resposta" (até 26/10, "Respostas ensinadas") — pergunta → resposta que o dono ensinou à IA.
  *
  * Nascem na aba "Não entendeu" ("Ensinar a resposta") ou aqui, do zero. A IA
  * recebe como exemplo de bom atendimento: vale para a mesma dúvida escrita
@@ -146,7 +146,7 @@ export const RespostasEnsinadasSecao: React.FC = () => {
   return (
     <>
       <Secao
-        titulo="Respostas ensinadas"
+        titulo="Exemplos de resposta"
        
         contador={consulta.data !== undefined ? itens.length : undefined}
         acoes={(

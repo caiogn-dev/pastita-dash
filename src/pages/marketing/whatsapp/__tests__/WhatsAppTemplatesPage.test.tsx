@@ -1,95 +1,123 @@
 /**
- * Modelos de mensagem do WhatsApp, simples: lista à esquerda, prévia no balão
- * do kit à direita, variáveis em Input do kit. Sem o verde do WhatsApp em hex,
- * sem cor por categoria, sem botão que não faz nada.
+ * Modelos de mensagem = os modelos da Meta da conta da loja (26/10).
+ *
+ * Até aqui a tela listava cinco textos fixos do código, que a Meta nunca viu e
+ * que não furam a janela de 24 h, e uma cópia somente-leitura dos avisos do
+ * pedido (que já têm tela própria). O que importa aqui é o que a Meta aprovou.
  */
 import React from 'react';
-import { render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
-
-import WhatsAppTemplatesPage from '../WhatsAppTemplatesPage';
-import { whatsappTemplates } from '../../../../data/whatsappTemplates';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 jest.mock('react-hot-toast', () => ({ __esModule: true, default: { success: jest.fn(), error: jest.fn() } }));
+jest.mock('../../../../services/api', () => ({ __esModule: true, default: {} }));
 
 jest.mock('../../../../hooks/useStore', () => ({
-  useStore: () => ({ storeId: 'loja-ce', storeName: 'Cê Saladas' }),
+  useStore: () => ({ storeId: 'loja-ce', storeSlug: 'ce-saladas', storeName: 'Cê Saladas' }),
 }));
 
-// O que a loja manda DE VERDADE: AutoMessage do servidor. Uma de outra loja do
-// mesmo dono vem junto na API e não pode aparecer.
-const preparoDaCe = {
-  id: 'am-1', company: 'perfil-ce', store_id: 'loja-ce', event_type: 'order_preparing',
-  name: 'Pedido em preparo', is_active: true, message_type: 'text',
-  message_text: '👨‍🍳 *Seu pedido está sendo preparado!*\n\nOlá {primeiro_nome},\n\nPedido #{order_number} em preparação.\n⏱️ Falta aproximadamente {tempo} minutos!',
-  created_at: '', updated_at: '',
-};
-const preparoDeOutraLoja = {
-  ...preparoDaCe, id: 'am-2', company: 'perfil-agriao', store_id: 'loja-agriao',
-  message_text: 'Texto da outra loja',
-};
-const boasVindasDaCe = { ...preparoDaCe, id: 'am-3', event_type: 'welcome', name: 'Boas-vindas', message_text: 'Oi' };
-
+const listarPerfis = jest.fn();
 jest.mock('../../../../services/automation', () => ({
-  eventTypeLabels: { order_preparing: 'Pedido em Preparo', welcome: 'Boas-vindas' },
-  autoMessageService: {
-    list: jest.fn(() => Promise.resolve({ results: [preparoDaCe, preparoDeOutraLoja, boasVindasDaCe], count: 3 })),
+  companyProfileService: { list: (...a: unknown[]) => listarPerfis(...a) },
+}));
+
+const getTemplates = jest.fn();
+const syncTemplates = jest.fn();
+jest.mock('../../../../services/whatsapp', () => ({
+  __esModule: true,
+  default: {
+    getTemplates: (...a: unknown[]) => getTemplates(...a),
+    syncTemplates: (...a: unknown[]) => syncTemplates(...a),
   },
 }));
 
-// userEvent + menu da linha: com a máquina carregada, 5 s não bastam.
-jest.setTimeout(20000);
+import WhatsAppTemplatesPage from '../WhatsAppTemplatesPage';
 
-const tela = () => render(<MemoryRouter><WhatsAppTemplatesPage /></MemoryRouter>);
+const MODELOS = [
+  { id: 't1', name: 'oferta_do_dia', language: 'pt_BR', category: 'MARKETING', status: 'approved', account: 'conta-1', components: [{ type: 'BODY', text: 'Oi {{1}}, hoje tem oferta' }] },
+  { id: 't2', name: 'pedido_pronto', language: 'pt_BR', category: 'utility', status: 'pending', account: 'conta-1', components: [] },
+  { id: 't3', name: 'promo_errada', language: 'en_US', category: 'marketing', status: 'rejected', account: 'conta-1', components: [] },
+];
 
-it('os avisos de status mostrados são os que a loja envia, com o botão de editar', async () => {
-  tela();
-  const avisos = await screen.findByRole('region', { name: 'Avisos automáticos do pedido' });
+const Onde: React.FC = () => {
+  const l = useLocation();
+  return <span data-testid="onde">{l.pathname + l.search}</span>;
+};
 
-  expect(within(avisos).getByText('Pedido em Preparo')).toBeInTheDocument();
-  expect(within(avisos).queryByText('Boas-vindas')).not.toBeInTheDocument();
-  expect(within(avisos).getByRole('link', { name: /Editar/ })).toHaveAttribute(
-    'href', '/atendimento/mensagens-prontas',
-  );
+const tela = () => render(
+  <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    <MemoryRouter initialEntries={['/marketing/whatsapp/templates']}>
+      <Routes>
+        <Route path="/marketing/whatsapp/templates" element={<WhatsAppTemplatesPage />} />
+        <Route path="*" element={<Onde />} />
+      </Routes>
+    </MemoryRouter>
+  </QueryClientProvider>,
+);
 
-  await userEvent.click(within(avisos).getByRole('button', { name: /Pedido em Preparo/ }));
-  const previa = screen.getByRole('figure', { name: 'Prévia da mensagem' });
-  expect(previa).toHaveTextContent('Seu pedido está sendo preparado!');
-  expect(previa).toHaveTextContent('Falta aproximadamente 40 minutos!');
-  expect(previa).not.toHaveTextContent('Texto da outra loja');
+beforeEach(() => {
+  jest.clearAllMocks();
+  listarPerfis.mockResolvedValue({ results: [{ id: 'perfil-1', account: 'conta-1' }] });
+  getTemplates.mockResolvedValue({ data: { results: MODELOS } });
+  syncTemplates.mockResolvedValue({ data: { count: 3 } });
 });
 
-it('a lista fixa não tem mais cópia dos avisos de status (eram outra coisa)', () => {
-  expect(whatsappTemplates.map((t) => t.id)).not.toEqual(
-    expect.arrayContaining(['order_preparing']),
-  );
-  expect(whatsappTemplates.some((t) => /order_(confirmed|preparing|delivery|delivered)/.test(t.id))).toBe(false);
+it('lista os modelos da Meta da conta da loja, com situação, idioma e categoria em português', async () => {
+  tela();
+
+  const linha = (await screen.findByText('oferta_do_dia')).closest('li')!;
+  expect(getTemplates).toHaveBeenCalledWith('conta-1');
+  expect(within(linha).getByText('Aprovado')).toBeInTheDocument();
+  expect(within(linha).getByText(/Português · Promoção/)).toBeInTheDocument();
+  expect(within(linha).getByText('Oi {{1}}, hoje tem oferta')).toBeInTheDocument();
+
+  expect(within(screen.getByText('pedido_pronto').closest('li')!).getByText('Em análise')).toBeInTheDocument();
+  expect(within(screen.getByText('promo_errada').closest('li')!).getByText('Recusado')).toBeInTheDocument();
+  expect(screen.queryByText(/APPROVED|pt_BR|MARKETING/)).not.toBeInTheDocument();
 });
 
-it('mostra quantos modelos há e filtra por categoria', async () => {
+it('sem a cópia dos avisos do pedido nem os textos fixos', async () => {
   tela();
-  const lista = screen.getByRole('region', { name: 'Modelos' });
-  expect(within(lista).getAllByRole('button')).toHaveLength(whatsappTemplates.length);
-
-  await userEvent.click(screen.getByRole('tab', { name: /Marketing/ }));
-  const deMarketing = whatsappTemplates.filter((t) => t.category === 'marketing').length;
-  expect(within(lista).getAllByRole('button')).toHaveLength(deMarketing);
+  await screen.findByText('oferta_do_dia');
+  expect(screen.queryByRole('region', { name: 'Avisos automáticos do pedido' })).not.toBeInTheDocument();
+  expect(screen.queryByText('Cupom de Desconto')).not.toBeInTheDocument();
 });
 
-it('sem modelo escolhido, a prévia diz o que fazer', () => {
+it('"Usar em campanha" só no aprovado, e abre a campanha com o modelo escolhido', async () => {
   tela();
-  expect(screen.getByText('Escolha um modelo')).toBeInTheDocument();
+  const aprovado = (await screen.findByText('oferta_do_dia')).closest('li')!;
+  expect(within(screen.getByText('pedido_pronto').closest('li')!).queryByRole('button', { name: /usar em campanha/i })).not.toBeInTheDocument();
+
+  fireEvent.click(within(aprovado).getByRole('button', { name: /usar em campanha/i }));
+  expect(screen.getByTestId('onde')).toHaveTextContent('/marketing/whatsapp/new?modelo=t1');
 });
 
-it('escolher um modelo mostra a prévia no balão e as variáveis viram campos', async () => {
+it('"Sincronizar" busca na Meta e recarrega a lista', async () => {
   tela();
-  const modelo = whatsappTemplates[0];
-  await userEvent.click(screen.getByRole('button', { name: new RegExp(modelo.name) }));
+  await screen.findByText('oferta_do_dia');
 
-  const previa = screen.getByRole('figure', { name: 'Prévia da mensagem' });
-  const campo = screen.getByLabelText(modelo.variables[0]);
-  await userEvent.type(campo, 'Maria');
-  expect(previa).toHaveTextContent('Maria');
-  expect(screen.getByRole('button', { name: 'Copiar mensagem' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /sincronizar/i }));
+  await waitFor(() => expect(syncTemplates).toHaveBeenCalledWith('conta-1'));
+  await waitFor(() => expect(getTemplates).toHaveBeenCalledTimes(2));
+});
+
+it('falha ao carregar não vira "nenhum modelo"', async () => {
+  getTemplates.mockRejectedValue(new Error('rede'));
+  tela();
+  expect(await screen.findByText(/não foi possível carregar os modelos/i)).toBeInTheDocument();
+  expect(screen.queryByText(/nenhum modelo/i)).not.toBeInTheDocument();
+});
+
+it('conta sem modelo oferece sincronizar', async () => {
+  getTemplates.mockResolvedValue({ data: { results: [] } });
+  tela();
+  expect(await screen.findByText(/nenhum modelo/i)).toBeInTheDocument();
+});
+
+it('sem WhatsApp conectado, oferece conectar', async () => {
+  listarPerfis.mockResolvedValue({ results: [] });
+  tela();
+  fireEvent.click(await screen.findByRole('button', { name: /conectar whatsapp/i }));
+  expect(screen.getByTestId('onde')).toHaveTextContent('/connections');
 });

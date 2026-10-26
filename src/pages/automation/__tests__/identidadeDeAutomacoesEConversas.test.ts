@@ -15,7 +15,6 @@ import { describe, expect, it } from '@jest/globals';
 const PAGINAS = [
   'marketing/AutomationsPage.tsx',
   'messenger/MessengerInbox.tsx',
-  'conversations/ConversationsPage.tsx',
   'automation/AutoMessagesPage.tsx',
   'automation/IntentStatsPage.tsx',
 ];
@@ -76,8 +75,7 @@ describe.each(PAGINAS)('%s', (rel) => {
 describe('estado de coisa vem de SeloDeEstado + estados.ts', () => {
   it.each([
     ['marketing/AutomationsPage.tsx', 'estadoDeAutomacao'],
-    ['automation/AutoMessagesPage.tsx', 'estadoDeAutomacao'],
-    ['conversations/ConversationsPage.tsx', 'estadoDeConversa'],
+    ['automation/TextosDosAvisos.tsx', 'estadoDeAutomacao'],
   ])('%s usa %s', (rel, mapa) => {
     const fonte = ler(rel);
     expect(fonte).toMatch(/SeloDeEstado/);
@@ -85,7 +83,7 @@ describe('estado de coisa vem de SeloDeEstado + estados.ts', () => {
   });
 
   it('liga/desliga de automação é o Switch do kit', () => {
-    for (const rel of ['marketing/AutomationsPage.tsx', 'automation/AutoMessagesPage.tsx']) {
+    for (const rel of ['marketing/AutomationsPage.tsx', 'automation/TextosDosAvisos.tsx']) {
       expect(ler(rel)).toMatch(/<Switch\b/);
     }
   });
@@ -97,7 +95,7 @@ describe('chassi', () => {
   });
 
   it('números de página são KpiGrid, não cartões à mão', () => {
-    for (const rel of ['conversations/ConversationsPage.tsx', 'automation/IntentStatsPage.tsx']) {
+    for (const rel of ['automation/IntentStatsPage.tsx']) {
       expect(ler(rel)).toMatch(/<KpiGrid\b/);
     }
   });

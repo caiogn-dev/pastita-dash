@@ -6,8 +6,13 @@
  * a de amanhã, grátis para quem falou em 24 h ou pelo modelo aprovado para
  * todos, e um card por dia da semana. O backend cria a campanha e ela aparece
  * no histórico daqui e em Campanha WhatsApp.
+ *
+ * 26/10: "Enviar agora" pergunta antes, dizendo para quantas pessoas vai (um
+ * clique disparava para a lista inteira), e cada pré-requisito que falta tem
+ * o botão que resolve: Conectar, Abrir produtos, Ver modelos.
  */
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
@@ -27,6 +32,7 @@ import {
   type ColunaDaTabela,
 } from '../../../components/ui';
 import { useStore } from '../../../hooks/useStore';
+import { useConfirm } from '../../../hooks/useConfirm';
 import { useRootStore } from '../../../stores/rootStore';
 import { updateStore } from '../../../services/storesApi';
 import { campaignsService } from '../../../services/campaigns';
@@ -44,6 +50,8 @@ export const PromocaoDoDiaPage: React.FC = () => {
   const [enviando, setEnviando] = useState(false);
   const [subindo, setSubindo] = useState<string | null>(null);
   const inputs = useRef<Record<string, HTMLInputElement | null>>({});
+  const navigate = useNavigate();
+  const [ConfirmDialog, confirm] = useConfirm();
 
   const chave = ['promo-do-dia', loja];
   const consulta = useQuery({ queryKey: chave, queryFn: () => promoDoDiaService.painel(loja), enabled: !!loja });
@@ -95,7 +103,27 @@ export const PromocaoDoDiaPage: React.FC = () => {
     void gravar({ ...config, cards });
   };
 
+  /** Para quantas pessoas vai: grátis = quem está na janela de 24 h; modelo = todos. */
+  const publico = async (): Promise<number | null> => {
+    try {
+      const j = await campaignsService.getJanelaDaAudiencia({ store: loja });
+      return config.modo === 'modelo' ? j.dentro + j.fora : j.dentro;
+    } catch {
+      return null;
+    }
+  };
+
   const enviarAgora = async () => {
+    const quantos = await publico();
+    const ok = await confirm({
+      title: 'Enviar a promoção agora',
+      message: quantos === null
+        ? 'A promoção de hoje sai agora para o público escolhido.'
+        : `A promoção de hoje sai agora para ${quantos} ${quantos === 1 ? 'pessoa' : 'pessoas'}.`,
+      confirmText: 'Enviar',
+      variant: 'warning',
+    });
+    if (!ok) return;
     setEnviando(true);
     try {
       const r = await promoDoDiaService.dispararAgora(loja);
@@ -133,7 +161,10 @@ export const PromocaoDoDiaPage: React.FC = () => {
       ) : d && (
         <>
           {!d.tem_whatsapp && (
-            <EmptyState titulo="A loja não tem WhatsApp conectado" descricao="Conecte o WhatsApp em Configurações para a promoção sair por aqui." />
+            <EmptyState
+              titulo="A loja não tem WhatsApp conectado"
+              acao={<Button onClick={() => navigate('/connections')}>Conectar</Button>}
+            />
           )}
 
           <Secao titulo="Quando e como sai">
@@ -152,7 +183,7 @@ export const PromocaoDoDiaPage: React.FC = () => {
                 valor={config.modo}
                 onMudar={(v) => void gravar({ ...config, modo: v as ConfigDaPromoDoDia['modo'] })}
               />
-              {config.modo === 'modelo' && (
+              {config.modo === 'modelo' && (d.modelos.length > 0 ? (
                 <Select
                   rotulo="Modelo aprovado"
                   opcoes={d.modelos.map((m) => ({ valor: m, rotulo: m }))}
@@ -160,7 +191,12 @@ export const PromocaoDoDiaPage: React.FC = () => {
                   onMudar={(v) => void gravar({ ...config, modelo: v })}
                   vazio="Escolha o modelo"
                 />
-              )}
+              ) : (
+                <div className="flex items-center justify-between gap-3 text-sm text-fg-token">
+                  <span>Nenhum modelo aprovado</span>
+                  <Button size="sm" variant="outline" onClick={() => navigate('/marketing/whatsapp/templates')}>Ver modelos</Button>
+                </div>
+              ))}
               <div className="sm:col-span-2">
                 <Textarea
                   label="Texto (envio grátis)"
@@ -217,7 +253,10 @@ export const PromocaoDoDiaPage: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <EmptyState titulo="Nenhuma promoção para esse dia" descricao="Marque o dia da semana e o preço promocional nos produtos. Sem promoção cadastrada, nada sai." />
+              <EmptyState
+                titulo="Nenhuma promoção para esse dia"
+                acao={<Button variant="outline" onClick={() => navigate(`/stores/${loja}/products`)}>Abrir produtos</Button>}
+              />
             )}
           </Secao>
 
@@ -230,6 +269,7 @@ export const PromocaoDoDiaPage: React.FC = () => {
           </Secao>
         </>
       )}
+      {ConfirmDialog}
     </PageShell>
   );
 };
