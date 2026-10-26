@@ -125,4 +125,27 @@ describe('Indicações — vazio enganoso', () => {
     );
     expect(screen.queryByText('Divulgador da loja A')).toBeNull();
   });
+
+  it('troca de loja com falha não mostra as indicações da loja anterior', async () => {
+    (cashbackService.indicacoes as jest.Mock)
+      .mockResolvedValueOnce(resposta)
+      .mockRejectedValueOnce(new Error('offline'));
+
+    const { rerender } = render(
+      <MemoryRouter>
+        <IndicacoesCard storeSlug="loja-a" />
+      </MemoryRouter>,
+    );
+    expect(await screen.findAllByText(/Elisangela/)).not.toHaveLength(0);
+
+    rerender(
+      <MemoryRouter>
+        <IndicacoesCard storeSlug="loja-b" />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Não foi possível carregar as indicações')).toBeInTheDocument();
+    expect(screen.queryByText(/Elisangela/)).not.toBeInTheDocument();
+  });
 });
+

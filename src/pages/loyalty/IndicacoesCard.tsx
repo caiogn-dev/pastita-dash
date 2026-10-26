@@ -3,6 +3,7 @@ import { Card, EmptyState, FalhaAoCarregar, RankedList, type RankedItem } from '
 import { ShareIcon } from '@heroicons/react/24/outline';
 import { formatCurrency } from '../../utils/formatters';
 import { cashbackService } from '../../services/cashback';
+import { estadoDaLista } from '../../utils/estadoDaLista';
 import { urlDeClienteBuscado } from '../customers/buscaPelaUrl';
 import {
   ordenarIndicadores, rotuloDoAmigo, rotuloDoIndicador, telefoneLegivel,
@@ -38,6 +39,7 @@ export const IndicacoesCard: React.FC<{ storeSlug: string }> = ({ storeSlug }) =
   const [porIndicador, setPorIndicador] = useState<IndicadorAgregado[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(false);
+  const [temDados, setTemDados] = useState(false);
 
   // Guarda monotônica contra resposta obsoleta. Não dá para usar um `vivo` de
   // fechamento aqui: o retry chama `carregar` como callback de evento
@@ -56,6 +58,7 @@ export const IndicacoesCard: React.FC<{ storeSlug: string }> = ({ storeSlug }) =
         if (req !== requisicaoRef.current) return; // busca superada (ex.: troca de loja)
         setLinhas(d.indicacoes || []);
         setPorIndicador(ordenarIndicadores(d.por_indicador || []));
+        setTemDados(true);
       })
       // Sem o flag, a falha ficava muda e a lista vazia virava o vazio
       // CONFIANTE "Nenhuma indicação ainda" — dizendo à loja que ninguém
@@ -64,16 +67,30 @@ export const IndicacoesCard: React.FC<{ storeSlug: string }> = ({ storeSlug }) =
       .finally(() => { if (req === requisicaoRef.current) setCarregando(false); });
   }, [storeSlug]);
 
+  // As linhas em memória são da loja anterior: sem zerar, uma falha na loja
+  // nova contaria como "cache" e mostraria as indicações de outro tenant.
+  useEffect(() => {
+    setLinhas([]);
+    setPorIndicador([]);
+    setTemDados(false);
+  }, [storeSlug]);
+
   // Ao trocar de loja, `carregar` roda de novo e incrementa `requisicaoRef`,
   // superando sozinho qualquer busca anterior em voo — não precisa de cleanup.
   useEffect(() => carregar(), [carregar]);
 
-  if (carregando) {
+  const estado = estadoDaLista({
+    temDados,
+    buscando: carregando,
+    falhou: erro,
+    quantidade: linhas.length,
+  });
+
+  if (estado === 'carregando') {
     return <Card title="Indicações"><div className="h-24 animate-pulse rounded bg-surface-2" /></Card>;
   }
 
-  // Falha SEM dado em cache: erro acionável no lugar do vazio enganoso.
-  if (erro && !linhas.length) {
+  if (estado === 'falhou') {
     return (
       <Card title="Indicações">
         <FalhaAoCarregar
@@ -84,7 +101,7 @@ export const IndicacoesCard: React.FC<{ storeSlug: string }> = ({ storeSlug }) =
     );
   }
 
-  if (!linhas.length) {
+  if (estado === 'vazio') {
     return (
       <Card title="Indicações">
         <EmptyState
