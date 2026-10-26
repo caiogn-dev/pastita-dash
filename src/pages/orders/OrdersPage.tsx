@@ -74,6 +74,7 @@ import { pedidosDaColuna, ENTREGUES_DE_HOJE } from './pedidosDoQuadro';
 import { filtrarPedidosDoQuadro } from './buscaNoQuadro';
 import type { ColumnId } from './orderColumns';
 import { getStageStart, getAvgPrepMinutes, prazoDoAgendado, situacaoDoPreparo } from './orderSla';
+import { lojaTemUber } from './uberDaLoja';
 import { proximaAcaoDoPedido } from './proximaAcao';
 import { saldoDoPedido } from './saldoDoPedido';
 import { formatCurrency } from '../../utils/formatters';
@@ -185,7 +186,7 @@ const OrderCardBase: React.FC<CardProps> = ({
       : getElapsedUrgency(elapsed, order.status);
   const isPickup = order.delivery_method === 'pickup' || order.delivery_method === 'digital';
   const canRequestUber =
-    storeSlug &&
+    onUberClick && storeSlug &&
     order.delivery_method === 'delivery' &&
     ['confirmed', 'preparing'].includes(order.status) &&
     (!order.delivery_provider || order.delivery_provider === 'none');
@@ -602,6 +603,8 @@ export const OrdersPage: React.FC = () => {
     patchOrder(o.id, { status: o.status, payment_status: o.payment_status });
   }, [patchOrder]);
 
+  const uberLigado = useRootStore((s) =>
+    lojaTemUber(s.stores.find((l) => l.id === storeQuery || l.slug === storeQuery)));
   const handleUberClick = useCallback((o: StoreOrder) => {
     setUberModalOrderId(o.id);
   }, []);
@@ -909,7 +912,7 @@ export const OrdersPage: React.FC = () => {
                           onPay={handlePay}
                           onCancel={handleCancel}
                           onDetail={handleDetail}
-                          onUberClick={handleUberClick}
+                          onUberClick={uberLigado ? handleUberClick : undefined}
                           storeSlug={storeSlug || undefined}
                         />
                       ))
