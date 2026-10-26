@@ -122,3 +122,13 @@ it('o link de avaliação do Google se configura aqui (saiu de Configurações �
   tela();
   expect(await screen.findByRole('button', { name: /Link do Google/ })).toBeInTheDocument();
 });
+
+describe('cada avaliação leva ao pedido (26/10)', () => {
+  it('"Ver pedido" abre o pedido avaliado — de lá se fala com o cliente', async () => {
+    listar.mockResolvedValue(LISTA);
+    relatorio.mockResolvedValue(RESUMO);
+    tela();
+    const link = await screen.findByRole('link', { name: /ver pedido CE-123/i });
+    expect(link).toHaveAttribute('href', '/stores/ce-saladas/orders/o1');
+  });
+});

@@ -10,6 +10,7 @@
  * alguma coisa a consertar. A tela trata isso como pauta, não como placar.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { StarIcon } from '@heroicons/react/24/solid';
 
 import { Button, EmptyState, Modal, PageShell } from '../../components/ui';
@@ -42,7 +43,7 @@ const Estrelas: React.FC<{ nota: number }> = ({ nota }) => (
   </span>
 );
 
-const LinhaDaAvaliacao: React.FC<{ avaliacao: Avaliacao }> = ({ avaliacao }) => {
+const LinhaDaAvaliacao: React.FC<{ avaliacao: Avaliacao; loja?: string }> = ({ avaliacao, loja }) => {
   const pratos = (avaliacao.items || []).filter((i) => i.product_name);
   return (
     <li className="flex flex-col gap-2 border-b border-border-token px-5 py-4 last:border-b-0">
@@ -50,7 +51,19 @@ const LinhaDaAvaliacao: React.FC<{ avaliacao: Avaliacao }> = ({ avaliacao }) => 
         <Estrelas nota={avaliacao.rating} />
         <span className="font-semibold text-fg-token">{avaliacao.customer_name || 'Cliente'}</span>
         {avaliacao.order_number && (
-          <span className="text-caption text-fg-muted-token">pedido {avaliacao.order_number}</span>
+          // A avaliação era só leitura (26/10): do pedido o dono vê o que foi
+          // servido e fala com o cliente.
+          loja && avaliacao.order ? (
+            <Link
+              to={`/stores/${loja}/orders/${avaliacao.order}`}
+              aria-label={`Ver pedido ${avaliacao.order_number}`}
+              className="text-caption text-brand hover:underline"
+            >
+              pedido {avaliacao.order_number}
+            </Link>
+          ) : (
+            <span className="text-caption text-fg-muted-token">pedido {avaliacao.order_number}</span>
+          )
         )}
         <time className="ml-auto text-caption text-fg-muted-token" dateTime={avaliacao.created_at}>
           {quando(avaliacao.created_at)}
@@ -214,7 +227,7 @@ export const AvaliacoesPage: React.FC = () => {
             />
           ) : (
             <ul className="superficie">
-              {lista.map((a) => <LinhaDaAvaliacao key={a.id} avaliacao={a} />)}
+              {lista.map((a) => <LinhaDaAvaliacao key={a.id} avaliacao={a} loja={slug} />)}
             </ul>
           )}
         </div>
