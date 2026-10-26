@@ -1,21 +1,22 @@
 /**
- * Vale, vale por QR Code, acréscimo e nota fiscal gravam fora da loja, mas
- * entram na mesma barra e no mesmo Salvar (20/10). Antes cada um tinha o seu
- * botão: mexia-se em dois, salvava-se um, e o outro se perdia ao sair da aba.
+ * Configurações → Pagamentos (26/10). O item do menu se chamava "Pagamentos"
+ * e abria um EXTRATO; conectar o Mercado Pago, vale e acréscimo moravam
+ * escondidos em Geral → Recebimento. Agora o item configura como a loja
+ * recebe, e o extrato virou Financeiro → Pagamentos recebidos.
+ *
+ * Vale, vale por QR Code e acréscimo gravam cada um no seu endpoint, mas
+ * entram na mesma barra e no mesmo Salvar (20/10).
  */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 jest.mock('react-hot-toast', () => ({ toast: { success: jest.fn(), error: jest.fn() } }));
 jest.mock('../../../services/logger', () => ({ __esModule: true, default: { error: jest.fn() } }));
 jest.mock('../../../hooks', () => ({ useStore: () => ({ storeId: 'ce-saladas', stores: [] }) }));
-jest.mock('../LocalizacaoNoGoogle', () => ({ LocalizacaoNoGoogle: () => null }));
-jest.mock('../RecebimentoSection', () => ({ __esModule: true, default: () => null }));
-jest.mock('../VoucherSection', () => ({ __esModule: true, default: () => null }));
-jest.mock('../NotaFiscalSection', () => ({ __esModule: true, default: () => null }));
-jest.mock('../CaixaDinheiroSection', () => ({ __esModule: true, default: () => null }));
-jest.mock('../AvisoFilaHumanaSection', () => ({ __esModule: true, default: () => null }));
+jest.mock('../../stores/RecebimentoSection', () => ({ __esModule: true, default: () => null }));
+jest.mock('../../stores/VoucherSection', () => ({ __esModule: true, default: () => null }));
+jest.mock('../../stores/CaixaDinheiroSection', () => ({ __esModule: true, default: () => null }));
 jest.mock('../../../services/payments', () => ({
   paymentsService: {
     getVoucherBrands: jest.fn().mockResolvedValue({ manual_brands: [{ value: 'volus', label: 'Volus' }] }),
@@ -38,12 +39,12 @@ jest.mock('../../../services/storesApi', () => ({
 }));
 import * as api from '../../../services/storesApi';
 import { toast } from 'react-hot-toast';
-import { StoreSettingsPage } from '../StoreSettingsPage';
+import { PagamentosDaLojaPage } from '../PagamentosDaLojaPage';
 
 const montar = () =>
   render(
-    <MemoryRouter initialEntries={['/stores/ce-saladas/settings?aba=recebimento']}>
-      <StoreSettingsPage />
+    <MemoryRouter initialEntries={['/stores/ce-saladas/payments']}>
+      <Routes><Route path="/stores/:storeId/payments" element={<PagamentosDaLojaPage />} /></Routes>
     </MemoryRouter>
   );
 
@@ -56,8 +57,8 @@ beforeEach(() => {
   (api.updateStore as jest.Mock).mockResolvedValue(loja);
 });
 
-describe('Configurações: seções de fora da loja no salvar único', () => {
-  it('acréscimo + bandeira + nome: um Salvar grava os três, sem botão por seção', async () => {
+describe('Configurações → Pagamentos: um Salvar para tudo', () => {
+  it('acréscimo + bandeira: um Salvar grava os dois, sem botão por seção', async () => {
     montar();
     const acrescimo = await screen.findByLabelText('Acréscimo (%)');
     expect(screen.queryByRole('button', { name: 'Salvar' })).toBeNull();
@@ -65,18 +66,11 @@ describe('Configurações: seções de fora da loja no salvar único', () => {
     fireEvent.change(acrescimo, { target: { value: '5' } });
     fireEvent.click(await screen.findByLabelText('Volus'));
     expect(barra()).toHaveTextContent('2 alterações');
-    expect(screen.getByRole('tab', { name: /Recebimento.*alterado/i })).toBeInTheDocument();
-
-    // Trocar de aba não joga fora o que foi digitado.
-    fireEvent.click(screen.getByRole('tab', { name: /^Loja/i }));
-    fireEvent.change(screen.getByLabelText('Nome da loja'), { target: { value: 'Cê' } });
-    expect(barra()).toHaveTextContent('3 alterações');
 
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
-    await waitFor(() => expect(api.updateStore).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(api.updateStore).toHaveBeenCalledTimes(2));
     const payloads = (api.updateStore as jest.Mock).mock.calls.map(([, p]) => p);
     expect(payloads).toEqual(expect.arrayContaining([
-      expect.objectContaining({ name: 'Cê' }),
       { voucher_fee_percent: 5 },
       { vale_por_link_brands: ['volus'] },
     ]));
@@ -103,19 +97,4 @@ describe('Configurações: seções de fora da loja no salvar único', () => {
     expect(barra()).toBeNull();
   });
 
-  // 21/10: o atributo `hidden` perdia para a classe `flex` no navegador (o jsdom
-  // não aplica CSS, então o teste passava) e o Mercado Pago/vale aparecia
-  // embaixo de Avaliações, Rastreamento… Esconder tem que ser por classe.
-  it('Recebimento e Nota fiscal só aparecem na aba deles', async () => {
-    const { container } = montar();
-    await screen.findByLabelText('Acréscimo (%)');
-    const recebimento = container.querySelector('[data-aba="recebimento"]')!;
-    const fiscal = container.querySelector('[data-aba="fiscal"]')!;
-    expect(recebimento).not.toHaveClass('hidden');
-    expect(fiscal).toHaveClass('hidden');
-    fireEvent.click(screen.getByRole('tab', { name: /Avaliações/i }));
-    expect(recebimento).toHaveClass('hidden');
-    expect(recebimento).not.toHaveClass('flex');
-    expect(fiscal).toHaveClass('hidden');
-  });
 });

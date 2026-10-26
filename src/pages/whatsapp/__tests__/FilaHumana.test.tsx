@@ -12,6 +12,7 @@ import { act, render, screen, waitFor, fireEvent, within } from '@testing-librar
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { HandoverRequestsPage } from '../HandoverRequestsPage';
 
+jest.mock('../../../services/storesApi', () => ({ getStore: jest.fn(), updateStore: jest.fn() }));
 jest.mock('../../../hooks/useStore', () => ({
   __esModule: true,
   useStore: () => ({ storeId: 'loja-1', storeSlug: 'ce-saladas', storeName: 'Cê Saladas', store: null }),
@@ -210,4 +211,9 @@ it('falha na consulta não vira "ninguém esperando"', async () => {
 
   expect(await screen.findByText(/não foi possível carregar a fila/i)).toBeInTheDocument();
   expect(screen.queryByText(/ninguém esperando/i)).not.toBeInTheDocument();
+});
+
+it('o aviso de fila no WhatsApp se configura aqui (saiu de Configurações → Geral)', async () => {
+  renderizar();
+  expect(await screen.findByRole('button', { name: /Aviso no WhatsApp/ })).toBeInTheDocument();
 });

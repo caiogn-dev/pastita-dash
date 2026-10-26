@@ -11,13 +11,6 @@ jest.mock('react-hot-toast', () => ({ toast: { success: jest.fn(), error: jest.f
 jest.mock('../../../services/logger', () => ({ __esModule: true, default: { error: jest.fn() } }));
 jest.mock('../../../hooks', () => ({ useStore: () => ({ storeId: 'ce-saladas', stores: [] }) }));
 jest.mock('../LocalizacaoNoGoogle', () => ({ LocalizacaoNoGoogle: () => null }));
-jest.mock('../RecebimentoSection', () => ({ __esModule: true, default: () => null }));
-jest.mock('../VoucherSection', () => ({ __esModule: true, default: () => null }));
-jest.mock('../ValePorLinkSection', () => ({ __esModule: true, default: () => null }));
-jest.mock('../AcrescimoDoValeSection', () => ({ __esModule: true, default: () => null }));
-jest.mock('../NotaFiscalSection', () => ({ __esModule: true, default: () => null }));
-jest.mock('../CaixaDinheiroSection', () => ({ __esModule: true, default: () => null }));
-jest.mock('../AvisoFilaHumanaSection', () => ({ __esModule: true, default: () => null }));
 
 const loja = {
   id: 'uuid-1',
@@ -82,17 +75,12 @@ describe('Configurações: um salvar só', () => {
     expect(screen.getByRole('region', { name: /alterações não salvas/i })).toHaveTextContent('1 alteração');
   });
 
-  it('nome + horário + avaliação viram UMA gravação da loja, sem perder o metadata', async () => {
+  it('nome + horário viram UMA gravação da loja', async () => {
     montar();
     fireEvent.change(await screen.findByLabelText('Nome da loja'), { target: { value: 'Cê' } });
 
-    fireEvent.click(screen.getByRole('tab', { name: /Entrega e horários/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /Horários/i }));
     fireEvent.click(screen.getByRole('button', { name: /Domingo/ }));
-
-    fireEvent.click(screen.getByRole('tab', { name: /Avaliações/i }));
-    fireEvent.change(screen.getByLabelText('Link de avaliação do Google'), {
-      target: { value: ' https://g.page/r/x/review ' },
-    });
 
     // A seção mexida e não salva fica marcada no menu.
     expect(screen.getByRole('tab', { name: /Loja.*alterado/i })).toBeInTheDocument();
@@ -102,7 +90,7 @@ describe('Configurações: um salvar só', () => {
     const [, payload] = (api.updateStore as jest.Mock).mock.calls[0];
     expect(payload.name).toBe('Cê');
     expect(payload.operating_hours.sunday.is_open).toBe(true);
-    expect(payload.metadata).toEqual({ google_review_url: 'https://g.page/r/x/review', outro: 1 });
+    expect(payload.metadata).toBeUndefined();
     expect(api.updateStoreMetaTracking).not.toHaveBeenCalled();
   });
 
@@ -132,24 +120,14 @@ describe('Configurações: um salvar só', () => {
     expect(api.updateStore).not.toHaveBeenCalled();
   });
 
-  // 14/10: o cliente via "~3 min" (trajeto) e reclamava de demora dentro do
-  // prazo. O dono define a faixa que o cliente vê ("30–45 min").
-  it('prazo de entrega para o cliente entra no mesmo salvar', async () => {
+  // Prazo de entrega e entrega/retirada saíram daqui em 26/10: moram em
+  // Configurações → Entrega (ComoOClienteRecebe.test.tsx).
+  it('a tela Geral não fala mais de entrega', async () => {
     montar('/stores/ce-saladas/settings?aba=entrega');
-    fireEvent.change(await screen.findByLabelText('Prazo mínimo'), { target: { value: '30' } });
-    fireEvent.change(screen.getByLabelText('Prazo máximo'), { target: { value: '45' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
-    await waitFor(() => expect(api.updateStore).toHaveBeenCalledTimes(1));
-    expect((api.updateStore as jest.Mock).mock.calls[0][1]).toMatchObject({ prazo_entrega_min: 30, prazo_entrega_max: 45 });
-  });
-
-  it('prazo invertido não grava', async () => {
-    montar('/stores/ce-saladas/settings?aba=entrega');
-    fireEvent.change(await screen.findByLabelText('Prazo mínimo'), { target: { value: '50' } });
-    fireEvent.change(screen.getByLabelText('Prazo máximo'), { target: { value: '40' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
-    expect(await screen.findByText(/mínimo não pode passar do máximo/i)).toBeInTheDocument();
-    expect(api.updateStore).not.toHaveBeenCalled();
+    await screen.findByLabelText('Tempo padrão');
+    expect(screen.queryByLabelText('Prazo mínimo')).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Entrega' })).toBeNull();
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Loja', 'Horários', 'Anúncios e medição']);
   });
 
   // 20/10: o tempo de preparo tinha um "Salvar" só dele no meio da aba —
@@ -159,7 +137,7 @@ describe('Configurações: um salvar só', () => {
     const campo = await screen.findByLabelText('Tempo padrão');
     expect(campo).toHaveValue(20);
     fireEvent.change(campo, { target: { value: '35' } });
-    expect(screen.getByRole('tab', { name: /Entrega.*alterado/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Horários.*alterado/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
     await waitFor(() => expect(api.updateStore).toHaveBeenCalledTimes(1));
     expect((api.updateStore as jest.Mock).mock.calls[0][1]).toEqual({ default_prep_minutes: 35 });

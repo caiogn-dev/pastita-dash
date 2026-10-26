@@ -43,8 +43,10 @@ describe('menu enxuto', () => {
   // 39 desde 22/10: o dono pediu "Mensagens prontas" no menu — o texto que o
   // bot manda sozinho só era alcançável por Modelos de mensagem → Editar.
   // 40 no mesmo dia: "Equipe e entregas" (só se chegava por um botão no Histórico).
-  it('o menu inteiro cabe em até 40 destinos', () => {
-    expect(destinos().length).toBeLessThanOrEqual(40);
+  // 41 em 26/10: o extrato de Pagamentos virou 'Pagamentos recebidos' em
+  // Financeiro, e Configurações → Pagamentos passou a configurar o recebimento.
+  it('o menu inteiro cabe em até 41 destinos', () => {
+    expect(destinos().length).toBeLessThanOrEqual(41);
   });
 
   it.each(FORA_DO_MENU)('a rota de %s continua no roteador', (_nome, href) => {

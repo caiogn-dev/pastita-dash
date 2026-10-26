@@ -32,6 +32,12 @@ jest.mock('../../../services/api', () => ({
   getErrorMessage: (e: unknown) => (e instanceof Error ? e.message : String(e)),
 }));
 
+// A configuração fiscal mora aqui desde 26/10 (antes: Geral → Nota fiscal).
+jest.mock('../../stores/NotaFiscalSection', () => ({
+  __esModule: true,
+  default: ({ storeId }: { storeId: string }) => <div data-testid="config-fiscal">{storeId}</div>,
+}));
+
 jest.mock('../../../hooks/useStore', () => ({
   useStore: () => ({ storeId: 'id-loja', storeSlug: 'loja', storeName: 'Loja' }),
 }));
@@ -110,13 +116,22 @@ describe('NotasFiscaisPage', () => {
     expect(screen.queryByText(/Nenhuma nota/)).not.toBeInTheDocument();
   });
 
-  it('loja que não emite é levada para a configuração', async () => {
+  it('loja que não emite configura aqui mesmo, sem sair da tela', async () => {
     mocked.listarNotas.mockResolvedValue({
       habilitado: false, ambiente: 'homologacao', resumo: { ...RESUMO, autorizadas_no_mes: 0 }, notas: [],
     } as never);
     renderizar();
-    const atalho = await screen.findByRole('link', { name: /Configurar emissão/ });
-    expect(atalho).toHaveAttribute('href', '/stores/loja/settings?aba=fiscal');
+    fireEvent.click(await screen.findByRole('button', { name: /Configurar emissão/ }));
+    expect(await screen.findByTestId('config-fiscal')).toHaveTextContent('loja');
+  });
+
+  it('loja que já emite também alcança a configuração', async () => {
+    mocked.listarNotas.mockResolvedValue({
+      habilitado: true, ambiente: 'producao', resumo: RESUMO, notas: [NOTA],
+    } as never);
+    renderizar();
+    fireEvent.click(await screen.findByRole('button', { name: /Configuração/ }));
+    expect(await screen.findByTestId('config-fiscal')).toBeInTheDocument();
   });
 
   it('homologação fica marcada na tela — nota de teste não é nota', async () => {

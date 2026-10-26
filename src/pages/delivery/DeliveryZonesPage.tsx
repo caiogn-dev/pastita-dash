@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ComoOClienteRecebe } from './ComoOClienteRecebe';
 import { Link, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import logger from '../../services/logger';
@@ -35,12 +36,6 @@ const formatKm = (value?: number | string | null) => {
   const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? '0'));
   // "2,5" e não "2.50": número de lojista brasileiro (auditoria 20/10).
   return formatNumber(Number.isFinite(numeric) ? numeric : 0, { maximumFractionDigits: 2 });
-};
-
-const formatDays = (value?: number | string | null) => {
-  const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? '0'));
-  if (Number.isNaN(numeric)) return '0';
-  return String(Math.round(numeric));
 };
 
 const DISTANCE_BANDS = [
@@ -313,10 +308,11 @@ export const DeliveryZonesPage: React.FC = () => {
       titulo="Entrega"
       acoes={
         <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="w-5 h-5" />}>
-          Nova Faixa
+          Nova faixa
         </Button>
       }
     >
+      {(storeSlug || storeId) && <ComoOClienteRecebe loja={(storeSlug || storeId)!} />}
 
       {/* Store Location Card - Read Only */}
       <Card className="p-4 md:p-6">
@@ -525,11 +521,10 @@ export const DeliveryZonesPage: React.FC = () => {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-4 max-lg:grid-cols-2 gap-3 md:gap-4">
-          <StatCard label="Total de Faixas" value={stats.total} />
+        <div className="grid grid-cols-3 max-lg:grid-cols-2 gap-3 md:gap-4">
+          <StatCard label="Faixas" value={stats.total} />
           <StatCard label="Ativas" value={stats.active} tone="brand" />
           <StatCard label="Valor Médio" value={formatCurrency(stats.avg_fee)} />
-          <StatCard label="Prazo Médio" value={`${formatDays(stats.avg_days)} dias`} />
         </div>
       )}
 
@@ -622,12 +617,6 @@ export const DeliveryZonesPage: React.FC = () => {
                 {formatCurrency(z.delivery_fee)}
               </span>
             ),
-          },
-          {
-            chave: 'prazo',
-            cabecalho: 'Prazo',
-            render: (z) =>
-              `${z.estimated_days} ${z.estimated_days === 1 ? 'dia útil' : 'dias úteis'}`,
           },
           {
             chave: 'status',
@@ -749,18 +738,8 @@ export const DeliveryZonesPage: React.FC = () => {
                 Cobrado do cliente no checkout.
               </p>
             </div>
-            <div>
-              <Input
-                label="Prazo de entrega (dias) *"
-                type="number"
-                value={formData.estimated_days}
-                onChange={(e) => setFormData({ ...formData, estimated_days: parseInt(e.target.value) || 1 })}
-                min="1"
-              />
-              <p className="mt-1 text-caption text-fg-muted-token">
-                Aparece como previsão no pedido.
-              </p>
-            </div>
+            {/* "Prazo em dias úteis" saiu (26/10): delivery de comida promete
+                minutos, e o prazo da loja mora em "Como o cliente recebe". */}
           </div>
 
           {/* Era um checkbox de 16px espremido ao lado de um campo numérico,

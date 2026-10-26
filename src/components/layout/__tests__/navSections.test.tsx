@@ -52,9 +52,12 @@ describe('arquitetura por tarefa (26/10): cada tela mora onde o lojista a procur
     expect(hrefs('Balcão')).toEqual(['/stores/loja-x/pdv', '/stores/loja-x/cash']);
   });
 
-  it('Financeiro junta cobrar e faturar: link de pagamento e notas fiscais', () => {
+  it('Financeiro junta cobrar, conferir e faturar', () => {
+    // 'Pagamentos recebidos' era o item Configurações → Pagamentos (26/10):
+    // um extrato no lugar onde o dono procurava conectar o Mercado Pago.
     expect(acha('Financeiro').items.map((i) => [i.name, i.href])).toEqual([
       ['Link de pagamento', '/payments/link'],
+      ['Pagamentos recebidos', '/stores/loja-x/pagamentos-recebidos'],
       ['Notas fiscais', '/stores/loja-x/notas-fiscais'],
     ]);
   });

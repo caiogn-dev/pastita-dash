@@ -15,11 +15,13 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
-  ArrowPathIcon, ArrowUturnLeftIcon, ChatBubbleLeftRightIcon, ClockIcon, HandRaisedIcon, UserGroupIcon,
+  ArrowPathIcon, ArrowUturnLeftIcon, BellAlertIcon, ChatBubbleLeftRightIcon, ClockIcon, HandRaisedIcon, UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { conversationsService, type FilaHumana } from '../../services/conversations';
 import { useStore } from '../../hooks/useStore';
-import { Button, EmptyState, FalhaAoCarregar, KpiGrid, PageShell, Secao, SeloDeEstado, Skeleton } from '../../components/ui';
+import { Button, EmptyState, FalhaAoCarregar, KpiGrid, Modal, PageShell, Secao, SeloDeEstado, Skeleton } from '../../components/ui';
+import { getStore, type Store } from '../../services/storesApi';
+import AvisoFilaHumanaSection from '../stores/AvisoFilaHumanaSection';
 import { estadoDaLista } from '../../utils/estadoDaLista';
 import { montarBalcao, type ItemNoBalcao } from './filaHumana';
 import { rotuloDoMotivo } from './motivoDoModoHumano';
@@ -92,6 +94,17 @@ const LinhaDaFila: React.FC<LinhaProps> = ({ item, esperando, acao, erro, onAssu
 
 export const HandoverRequestsPage: React.FC = () => {
   const { storeSlug } = useStore();
+  // "Me avise quando alguém esperar": morava em Configurações → Geral →
+  // Atendimento (26/10), longe da fila que ele vigia.
+  const [lojaDoAviso, setLojaDoAviso] = useState<Store | null>(null);
+  const abrirAviso = async () => {
+    if (!storeSlug) return;
+    try {
+      setLojaDoAviso(await getStore(storeSlug));
+    } catch {
+      toast.error('Não foi possível abrir o aviso.');
+    }
+  };
   const navigate = useNavigate();
   const [fila, setFila] = useState<FilaHumana | null>(null);
   const [buscadoEm, setBuscadoEm] = useState(() => Date.now());
@@ -194,9 +207,14 @@ export const HandoverRequestsPage: React.FC = () => {
       titulo="Esperando atendente"
      
       acoes={(
-        <Button variant="outline" size="sm" leftIcon={<ArrowPathIcon className="h-4 w-4" />} onClick={() => void carregar()}>
-          Atualizar
-        </Button>
+        <>
+          <Button variant="outline" size="sm" leftIcon={<BellAlertIcon className="h-4 w-4" />} onClick={() => void abrirAviso()}>
+            Aviso no WhatsApp
+          </Button>
+          <Button variant="outline" size="sm" leftIcon={<ArrowPathIcon className="h-4 w-4" />} onClick={() => void carregar()}>
+            Atualizar
+          </Button>
+        </>
       )}
     >
       {estado === 'carregando' && <Skeleton className="h-40 w-full" />}
@@ -251,6 +269,9 @@ export const HandoverRequestsPage: React.FC = () => {
           )}
         </div>
       )}
+      <Modal open={lojaDoAviso !== null} onClose={() => setLojaDoAviso(null)} title="Aviso no WhatsApp">
+        {lojaDoAviso && <AvisoFilaHumanaSection loja={lojaDoAviso} onSalvo={() => setLojaDoAviso(null)} />}
+      </Modal>
     </PageShell>
   );
 };

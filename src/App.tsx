@@ -32,6 +32,7 @@ const OrderDetailPage = lazy(() => import('./pages/orders/OrderDetailPage').then
 const HistoricoPedidosPage = lazy(() => import('./pages/orders/HistoricoPedidosPage').then(m => ({ default: m.HistoricoPedidosPage })));
 const ExpedicaoPage = lazy(() => import('./pages/expedicao/ExpedicaoPage'));
 const PaymentsPage = lazy(() => import('./pages/payments/PaymentsPage').then(m => ({ default: m.PaymentsPage })));
+const PagamentosDaLojaPage = lazy(() => import('./pages/payments/PagamentosDaLojaPage').then(m => ({ default: m.PagamentosDaLojaPage })));
 const PaymentLinkPage = lazy(() => import('./pages/payments/PaymentLinkPage').then(m => ({ default: m.PaymentLinkPage })));
 const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const SubscriptionManagementPage = lazy(() => import('./pages/plano/SubscriptionManagementPage'));
@@ -286,7 +287,8 @@ const AppContent: React.FC = () => {
         <Route path="stores/:storeId/coupons" element={<PageBoundary><CouponsPage /></PageBoundary>} />
         <Route path="stores/:storeId/fidelidade" element={<PageBoundary><FidelidadePage /></PageBoundary>} />
         <Route path="stores/:storeId/link-bio" element={<PageBoundary><LinkBioPage /></PageBoundary>} />
-        <Route path="stores/:storeId/payments" element={<PageBoundary><PaymentsPage /></PageBoundary>} />
+        <Route path="stores/:storeId/payments" element={<PageBoundary><PagamentosDaLojaPage /></PageBoundary>} />
+        <Route path="stores/:storeId/pagamentos-recebidos" element={<PageBoundary><PaymentsPage /></PageBoundary>} />
         <Route path="stores/:storeId/settings" element={<PageBoundary><StoreSettingsPage /></PageBoundary>} />
         <Route path="stores/:storeId/aparencia" element={<PageBoundary><StorefrontPage /></PageBoundary>} />
         {/* Endereço antigo: favoritos e links de suporte continuam abrindo. */}

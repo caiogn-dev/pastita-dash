@@ -23,6 +23,7 @@ import {
 } from '../../components/ui';
 import { Loading } from '../../components/common';
 import { useStore } from '../../hooks/useStore';
+import NotaFiscalSection from '../stores/NotaFiscalSection';
 import { getErrorMessage } from '../../services/api';
 import { fiscalService, type NotaDaLoja, type NotasDaLoja } from '../../services/fiscal';
 import { estadoDaLista } from '../../utils/estadoDaLista';
@@ -68,6 +69,7 @@ export const NotasFiscaisPage: React.FC = () => {
   const { storeId: lojaDaRota } = useParams<{ storeId?: string }>();
   const { storeSlug } = useStore();
   const loja = lojaDaRota || storeSlug || '';
+  const [configurando, setConfigurando] = useState(false);
   const [parametros, setParametros] = useSearchParams();
 
   const [dados, setDados] = useState<NotasDaLoja | null>(null);
@@ -312,9 +314,14 @@ export const NotasFiscaisPage: React.FC = () => {
         ? <SeloDeEstado tone="warning">Homologação</SeloDeEstado>
         : undefined}
       acoes={habilitado ? (
-        <Button leftIcon={<DocumentPlusIcon className="h-4 w-4" />} onClick={() => setEmissao({})}>
-          Emitir nota
-        </Button>
+        <>
+          <Button variant="secondary" leftIcon={<Cog6ToothIcon className="h-4 w-4" />} onClick={() => setConfigurando(true)}>
+            Configuração
+          </Button>
+          <Button leftIcon={<DocumentPlusIcon className="h-4 w-4" />} onClick={() => setEmissao({})}>
+            Emitir nota
+          </Button>
+        </>
       ) : undefined}
       filtros={habilitado ? (
         <div className="flex flex-wrap items-center gap-3">
@@ -347,13 +354,9 @@ export const NotasFiscaisPage: React.FC = () => {
           estado="Emissão desligada"
           titulo="Emita NF-e e NFC-e direto dos pedidos"
           acao={(
-            <Link
-              to={`/stores/${loja}/settings?aba=fiscal`}
-              className="inline-flex items-center gap-2 rounded bg-brand px-4 py-2 text-sm font-semibold text-on-brand"
-            >
-              <Cog6ToothIcon className="h-4 w-4" aria-hidden />
+            <Button leftIcon={<Cog6ToothIcon className="h-4 w-4" />} onClick={() => setConfigurando(true)}>
               Configurar emissão
-            </Link>
+            </Button>
           )}
         />
       )}
@@ -399,6 +402,17 @@ export const NotasFiscaisPage: React.FC = () => {
           />
         </>
       )}
+
+      {/* A configuração fiscal morava em Configurações → Geral → Nota fiscal
+          (26/10): quem ia emitir a primeira nota saía desta tela para outra. */}
+      <Modal
+        open={configurando}
+        onClose={() => { setConfigurando(false); recarregar(); }}
+        title="Configuração da nota fiscal"
+        size="lg"
+      >
+        {configurando && <NotaFiscalSection storeId={loja} />}
+      </Modal>
 
       <EmitirNota
         aberto={emissao !== null}

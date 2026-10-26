@@ -20,6 +20,7 @@ import AvaliacoesPage from '../AvaliacoesPage';
 const listar = jest.fn();
 const relatorio = jest.fn();
 
+jest.mock('../../../services/storesApi', () => ({ getStore: jest.fn(), updateStore: jest.fn() }));
 jest.mock('../../../services/avaliacoes', () => ({
   __esModule: true,
   avaliacoesService: { listar: (...a: unknown[]) => listar(...a) },
@@ -115,4 +116,9 @@ it('sem avaliação nenhuma, explica o que traz avaliação', async () => {
   tela();
 
   expect(await screen.findByText(/Nenhuma avaliação ainda/)).toBeInTheDocument();
+});
+
+it('o link de avaliação do Google se configura aqui (saiu de Configurações → Geral)', async () => {
+  tela();
+  expect(await screen.findByRole('button', { name: /Link do Google/ })).toBeInTheDocument();
 });

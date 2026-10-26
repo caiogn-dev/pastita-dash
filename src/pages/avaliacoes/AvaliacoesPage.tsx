@@ -12,7 +12,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StarIcon } from '@heroicons/react/24/solid';
 
-import { EmptyState, PageShell } from '../../components/ui';
+import { Button, EmptyState, Modal, PageShell } from '../../components/ui';
+import { LinkIcon } from '@heroicons/react/24/outline';
+import { LinkDoGoogle } from './LinkDoGoogle';
 import { useStore } from '../../hooks/useStore';
 import { getAnalyticsReport } from '../../services/reports';
 import { avaliacoesService, type Avaliacao } from '../../services/avaliacoes';
@@ -85,6 +87,7 @@ const LinhaDaAvaliacao: React.FC<{ avaliacao: Avaliacao }> = ({ avaliacao }) => 
 export const AvaliacoesPage: React.FC = () => {
   const { store } = useStore();
   const slug = (store as { slug?: string } | null)?.slug;
+  const [linkAberto, setLinkAberto] = useState(false);
   const [nota, setNota] = useState<number | undefined>();
   const [lista, setLista] = useState<Avaliacao[] | null>(null);
   const [resumo, setResumo] = useState<ResumoDeAvaliacoes | null>(null);
@@ -116,6 +119,11 @@ export const AvaliacoesPage: React.FC = () => {
   return (
     <PageShell
       titulo="Avaliações"
+      acoes={slug ? (
+        <Button variant="secondary" leftIcon={<LinkIcon className="h-4 w-4" />} onClick={() => setLinkAberto(true)}>
+          Link do Google
+        </Button>
+      ) : undefined}
      
       filtros={(
         <div className="flex flex-wrap gap-2">
@@ -211,6 +219,10 @@ export const AvaliacoesPage: React.FC = () => {
           )}
         </div>
       )}
+      {/* Morava em Configurações → Geral → Avaliações (26/10). */}
+      <Modal open={linkAberto} onClose={() => setLinkAberto(false)} title="Link de avaliação do Google">
+        {linkAberto && slug && <LinkDoGoogle loja={slug} onSalvo={() => setLinkAberto(false)} />}
+      </Modal>
     </PageShell>
   );
 };

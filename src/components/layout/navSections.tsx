@@ -202,6 +202,7 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
       icon: CurrencyDollarIcon,
       items: [
         { name: 'Link de pagamento', href: '/payments/link',            icon: LinkIcon, tambem: ['cobrança', 'cobrar'] },
+        { name: 'Pagamentos recebidos', href: storeHref('pagamentos-recebidos'), icon: BanknotesIcon, tambem: ['extrato', 'recebido'] },
         { name: 'Notas fiscais',     href: storeHref('notas-fiscais'),  icon: DocumentTextIcon, tambem: ['nf-e', 'nfc-e'] },
       ],
     },
@@ -260,7 +261,8 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
       items: [
         { name: 'Geral',      href: storeHref('settings'),   icon: Cog6ToothIcon, tambem: ['horário', 'turnos'] },
         { name: 'Entrega',    href: storeHref('delivery'),   icon: MapPinIcon, tambem: ['frete', 'zonas', 'raio'] },
-        { name: 'Pagamentos', href: storeHref('payments'),   icon: CreditCardIcon, tambem: ['mercado pago', 'pix'] },
+        // Era um extrato (26/10); agora configura como a loja recebe.
+        { name: 'Pagamentos', href: storeHref('payments'),   icon: CreditCardIcon, tambem: ['mercado pago', 'pix', 'vale', 'recebimento', 'caixa'] },
         { name: 'Aparência da loja', href: storeHref('aparencia'), icon: BuildingStorefrontIcon, tambem: ['storefront', 'vitrine', 'cores', 'logo', 'capa', 'tema'] },
         // Saiu de Etiquetas: a mesma tela configura a COMANDA do pedido.
         { name: 'Impressoras e comanda', href: storeHref('printing'), icon: PrinterIcon, tambem: ['impressora', 'comanda', 'print agent'] },

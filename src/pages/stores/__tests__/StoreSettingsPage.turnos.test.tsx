@@ -9,13 +9,6 @@ jest.mock('react-hot-toast', () => ({ toast: { success: jest.fn(), error: jest.f
 jest.mock('../../../services/logger', () => ({ __esModule: true, default: { error: jest.fn() } }));
 jest.mock('../../../hooks', () => ({ useStore: () => ({ storeId: 'agriao', stores: [] }) }));
 jest.mock('../LocalizacaoNoGoogle', () => ({ LocalizacaoNoGoogle: () => null }));
-jest.mock('../RecebimentoSection', () => ({ __esModule: true, default: () => null }));
-jest.mock('../VoucherSection', () => ({ __esModule: true, default: () => null }));
-jest.mock('../ValePorLinkSection', () => ({ __esModule: true, default: () => null }));
-jest.mock('../AcrescimoDoValeSection', () => ({ __esModule: true, default: () => null }));
-jest.mock('../NotaFiscalSection', () => ({ __esModule: true, default: () => null }));
-jest.mock('../CaixaDinheiroSection', () => ({ __esModule: true, default: () => null }));
-jest.mock('../AvisoFilaHumanaSection', () => ({ __esModule: true, default: () => null }));
 
 const DIA = { is_open: true, open: '08:00', close: '17:00' };
 const loja = {
@@ -43,7 +36,7 @@ import { StoreSettingsPage } from '../StoreSettingsPage';
 const abrir = async () => {
   render(<MemoryRouter initialEntries={['/stores/agriao/settings']}><StoreSettingsPage /></MemoryRouter>);
   await screen.findByLabelText('Nome da loja');
-  fireEvent.click(screen.getByRole('tab', { name: /Entrega e horários/i }));
+  fireEvent.click(screen.getByRole('tab', { name: /Horários/i }));
 };
 
 beforeEach(() => {

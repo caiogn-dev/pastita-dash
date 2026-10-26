@@ -1,18 +1,13 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import {
   BuildingStorefrontIcon,
-  BanknotesIcon,
-  DocumentTextIcon,
   MapPinIcon,
-  TruckIcon,
   ClockIcon,
   PauseCircleIcon,
   ChartBarIcon,
-  StarIcon,
   ArrowPathIcon,
-  ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline';
 import {
   getStore,
@@ -26,7 +21,6 @@ import { useStore } from '../../hooks';
 import logger from '../../services/logger';
 import {
   Card,
-  StatCard,
   PageShell,
   PageTabs,
   BarraDeAlteracoes,
@@ -35,16 +29,6 @@ import {
   Input,
 } from '../../components/ui';
 import { Switch } from '../../components/common';
-import { cn } from '../../utils/cn';
-import { aoAlternarModo, resumoDosModos, type ModosDeRecebimento, type Modo } from './modosDeRecebimento';
-import RecebimentoSection from './RecebimentoSection';
-import VoucherSection from './VoucherSection';
-import ValePorLinkSection from './ValePorLinkSection';
-import AcrescimoDoValeSection from './AcrescimoDoValeSection';
-import NotaFiscalSection from './NotaFiscalSection';
-import { SalvarJunto, useSalvarJunto } from './salvarJunto';
-import CaixaDinheiroSection from './CaixaDinheiroSection';
-import AvisoFilaHumanaSection from './AvisoFilaHumanaSection';
 import { LocalizacaoNoGoogle } from './LocalizacaoNoGoogle';
 import AgendamentoCampos from './AgendamentoCampos';
 
@@ -90,15 +74,12 @@ const FORM_VAZIO = {
   zip_code: '',
   latitude: '',
   longitude: '',
-  prazo_entrega_min: '',
-  prazo_entrega_max: '',
   tempo_preparo: '',
 };
 type FormDaLoja = typeof FORM_VAZIO;
 
 const CAMPOS_DA_LOJA: (keyof FormDaLoja)[] = ['name', 'email', 'phone', 'whatsapp_number'];
 const CAMPOS_DO_LOCAL: (keyof FormDaLoja)[] = ['address', 'city', 'state', 'zip_code', 'latitude', 'longitude'];
-const CAMPOS_DO_PRAZO: (keyof FormDaLoja)[] = ['prazo_entrega_min', 'prazo_entrega_max'];
 
 /** Tempo de preparo vazio = 0 = sem previsão "pronto às" no quadro de pedidos. */
 const erroDoPreparo = (texto: string) => {
@@ -107,10 +88,6 @@ const erroDoPreparo = (texto: string) => {
   return Number.isInteger(n) && n >= 0 && n <= 600 ? null : 'Use um número inteiro de 0 a 600 minutos.';
 };
 
-const minutosOuZero = (texto: string) => {
-  const n = parseInt(texto, 10);
-  return Number.isFinite(n) && n > 0 ? n : 0;
-};
 const CAMPOS_DO_RASTREIO: (keyof StoreMetaTracking)[] = [
   'meta_pixel_id', 'meta_pixel_enabled', 'meta_capi_enabled', 'meta_capi_test_event_code', 'clarity_id', 'clarity_enabled',
 ];
@@ -120,13 +97,12 @@ interface Salvo {
   form: FormDaLoja;
   horas: OperatingHours;
   pausas: Pausa[];
-  avaliacao: string;
   rastreio: StoreMetaTracking;
   agendamento: Agendamento;
 }
 
 const SALVO_VAZIO: Salvo = {
-  form: FORM_VAZIO, horas: {}, pausas: [], avaliacao: '', rastreio: defaultMetaTracking, agendamento: AGENDAMENTO_PADRAO,
+  form: FORM_VAZIO, horas: {}, pausas: [], rastreio: defaultMetaTracking, agendamento: AGENDAMENTO_PADRAO,
 };
 
 const iguais = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -159,44 +135,7 @@ export const StoreSettingsPage: React.FC = () => {
   const [pausas, setPausas] = useState<Pausa[]>([]);
   const [agendamento, setAgendamento] = useState<Agendamento>(AGENDAMENTO_PADRAO);
   const [metaTracking, setMetaTracking] = useState<StoreMetaTracking>(defaultMetaTracking);
-  const [googleReviewUrl, setGoogleReviewUrl] = useState('');
-  const [erros, setErros] = useState<{ latitude?: string | null; longitude?: string | null; prazo?: string | null; preparo?: string | null }>({});
-  /** Entrega/retirada: os campos existem no banco e o cardápio já os respeita
-   *  — faltava o dono poder mudar depois do onboarding. */
-  const [modos, setModos] = useState<ModosDeRecebimento>({ delivery: true, pickup: true });
-  const [salvandoModos, setSalvandoModos] = useState<Modo | null>(null);
-
-  /**
-   * Liga/desliga entrega ou retirada.
-   *
-   * Salva no ato (fora da barra de alterações): é um interruptor de duas
-   * posições e o efeito é imediato no cardápio. Em caso de erro, volta ao
-   * estado anterior — deixar o botão ligado sem ter salvo é pior que não mexer.
-   */
-  const alternarRecebimento = useCallback(async (modo: Modo, ligado: boolean) => {
-    const anterior = modos;
-    const novo = aoAlternarModo(anterior, modo, ligado);
-    if (!novo) {
-      toast.error('A loja precisa de pelo menos uma forma de receber: entrega ou retirada.');
-      return;
-    }
-    if (!effectiveStoreId) return;
-    setModos(novo);
-    setSalvandoModos(modo);
-    try {
-      await updateStore(effectiveStoreId, {
-        delivery_enabled: novo.delivery,
-        pickup_enabled: novo.pickup,
-      });
-      toast.success(resumoDosModos(novo));
-    } catch (error) {
-      setModos(anterior);
-      logger.error('Erro ao salvar formas de recebimento:', error);
-      toast.error('Não foi possível salvar. Nada mudou no cardápio.');
-    } finally {
-      setSalvandoModos(null);
-    }
-  }, [modos, effectiveStoreId]);
+  const [erros, setErros] = useState<{ latitude?: string | null; longitude?: string | null; preparo?: string | null }>({});
 
   /** `silencioso`: depois de salvar, recarrega sem trocar a tela pelo "Carregando". */
   const loadStore = useCallback(async (silencioso = false) => {
@@ -224,8 +163,6 @@ export const StoreSettingsPage: React.FC = () => {
         zip_code: data.zip_code || '',
         latitude: data.latitude?.toString() || '',
         longitude: data.longitude?.toString() || '',
-        prazo_entrega_min: data.prazo_entrega_min ? String(data.prazo_entrega_min) : '',
-        prazo_entrega_max: data.prazo_entrega_max ? String(data.prazo_entrega_max) : '',
         tempo_preparo: data.default_prep_minutes ? String(data.default_prep_minutes) : '',
       };
       const stored = (data.operating_hours as OperatingHours) || {};
@@ -233,23 +170,17 @@ export const StoreSettingsPage: React.FC = () => {
       DAYS.forEach(d => {
         horas[d.key] = stored[d.key] || { ...DEFAULT_HOURS, is_open: d.key !== 'sunday' };
       });
-      const avaliacao = String((data.metadata || {}).google_review_url || '');
       const rastreio = { ...tracking, meta_capi_access_token: '' };
 
       const pausasSalvas = lerPausas(data.metadata as Record<string, unknown>);
       const agendamentoSalvo = lerAgendamento(data.metadata as Record<string, unknown>);
-      setSalvo({ form, horas, pausas: pausasSalvas, avaliacao, rastreio, agendamento: agendamentoSalvo });
+      setSalvo({ form, horas, pausas: pausasSalvas, rastreio, agendamento: agendamentoSalvo });
       setAgendamento(agendamentoSalvo);
       setStoreForm(form);
       setOperatingHours(horas);
       setPausas(pausasSalvas);
-      setGoogleReviewUrl(avaliacao);
       setMetaTracking(rastreio);
       setErros({});
-      setModos({
-        delivery: data.delivery_enabled !== false,
-        pickup: data.pickup_enabled !== false,
-      });
     } catch (error) {
       logger.error('Error loading store:', error);
       toast.error('Erro ao carregar configurações da loja');
@@ -265,21 +196,16 @@ export const StoreSettingsPage: React.FC = () => {
   // ── O que mudou, por seção ────────────────────────────────────────────
   const mudouNaLoja = CAMPOS_DA_LOJA.filter((k) => storeForm[k] !== salvo.form[k]);
   const mudouNoLocal = CAMPOS_DO_LOCAL.filter((k) => storeForm[k] !== salvo.form[k]);
-  const mudouNoPrazo = CAMPOS_DO_PRAZO.filter((k) => storeForm[k] !== salvo.form[k]);
   const preparoMudou = storeForm.tempo_preparo !== salvo.form.tempo_preparo;
   const diasMudados = DAYS.filter((d) => !iguais(operatingHours[d.key], salvo.horas[d.key]));
   const pausasMudaram = !iguais(pausas, salvo.pausas);
   const agendamentoMudou = !iguais(agendamento, salvo.agendamento);
-  const avaliacaoMudou = googleReviewUrl.trim() !== salvo.avaliacao.trim();
   const rastreioMudado = CAMPOS_DO_RASTREIO.filter((k) => metaTracking[k] !== salvo.rastreio[k]).length
     + (metaTracking.meta_capi_access_token?.trim() ? 1 : 0);
 
-  // Vale, vale por QR Code, acréscimo e nota fiscal gravam fora da loja, cada
-  // uma no seu endpoint — mas entram na mesma barra e no mesmo Salvar.
-  const juntas = useSalvarJunto();
 
-  const quantidade = juntas.mudancas + mudouNaLoja.length + mudouNoLocal.length + mudouNoPrazo.length + diasMudados.length
-    + (preparoMudou ? 1 : 0) + (agendamentoMudou ? 1 : 0) + (avaliacaoMudou ? 1 : 0) + (pausasMudaram ? 1 : 0) + rastreioMudado;
+  const quantidade = mudouNaLoja.length + mudouNoLocal.length + diasMudados.length
+    + (preparoMudou ? 1 : 0) + (agendamentoMudou ? 1 : 0) + (pausasMudaram ? 1 : 0) + rastreioMudado;
 
   // Sair da página com alteração pendente perde o que foi digitado.
   useEffect(() => {
@@ -294,10 +220,8 @@ export const StoreSettingsPage: React.FC = () => {
     setOperatingHours(salvo.horas);
     setPausas(salvo.pausas);
     setAgendamento(salvo.agendamento);
-    setGoogleReviewUrl(salvo.avaliacao);
     setMetaTracking(salvo.rastreio);
     setErros({});
-    juntas.descartar();
   };
 
   /**
@@ -310,12 +234,6 @@ export const StoreSettingsPage: React.FC = () => {
    */
   const salvar = async () => {
     if (!effectiveStoreId) return;
-
-    const erroDasSecoes = juntas.validar();
-    if (erroDasSecoes) {
-      toast.error(erroDasSecoes);
-      return;
-    }
 
     if (mudouNoLocal.length) {
       const novosErros = {
@@ -344,16 +262,6 @@ export const StoreSettingsPage: React.FC = () => {
       }
     }
 
-    if (mudouNoPrazo.length) {
-      const minimo = minutosOuZero(storeForm.prazo_entrega_min);
-      const maximo = minutosOuZero(storeForm.prazo_entrega_max);
-      const erroDoPrazo = maximo && minimo > maximo ? 'O mínimo não pode passar do máximo.' : null;
-      setErros((atual) => ({ ...atual, prazo: erroDoPrazo }));
-      if (erroDoPrazo) {
-        toast.error('Confira o prazo de entrega antes de salvar.');
-        return;
-      }
-    }
 
     if (preparoMudou) {
       const erro = erroDoPreparo(storeForm.tempo_preparo);
@@ -366,10 +274,6 @@ export const StoreSettingsPage: React.FC = () => {
 
     const payload: Record<string, unknown> = {};
     if (preparoMudou) payload.default_prep_minutes = Number(storeForm.tempo_preparo.trim() || 0);
-    if (mudouNoPrazo.length) {
-      payload.prazo_entrega_min = minutosOuZero(storeForm.prazo_entrega_min);
-      payload.prazo_entrega_max = minutosOuZero(storeForm.prazo_entrega_max);
-    }
     const metadata: Record<string, unknown> = { ...(store?.metadata || {}) };
     let mexeuNoMetadata = false;
 
@@ -398,10 +302,6 @@ export const StoreSettingsPage: React.FC = () => {
       metadata.agendamento = agendamento;
       mexeuNoMetadata = true;
     }
-    if (avaliacaoMudou) {
-      metadata.google_review_url = googleReviewUrl.trim();
-      mexeuNoMetadata = true;
-    }
     if (mexeuNoMetadata) payload.metadata = metadata;
 
     setSaving(true);
@@ -423,7 +323,6 @@ export const StoreSettingsPage: React.FC = () => {
         }
         await updateStoreMetaTracking(effectiveStoreId, dados);
       }
-      await juntas.salvar();
       toast.success(quantidade === 1 ? 'Alteração salva' : `${quantidade} alterações salvas`);
       await loadStore(true);
     } catch (error) {
@@ -468,32 +367,18 @@ export const StoreSettingsPage: React.FC = () => {
       className="mx-auto max-w-6xl"
     >
 
-      {/* Os KPIs ficam FORA das seções: respondem "como esta loja está", e a
-          resposta não muda conforme a seção aberta. */}
-        <div className="grid grid-cols-3 max-md:grid-cols-1 gap-4">
-          <StatCard
-            label="Status"
-            value={store?.status === 'active' ? 'Ativa' : 'Inativa'}
-            tone={store?.status === 'active' ? 'brand' : 'default'}
-          />
-          <StatCard label="Pedidos" value={store?.orders_count ?? 0} />
-          <StatCard label="Produtos" value={store?.products_count ?? 0} />
-        </div>
-
       {/* Molde Configurações: seções à esquerda, conteúdo ao lado, um salvar.
           Sete abas numa linha já passavam da largura e escondiam as últimas. */}
-      <SalvarJunto registro={juntas.registro}>
       <PageTabs
         lateral
         ariaLabel="Seções das configurações da loja"
         abas={[
           { id: 'loja', rotulo: 'Loja', icone: BuildingStorefrontIcon, mudou: mudouNaLoja.length + mudouNoLocal.length > 0 },
-          { id: 'entrega', rotulo: 'Entrega e horários', icone: ClockIcon, mudou: diasMudados.length + mudouNoPrazo.length > 0 || preparoMudou || agendamentoMudou },
-          { id: 'rastreamento', rotulo: 'Rastreamento', icone: ChartBarIcon, mudou: rastreioMudado > 0 },
-          { id: 'avaliacoes', rotulo: 'Avaliações', icone: StarIcon, mudou: avaliacaoMudou },
-          { id: 'recebimento', rotulo: 'Recebimento', icone: BanknotesIcon, mudou: juntas.mudouEm('vale-pagarme', 'vale-por-link', 'acrescimo-do-vale') },
-          { id: 'fiscal', rotulo: 'Nota fiscal', icone: DocumentTextIcon, mudou: juntas.mudouEm('nota-fiscal') },
-          { id: 'atendimento', rotulo: 'Atendimento', icone: ChatBubbleLeftRightIcon },
+          // 26/10: Recebimento → Configurações › Pagamentos; Nota fiscal →
+          // Financeiro › Notas fiscais; Atendimento → Esperando atendente;
+          // Avaliações → Clientes › Avaliações. Cada uma mora com o assunto dela.
+          { id: 'entrega', rotulo: 'Horários', icone: ClockIcon, mudou: diasMudados.length > 0 || pausasMudaram || preparoMudou || agendamentoMudou },
+          { id: 'rastreamento', rotulo: 'Anúncios e medição', icone: ChartBarIcon, mudou: rastreioMudado > 0 },
         ]}
       >
         {(aba) => (
@@ -596,84 +481,8 @@ export const StoreSettingsPage: React.FC = () => {
 
             {aba === 'entrega' && (
               <>
-        {/* COMO O CLIENTE RECEBE — antes do preço, porque decide se o preço
-            sequer existe. Salva no ato (ver alternarRecebimento). */}
-        <Card className="p-6">
-          <div className="mb-1 flex items-center gap-2">
-            <TruckIcon className="h-5 w-5 text-fg-muted-token" />
-            <h2 className="text-lg font-semibold text-fg-token">Como o cliente recebe</h2>
-          </div>
-          <p className="text-sm text-fg-muted-token">{resumoDosModos(modos)}</p>
-
-          <ul className="mt-4 divide-y divide-border-token">
-            {([
-              { modo: 'delivery' as Modo, titulo: 'Entrega', Icone: TruckIcon },
-              { modo: 'pickup' as Modo, titulo: 'Retirada no balcão', Icone: BuildingStorefrontIcon },
-            ]).map(({ modo, titulo, Icone }) => {
-              const ligado = modos[modo];
-              return (
-                <li key={modo} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                  <span
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors ${
-                      ligado
-                        ? 'border-brand/40 bg-brand-soft text-brand-ink'
-                        : 'border-border-token bg-surface-2 text-fg-muted-token'
-                    }`}
-                  >
-                    <Icone className="h-5 w-5" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-fg-token">{titulo}</p>
-                  </div>
-                  <Switch
-                    checked={ligado}
-                    disabled={salvandoModos !== null}
-                    onChange={(marcado) => alternarRecebimento(modo, marcado)}
-                    ariaLabel={titulo}
-                  />
-                </li>
-              );
-            })}
-          </ul>
-
-          {/* O PREÇO da entrega mora em Zonas de Entrega, não aqui: esta aba
-              já teve uma terceira cópia da matemática do frete. */}
-          <Link
-            to={effectiveStoreId ? `/stores/${effectiveStoreId}/delivery` : '/stores'}
-            className="mt-4 inline-flex items-center gap-2 rounded bg-brand-soft px-4 py-2 text-sm font-medium text-brand-ink transition-colors hover:bg-brand-soft/80"
-          >
-            <TruckIcon className="w-4 h-4" />
-            Abrir preço da entrega
-          </Link>
-        </Card>
-
-        {/* A promessa que o cliente vê no cardápio, no checkout e no WhatsApp
-            ("chega entre 13:14 e 13:29"). Atraso é o que passa do máximo. */}
-        <Card className="p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-fg-token">
-            <TruckIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
-            Prazo de entrega
-          </h2>
-          <div className="grid max-w-md grid-cols-2 items-start gap-4">
-            <Campo rotulo="Prazo mínimo" erro={erros.prazo}>
-              <Input
-                type="number" inputMode="numeric" min={0} max={600}
-                rightAddon="min" className="tabular-nums" placeholder="30"
-                value={storeForm.prazo_entrega_min}
-                onChange={(e) => mudarForm('prazo_entrega_min')(e.target.value)}
-              />
-            </Campo>
-            <Campo rotulo="Prazo máximo">
-              <Input
-                type="number" inputMode="numeric" min={0} max={600}
-                rightAddon="min" className="tabular-nums" placeholder="45"
-                value={storeForm.prazo_entrega_max}
-                onChange={(e) => mudarForm('prazo_entrega_max')(e.target.value)}
-              />
-            </Campo>
-          </div>
-        </Card>
-
+        {/* Entrega/retirada e o prazo foram para Configurações → Entrega
+            (26/10): "entrega" era meia tela aqui e meia lá. */}
         <Card className="p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-fg-token">
             <ClockIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
@@ -776,71 +585,9 @@ export const StoreSettingsPage: React.FC = () => {
               </Card>
             )}
 
-            {/* Recebimento e Nota fiscal ficam montados, só escondidos: são
-                deles as alterações que a barra conta, e desmontar ao trocar de
-                aba jogaria fora o que foi digitado sem aviso. */}
-            {store?.id && (
-              // Classe, não o atributo `hidden`: `flex` vence o display:none do
-              // atributo, e o Recebimento aparecia embaixo de TODAS as abas (21/10).
-              <div className={aba === 'recebimento' ? 'flex flex-col gap-6' : 'hidden'} data-aba="recebimento">
-                <RecebimentoSection
-                  storeId={store.id}
-                  usaGatewayDaPlataforma={Boolean(
-                    (store as unknown as { usa_gateway_da_plataforma?: boolean }).usa_gateway_da_plataforma,
-                  )}
-                />
-                <VoucherSection storeId={store.id} />
-                <ValePorLinkSection
-                  storeId={store.id}
-                  ligadas={
-                    (store as unknown as { vale_por_link_brands?: string[] })
-                      .vale_por_link_brands || []
-                  }
-                  whatsapp={store.whatsapp_number || ''}
-                />
-                <AcrescimoDoValeSection
-                  storeId={store.id}
-                  percentualAtual={Number(
-                    (store as unknown as { voucher_fee_percent?: number }).voucher_fee_percent,
-                  ) || 0}
-                />
-                <CaixaDinheiroSection loja={store} onSalvo={setStore} />
-              </div>
-            )}
-
-            {store?.id && (
-              <div className={aba === 'fiscal' ? undefined : 'hidden'} data-aba="fiscal">
-                <NotaFiscalSection storeId={store.id} />
-              </div>
-            )}
-
-            {aba === 'atendimento' && store?.id && (
-              <AvisoFilaHumanaSection loja={store} onSalvo={setStore} />
-            )}
-
-            {aba === 'avaliacoes' && (
-              <Card className="p-6">
-                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-fg-token">
-                  <StarIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
-                  Avaliações no Google
-                </h2>
-                <Campo
-                  rotulo="Link de avaliação do Google"
-                  dica={'No Perfil da Empresa no Google: "Pedir avaliações" → copiar link.'}
-                >
-                  <Input
-                    type="url"
-                    placeholder="https://g.page/r/SEU_CODIGO/review"
-                    value={googleReviewUrl}
-                    onChange={(e) => setGoogleReviewUrl(e.target.value)}
-                  />
-                </Campo>
-              </Card>
-            )}
           </div>
         )}
       </PageTabs>
-      </SalvarJunto>
 
       <BarraDeAlteracoes
         quantidade={quantidade}
