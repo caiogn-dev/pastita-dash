@@ -9,11 +9,12 @@
  * cliente vai para o Google. Então tudo que chega aqui tem, por construção,
  * alguma coisa a consertar. A tela trata isso como pauta, não como placar.
  */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { StarIcon } from '@heroicons/react/24/solid';
+import toast from 'react-hot-toast';
 
-import { Button, EmptyState, Modal, PageShell } from '../../components/ui';
+import { Button, EmptyState, FalhaAoCarregar, Modal, PageShell } from '../../components/ui';
 import { LinkIcon } from '@heroicons/react/24/outline';
 import { LinkDoGoogle } from './LinkDoGoogle';
 import { useStore } from '../../hooks/useStore';
@@ -105,6 +106,9 @@ export const AvaliacoesPage: React.FC = () => {
   const [lista, setLista] = useState<Avaliacao[] | null>(null);
   const [resumo, setResumo] = useState<ResumoDeAvaliacoes | null>(null);
   const [erro, setErro] = useState(false);
+  // Espelho da lista para o `catch` saber se já há dado em cache sem entrar nas
+  // dependências de `carregar` (o que relançaria a busca a cada carga).
+  const listaRef = useRef<Avaliacao[] | null>(null);
 
   const carregar = useCallback(async () => {
     if (!slug) return;
@@ -113,13 +117,30 @@ export const AvaliacoesPage: React.FC = () => {
         avaliacoesService.listar(slug, nota),
         getAnalyticsReport<ResumoDeAvaliacoes>('reviews'),
       ]);
+      listaRef.current = avaliacoes;
       setLista(avaliacoes);
       setResumo(relatorio);
       setErro(false);
     } catch {
       setErro(true);
+      // Falha ao ATUALIZAR com a lista já na tela não pode apagá-la — seria um
+      // vazio enganoso sobre dado que o painel já tem. Mantém a lista e avisa
+      // pelo toast; só a falha SEM cache cai no ramo de erro acionável abaixo.
+      if (listaRef.current !== null) {
+        toast.error('Não foi possível atualizar as avaliações');
+      }
     }
   }, [slug, nota]);
+
+  // Troca de loja: lista/resumo/erro em memória são da loja ANTERIOR. Zera tudo
+  // para a nova loja não herdar avaliações de outra — e para uma falha na nova
+  // loja não ser classificada como "cache válido" (vazamento entre lojas).
+  useEffect(() => {
+    listaRef.current = null;
+    setLista(null);
+    setResumo(null);
+    setErro(false);
+  }, [slug]);
 
   useEffect(() => { void carregar(); }, [carregar]);
 
@@ -170,10 +191,11 @@ export const AvaliacoesPage: React.FC = () => {
         </div>
       )}
     >
-      {erro ? (
-        <p role="alert" className="superficie p-4 text-body text-danger-token">
-          Não foi possível carregar as avaliações agora.
-        </p>
+      {erro && lista === null ? (
+        <FalhaAoCarregar
+          titulo="Não foi possível carregar as avaliações"
+          onTentarDeNovo={() => void carregar()}
+        />
       ) : lista === null ? (
         <p className="text-body text-fg-muted-token">Carregando…</p>
       ) : (
