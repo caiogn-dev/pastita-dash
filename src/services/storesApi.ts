@@ -5,6 +5,7 @@
 import api from './api';
 import logger from './logger';
 import type { DeliveryAddress } from '../types';
+import { slugify } from '../utils/texto';
 
 // =============================================================================
 // HELPERS
@@ -573,15 +574,6 @@ const BASE_URL = '/stores';
 // Não usar /stores/{id}/ pois o catch-all <slug:store_slug>/ intercepta e retorna 404
 const STORES_ADMIN_URL = `${BASE_URL}/stores`;
 
-const generateSlug = (name: string): string => {
-  return name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-};
-
 const isFile = (value: unknown): value is File => {
   return typeof File !== 'undefined' && value instanceof File;
 };
@@ -915,7 +907,7 @@ export const getCategories = async (storeId?: string): Promise<PaginatedResponse
 
 export const createCategory = async (data: StoreCategoryInput): Promise<StoreCategory> => {
   try {
-    const payload = { ...data, slug: data.slug || generateSlug(data.name) };
+    const payload = { ...data, slug: data.slug || slugify(data.name) };
     if (data.image && isFile(data.image)) {
       const formData = buildFormData(payload);
       const response = await api.post(`${BASE_URL}/categories/`, formData);
@@ -986,7 +978,7 @@ export const getProduct = async (id: string): Promise<StoreProduct> => {
 
 export const createProduct = async (data: StoreProductInput): Promise<StoreProduct> => {
   try {
-    const payload = { ...data, slug: data.slug || generateSlug(data.name) };
+    const payload = { ...data, slug: data.slug || slugify(data.name) };
     if (data.main_image && isFile(data.main_image)) {
       const formData = buildFormData(payload);
       const response = await api.post(`${BASE_URL}/products/`, formData);
@@ -1963,7 +1955,7 @@ export const createComboWithItems = async (
   data: StoreComboPayload
 ): Promise<StoreCombo> => {
   try {
-    const payload = { ...data, slug: data.slug || generateSlug(data.name) };
+    const payload = { ...data, slug: data.slug || slugify(data.name) };
     const response = await api.post(`${BASE_URL}/combos/`, payload);
     return response.data;
   } catch (error) {
@@ -2040,7 +2032,7 @@ export const getProductTypes = async (storeId?: string): Promise<PaginatedRespon
 
 export const createProductType = async (data: StoreProductTypeInput): Promise<StoreProductType> => {
   try {
-    const payload = { ...data, slug: data.slug || generateSlug(data.name) };
+    const payload = { ...data, slug: data.slug || slugify(data.name) };
     if (data.image && isFile(data.image)) {
       const formData = buildFormData(payload);
       const response = await api.post(`${BASE_URL}/product-types/`, formData);

@@ -3,6 +3,7 @@ import { CheckIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import { Modal, SearchInput, Button } from '../../ui';
 import type { StoreProduct } from '../../../services/storesApi';
 import { formatCurrency } from '../../../utils/formatters';
+import { paraBusca } from '../../../utils/texto';
 
 interface Props {
   aberto: boolean;
@@ -15,7 +16,6 @@ interface Props {
 
 const SEM_CATEGORIA = 'Sem categoria';
 const categoriaDe = (p: StoreProduct) => p.category_name || SEM_CATEGORIA;
-const semAcento = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 export const SeletorDeProdutos: React.FC<Props> = ({ aberto, produtos, jaEscolhidos, onFechar, onConfirmar }) => {
   const [busca, setBusca] = useState('');
@@ -29,9 +29,9 @@ export const SeletorDeProdutos: React.FC<Props> = ({ aberto, produtos, jaEscolhi
   }, [produtos]);
 
   const visiveis = useMemo(() => {
-    const termo = semAcento(busca.trim());
+    const termo = paraBusca(busca.trim());
     return produtos.filter(p =>
-      (!categoria || categoriaDe(p) === categoria) && (!termo || semAcento(p.name).includes(termo)),
+      (!categoria || categoriaDe(p) === categoria) && (!termo || paraBusca(p.name).includes(termo)),
     );
   }, [produtos, busca, categoria]);
 

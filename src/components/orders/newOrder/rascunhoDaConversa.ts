@@ -11,6 +11,7 @@
 import type { Product } from '../../../services/products';
 import type { ContextoDoBot } from '../../../services/atendimentoBot';
 import type { CartItem } from './types';
+import { paraBusca } from '../../../utils/texto';
 
 export interface RascunhoDePedido {
   cliente: { nome: string; telefone: string };
@@ -21,8 +22,7 @@ export interface RascunhoDePedido {
   naoAchados: string[];
 }
 
-const normalizar = (s: string) =>
-  (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+const normalizar = (s: string) => paraBusca(s).replace(/\s+/g, ' ').trim();
 
 function acharProduto(nome: string, produtos: Product[]): Product | null {
   const alvo = normalizar(nome);

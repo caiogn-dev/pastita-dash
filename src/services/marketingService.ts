@@ -6,6 +6,7 @@
  */
 import api from './api';
 import logger from './logger';
+import { slugify } from '../utils/texto';
 
 const BASE_URL = '/marketing';
 
@@ -431,15 +432,6 @@ export const EMAIL_TEMPLATE_PRESETS: Record<string, Partial<EmailTemplateInput>>
 // HELPER FUNCTIONS
 // =============================================================================
 
-const generateSlug = (name: string): string => {
-  return name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-};
-
 // =============================================================================
 // EMAIL TEMPLATES API
 // =============================================================================
@@ -492,7 +484,7 @@ export const emailTemplatesApi = {
   },
 
   async create(data: EmailTemplateInput): Promise<EmailTemplate> {
-    const payload = { ...data, slug: data.slug || generateSlug(data.name) };
+    const payload = { ...data, slug: data.slug || slugify(data.name) };
     const response = await api.post<EmailTemplate>(`${BASE_URL}/templates/`, payload);
     return response.data;
   },

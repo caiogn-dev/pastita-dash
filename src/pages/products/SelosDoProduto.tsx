@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { cn } from '../../utils/cn';
+import { paraBusca } from '../../utils/texto';
 
 /**
  * Selos do produto — "Zero lactose", "Fit", "Bistrô" — que a vitrine mostra
@@ -25,7 +26,7 @@ export const SELOS_PADRAO = [
 ];
 
 const chave = (texto: string) =>
-  texto.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+  paraBusca(texto).trim();
 
 export const lerSelos = (attributes?: Record<string, unknown>): string[] => {
   const bruto = attributes?.selos;

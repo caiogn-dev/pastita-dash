@@ -11,6 +11,7 @@
  *   do número que eles tentam recuperar.
  */
 import type { AutoMessageEventType } from '../../types';
+import { semAcento } from '../../utils/texto';
 
 export interface GrupoDeAvisos {
   id: 'conversa' | 'pedido' | 'pagamento' | 'carrinho';
@@ -63,8 +64,6 @@ export function esperaEmTexto(segundos?: number | null): string {
   if (minutos >= 60 && minutos % 60 === 0) return `Espera ${numero(minutos / 60)} h`;
   return `Espera ${numero(minutos)} min`;
 }
-
-const semAcento = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 /**
  * O id que a Meta devolve quando o cliente toca no botão. O dono não precisa

@@ -22,6 +22,7 @@ import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 import { cn } from '../../utils/cn';
 import { NavSection } from './navSections';
+import { paraBusca } from '../../utils/texto';
 
 export interface CommandPaletteProps {
   aberto: boolean;
@@ -39,9 +40,7 @@ interface Destino {
 }
 
 /** Minúsculas e sem acento: ninguém digita "Relatórios" com acento na correria. */
-function normalizar(s: string): string {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-}
+const normalizar = paraBusca;
 
 function achatar(sections: NavSection[]): Destino[] {
   const out: Destino[] = [];

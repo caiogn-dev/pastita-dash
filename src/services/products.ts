@@ -1,5 +1,6 @@
 import api from './api';
 import { PaginatedResponse } from '../types';
+import { slugify } from '../utils/texto';
 
 // Store slug for legacy operations. Never default to a specific tenant.
 const STORE_SLUG = import.meta.env.VITE_STORE_SLUG || '';
@@ -101,15 +102,6 @@ async function getCategoriesWithIds(): Promise<Category[]> {
   return [];
 }
 
-function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
 async function getCategoryIdByName(categoryName: string): Promise<string | null> {
   if (!categoryName) return null;
   
@@ -127,7 +119,7 @@ const buildProductFormData = async (data: CreateProduct | UpdateProduct, include
   if (data.name !== undefined) {
     formData.append('name', data.name);
     // Auto-generate slug from name
-    formData.append('slug', generateSlug(data.name));
+    formData.append('slug', slugify(data.name));
   }
   if (data.description !== undefined) formData.append('description', data.description || '');
   if (data.price !== undefined) formData.append('price', String(data.price));
