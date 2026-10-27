@@ -468,6 +468,10 @@ export interface OrderAdjustPayload {
   surcharge_reason?: string;
   delivery_fee?: number;
   item_ops?: OrderItemOp[];
+  delivery_method?: 'delivery' | 'pickup';
+  delivery_address?: Record<string, string>;
+  /** '' tira o cupom. */
+  coupon_code?: string;
 }
 
 // ============================================

@@ -6,8 +6,36 @@ import { productsService } from '../../services/products';
 import type { Product } from '../../services/products';
 import { TIME_SLOTS } from '../../utils/schedulingSlots';
 import type { Order, OrderItemOp } from '../../types';
+import { Campo, Input, Segmentado } from '../ui';
 
 type EditableItem = { id: string; product_name: string; unit_price: number; quantity: number; removed?: boolean };
+
+const CAMPOS_DO_ENDERECO = [
+  ['street', 'Rua / quadra'],
+  ['number', 'Número'],
+  ['complement', 'Complemento'],
+  ['neighborhood', 'Bairro'],
+  ['city', 'Cidade'],
+  ['state', 'UF'],
+  ['zip_code', 'CEP'],
+] as const;
+type CampoDoEndereco = typeof CAMPOS_DO_ENDERECO[number][0];
+type Endereco = Record<CampoDoEndereco, string>;
+
+const enderecoDoPedido = (raw: unknown): Endereco => {
+  const a = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const e = {} as Endereco;
+  for (const [k] of CAMPOS_DO_ENDERECO) e[k] = String(a[k] ?? '');
+  // Bot e PDV às vezes só mandam o texto livre.
+  if (!e.street && typeof a.raw_address === 'string') e.street = a.raw_address;
+  return e;
+};
+
+const mensagemDoErro = (e: unknown): string => {
+  const data = (e as { response?: { data?: { error?: unknown; detail?: unknown } } })?.response?.data;
+  const msg = data?.error ?? data?.detail;
+  return typeof msg === 'string' && msg ? msg : 'Erro ao salvar pedido';
+};
 
 interface Props {
   order: Order;
@@ -39,6 +67,12 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
   const [surcharge, setSurcharge] = useState(String(order.surcharge_value ?? 0));
   const [surchargeReason, setSurchargeReason] = useState(order.surcharge_reason ?? '');
   const [deliveryFee, setDeliveryFee] = useState(String(order.delivery_fee ?? 0));
+  const metodoOriginal = order.delivery_method === 'pickup' ? 'pickup' : 'delivery';
+  const [metodo, setMetodo] = useState<'delivery' | 'pickup'>(metodoOriginal);
+  const enderecoOriginal = enderecoDoPedido(order.delivery_address);
+  const [endereco, setEndereco] = useState<Endereco>(enderecoOriginal);
+  const [cupom, setCupom] = useState(order.coupon_code ?? '');
+  const [erroDeEndereco, setErroDeEndereco] = useState('');
 
   useEffect(() => {
     const storeId = order.store;
@@ -92,7 +126,22 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
     const num = (s: string) => Number(s) || 0;
     if (num(discount) !== (order.discount ?? 0)) { adj.discount = num(discount); adj.discount_reason = discountReason; }
     if (num(surcharge) !== (order.surcharge_value ?? 0)) { adj.surcharge_value = num(surcharge); adj.surcharge_reason = surchargeReason; }
-    if (num(deliveryFee) !== (order.delivery_fee ?? 0)) { adj.delivery_fee = num(deliveryFee); }
+    const freteDigitado = num(deliveryFee) !== (order.delivery_fee ?? 0);
+    if (metodo !== metodoOriginal) adj.delivery_method = metodo;
+    if (metodo === 'delivery') {
+      const mudou = CAMPOS_DO_ENDERECO.some(([k]) => endereco[k].trim() !== enderecoOriginal[k].trim());
+      if (mudou || metodo !== metodoOriginal) {
+        adj.delivery_address = Object.fromEntries(
+          CAMPOS_DO_ENDERECO.map(([k]) => [k, endereco[k].trim()]).filter(([, v]) => v),
+        );
+      }
+      // Sem frete digitado o servidor cota o endereço novo.
+      if (freteDigitado) adj.delivery_fee = num(deliveryFee);
+    } else if (freteDigitado) {
+      adj.delivery_fee = num(deliveryFee);
+    }
+    const cupomNovo = cupom.trim().toUpperCase();
+    if (cupomNovo !== (order.coupon_code ?? '').toUpperCase()) adj.coupon_code = cupomNovo;
     const itemOps = buildItemOps();
     if (itemOps.length) adj.item_ops = itemOps;
     return Object.keys(adj).length ? adj : null;
@@ -100,6 +149,13 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
 
   const handleSave = async () => {
     if (saving) return;
+    const exigeRua = metodo === 'delivery'
+      && (metodo !== metodoOriginal || Boolean(enderecoOriginal.street.trim()));
+    if (exigeRua && !endereco.street.trim()) {
+      setErroDeEndereco('Informe a rua ou quadra para entrega.');
+      return;
+    }
+    setErroDeEndereco('');
     const patch = buildPatch();
     const adjust = buildAdjust();
     if (Object.keys(patch).length === 0 && !adjust) { onClose(); return; }
@@ -109,8 +165,8 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
       if (adjust) await ordersService.adjustOrder(order.id, adjust, undefined);
       toast.success('Pedido atualizado');
       onSaved();
-    } catch {
-      toast.error('Erro ao salvar pedido');
+    } catch (e) {
+      toast.error(mensagemDoErro(e));
     } finally {
       setSaving(false);
     }
@@ -242,8 +298,46 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
             </div>
           </div>
 
-          {/* Desconto / Acréscimo / Taxa */}
+          {/* Entrega ou retirada */}
           <div className="rounded-xl border border-border-token p-3 space-y-3">
+            <Segmentado
+              rotulo="Entrega ou retirada"
+              valor={metodo}
+              onChange={(v) => { setMetodo(v); setErroDeEndereco(''); }}
+              opcoes={[{ valor: 'delivery', rotulo: 'Entrega' }, { valor: 'pickup', rotulo: 'Retirada' }]}
+            />
+            {metodo === 'delivery' && (
+              <div className="grid grid-cols-6 gap-2">
+                {CAMPOS_DO_ENDERECO.map(([campo, rotulo]) => (
+                  <Campo
+                    key={campo}
+                    rotulo={rotulo}
+                    erro={campo === 'street' ? erroDeEndereco : undefined}
+                    className={campo === 'street' || campo === 'complement' ? 'col-span-6'
+                      : campo === 'state' || campo === 'number' ? 'col-span-2' : 'col-span-4'}
+                  >
+                    <Input
+                      size="sm"
+                      value={endereco[campo]}
+                      onChange={(e) => setEndereco((x) => ({ ...x, [campo]: e.target.value }))}
+                    />
+                  </Campo>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Cupom / Desconto / Acréscimo / Taxa */}
+          <div className="rounded-xl border border-border-token p-3 space-y-3">
+            <Campo rotulo="Cupom">
+              <Input
+                size="sm"
+                className="uppercase"
+                value={cupom}
+                placeholder="Sem cupom"
+                onChange={(e) => setCupom(e.target.value)}
+              />
+            </Campo>
             <div>
               <label htmlFor="edit-discount" className="block text-xs font-bold text-fg-muted-token uppercase tracking-widest mb-2">Desconto (R$)</label>
               <input id="edit-discount" type="number" min="0" step="0.01" className={inputCls} value={discount} onChange={(e) => setDiscount(e.target.value)} />
