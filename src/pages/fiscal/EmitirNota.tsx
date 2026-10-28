@@ -14,7 +14,7 @@ import {
   type ModeloDeNota, type NotaDaLoja, type PedidoParaNota,
 } from '../../services/fiscal';
 import {
-  classificarDocumento, cnpjValido, formatarCep, formatarDocumento, somenteDigitos,
+  classificarDocumento, cnpjValido, formatarCep, formatarDocumento, inscricaoEstadual, ISENTO, somenteDigitos,
 } from '../../utils/documento';
 import { formatCurrency } from '../../utils/formatters';
 import { ordersService } from '../../services/orders';
@@ -227,7 +227,7 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
       ? {
         documento: numero,
         nome: nome.trim() || pedido.customer_name,
-        inscricao_estadual: somenteDigitos(inscricao),
+        inscricao_estadual: inscricaoEstadual(inscricao),
         ...(emailLimpo ? { email: emailLimpo } : {}),
         endereco: {
           street: endereco.street.trim(),
@@ -441,14 +441,21 @@ export const EmitirNota: React.FC<EmitirNotaProps> = ({
                     <MagnifyingGlassIcon className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="sm:col-span-3">
-                  <Input
-                    label="Inscrição estadual"
-                    inputMode="numeric"
-                    placeholder="Isento"
-                    value={inscricao}
-                    onChange={(e) => setInscricao(e.target.value)}
-                  />
+                <div className="flex items-end gap-2 sm:col-span-3">
+                  <div className="min-w-0 flex-1">
+                    <Input
+                      label="Inscrição estadual"
+                      value={inscricao}
+                      onChange={(e) => setInscricao(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    variant={inscricaoEstadual(inscricao) === ISENTO ? 'primary' : 'secondary'}
+                    aria-pressed={inscricaoEstadual(inscricao) === ISENTO}
+                    onClick={() => setInscricao(inscricaoEstadual(inscricao) === ISENTO ? '' : ISENTO)}
+                  >
+                    Isento
+                  </Button>
                 </div>
                 <div className="sm:col-span-6">
                   <Input

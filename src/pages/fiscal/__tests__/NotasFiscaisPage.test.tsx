@@ -232,6 +232,20 @@ describe('NotasFiscaisPage', () => {
       await waitFor(() => expect(mocked.listarNotas).toHaveBeenCalledTimes(2));
     });
 
+    it('IE "isento" vai como ISENTO, não some na limpeza de dígitos', async () => {
+      // HOA (28/10): isenta de IE; o campo virava vazio e a nota saía como
+      // não contribuinte — a SEFAZ pediu a IE.
+      mocked.emitir.mockResolvedValue({ ...NOTA, id: 'n4' } as never);
+      const dialogo = await abrir();
+      fireEvent.change(within(dialogo).getByLabelText('Número'), { target: { value: '2' } });
+      fireEvent.change(within(dialogo).getByLabelText('Bairro'), { target: { value: 'Plano Diretor Sul' } });
+      fireEvent.click(within(dialogo).getByRole('button', { name: 'Isento' }));
+      expect(within(dialogo).getByLabelText('Inscrição estadual')).toHaveValue('ISENTO');
+      fireEvent.click(within(dialogo).getByRole('button', { name: 'Emitir NF-e' }));
+      await waitFor(() => expect(mocked.emitir).toHaveBeenCalledTimes(1));
+      expect(mocked.emitir.mock.calls[0][1].destinatario?.inscricao_estadual).toBe('ISENTO');
+    });
+
     it('rejeição da SEFAZ fica na tela, com o formulário aberto para corrigir', async () => {
       mocked.emitir.mockResolvedValue({
         ...NOTA, id: 'n3', status: 'rejected', error_message: 'Rejeição: IE do destinatário não informada',
