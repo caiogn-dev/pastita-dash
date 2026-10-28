@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { PlusIcon, MinusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { SearchInput } from '../../../ui';
-import toast from 'react-hot-toast';
-import { productsService } from '../../../../services/products';
+import { useProdutosDaLoja } from '../useProdutosDaLoja';
 import type { Product } from '../../../../services/products';
 import type { CartItem } from '../types';
 import { fmt } from '../types';
@@ -23,32 +22,7 @@ export function StepItens({
   onRemove: (productId: string) => void;
 }) {
   const [search, setSearch] = useState('');
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(false);
-
-  // Todas as páginas. Com uma página só de 40, a Ivoneth (58 ativos) tinha
-  // 18 produtos que nunca apareciam aqui, nem buscando pelo nome.
-  useEffect(() => {
-    if (!storeId) {
-      setLoadingProducts(false);
-      return;
-    }
-    let vivo = true;
-    setLoadingProducts(true);
-    (async () => {
-      const todos: Product[] = [];
-      for (let page = 1; page <= 20; page++) {
-        const data = await productsService.getProducts({ store: storeId, is_active: true, page, page_size: 200, ordering: 'name' });
-        todos.push(...(data.results || []));
-        if (!data.next) break;
-      }
-      return todos;
-    })()
-      .then((todos) => { if (vivo) setProducts(todos); })
-      .catch(() => { if (vivo) { setProducts([]); toast.error('Erro ao carregar produtos'); } })
-      .finally(() => { if (vivo) setLoadingProducts(false); });
-    return () => { vivo = false; };
-  }, [storeId]);
+  const { produtos: products, carregando: loadingProducts } = useProdutosDaLoja(storeId);
 
   const filteredProducts = products.filter((p) => {
     if (!search.trim()) return true;

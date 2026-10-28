@@ -1,7 +1,6 @@
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { rotuloDoAgendamento } from '../../utils/rotuloDoAgendamento';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { NewOrderDrawer } from '../../components/orders/NewOrderDrawer';
 import { rascunhoDoEstado } from '../../components/orders/newOrder/rascunhoDaConversa';
 import { OrderDeliveryModal } from '../../components/OrderDeliveryModal';
 import {
@@ -409,22 +408,17 @@ export const OrdersPage: React.FC = () => {
   const { storeId, storeSlug } = useStore();
   const storeQuery = storeSlug || storeId;
 
-  // ── Novo Pedido (PDV) drawer ─────────────────────────────────────────────
-  const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
-
-  // Deep-link ?novo=1 abre o wizard direto (ex.: botão "Novo pedido" do
-  // dashboard). Substituiu a antiga página /orders/new (builder duplicado).
-  const [pageParams, setPageParams] = useSearchParams();
-  // "Criar pedido desta conversa" (inbox) chega com o rascunho no state da
-  // navegação. Lido uma vez, na montagem: o setPageParams abaixo apaga o state.
+  // ── Novo pedido: página dedicada (28/10) ────────────────────────────────
+  // No celular o MainLayout troca tudo pelo MobileShell (assistente em passos);
+  // aqui, do tablet para cima, o pedido é montado numa tela só. ?novo=1 (botão
+  // do dashboard) e o rascunho da conversa (inbox) seguem para lá.
+  const [pageParams] = useSearchParams();
   const location = useLocation();
-  const [rascunho, setRascunho] = useState(() => rascunhoDoEstado(location.state));
+  const abrirNovoPedido = useCallback((state?: unknown) => {
+    navigate(storeId ? `/stores/${storeId}/orders/novo` : '/orders', { state });
+  }, [navigate, storeId]);
   useEffect(() => {
-    if (pageParams.get('novo')) {
-      setIsNewOrderOpen(true);
-      pageParams.delete('novo');
-      setPageParams(pageParams, { replace: true });
-    }
+    if (pageParams.get('novo') || rascunhoDoEstado(location.state)) abrirNovoPedido(location.state);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -444,15 +438,17 @@ export const OrdersPage: React.FC = () => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
       if (['input', 'textarea', 'select'].includes(tag)) return;
+      // Com detalhe, modal ou paleta aberta, N é letra digitada lá — não abre pedido por cima.
+      if (document.querySelector('[role="dialog"]')) return;
       if (e.key === 'n' || e.key === 'N') {
         if (!e.metaKey && !e.ctrlKey && !e.altKey) {
-          setIsNewOrderOpen(true);
+          abrirNovoPedido();
         }
       }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, []);
+  }, [abrirNovoPedido]);
 
   // Real-time orders from Zustand store + WebSocket
   // Selector estreito: re-render apenas quando os pedidos DESTA loja mudam,
@@ -780,7 +776,7 @@ export const OrdersPage: React.FC = () => {
               )}
               {storeQuery && (
                 <Button
-                  onClick={() => setIsNewOrderOpen(true)}
+                  onClick={() => abrirNovoPedido()}
                   className="py-1.5"
                   leftIcon={<ShoppingCartIcon className="h-4 w-4" />}
                   title="Atalho: tecla N"
@@ -967,22 +963,6 @@ export const OrdersPage: React.FC = () => {
         onClose={() => setPedidoACancelar(null)}
         onConfirm={(motivo) => { if (pedidoACancelar) confirmarCancelamento(pedidoACancelar, motivo); }}
       />
-
-      {/* PDV: Novo Pedido Drawer */}
-      {storeSlug && (
-        <NewOrderDrawer
-          isOpen={isNewOrderOpen}
-          onClose={() => { setIsNewOrderOpen(false); setRascunho(null); }}
-          rascunho={rascunho}
-          storeSlug={storeSlug}
-          storeId={storeId || undefined}
-          onOrderCreated={() => {
-            setIsNewOrderOpen(false);
-            setRascunho(null);
-            loadOrders(true);
-          }}
-        />
-      )}
 
       {/* Uber Delivery Modal */}
       {uberModalOrderId && storeQuery && (
