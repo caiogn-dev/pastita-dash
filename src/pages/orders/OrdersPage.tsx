@@ -1,4 +1,5 @@
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { rotuloDoAgendamento } from '../../utils/rotuloDoAgendamento';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { NewOrderDrawer } from '../../components/orders/NewOrderDrawer';
 import { rascunhoDoEstado } from '../../components/orders/newOrder/rascunhoDaConversa';
@@ -125,16 +126,8 @@ const formatElapsed = (minutes: number): string => {
 };
 
 // Rótulo curto de agendamento p/ o card ("15/01 14:30"). Vazio se não houver agendamento.
-const formatScheduledShort = (order: { scheduled_date?: string | null; scheduled_time?: string | null }): string => {
-  const date = order.scheduled_date;
-  const time = order.scheduled_time ? order.scheduled_time.slice(0, 5) : '';
-  let datePart = '';
-  if (date) {
-    const [, m, d] = date.split('-');
-    datePart = m && d ? `${d}/${m}` : date;
-  }
-  return [datePart, time].filter(Boolean).join('');
-};
+const formatScheduledShort = (order: { scheduled_date?: string | null; scheduled_time?: string | null }): string =>
+  rotuloDoAgendamento(order.scheduled_date, order.scheduled_time);
 
 // ─── OrderCard ────────────────────────────────────────────────────────────────
 

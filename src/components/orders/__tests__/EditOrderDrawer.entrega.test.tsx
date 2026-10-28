@@ -71,3 +71,28 @@ test('erro do servidor aparece com a mensagem dele (cupom inválido, fora da ár
   salvar();
   await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Cupom nao encontrado'));
 });
+
+// 27/10, Ivoneth: marcou "Agendado", escolheu a data e salvou sem faixa — o
+// painel dizia "Pedido atualizado" e nada era gravado.
+test('agendado sem faixa não salva e diz o que falta', async () => {
+  render(<EditOrderDrawer order={pedidoDeEntrega} onClose={jest.fn()} onSaved={jest.fn()} />);
+  fireEvent.click(screen.getByRole('checkbox', { name: /agendado/i }));
+  fireEvent.change(screen.getByLabelText(/data do agendamento/i), { target: { value: '2026-10-29' } });
+  salvar();
+  expect(await screen.findByText(/escolha a faixa/i)).toBeInTheDocument();
+  expect(ordersService.updateOrder).not.toHaveBeenCalled();
+});
+
+// O DRF manda dinheiro como texto ("0.00"). Comparar "0.00" com 0 dava
+// diferente, e TODO salvar chamava o ajuste — em pedido cancelado, trocar só
+// o nome gravava o nome e mostrava erro (pedido meio editado).
+test('dinheiro vindo como texto não dispara ajuste quando só o nome muda', async () => {
+  const pedido = {
+    ...(pedidoDeEntrega as object), discount: '0.00', surcharge_value: '0.00', delivery_fee: '8.00',
+  } as never;
+  render(<EditOrderDrawer order={pedido} onClose={jest.fn()} onSaved={jest.fn()} />);
+  fireEvent.change(screen.getByLabelText(/nome/i), { target: { value: 'Carlos Silva' } });
+  salvar();
+  await waitFor(() => expect(ordersService.updateOrder).toHaveBeenCalled());
+  expect(ordersService.adjustOrder).not.toHaveBeenCalled();
+});

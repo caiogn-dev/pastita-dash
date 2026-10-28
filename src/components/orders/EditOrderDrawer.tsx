@@ -4,7 +4,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import { ordersService } from '../../services/orders';
 import { productsService } from '../../services/products';
 import type { Product } from '../../services/products';
-import { TIME_SLOTS } from '../../utils/schedulingSlots';
+import { SeletorDeFaixa } from './agendamento/SeletorDeFaixa';
 import type { Order, OrderItemOp } from '../../types';
 import { Campo, Input, Segmentado } from '../ui';
 
@@ -73,6 +73,7 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
   const [endereco, setEndereco] = useState<Endereco>(enderecoOriginal);
   const [cupom, setCupom] = useState(order.coupon_code ?? '');
   const [erroDeEndereco, setErroDeEndereco] = useState('');
+  const [erroDoAgendamento, setErroDoAgendamento] = useState('');
 
   useEffect(() => {
     const storeId = order.store;
@@ -124,9 +125,9 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
   const buildAdjust = (): import('../../types').OrderAdjustPayload | null => {
     const adj: import('../../types').OrderAdjustPayload = {};
     const num = (s: string) => Number(s) || 0;
-    if (num(discount) !== (order.discount ?? 0)) { adj.discount = num(discount); adj.discount_reason = discountReason; }
-    if (num(surcharge) !== (order.surcharge_value ?? 0)) { adj.surcharge_value = num(surcharge); adj.surcharge_reason = surchargeReason; }
-    const freteDigitado = num(deliveryFee) !== (order.delivery_fee ?? 0);
+    if (num(discount) !== Number(order.discount ?? 0)) { adj.discount = num(discount); adj.discount_reason = discountReason; }
+    if (num(surcharge) !== Number(order.surcharge_value ?? 0)) { adj.surcharge_value = num(surcharge); adj.surcharge_reason = surchargeReason; }
+    const freteDigitado = num(deliveryFee) !== Number(order.delivery_fee ?? 0);
     if (metodo !== metodoOriginal) adj.delivery_method = metodo;
     if (metodo === 'delivery') {
       const mudou = CAMPOS_DO_ENDERECO.some(([k]) => endereco[k].trim() !== enderecoOriginal[k].trim());
@@ -156,6 +157,13 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
       return;
     }
     setErroDeEndereco('');
+    // Sem data ou sem faixa o buildPatch não manda nada e o painel dizia
+    // "Pedido atualizado" sem gravar (Ivoneth, 27/10).
+    if (enableScheduling && (!scheduledDate || !scheduledTime)) {
+      setErroDoAgendamento(!scheduledDate ? 'Escolha a data do agendamento.' : 'Escolha a faixa de horário.');
+      return;
+    }
+    setErroDoAgendamento('');
     const patch = buildPatch();
     const adjust = buildAdjust();
     if (Object.keys(patch).length === 0 && !adjust) { onClose(); return; }
@@ -366,30 +374,14 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
               <span className="text-sm font-semibold text-fg-token">Agendado</span>
             </label>
             {enableScheduling && (
-              <>
-                <input
-                  type="date"
-                  className={inputCls}
-                  value={scheduledDate}
-                  onChange={(e) => setScheduledDate(e.target.value)}
-                />
-                <div className="flex flex-wrap gap-1.5">
-                  {TIME_SLOTS.map((slot) => (
-                    <button
-                      key={slot}
-                      type="button"
-                      onClick={() => setScheduledTime(slot)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${
-                        scheduledTime === slot
-                          ? 'bg-brand border-brand text-white'
-                          : 'border-border-token text-fg-token hover:bg-surface-2'
-                      }`}
-                    >
-                      {slot}
-                    </button>
-                  ))}
-                </div>
-              </>
+              <SeletorDeFaixa
+                storeSlug={order.store_slug}
+                data={scheduledDate}
+                onData={setScheduledDate}
+                faixa={scheduledTime}
+                onFaixa={setScheduledTime}
+                erro={erroDoAgendamento}
+              />
             )}
           </div>
         </div>

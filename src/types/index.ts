@@ -327,6 +327,7 @@ export interface Order {
   store: string;
   store_id?: string;
   store_name?: string;
+  store_slug?: string;
   source?: string;
   customer_name: string;
   customer_phone: string;

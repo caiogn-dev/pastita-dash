@@ -141,6 +141,12 @@ export const ordersService = {
   /** Última localização (pin) que o cliente enviou no WhatsApp — para reusar no
    *  cálculo de rota / criação de pedido sem redigitar. Passe conversationId
    *  (inbox) ou phone (PDV). Retorna null quando não há pin compartilhado. */
+  /** Faixas de agendamento da loja — as mesmas que o cardápio oferece. */
+  agendaDaLoja: async (storeSlug: string): Promise<{ data: string; faixas: string[] }[]> => {
+    const { data } = await api.get(`/public/${storeSlug}/availability/`);
+    return data?.agendamento?.dias ?? [];
+  },
+
   /**
    * Nome do lugar a partir da coordenada.
    *

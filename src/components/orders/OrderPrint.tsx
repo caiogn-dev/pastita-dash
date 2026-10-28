@@ -3,6 +3,7 @@
  * Formats order data for thermal printers (80mm width - Epson TM-T20)
  * Optimized for thermal printing with high contrast
  */
+import { rotuloDoAgendamento } from '../../utils/rotuloDoAgendamento';
 import { useRef, useCallback } from 'react';
 import { Order, OrderComboItem } from '../../types';
 import { rotuloDePagamento } from '../../utils/rotulosDeEstado';
@@ -326,9 +327,7 @@ export const useOrderPrint = () => {
         </div>
       `;
     })();
-    const scheduledLabel = [pedido.scheduled_date, pedido.scheduled_time]
-      .filter(Boolean)
-      .join(' ');
+    const scheduledLabel = rotuloDoAgendamento(pedido.scheduled_date, pedido.scheduled_time);
 
     const html = `
       <!DOCTYPE html>

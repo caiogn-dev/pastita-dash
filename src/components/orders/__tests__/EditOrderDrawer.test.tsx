@@ -41,21 +41,16 @@ test('nao fecha em erro de salvar', async () => {
   expect(onClose).not.toHaveBeenCalled();
 });
 
-test('habilitar agendamento com apenas horario (sem data) nao envia campos de agendamento', async () => {
+// Antes salvava o resto e descartava o agendamento em silêncio, com
+// "Pedido atualizado" na tela (Ivoneth, 27/10). Agora diz o que falta.
+test('agendado sem data nao salva e pede a data', async () => {
   (ordersService.updateOrder as jest.Mock).mockClear();
-  const onSaved = jest.fn();
-  render(<EditOrderDrawer order={baseOrder} onClose={jest.fn()} onSaved={onSaved} />);
-  // Enable scheduling
+  render(<EditOrderDrawer order={baseOrder} onClose={jest.fn()} onSaved={jest.fn()} />);
   fireEvent.click(screen.getByRole('checkbox'));
-  // Pick only a time slot, leave date empty
-  fireEvent.click(screen.getByText('10:00-12:00'));
-  // Also change name so patch is non-empty (otherwise drawer no-ops with onClose)
   fireEvent.change(screen.getByLabelText(/nome/i), { target: { value: 'Outro Nome' } });
   fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
-  await waitFor(() => expect(ordersService.updateOrder).toHaveBeenCalled());
-  const patch = (ordersService.updateOrder as jest.Mock).mock.calls[0][1];
-  expect(patch).not.toHaveProperty('scheduled_date');
-  expect(patch).not.toHaveProperty('scheduled_time');
+  expect(await screen.findByText(/escolha a data/i)).toBeInTheDocument();
+  expect(ordersService.updateOrder).not.toHaveBeenCalled();
 });
 
 // Task 7: discount / surcharge / delivery-fee editing

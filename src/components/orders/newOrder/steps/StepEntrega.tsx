@@ -2,7 +2,7 @@ import React from 'react';
 import type { Customer } from '../types';
 import type { UserAddress, RouteQuote } from '../../../../types/crm';
 import { fmt } from '../types';
-import { TIME_SLOTS } from '../../../../utils/schedulingSlots';
+import { SeletorDeFaixa } from '../../agendamento/SeletorDeFaixa';
 import { rotuloDoEndereco } from '../enderecoDoPedido';
 
 /** Step 2 */
@@ -26,6 +26,7 @@ export function StepEntrega({
   setScheduledDate,
   scheduledTime,
   setScheduledTime,
+  storeSlug,
 }: {
   customer: Customer | null;
   deliveryMethod: 'delivery' | 'pickup';
@@ -46,6 +47,7 @@ export function StepEntrega({
   setScheduledDate: (v: string) => void;
   scheduledTime: string;
   setScheduledTime: (v: string) => void;
+  storeSlug?: string | null;
 }) {
   const addresses = customer?.addresses ?? [];
 
@@ -212,40 +214,13 @@ export function StepEntrega({
         </label>
 
         {enableScheduling && (
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-widest text-fg-muted-token mb-2">
-                Data
-              </label>
-              <input
-                type="date"
-                value={scheduledDate}
-                onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full px-3 py-2 superficie text-sm text-fg-token focus:outline-none focus:ring-1 focus:ring-brand"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-widest text-fg-muted-token mb-2">
-                Janela de horário
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {TIME_SLOTS.map((slot) => (
-                  <button
-                    key={slot}
-                    type="button"
-                    onClick={() => setScheduledTime(slot)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors ${
-                      scheduledTime === slot
-                        ? 'bg-brand border-brand text-on-brand'
-                        : 'border-border-token text-fg-token hover:bg-surface-2'
-                    }`}
-                  >
-                    {slot}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+          <SeletorDeFaixa
+            storeSlug={storeSlug}
+            data={scheduledDate}
+            onData={setScheduledDate}
+            faixa={scheduledTime}
+            onFaixa={setScheduledTime}
+          />
         )}
       </div>
     </div>
