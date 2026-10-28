@@ -102,6 +102,18 @@ export const listPrintJobs = (storeSlug: string, params?: { page?: number }) =>
 export const requeuePrintJob = (_storeSlug: string, jobId: string) =>
   api.post(`/stores/print-jobs/${jobId}/requeue/`, {});
 
+/** Cancelado não volta à fila — nem se o agent relatar falha depois. */
+export const cancelPrintJob = (jobId: string) =>
+  api.post(`/stores/print-jobs/${jobId}/cancel/`, {});
+
+/** Cancela tudo que espera ou está saindo na loja (slug ou id). */
+export const cancelarFilaDeImpressao = (store: string) =>
+  api.post<{ canceladas: number }>('/stores/print-jobs/cancelar-fila/', { store });
+
+/** O que ainda pode ser cancelado: não imprimiu nem foi cancelado. */
+export const NA_FILA = ['pending', 'claimed'];
+export const podeCancelar = (status: string) => [...NA_FILA, 'failed'].includes(status);
+
 /**
  * Etiqueta remota: o backend converte os dados em ZPL e enfileira para a
  * Zebra de UM agent (nunca "qualquer agent da loja" — cairia na Epson).
