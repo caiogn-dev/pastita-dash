@@ -12,7 +12,7 @@ const wiz: Record<string, any> = {};
 const reset = () => Object.assign(wiz, {
   storeSlug: 'ivoneth', productStoreKey: 'ivoneth',
   customer: null, setCustomer: jest.fn(),
-  cart: [], addToCart: jest.fn(), changeQty: jest.fn(), removeFromCart: jest.fn(),
+  cart: [], addToCart: jest.fn(), addComboToCart: jest.fn(), changeQty: jest.fn(), removeFromCart: jest.fn(),
   deliveryMethod: 'pickup', setDeliveryMethod: jest.fn(),
   selectedAddress: null, setSelectedAddress: jest.fn(), escolherEnderecoSalvo: jest.fn(),
   freeAddressText: '', setFreeAddressText: jest.fn(),
@@ -40,6 +40,12 @@ jest.mock('../../../../components/orders/newOrder/useProdutosDaLoja', () => ({
       { id: 'p1', name: 'Coxinha', price: '5.00', category_name: 'Salgados', track_stock: false },
       { id: 'p2', name: 'Brigadeiro', price: '3.00', category_name: 'Doces', track_stock: true, stock_quantity: 0 },
     ],
+    combos: [{
+      id: 'c1', name: 'Combo Lanche', price: 15, is_active: true, track_stock: false, stock_quantity: 0,
+      groups: [{ id: 'g1', title: 'Salgado', product_name: '', product_id: null, is_required: true, min_selections: 1,
+        max_selections: 1, allow_duplicate_variants: false, position: 0, variant_limits: [],
+        product_options: [{ product_id: 'p1', name: 'Coxinha', price: 5, max_selections: 1 }, { product_id: 'p9', name: 'Kibe', price: 5, max_selections: 1 }] }],
+    }],
   }),
 }));
 jest.mock('../ClienteDoPedido', () => ({ ClienteDoPedido: () => <div>cliente</div> }));
@@ -87,6 +93,20 @@ describe('NovoPedidoPage', () => {
     montar();
     fireEvent.click(screen.getByRole('button', { name: 'Adicionar Coxinha' }));
     expect(wiz.addToCart).toHaveBeenCalledWith(expect.objectContaining({ id: 'p1' }));
+  });
+
+  it('combo aparece no catálogo e entra com as escolhas', () => {
+    montar();
+    fireEvent.click(screen.getByRole('button', { name: /Combos/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar Combo Lanche' }));
+    const adicionar = screen.getByRole('button', { name: /Adicionar · / });
+    expect(adicionar).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Kibe' }));
+    fireEvent.click(adicionar);
+    expect(wiz.addComboToCart).toHaveBeenCalledWith(expect.objectContaining({
+      quantity: 1,
+      combo: { id: 'c1', selections: { g1: ['p9'] }, resumo: 'Kibe' },
+    }));
   });
 
   it('produto esgotado não entra', () => {

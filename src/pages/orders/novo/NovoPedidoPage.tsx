@@ -27,6 +27,11 @@ import { ClienteDoPedido } from './ClienteDoPedido';
 import { EntregaDoPedido } from './EntregaDoPedido';
 import { ResumoDoPedido, contaDoPedido } from './ResumoDoPedido';
 import { PagamentoDoPedido } from './PagamentoDoPedido';
+import { EscolhasDoCombo } from './EscolhasDoCombo';
+import { chaveDoCombo, comboComoProduto, comboDoProduto, precoDoCombo, resumoDasEscolhas } from './combosDoPedido';
+import type { StoreCombo } from '../../../services/storesApi';
+
+const SEM_COMBOS: StoreCombo[] = [];
 
 const TOM_DO_SELO = {
   ok: 'bg-success-soft text-success-token',
@@ -79,14 +84,22 @@ export const NovoPedidoPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const { produtos, carregando } = useProdutosDaLoja(wiz.productStoreKey);
+  const { produtos: soProdutos, combos = SEM_COMBOS, carregando } = useProdutosDaLoja(wiz.productStoreKey);
+  // Combos entram no catálogo como cartões da categoria "Combos", na frente.
+  const produtos = useMemo(() => [...combos.map(comboComoProduto), ...soProdutos], [combos, soProdutos]);
+  const [comboAberto, setComboAberto] = useState<StoreCombo | null>(null);
   const [categoria, setCategoria] = useState<string | null>(null);
   const [busca, setBusca] = useState('');
   const buscaRef = useRef<HTMLInputElement>(null);
 
   const categorias = useMemo(() => categoriasDoCatalogo(produtos), [produtos]);
   const visiveis = useMemo(() => filtrarCatalogo(produtos, categoria, busca), [produtos, categoria, busca]);
-  const qtd = new Map(wiz.cart.map((c) => [c.product.id, c.quantity]));
+  const qtd = new Map<string, number>();
+  for (const c of wiz.cart) {
+    // Linhas do mesmo combo (escolhas diferentes) somam no cartão dele.
+    const chave = c.combo ? `combo:${c.combo.id}` : c.product.id;
+    qtd.set(chave, (qtd.get(chave) ?? 0) + c.quantity);
+  }
   const conta = contaDoPedido(wiz);
   const falta = oQueFalta(wiz);
 
@@ -107,6 +120,8 @@ export const NovoPedidoPage: React.FC = () => {
   const adicionar = (id: string) => {
     const p = produtos.find((x) => x.id === id);
     if (!p) return;
+    const combo = comboDoProduto(p);
+    if (combo) { setComboAberto(combo); return; }
     const atual = qtd.get(id) ?? 0;
     if (atual > 0) wiz.changeQty(id, atual + 1);
     else wiz.addToCart(p);
@@ -242,6 +257,21 @@ export const NovoPedidoPage: React.FC = () => {
           </aside>
         </div>
       </div>
+      {comboAberto && (
+        <EscolhasDoCombo
+          combo={comboAberto}
+          onFechar={() => setComboAberto(null)}
+          onAdicionar={(escolhas) => {
+            const c = comboAberto;
+            wiz.addComboToCart({
+              product: { ...comboComoProduto(c), id: chaveDoCombo(c.id, escolhas), price: precoDoCombo(c, escolhas) },
+              quantity: 1,
+              combo: { id: c.id, selections: escolhas, resumo: resumoDasEscolhas(c, escolhas) },
+            });
+            setComboAberto(null);
+          }}
+        />
+      )}
     </PageShell>
   );
 };

@@ -28,7 +28,7 @@ export interface NewOrderWizard {
   freeAddressText: string; setFreeAddressText: (v: string) => void;
   routeQuote: RouteQuote | null; calculatingRoute: boolean; handleCalculateRoute: (address: string, coords?: Coords | null) => Promise<void>;
   handleUseSharedLocation: () => Promise<void>; customerHasPhone: boolean;
-  cart: CartItem[]; addToCart: (p: Product) => void; changeQty: (id: string, qty: number) => void; removeFromCart: (id: string) => void;
+  cart: CartItem[]; addToCart: (p: Product) => void; addComboToCart: (linha: CartItem) => void; changeQty: (id: string, qty: number) => void; removeFromCart: (id: string) => void;
   discountType: DiscountType; setDiscountType: (v: DiscountType) => void;
   discountValue: string; setDiscountValue: (v: string) => void; discountReason: string; setDiscountReason: (v: string) => void;
   surchargeValue: string; setSurchargeValue: (v: string) => void; surchargeReason: string; setSurchargeReason: (v: string) => void;
@@ -172,6 +172,13 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
         ? prev.map((c) => (c.product.id === product.id ? { ...c, quantity: c.quantity + 1 } : c))
         : [...prev, { product, quantity: 1 }],
     );
+  // Combo chega montado (escolhas + preço); mesma chave soma uma unidade.
+  const addComboToCart = (linha: CartItem) =>
+    setCart((prev) =>
+      prev.some((c) => c.product.id === linha.product.id)
+        ? prev.map((c) => (c.product.id === linha.product.id ? { ...c, quantity: c.quantity + linha.quantity } : c))
+        : [...prev, linha],
+    );
   const changeQty = (productId: string, qty: number) =>
     setCart((prev) => prev.map((c) => (c.product.id === productId ? { ...c, quantity: qty } : c)));
   const removeFromCart = (productId: string) =>
@@ -223,7 +230,9 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
         delivery_method: deliveryMethod,
         delivery_address: deliveryAddress,
         delivery_fee: deliveryMethod === 'delivery' ? (routeQuote?.fee ?? 0) : 0,
-        items: cart.map((c) => ({ product_id: c.product.id, quantity: c.quantity })),
+        items: cart.map((c) => (c.combo
+          ? { combo_id: c.combo.id, selections: c.combo.selections, quantity: c.quantity }
+          : { product_id: c.product.id, quantity: c.quantity })),
         // Pedido lançado por dentro da loja — mesmo canal do PDV no relatório.
         source: 'dashboard',
         payment_method: paymentMethod,
@@ -293,7 +302,7 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     freeAddressText, setFreeAddressText: updateAddress, routeQuote, calculatingRoute, handleCalculateRoute,
     handleUseSharedLocation,
     customerHasPhone: Boolean((customer?.phone_number_edited || customer?.phone_number || '').replace(/\D/g, '')),
-    cart, addToCart, changeQty, removeFromCart,
+    cart, addToCart, addComboToCart, changeQty, removeFromCart,
     discountType, setDiscountType, discountValue, setDiscountValue, discountReason, setDiscountReason,
     surchargeValue, setSurchargeValue, surchargeReason, setSurchargeReason,
     paymentMethod, setPaymentMethod, submitting, handleSubmit,

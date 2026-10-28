@@ -103,6 +103,7 @@ export function ResumoDoPedido({ wiz }: { wiz: NewOrderWizard }) {
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-fg-token">{item.product.name}</p>
+                  {item.combo?.resumo && <p className="truncate text-xs text-fg-muted-token" title={item.combo.resumo}>{item.combo.resumo}</p>}
                   <p className="text-xs text-fg-muted-token tabular-nums">{formatCurrency(unit)} un.</p>
                 </div>
                 <span className="font-semibold tabular-nums text-fg-token">{formatCurrency(unit * item.quantity)}</span>

@@ -7,6 +7,8 @@ export interface CartItem {
   product: Product;
   quantity: number;
   notes?: string;
+  /** Linha de combo: `product` é o cartão do combo (preço já com as escolhas). */
+  combo?: { id: string; selections: Record<string, string[]>; resumo: string };
 }
 
 /**

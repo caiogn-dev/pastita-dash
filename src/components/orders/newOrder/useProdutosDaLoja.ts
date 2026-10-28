@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { productsService } from '../../../services/products';
 import type { Product } from '../../../services/products';
+import { getCombos, type StoreCombo } from '../../../services/storesApi';
 
 /**
  * Todos os produtos ativos da loja, todas as páginas. Com uma página só de 40,
@@ -10,6 +11,17 @@ import type { Product } from '../../../services/products';
 export function useProdutosDaLoja(storeId: string) {
   const [produtos, setProdutos] = useState<Product[]>([]);
   const [carregando, setCarregando] = useState(false);
+  // Combo é outro cadastro (`/combos/`): sem isto não aparecia no pedido (28/10).
+  const [combos, setCombos] = useState<StoreCombo[]>([]);
+
+  useEffect(() => {
+    if (!storeId) return;
+    let vivo = true;
+    getCombos(storeId)
+      .then((r) => { if (vivo) setCombos((r.results || []).filter((c) => c.is_active)); })
+      .catch(() => { if (vivo) setCombos([]); });
+    return () => { vivo = false; };
+  }, [storeId]);
 
   useEffect(() => {
     if (!storeId) {
@@ -33,5 +45,5 @@ export function useProdutosDaLoja(storeId: string) {
     return () => { vivo = false; };
   }, [storeId]);
 
-  return { produtos, carregando };
+  return { produtos, combos, carregando };
 }

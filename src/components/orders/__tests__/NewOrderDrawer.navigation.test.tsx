@@ -5,6 +5,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 jest.mock('../../crm/CustomerSearchInput', () => ({ CustomerSearchInput: () => <div data-testid="customer-search" /> }));
 jest.mock('../../../services/orders', () => ({ ordersService: { calculateDeliveryFee: jest.fn(), createOrder: jest.fn() } }));
 jest.mock('../../../services/products', () => ({ productsService: { getProducts: jest.fn().mockResolvedValue({ results: [] }) } }));
+jest.mock('../../../services/storesApi', () => ({ getCombos: () => Promise.resolve({ results: [] }) }));
 jest.mock('react-hot-toast', () => ({ __esModule: true, default: { success: jest.fn(), error: jest.fn() } }));
 
 import { useNewOrderWizard } from '../newOrder/useNewOrderWizard';

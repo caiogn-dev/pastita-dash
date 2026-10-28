@@ -433,7 +433,11 @@ export interface CreateOrder {
   discount?: number;
   surcharge?: number;
   adjustment_reason?: string;
-  items: Array<{ product_id: string; quantity: number; options?: Record<string, unknown> }>;
+  /** Produto, ou combo com as escolhas (`selections` = {grupo: [ids]}). */
+  items: Array<
+    | { product_id: string; quantity: number; options?: Record<string, unknown> }
+    | { combo_id: string; selections: Record<string, string[]>; quantity: number }
+  >;
   payment_method?: 'pix' | 'cash' | 'card_on_delivery' | 'voucher_on_delivery' | 'fiado' | 'credit_card' | 'debit_card';
   /** Cupom: o servidor confere e calcula o desconto. */
   coupon_code?: string;
