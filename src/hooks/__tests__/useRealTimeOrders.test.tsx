@@ -177,3 +177,42 @@ describe('pedido novo busca só ele', () => {
     expect(fetchMock.mock.calls[1][0]).toBe('http://api/api/v1/stores/s1/orders/?quadro=1');
   });
 });
+
+// 28/10: quedas de rede. Se a PRIMEIRA conexão falhava, o hook saía antes de
+// se inscrever — o client reconectava sozinho em segundo plano, o selo virava
+// "online", e nenhum pedido chegava. E ao reconectar ninguém buscava o que
+// entrou durante a queda.
+describe('quedas de rede', () => {
+  let fetchMock: jest.Mock;
+  beforeEach(() => {
+    fetchMock = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ results: [] }) });
+    (globalThis as unknown as { fetch: unknown }).fetch = fetchMock;
+    mockWs.on.mockClear();
+  });
+
+  const handlerDe = (evento: string) =>
+    mockWs.on.mock.calls.filter(([e]) => e === evento).map(([, h]) => h).pop();
+
+  it('primeira conexão falhou: inscreve mesmo assim (a reconexão em segundo plano entrega)', async () => {
+    mockWs.connect.mockRejectedValueOnce(new Error('offline'));
+    renderHook(() => useRealTimeOrders(config));
+    await waitFor(() => expect(mockWs.connect).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(mockWs.subscribe.mock.calls.map(([e]) => e)).toContain('order.created'),
+    );
+  });
+
+  it('reconectou depois de cair: busca o quadro para pegar o que entrou na queda', async () => {
+    renderHook(() => useRealTimeOrders(config));
+    await waitFor(() => expect(handlerDe('connected')).toBeDefined());
+
+    handlerDe('connected')(); // a 1ª conexão — nada a recuperar
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    handlerDe('disconnected')();
+    handlerDe('connected')();
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('http://api/api/v1/stores/s1/orders/?quadro=1', expect.anything()),
+    );
+  });
+});

@@ -1,7 +1,6 @@
 // src/mobile/useStoreOrdersFeed.ts
 import { useCallback, useEffect, useState } from 'react';
 import { useRootStore } from '../stores/rootStore';
-import { useRealTimeOrders } from '../hooks/useRealTimeOrders';
 import { getOrders } from '../services/storesApi';
 import type { StoreOrder } from '../services/storesApi';
 
@@ -18,13 +17,8 @@ export function useStoreOrdersFeed(): StoreOrdersFeed {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useRealTimeOrders({
-    enabled: Boolean(storeId),
-    apiUrl: import.meta.env.VITE_API_URL,
-    // Base only: o client já monta /ws/stores/<slug>/orders/ — passar o path
-    // aqui duplicava o caminho (e "undefined/..." quando a env não existia).
-    wsUrl: import.meta.env.VITE_WS_URL,
-  });
+  // Tempo real (e o bipe) vêm do PedidosAoVivo, montado no MainLayout acima do MobileShell.
+
 
   const load = useCallback(async () => {
     if (!storeId) return;

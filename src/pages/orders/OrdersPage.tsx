@@ -60,7 +60,7 @@ import {
 import { useStore, useOrderDetailModal } from '../../hooks';
 import { CancelarPedidoModal } from '../../components/orders/CancelarPedidoModal';
 import { RegistrarPagamentoModal } from '../../components/orders/RegistrarPagamentoModal';
-import { useRealTimeOrders } from '../../hooks/useRealTimeOrders';
+import { useTempoRealDosPedidos } from '../../stores/tempoRealDosPedidos';
 import { getErrorMessage } from '../../services';
 import { useRootStore, resolveStoreKey } from '../../stores/rootStore';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
@@ -470,12 +470,10 @@ export const OrdersPage: React.FC = () => {
 
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
-  // WebSocket real-time sync
-  const { isConnected: wsConnected, connectionError: wsConnectionError } = useRealTimeOrders({
-    enabled: Boolean(storeQuery),
-    apiUrl: import.meta.env.VITE_API_URL,
-    wsUrl: import.meta.env.VITE_WS_URL,
-  });
+  // Tempo real: conectado uma vez só, no layout (PedidosAoVivo). Aqui só o selo.
+  const wsConnected = useTempoRealDosPedidos((s) => s.conectado);
+  const wsConnectionError = useTempoRealDosPedidos((s) => s.falhou);
+
 
   // Aviso único quando o tempo real não conecta — o board continua funcionando
   // via refresh manual/polling, mas o operador precisa saber que não é ao vivo.

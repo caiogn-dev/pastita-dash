@@ -46,6 +46,12 @@ export class WebSocketClient {
   private reconnecting = false;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private heartbeatTimeout: NodeJS.Timeout | null = null;
+  // Vigia do silêncio (28/10): Wi-Fi trocado ou notebook suspenso deixa o
+  // socket "aberto e morto" — o 'close' demora minutos ou nunca vem, e o quadro
+  // fica parado com selo de online. O servidor manda ping a cada 30 s.
+  private vigiaTimeout: NodeJS.Timeout | null = null;
+  static readonly SILENCIO_MAXIMO_MS = 75_000;
+  private ouvindoRede = false;
   private subscriptionIds: Map<string, { type: string; id: string }> = new Map();
 
   constructor(config: WebSocketConfig) {
@@ -62,6 +68,7 @@ export class WebSocketClient {
     }
 
     this.intentionallyClosed = false;
+    this.ouvirRede();
 
     return new Promise((resolve, reject) => {
       try {
@@ -80,6 +87,7 @@ export class WebSocketClient {
             return;
           }
           this.reconnectAttempts = 0;
+          this.armarVigia();
           // Send authentication message on open
           socket.send(JSON.stringify({
             type: 'auth',
@@ -91,11 +99,13 @@ export class WebSocketClient {
 
         socket.addEventListener('message', (event) => {
           if (!ehOAtual()) return;
+          this.armarVigia();
           this.handleMessage(event.data);
         });
 
         socket.addEventListener('close', () => {
           if (!ehOAtual()) return;
+          this.desarmarVigia();
           this.emit('disconnected');
           this.attemptReconnect();
         });
@@ -122,6 +132,8 @@ export class WebSocketClient {
       clearTimeout(this.heartbeatTimeout);
       this.heartbeatTimeout = null;
     }
+    this.desarmarVigia();
+    this.pararDeOuvirRede();
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -204,6 +216,60 @@ export class WebSocketClient {
         })
       );
     }
+  }
+
+  private armarVigia(): void {
+    this.desarmarVigia();
+    this.vigiaTimeout = setTimeout(() => {
+      this.vigiaTimeout = null;
+      const morto = this.ws;
+      if (!morto || this.intentionallyClosed) return;
+      // Solta o socket ANTES de fechar: num TCP morto o 'close' pode nunca
+      // chegar, e o dele (se chegar) passa a ser de órfão e é ignorado.
+      this.ws = null;
+      try { morto.close(); } catch { /* já estava morto */ }
+      this.emit('disconnected');
+      this.attemptReconnect();
+    }, WebSocketClient.SILENCIO_MAXIMO_MS);
+  }
+
+  private desarmarVigia(): void {
+    if (this.vigiaTimeout) {
+      clearTimeout(this.vigiaTimeout);
+      this.vigiaTimeout = null;
+    }
+  }
+
+  /**
+   * A rede voltou ou a aba voltou a ficar visível: tenta já, sem esperar o
+   * backoff (que pode estar em 30 s depois de uma queda longa).
+   */
+  private readonly reconectarAgora = (): void => {
+    if (this.intentionallyClosed) return;
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+    const estado = this.ws?.readyState;
+    if (estado === 1 /* OPEN */ || estado === 0 /* CONNECTING */) return;
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+    this.reconnecting = false;
+    this.reconnectAttempts = 0;
+    this.connect().catch(() => this.attemptReconnect());
+  };
+
+  private ouvirRede(): void {
+    if (this.ouvindoRede || typeof window === 'undefined') return;
+    this.ouvindoRede = true;
+    window.addEventListener('online', this.reconectarAgora);
+    document.addEventListener('visibilitychange', this.reconectarAgora);
+  }
+
+  private pararDeOuvirRede(): void {
+    if (!this.ouvindoRede) return;
+    this.ouvindoRede = false;
+    window.removeEventListener('online', this.reconectarAgora);
+    document.removeEventListener('visibilitychange', this.reconectarAgora);
   }
 
   private attemptReconnect(): void {

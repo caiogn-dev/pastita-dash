@@ -9,6 +9,7 @@ import { TrilhaAutomatica } from '../ui/trilhaAutomatica';
 import { TrialBanner } from './TrialBanner';
 import { useIsMobileViewport } from '../../mobile/useIsMobileViewport';
 import { MobileShell } from '../../mobile/MobileShell';
+import { PedidosAoVivo } from '../realtime/PedidosAoVivo';
 import { useAuthStore } from '../../stores/authStore';
 import { classeDeAltura } from './alturaDaCasca';
 
@@ -85,7 +86,7 @@ const Casca: React.FC<{
   );
 };
 
-export const MainLayout: React.FC = () => {
+const ConteudoDoLayout: React.FC = () => {
   const location = useLocation();
 
   // Só o BOARD de pedidos é full-bleed (tem chrome próprio). Sub-rotas como
@@ -144,5 +145,17 @@ export const MainLayout: React.FC = () => {
     </Casca>
   );
 };
+
+/**
+ * O tempo real de pedidos fica FORA dos ramos do layout (quadro, tela cheia,
+ * celular, normal): na mesma posição da árvore em todos, ir do quadro ao Início
+ * não derruba e reabre o socket — e o bipe de pedido novo toca em qualquer tela.
+ */
+export const MainLayout: React.FC = () => (
+  <>
+    <PedidosAoVivo />
+    <ConteudoDoLayout />
+  </>
+);
 
 export default MainLayout;

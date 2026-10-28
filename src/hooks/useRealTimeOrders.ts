@@ -89,27 +89,29 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
       // Reconexões em background (deploy do backend, rede) devem refletir no
       // estado — antes o hook só sabia do connect() inicial e o painel ficava
       // marcado como offline até um F5 mesmo com o WS de volta.
+      // Quedas (28/10): ao voltar depois de cair, busca o quadro — o WebSocket
+      // só entrega o que acontece com ele de pé, e o pedido que entrou na queda
+      // ficava fora até alguém clicar em Atualizar.
+      let caiu = false;
       ws.on('connected', () => {
         setIsConnected(true);
         setConnectionError(false);
+        if (caiu) {
+          caiu = false;
+          refreshOrdersFromAPI();
+        }
       });
       ws.on('disconnected', () => {
+        caiu = true;
         setIsConnected(false);
       });
       ws.on('error', () => {
         setConnectionError(true);
       });
 
-      try {
-        await ws.connect();
-        setIsConnected(true);
-        setConnectionError(false);
-      } catch {
-        setIsConnected(false);
-        setConnectionError(true);
-        return;
-      }
-
+      // Inscreve ANTES de conectar: se a primeira conexão falhava, o hook saía
+      // antes daqui, o client reconectava sozinho em segundo plano — selo
+      // "online" — e nenhum pedido chegava.
       // Subscribe to order events (sem console.log — payload contém dados de pedido)
       ws.subscribe('order.created', (event) => {
         // Venda de saldo (carteira) não é pedido: aviso do que é, sem bipe e
@@ -167,6 +169,17 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
           { duration: 15000, id: `pagamento-a-menor-${e.order_id}` },
         );
       });
+
+      try {
+        await ws.connect();
+        setIsConnected(true);
+        setConnectionError(false);
+      } catch {
+        // O client segue tentando (backoff, rede de volta, aba visível).
+        caiu = true;
+        setIsConnected(false);
+        setConnectionError(true);
+      }
     };
 
     initWebSocket();
