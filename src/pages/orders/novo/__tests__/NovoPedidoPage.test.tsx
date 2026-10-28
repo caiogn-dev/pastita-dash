@@ -1,10 +1,10 @@
 /**
- * Novo pedido em tela só (desktop, 28/10): clicar no cartão põe o item no
- * pedido, a busca "/" filtra, e o Concluir diz o que falta em vez de só
- * ficar cinza.
+ * Novo pedido em 4 passos (28/10): Cliente → Itens → Entrega → Pagamento.
+ * Clicar no cartão põe o item no pedido, a busca "/" filtra, e o botão diz
+ * o que falta em vez de só ficar cinza.
  */
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { oQueFalta } from '../NovoPedidoPage';
 
@@ -61,6 +61,9 @@ jest.mock('../../../../hooks', () => ({
 const { NovoPedidoPage } = require('../NovoPedidoPage');
 
 const montar = () => render(<MemoryRouter><NovoPedidoPage /></MemoryRouter>);
+const passo = (rotulo: string) => fireEvent.click(
+  within(screen.getByRole('navigation', { name: 'Passos do pedido' })).getByRole('button', { name: new RegExp(`^${rotulo}`) }),
+);
 
 beforeEach(reset);
 
@@ -91,12 +94,14 @@ describe('oQueFalta', () => {
 describe('NovoPedidoPage', () => {
   it('clicar no cartão põe o produto no pedido', () => {
     montar();
+    passo('Itens');
     fireEvent.click(screen.getByRole('button', { name: 'Adicionar Coxinha' }));
     expect(wiz.addToCart).toHaveBeenCalledWith(expect.objectContaining({ id: 'p1' }));
   });
 
   it('combo aparece no catálogo e entra com as escolhas', () => {
     montar();
+    passo('Itens');
     fireEvent.click(screen.getByRole('button', { name: /Combos/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Adicionar Combo Lanche' }));
     const adicionar = screen.getByRole('button', { name: /Adicionar · / });
@@ -111,26 +116,48 @@ describe('NovoPedidoPage', () => {
 
   it('produto esgotado não entra', () => {
     montar();
+    passo('Itens');
     expect(screen.getByRole('button', { name: 'Adicionar Brigadeiro' })).toBeDisabled();
   });
 
   it('categoria filtra a grade', () => {
     montar();
+    passo('Itens');
     fireEvent.click(screen.getByRole('button', { name: /Doces/ }));
     expect(screen.queryByRole('button', { name: 'Adicionar Coxinha' })).toBeNull();
   });
 
-  it('Concluir desabilitado diz o motivo', () => {
+  it('começa no cliente e não segue sem ele, dizendo o motivo', () => {
     montar();
-    expect(screen.getByRole('button', { name: /Concluir/ })).toBeDisabled();
+    expect(screen.getByRole('heading', { name: 'Quem é o cliente?' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Continuar · Itens/ })).toBeDisabled();
     expect(screen.getByText('Escolha o cliente')).toBeInTheDocument();
   });
 
-  it('com tudo pronto, Ctrl+Enter conclui', () => {
-    wiz.customer = { id: 'c1', phone_number: '63999990000' };
+  it('Continuar leva ao próximo passo', () => {
+    wiz.customer = { id: 'c1', name: 'Ana', phone_number: '63999990000' };
+    montar();
+    fireEvent.click(screen.getByRole('button', { name: /Continuar · Itens/ }));
+    expect(screen.getByRole('heading', { name: 'O que vai no pedido?' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Continuar · Entrega/ })).toBeDisabled();
+  });
+
+  it('no último passo, o que falta de antes leva até lá', () => {
+    wiz.customer = { id: 'c1', name: 'Ana', phone_number: '63999990000' };
+    montar();
+    passo('Pagamento');
+    expect(screen.getByRole('button', { name: /Concluir/ })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Adicione pelo menos um item' }));
+    expect(screen.getByRole('heading', { name: 'O que vai no pedido?' })).toBeInTheDocument();
+  });
+
+  it('com tudo pronto, Ctrl+Enter segue até concluir', () => {
+    wiz.customer = { id: 'c1', name: 'Ana', phone_number: '63999990000' };
     wiz.cart = [{ product: { id: 'p1', name: 'Coxinha', price: '5.00' }, quantity: 2 }];
     montar();
     expect(screen.getByTestId('total-do-pedido')).toHaveTextContent('10,00');
+    for (let i = 0; i < 3; i += 1) fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
+    expect(wiz.handleSubmit).not.toHaveBeenCalled();
     fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
     expect(wiz.handleSubmit).toHaveBeenCalled();
   });
@@ -177,12 +204,14 @@ describe('NovoPedidoPage', () => {
     wiz.paymentMethod = 'cash';
     wiz.trocoPara = 50;
     montar();
+    passo('Pagamento');
     expect(screen.getByTestId('troco-a-levar')).toHaveTextContent('30,00');
   });
 
   it('vale mostra as bandeiras', () => {
     wiz.paymentMethod = 'voucher_on_delivery';
     montar();
+    passo('Pagamento');
     fireEvent.click(screen.getByRole('radio', { name: 'Alelo' }));
     expect(wiz.setBandeiraDoVale).toHaveBeenCalledWith('alelo');
   });

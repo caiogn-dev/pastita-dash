@@ -79,14 +79,15 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
   return (
     <div ref={containerRef} className="relative">
       {/* Input */}
-      <div className="flex items-center gap-2 px-3 py-2 superficie focus-within:border-brand focus-within:ring-1 focus-within:ring-brand transition-colors">
-        <MagnifyingGlassIcon className="h-4 w-4 text-fg-muted-token flex-shrink-0" />
+      <div className="flex h-12 items-center gap-3 rounded-lg border border-border-input bg-surface px-4 transition-colors focus-within:border-brand focus-within:ring-2 focus-within:ring-brand">
+        <MagnifyingGlassIcon className="h-5 w-5 text-fg-muted-token flex-shrink-0" />
         <input
           type="text"
           value={query}
           onChange={(e) => search(e.target.value)}
-          placeholder="Buscar cliente por nome ou telefone..."
-          className="flex-1 border-0 p-0 shadow-none focus:ring-0 bg-transparent text-sm text-fg-token placeholder:text-fg-muted-token outline-none min-w-0"
+          placeholder="Nome, telefone ou CPF/CNPJ"
+          aria-label="Buscar cliente"
+          className="flex-1 border-0 p-0 shadow-none focus:ring-0 bg-transparent text-base text-fg-token placeholder:text-fg-muted-token outline-none min-w-0"
           autoComplete="off"
         />
         {loading && (
@@ -97,22 +98,23 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
         {query && !loading && (
           <button
             type="button"
+            aria-label="Limpar busca"
             onClick={() => search('')}
-            className="p-0.5 text-fg-muted-token hover:text-fg-muted-token flex-shrink-0"
+            className="rounded-full p-1 text-fg-muted-token hover:bg-surface-2 hover:text-fg-token flex-shrink-0"
           >
-            <XMarkIcon className="h-3.5 w-3.5" />
+            <XMarkIcon className="h-4 w-4" />
           </button>
         )}
       </div>
 
       {/* Dropdown */}
       {(results.length > 0 || (query.length >= 2 && !loading && results.length === 0)) && (
-        <div className="absolute z-50 top-full mt-1 left-0 right-0 superficie shadow-xl overflow-hidden">
+        <div className="absolute z-50 top-full mt-2 left-0 right-0 max-h-80 overflow-y-auto superficie shadow-xl">
           {results.length === 0 ? (
             // No results — offer "new customer" option
             <button
               type="button"
-              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left hover:bg-surface-2 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-surface-2 transition-colors"
               onClick={() => {
                 // Create a placeholder customer with query as name
                 const newCustomer: CustomerSearchResult = {
@@ -126,14 +128,13 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
                 handleSelect(newCustomer);
               }}
             >
-              <span className="flex items-center justify-center h-8 w-8 rounded-full bg-surface-2 flex-shrink-0">
+              <span className="flex items-center justify-center h-9 w-9 rounded-full bg-surface-2 flex-shrink-0">
                 <UserPlusIcon className="h-4 w-4 text-fg-muted-token" />
               </span>
               <div>
                 <p className="font-medium text-fg-token">
                   Novo cliente: <span className="text-brand-ink">{query}</span>
                 </p>
-                <p className="text-xs text-fg-muted-token">Cliente não encontrado — criar novo</p>
               </div>
             </button>
           ) : (
@@ -142,13 +143,10 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
                 key={customer.id}
                 type="button"
                 onClick={() => handleSelect(customer)}
-                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left hover:bg-surface-2 transition-colors border-b border-border-token last:border-0"
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-surface-2 transition-colors border-b border-border-token last:border-0"
               >
                 {/* Avatar */}
-                <span
-                  className="flex items-center justify-center h-8 w-8 rounded-full text-white text-xs font-bold flex-shrink-0"
-                  style={{ backgroundColor: '#6366f1' }}
-                >
+                <span className="flex items-center justify-center h-9 w-9 rounded-full bg-brand-soft text-brand-ink text-xs font-bold flex-shrink-0">
                   {customer.name.slice(0, 2).toUpperCase()}
                 </span>
                 {/* Info */}
@@ -168,7 +166,7 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
                 </div>
                 {/* Spent */}
                 {customer.total_spent > 0 && (
-                  <span className="text-xs font-semibold text-success-token flex-shrink-0">
+                  <span className="text-sm font-semibold tabular-nums text-fg-token flex-shrink-0">
                     {formatCurrency(customer.total_spent)}
                   </span>
                 )}
