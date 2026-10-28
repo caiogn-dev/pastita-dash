@@ -25,6 +25,16 @@ export interface CustomerSearchResult {
   total_spent: number;
   last_order_at?: string;
   addresses: UserAddress[];
+  /** Cadastro DESTA loja: PF/PJ e dados da nota. */
+  cadastro?: {
+    id: string;
+    tipo_pessoa: 'pf' | 'pj';
+    documento: string;
+    razao_social: string;
+    nome_fantasia: string;
+    inscricao_estadual: string;
+    email: string;
+  } | null;
 }
 
 export interface CustomerProfile extends CustomerSearchResult {

@@ -3,6 +3,7 @@ import { MagnifyingGlassIcon, XMarkIcon, UserPlusIcon } from '@heroicons/react/2
 import { useCustomerSearch } from '../../hooks/useCustomerSearch';
 import type { CustomerSearchResult } from '../../types/crm';
 import { formatCurrency } from '../../utils/formatters';
+import { formatarDocumento } from '../../utils/documento';
 
 interface CustomerSearchInputProps {
   storeSlug: string;
@@ -157,6 +158,9 @@ export const CustomerSearchInput: React.FC<CustomerSearchInputProps> = ({
                   </p>
                   <p className="text-xs text-fg-muted-token truncate">
                     {customer.phone_number}
+                    {customer.cadastro?.documento && (
+                      <> · {customer.cadastro.tipo_pessoa === 'pj' ? 'CNPJ' : 'CPF'} {formatarDocumento(customer.cadastro.documento)}</>
+                    )}
                     {customer.total_orders > 0 && (
                       <> · {customer.total_orders} pedido(s)</>
                     )}

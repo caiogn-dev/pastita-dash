@@ -498,6 +498,13 @@ export interface StoreCustomer {
   user_name: string;
   phone: string;
   whatsapp: string;
+  email?: string;
+  tipo_pessoa?: 'pf' | 'pj';
+  /** CPF ou CNPJ, só dígitos. */
+  documento?: string;
+  razao_social?: string;
+  nome_fantasia?: string;
+  inscricao_estadual?: string;
   instagram: string;
   twitter: string;
   facebook: string;
@@ -1463,6 +1470,12 @@ export const getCustomer = async (id: string): Promise<StoreCustomer> => {
 
 export interface CustomerWritePayload {
   name?: string;
+  email?: string;
+  tipo_pessoa?: 'pf' | 'pj';
+  documento?: string;
+  razao_social?: string;
+  nome_fantasia?: string;
+  inscricao_estadual?: string;
   phone?: string;
   whatsapp?: string;
   notes?: string;
