@@ -434,7 +434,13 @@ export interface CreateOrder {
   surcharge?: number;
   adjustment_reason?: string;
   items: Array<{ product_id: string; quantity: number; options?: Record<string, unknown> }>;
-  payment_method?: 'pix' | 'cash' | 'card_on_delivery' | 'credit_card' | 'debit_card';
+  payment_method?: 'pix' | 'cash' | 'card_on_delivery' | 'voucher_on_delivery' | 'fiado' | 'credit_card' | 'debit_card';
+  /** Cupom: o servidor confere e calcula o desconto. */
+  coupon_code?: string;
+  /** Dinheiro: troco para quanto (0 = não precisa de troco). */
+  change_for?: number;
+  /** Vale na entrega: bandeira (vr, sodexo, ticket, alelo). */
+  voucher_brand?: string;
   notes?: string;
   scheduled_date?: string;
   scheduled_time?: string;

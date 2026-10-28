@@ -23,6 +23,8 @@ const reset = () => Object.assign(wiz, {
   observacoes: '', setObservacoes: jest.fn(),
   discountType: 'fixed', setDiscountType: jest.fn(), discountValue: '', setDiscountValue: jest.fn(),
   surchargeValue: '', setSurchargeValue: jest.fn(), discountReason: '', setDiscountReason: jest.fn(),
+  surchargeReason: '', setSurchargeReason: jest.fn(),
+  cupom: null, setCupom: jest.fn(), trocoPara: null, setTrocoPara: jest.fn(), bandeiraDoVale: '', setBandeiraDoVale: jest.fn(),
   paymentMethod: 'pix', setPaymentMethod: jest.fn(),
   suppressNotifications: false, setSuppressNotifications: jest.fn(),
   submitting: false, handleSubmit: jest.fn(), aplicarRascunho: jest.fn(),
@@ -40,8 +42,11 @@ jest.mock('../../../../components/orders/newOrder/useProdutosDaLoja', () => ({
     ],
   }),
 }));
-jest.mock('../../../../components/orders/newOrder/steps/StepCliente', () => ({ StepCliente: () => <div>cliente</div> }));
-jest.mock('../../../../components/orders/newOrder/steps/StepEntrega', () => ({ StepEntrega: () => <div>entrega</div> }));
+jest.mock('../ClienteDoPedido', () => ({ ClienteDoPedido: () => <div>cliente</div> }));
+jest.mock('../EntregaDoPedido', () => ({ EntregaDoPedido: () => <div>entrega</div> }));
+const mockValidarCupom = jest.fn();
+jest.mock('../../../../services/orders', () => ({ ordersService: { validarCupom: (...a: unknown[]) => mockValidarCupom(...a) } }));
+jest.mock('../../../../services/api', () => ({ getErrorMessage: () => 'erro' }));
 jest.mock('../../../../hooks', () => ({
   useStore: () => ({ storeId: 's1', storeSlug: 'ivoneth' }),
 }));
@@ -54,7 +59,7 @@ const montar = () => render(<MemoryRouter><NovoPedidoPage /></MemoryRouter>);
 beforeEach(reset);
 
 describe('oQueFalta', () => {
-  const base = { ...({} as any), customer: { id: 'c1', phone_number: '63999990000' }, cart: [{ quantity: 1 }], deliveryMethod: 'pickup', freeAddressText: '', routeQuote: null, enableScheduling: false, scheduledDate: '', scheduledTime: '' };
+  const base = { ...({} as any), customer: { id: 'c1', phone_number: '63999990000' }, cart: [{ quantity: 1 }], deliveryMethod: 'pickup', freeAddressText: '', routeQuote: null, enableScheduling: false, scheduledDate: '', scheduledTime: '', paymentMethod: 'pix', bandeiraDoVale: '' };
 
   it('pede cliente, depois item, depois frete', () => {
     expect(oQueFalta({ ...base, customer: null })).toBe('Escolha o cliente');
@@ -65,6 +70,11 @@ describe('oQueFalta', () => {
 
   it('cliente novo sem telefone não passa', () => {
     expect(oQueFalta({ ...base, customer: { id: '', phone_number: '' } })).toBe('Informe o telefone do cliente');
+  });
+
+  it('vale sem bandeira não passa', () => {
+    expect(oQueFalta({ ...base, paymentMethod: 'voucher_on_delivery' })).toBe('Escolha a bandeira do vale');
+    expect(oQueFalta({ ...base, paymentMethod: 'voucher_on_delivery', bandeiraDoVale: 'alelo' })).toBeNull();
   });
 
   it('agendado sem faixa não passa', () => {
@@ -92,7 +102,7 @@ describe('NovoPedidoPage', () => {
 
   it('Concluir desabilitado diz o motivo', () => {
     montar();
-    expect(screen.getByRole('button', { name: /Concluir pedido/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Concluir/ })).toBeDisabled();
     expect(screen.getByText('Escolha o cliente')).toBeInTheDocument();
   });
 
@@ -103,5 +113,57 @@ describe('NovoPedidoPage', () => {
     expect(screen.getByTestId('total-do-pedido')).toHaveTextContent('10,00');
     fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
     expect(wiz.handleSubmit).toHaveBeenCalled();
+  });
+
+  it('ajustes ficam fechados até serem chamados', () => {
+    montar();
+    expect(screen.queryByLabelText('Desconto')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '+ Desconto' }));
+    expect(screen.getByLabelText('Desconto')).toBeInTheDocument();
+  });
+
+  it('cupom é conferido no servidor antes de entrar no pedido', async () => {
+    wiz.cart = [{ product: { id: 'p1', name: 'Coxinha', price: '20.00' }, quantity: 1 }];
+    mockValidarCupom.mockResolvedValue({ valido: true, codigo: 'VOLTA10', desconto: 2 });
+    montar();
+    fireEvent.click(screen.getByRole('button', { name: '+ Cupom' }));
+    fireEvent.change(screen.getByLabelText('Código do cupom'), { target: { value: 'volta10' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
+    await screen.findByRole('button', { name: '+ Cupom' });
+    expect(mockValidarCupom).toHaveBeenCalledWith('ivoneth', 'VOLTA10', 20, undefined);
+    expect(wiz.setCupom).toHaveBeenCalledWith({ codigo: 'VOLTA10', desconto: 2 });
+  });
+
+  it('cupom recusado mostra o motivo e não entra', async () => {
+    wiz.cart = [{ product: { id: 'p1', name: 'Coxinha', price: '20.00' }, quantity: 1 }];
+    mockValidarCupom.mockResolvedValue({ valido: false, erro: 'Cupom expirado' });
+    montar();
+    fireEvent.click(screen.getByRole('button', { name: '+ Cupom' }));
+    fireEvent.change(screen.getByLabelText('Código do cupom'), { target: { value: 'X' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
+    expect(await screen.findByText('Cupom expirado')).toBeInTheDocument();
+    expect(wiz.setCupom).not.toHaveBeenCalled();
+  });
+
+  it('cupom aplicado desconta do total', () => {
+    wiz.cart = [{ product: { id: 'p1', name: 'Coxinha', price: '20.00' }, quantity: 1 }];
+    wiz.cupom = { codigo: 'VOLTA10', desconto: 2 };
+    montar();
+    expect(screen.getByTestId('total-do-pedido')).toHaveTextContent('18,00');
+  });
+
+  it('dinheiro pede troco e mostra quanto levar', () => {
+    wiz.cart = [{ product: { id: 'p1', name: 'Coxinha', price: '20.00' }, quantity: 1 }];
+    wiz.paymentMethod = 'cash';
+    wiz.trocoPara = 50;
+    montar();
+    expect(screen.getByTestId('troco-a-levar')).toHaveTextContent('30,00');
+  });
+
+  it('vale mostra as bandeiras', () => {
+    wiz.paymentMethod = 'voucher_on_delivery';
+    montar();
+    fireEvent.click(screen.getByRole('radio', { name: 'Alelo' }));
+    expect(wiz.setBandeiraDoVale).toHaveBeenCalledWith('alelo');
   });
 });

@@ -142,6 +142,21 @@ export const ordersService = {
    *  cálculo de rota / criação de pedido sem redigitar. Passe conversationId
    *  (inbox) ou phone (PDV). Retorna null quando não há pin compartilhado. */
   /** Faixas de agendamento da loja — as mesmas que o cardápio oferece. */
+  /**
+   * Confere o cupom no servidor (mesma conta do checkout). Devolve o desconto
+   * em reais ou o motivo da recusa — o pedido só leva cupom que passou aqui.
+   */
+  validarCupom: async (
+    storeSlug: string, codigo: string, subtotal: number, telefone?: string,
+  ): Promise<{ valido: true; codigo: string; desconto: number } | { valido: false; erro: string }> => {
+    const { data } = await api.post<{ valid: boolean; error?: string; coupon?: { code: string; calculated_discount: string } }>(
+      `/stores/${storeSlug}/validate-coupon/`,
+      { code: codigo, subtotal, ...(telefone ? { customer_phone: telefone } : {}) },
+    );
+    if (!data.valid || !data.coupon) return { valido: false, erro: data.error || 'Cupom inválido' };
+    return { valido: true, codigo: data.coupon.code, desconto: Number(data.coupon.calculated_discount) || 0 };
+  },
+
   agendaDaLoja: async (storeSlug: string): Promise<{ data: string; faixas: string[] }[]> => {
     const { data } = await api.get(`/public/${storeSlug}/availability/`);
     return data?.agendamento?.dias ?? [];

@@ -5,7 +5,7 @@ import { ordersService } from '../../../services/orders';
 import { getErrorMessage } from '../../../services/api';
 import type { Product } from '../../../services/products';
 import type { CustomerSearchResult, UserAddress, DiscountType, RouteQuote } from '../../../types/crm';
-import type { CartItem, PaymentMethod, Customer } from './types';
+import type { CartItem, PaymentMethod, Customer, CupomValidado } from './types';
 import { ULTIMO_PASSO } from './types';
 import { parseCoords, type Coords } from './parseCoords';
 import { enderecoParaOPedido, rotuloDoEndereco, eSoUmPontoNoMapa } from './enderecoDoPedido';
@@ -38,6 +38,9 @@ export interface NewOrderWizard {
   scheduledTime: string; setScheduledTime: (v: string) => void;
   suppressNotifications: boolean; setSuppressNotifications: (v: boolean) => void;
   observacoes: string; setObservacoes: (v: string) => void;
+  cupom: CupomValidado | null; setCupom: (c: CupomValidado | null) => void;
+  trocoPara: number | null; setTrocoPara: (v: number | null) => void;
+  bandeiraDoVale: string; setBandeiraDoVale: (v: string) => void;
   aplicarRascunho: (r: RascunhoDePedido) => void;
   reset: () => void; productStoreKey: string; storeSlug: string;
 }
@@ -67,6 +70,9 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
   const [scheduledTime, setScheduledTime] = useState('');
   const [suppressNotifications, setSuppressNotifications] = useState(false);
   const [observacoes, setObservacoes] = useState('');
+  const [cupom, setCupom] = useState<CupomValidado | null>(null);
+  const [trocoPara, setTrocoPara] = useState<number | null>(null);
+  const [bandeiraDoVale, setBandeiraDoVale] = useState('');
 
   const reset = () => {
     setStep(0); setCustomer(null); setDeliveryMethod('delivery'); setSelectedAddress(null);
@@ -76,6 +82,7 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     setEnableScheduling(false); setScheduledDate(''); setScheduledTime('');
     setSuppressNotifications(false);
     setObservacoes('');
+    setCupom(null); setTrocoPara(null); setBandeiraDoVale('');
   };
 
   // "Criar pedido desta conversa": o que o bot já juntou vira o estado
@@ -200,8 +207,6 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
       const deliveryAddress = deliveryMethod !== 'delivery'
         ? undefined
         : enderecoParaOPedido({ selectedAddress, freeAddressText, routeCoords });
-      const apiPaymentMethod: Exclude<PaymentMethod, 'fiado'> =
-        paymentMethod === 'fiado' ? 'cash' : paymentMethod;
       const isNewCustomer = customer.id === '';
       const customerPhone = isNewCustomer ? (customer.phone_number_edited || customer.phone_number) : customer.phone_number;
       const orderSubtotal = cart.reduce((s, c) => s + precoVigenteDoProduto(c.product) * c.quantity, 0);
@@ -221,8 +226,12 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
         items: cart.map((c) => ({ product_id: c.product.id, quantity: c.quantity })),
         // Pedido lançado por dentro da loja — mesmo canal do PDV no relatório.
         source: 'dashboard',
-        payment_method: apiPaymentMethod,
-        notes: [paymentMethod === 'fiado' ? 'Fiado' : '', observacoes.trim()].filter(Boolean).join('\n') || undefined,
+        payment_method: paymentMethod,
+        notes: observacoes.trim() || undefined,
+        // O servidor confere o cupom de novo e calcula o desconto dele.
+        ...(cupom ? { coupon_code: cupom.codigo } : {}),
+        ...(paymentMethod === 'cash' && trocoPara != null ? { change_for: trocoPara } : {}),
+        ...(paymentMethod === 'voucher_on_delivery' && bandeiraDoVale ? { voucher_brand: bandeiraDoVale } : {}),
         ...(discountAmount > 0 ? { discount: Number(discountAmount.toFixed(2)) } : {}),
         ...(surchargeAmount > 0 ? { surcharge: Number(surchargeAmount.toFixed(2)) } : {}),
         ...(adjustmentReason ? { adjustment_reason: adjustmentReason } : {}),
@@ -291,6 +300,7 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     enableScheduling, setEnableScheduling, scheduledDate, setScheduledDate, scheduledTime, setScheduledTime,
     suppressNotifications, setSuppressNotifications,
     observacoes, setObservacoes, aplicarRascunho,
+    cupom, setCupom, trocoPara, setTrocoPara, bandeiraDoVale, setBandeiraDoVale,
     reset, productStoreKey, storeSlug,
   };
 }

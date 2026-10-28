@@ -36,14 +36,15 @@ test('aplicar o rascunho preenche cliente, endereço, itens e observações', ()
   expect(result.current.step).toBe(0);
 });
 
-test('as observações vão no pedido, junto do Fiado quando for o caso', async () => {
+test('as observações vão no pedido, sem marcar o fiado na nota', async () => {
   const { result } = renderHook(() => useNewOrderWizard({ storeSlug: 'loja-1' }));
   act(() => {
     result.current.aplicarRascunho({ ...RASCUNHO, entrega: 'pickup' });
     result.current.setPaymentMethod('fiado');
   });
   await act(async () => { await result.current.handleSubmit(); });
-  expect(createOrder.mock.calls[0][0].notes).toBe('Fiado\nsem cebola');
+  expect(createOrder.mock.calls[0][0].notes).toBe('sem cebola');
+  expect(createOrder.mock.calls[0][0].payment_method).toBe('fiado');
 });
 
 test('sem observação, notes continua como antes', async () => {
