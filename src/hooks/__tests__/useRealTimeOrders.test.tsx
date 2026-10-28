@@ -30,6 +30,7 @@ jest.mock('../useNotificationSound', () => ({
     playNotificationSound: mockPlayNotificationSound,
     playOrderSound: mockPlayNotificationSound,
     playSuccessSound: jest.fn(),
+    playPixSound: jest.fn(),
     stopAlert: jest.fn(),
     isAlertActive: false,
   }),

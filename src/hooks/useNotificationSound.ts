@@ -1,195 +1,141 @@
 /**
- * Hook for playing notification sounds
- * Uses Web Audio API with proper initialization
+ * Alarme de pedido novo (28/10).
+ *
+ * Sino de balcão que repete a cada 6 s até o pedido sair de "Recebido" —
+ * antes era um arpejo que calava em 30 s, e pedido entrado com a cozinha
+ * barulhenta ficava parado sem ninguém ver. Quem decide quando parar é
+ * `alarmeDePedidos` (aceito, cancelado, PIX não pago); teto de 10 min para
+ * não tocar a noite inteira num painel esquecido aberto.
+ * Liga/desliga e volume: `somDosPedidos`, por aparelho.
  */
 import { useCallback, useRef, useEffect, useState } from 'react';
+import { useRootStore } from '../stores/rootStore';
+import { useSomDosPedidos, GANHO_DO_VOLUME } from '../stores/somDosPedidos';
+import { tocarSino, tocarPix } from '../utils/sinoDoBalcao';
+import { aindaAguardando } from './alarmeDePedidos';
 
-const ORDER_FREQUENCIES = [659.25, 783.99, 987.77, 1174.66]; // E5, G5, B5, D6
-const SUCCESS_FREQUENCIES = [523.25, 783.99]; // C5, G5
+const REPETE_A_CADA_MS = 6000;
+const TETO_MS = 10 * 60 * 1000;
 
-interface NotificationSoundOptions {
-  enabled?: boolean;
-  volume?: number;
+function pedidosDaLoja() {
+  const { orders, selectedStoreId } = useRootStore.getState();
+  return (selectedStoreId && orders[selectedStoreId]) || [];
 }
 
-export const useNotificationSound = (options: NotificationSoundOptions = {}) => {
-  const { enabled = true, volume = 1.0 } = options;
-
+export const useNotificationSound = () => {
   const audioCtx = useRef<AudioContext | null>(null);
-  const alertIntervalId = useRef<number | undefined>(undefined);
-  const alertTimeoutId = useRef<number | undefined>(undefined);
+  const aguardando = useRef<Set<string>>(new Set());
+  const intervalo = useRef<number | undefined>(undefined);
+  const teto = useRef<number | undefined>(undefined);
   const [isAlertActive, setIsAlertActive] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Initialize AudioContext
   const initAudio = useCallback(() => {
-    if (audioCtx.current && audioCtx.current.state !== 'closed') {
-      if (audioCtx.current.state === 'suspended') {
-        audioCtx.current.resume();
-      }
+    if (audioCtx.current) {
+      if (audioCtx.current.state === 'suspended') void audioCtx.current.resume();
       return audioCtx.current;
     }
-
     try {
       audioCtx.current = new (window.AudioContext || window.webkitAudioContext!)();
-      setIsInitialized(true);
       return audioCtx.current;
-    } catch (e) {
-      console.error('[Sound] Failed to create AudioContext:', e);
+    } catch {
       return null;
     }
   }, []);
 
-  // Request notification permission and init audio on first click
+  // O navegador só libera áudio depois de um clique ou tecla.
   useEffect(() => {
-    const handleInteraction = () => {
+    const liberar = () => {
       initAudio();
       if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
+        void Notification.requestPermission();
       }
     };
-
-    document.addEventListener('click', handleInteraction, { once: true });
-    document.addEventListener('keydown', handleInteraction, { once: true });
-
+    document.addEventListener('click', liberar, { once: true });
+    document.addEventListener('keydown', liberar, { once: true });
     return () => {
-      document.removeEventListener('click', handleInteraction);
-      document.removeEventListener('keydown', handleInteraction);
-      if (alertIntervalId.current) {
-        window.clearInterval(alertIntervalId.current);
-      }
-      if (alertTimeoutId.current) {
-        window.clearTimeout(alertTimeoutId.current);
-      }
+      document.removeEventListener('click', liberar);
+      document.removeEventListener('keydown', liberar);
     };
   }, [initAudio]);
 
-  // Play a single tone
-  const playTone = useCallback((freq: number, duration: number, startTime: number, vol: number) => {
-    const ctx = audioCtx.current;
-    if (!ctx) return;
+  const ganho = () => GANHO_DO_VOLUME[useSomDosPedidos.getState().volume];
 
-    try {
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
+  const sino = useCallback(() => {
+    const ctx = initAudio();
+    if (ctx) tocarSino(ctx, ganho());
+  }, [initAudio]);
 
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(freq, startTime);
-
-      gainNode.gain.setValueAtTime(0, startTime);
-      gainNode.gain.linearRampToValueAtTime(vol, startTime + 0.02);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-
-      oscillator.start(startTime);
-      oscillator.stop(startTime + duration);
-    } catch (e) {
-      console.error('[Sound] playTone error:', e);
-    }
-  }, []);
-
-  // Play order sound (arpeggio)
-  const playOrderSoundOnce = useCallback(async () => {
-    let ctx = audioCtx.current;
-    if (!ctx) {
-      ctx = initAudio();
-      if (!ctx) return;
-    }
-
-    if (ctx.state === 'suspended') {
-      await ctx.resume();
-    }
-
-    const now = ctx.currentTime;
-
-    // First wave - ascending (louder)
-    ORDER_FREQUENCIES.forEach((freq, i) => {
-      playTone(freq, 0.3, now + i * 0.12, volume * 0.7);
-    });
-
-    // Second wave - ascending (delayed)
-    ORDER_FREQUENCIES.forEach((freq, i) => {
-      playTone(freq, 0.25, now + 0.7 + i * 0.1, volume * 0.5);
-    });
-  }, [initAudio, playTone, volume]);
-
-  // Stop the repeating alert
   const stopAlert = useCallback(() => {
-    if (alertIntervalId.current) {
-      window.clearInterval(alertIntervalId.current);
-      alertIntervalId.current = undefined;
-    }
-    if (alertTimeoutId.current) {
-      window.clearTimeout(alertTimeoutId.current);
-      alertTimeoutId.current = undefined;
-    }
+    window.clearInterval(intervalo.current);
+    window.clearTimeout(teto.current);
+    intervalo.current = undefined;
+    teto.current = undefined;
+    aguardando.current.clear();
     setIsAlertActive(false);
   }, []);
 
-  // Play order sound with optional repeat
-  const playOrderSound = useCallback(() => {
-    if (!enabled) return;
+  const conferir = useCallback(() => {
+    aguardando.current = aindaAguardando(aguardando.current, pedidosDaLoja());
+    if (aguardando.current.size === 0) stopAlert();
+    return aguardando.current.size > 0;
+  }, [stopAlert]);
 
-    playOrderSoundOnce();
+  const armar = useCallback((orderId: string) => {
+    aguardando.current.add(orderId);
+    if (intervalo.current) return;
+    setIsAlertActive(true);
+    intervalo.current = window.setInterval(() => { if (conferir()) sino(); }, REPETE_A_CADA_MS);
+    teto.current = window.setTimeout(stopAlert, TETO_MS);
+  }, [conferir, sino, stopAlert]);
 
-    // Guard against multiple concurrent intervals using the ref (synchronous check)
-    if (!alertIntervalId.current) {
-      setIsAlertActive(true);
-      alertIntervalId.current = window.setInterval(playOrderSoundOnce, 4000);
+  // Aceitou no quadro (ou em outra aba, via WebSocket) → cala na hora.
+  useEffect(() => useRootStore.subscribe(() => {
+    if (intervalo.current) conferir();
+  }), [conferir]);
 
-      // Auto-stop after 30 seconds; store timeout so it can be cancelled on unmount
-      alertTimeoutId.current = window.setTimeout(() => {
-        stopAlert();
-      }, 30000);
+  useEffect(() => stopAlert, [stopAlert]);
+
+  const avisarNoSistema = (titulo: string, corpo: string) => {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+      new Notification(titulo, { body: corpo, icon: '/brand/icon-192.png', tag: 'new-order', requireInteraction: true });
+    } catch {
+      // Notificação do sistema é bônus; o sino já tocou.
     }
+  };
 
-    // Browser notification
-    if ('Notification' in window && Notification.permission === 'granted') {
-      try {
-        new Notification('Novo Pedido!', {
-          body: 'Você tem um novo pedido para processar',
-          icon: '/brand/icon-192.png',
-          tag: 'new-order',
-          requireInteraction: true,
-        });
-      } catch (e) {
-        console.error('[Sound] Notification error:', e);
-      }
+  const playOrderSound = useCallback((orderId?: string | null) => {
+    if (!useSomDosPedidos.getState().ligado) return;
+    sino();
+    if (orderId) armar(orderId);
+    avisarNoSistema('Novo pedido!', 'Você tem um novo pedido para aceitar');
+  }, [sino, armar]);
+
+  /** PIX caiu: toque de caixa e, se o pedido ainda espera aceite, o sino segue. */
+  const playPixSound = useCallback((orderId?: string | null) => {
+    if (!useSomDosPedidos.getState().ligado) return;
+    const ctx = initAudio();
+    if (ctx) tocarPix(ctx, ganho());
+    if (orderId) {
+      aguardando.current.add(orderId);
+      if (conferir()) armar(orderId);
     }
-  }, [enabled, playOrderSoundOnce, stopAlert]);
+  }, [initAudio, conferir, armar]);
 
-  // Play success sound
-  const playSuccessSound = useCallback(() => {
-    if (!enabled) return;
-
-    let ctx = audioCtx.current;
-    if (!ctx) {
-      ctx = initAudio();
-      if (!ctx) return;
-    }
-
-    if (ctx.state === 'suspended') {
-      ctx.resume();
-    }
-
-    const now = ctx.currentTime;
-    playTone(SUCCESS_FREQUENCIES[0], 0.15, now, volume * 0.4);
-    playTone(SUCCESS_FREQUENCIES[1], 0.3, now + 0.15, volume * 0.45);
-  }, [enabled, initAudio, playTone, volume]);
-
-  // Alias for compatibility
-  const playNotificationSound = playOrderSound;
+  /** Botão "Testar" das preferências: toca mesmo com o som desligado. */
+  const testar = useCallback((qual: 'sino' | 'pix' = 'sino') => {
+    const ctx = initAudio();
+    if (!ctx) return;
+    (qual === 'pix' ? tocarPix : tocarSino)(ctx, ganho());
+  }, [initAudio]);
 
   return {
     playOrderSound,
-    playSuccessSound,
-    playNotificationSound,
+    playPixSound,
+    playNotificationSound: playOrderSound,
     stopAlert,
+    testar,
     isAlertActive,
-    isInitialized,
-    initAudio,
   };
 };
 

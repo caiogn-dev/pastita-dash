@@ -60,11 +60,13 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
 
   // Via ref para o handler de `order.created` não entrar nas deps do efeito de
   // conexão — senão qualquer recriação da função derrubaria e reabriria o socket.
-  const { playNotificationSound } = useNotificationSound();
+  const { playNotificationSound, playPixSound } = useNotificationSound();
   const playNewOrderSoundRef = useRef(playNotificationSound);
+  const playPixSoundRef = useRef(playPixSound);
   useEffect(() => {
     playNewOrderSoundRef.current = playNotificationSound;
-  }, [playNotificationSound]);
+    playPixSoundRef.current = playPixSound;
+  }, [playNotificationSound, playPixSound]);
 
   useEffect(() => {
     if (!enabled || !authToken || !selectedStoreId || !selectedStoreSlug) {
@@ -134,7 +136,8 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
         // na coluna "Novo" até alguém olhar para o monitor.
         // Disparar AQUI, na origem do evento, e não no board: o som toca mesmo
         // com o operador em outra tela do painel.
-        playNewOrderSoundRef.current?.();
+        // Com o id, o sino repete até o pedido ser aceito (alarmeDePedidos).
+        playNewOrderSoundRef.current?.((event as OrderRealtimeEvent).order_id);
       });
 
       ws.subscribe('order.updated', (event) => {
@@ -150,7 +153,13 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
       // e pedido cancelado eram transmitidos e o painel ignorava — a linha só
       // mudava de estado depois de um F5.
       ws.subscribe('order.paid', (event) => {
-        applyEventOrRefresh(event as OrderRealtimeEvent);
+        const e = event as OrderRealtimeEvent;
+        applyEventOrRefresh(e);
+        // PIX caiu: o pedido que estava calado (não pago) agora pede aceite.
+        const pedido = selectedStoreId
+          ? (useRootStore.getState().orders[selectedStoreId] || []).find((o) => o.id === e.order_id)
+          : undefined;
+        if (pedido?.payment_method === 'pix') playPixSoundRef.current?.(e.order_id);
       });
 
       ws.subscribe('order.cancelled', (event) => {

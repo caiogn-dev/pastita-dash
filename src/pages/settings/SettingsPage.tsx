@@ -6,6 +6,7 @@ import type { NotificationPreference } from '../../services/notifications';
 import { useAuthStore } from '../../stores/authStore';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { PageShell } from '../../components/ui';
+import { SomDosPedidos } from './SomDosPedidos';
 
 type NotificationSection = {
   id: string;
@@ -309,6 +310,7 @@ export const SettingsPage: React.FC = () => {
           </Button>
         </form>
       </Card>
+      <SomDosPedidos />
       </div>
 
       {/* Notification Preferences */}
