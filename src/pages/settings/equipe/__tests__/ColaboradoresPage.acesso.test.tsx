@@ -35,7 +35,19 @@ import { ColaboradoresPage } from '../ColaboradoresPage';
 describe('ColaboradoresPage — acesso do colaborador', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    addTeamMember.mockResolvedValue({ status: 201, data: {} });
+    addTeamMember.mockResolvedValue({ status: 201, data: { senha_definida: true } });
+  });
+
+  it('não promete a senha nova para quem já tinha cadastro', async () => {
+    addTeamMember.mockResolvedValue({ status: 201, data: { senha_definida: false } });
+    render(<MemoryRouter><ColaboradoresPage /></MemoryRouter>);
+    fireEvent.change(await screen.findByLabelText(/celular do colaborador/i), { target: { value: '63 98888-0002' } });
+    fireEvent.change(screen.getByLabelText(/senha de acesso/i), { target: { value: 'segredo1' } });
+    fireEvent.click(screen.getByRole('button', { name: /convidar/i }));
+
+    await waitFor(() => expect(toast.success).toHaveBeenCalled());
+    expect(toast.success.mock.calls[0][0]).toMatch(/já tinha cadastro/i);
+    expect(toast.success.mock.calls[0][0]).not.toMatch(/que você definiu/i);
   });
 
   it('manda a senha junto com o convite e diz como a pessoa entra', async () => {

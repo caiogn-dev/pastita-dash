@@ -64,7 +64,7 @@ export const ColaboradoresPage: React.FC = () => {
     if (!storeSlug || enviando) return;
     setEnviando(true);
     try {
-      const { status } = await crmApi.addTeamMember(storeSlug, {
+      const { status, data } = await crmApi.addTeamMember(storeSlug, {
         phone: telefone,
         name: nome,
         role: papel,
@@ -72,12 +72,14 @@ export const ColaboradoresPage: React.FC = () => {
       });
       // 201 = entrou agora; 200 = já estava na equipe e o papel mudou. Dizer
       // "adicionado" nos dois casos faria o dono achar que duplicou.
-      toast.success(
-        status === 201
+      // A senha só vale para conta nova: quem já tem cadastro mantém a dele.
+      let aviso = 'Papel atualizado.';
+      if (status === 201) {
+        aviso = data.senha_definida
           ? 'Colaborador adicionado. Ele entra em painel.cardapidex.com.br com o celular e a senha que você definiu.'
-          : 'Papel atualizado.',
-        { duration: 8000 },
-      );
+          : 'Colaborador adicionado. Ele já tinha cadastro: a senha dele não mudou e é com ela que ele entra.';
+      }
+      toast.success(aviso, { duration: 8000 });
       setTelefone('');
       setNome('');
       setSenha('');
