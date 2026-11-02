@@ -11,7 +11,8 @@
  *
  * Agora:
  *  - falha SEM cache → `FalhaAoCarregar` (role="alert") com "Tentar novamente";
- *  - falha COM cache → mantém a lista na tela e avisa pelo toast, sem apagá-la.
+ *  - toda busca vem de trocar a loja ou o filtro: a lista anterior é de OUTRA
+ *    seleção, então a falha também cai no erro acionável em vez de deixá-la na tela.
  */
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -32,6 +33,7 @@ jest.mock('../../../services/reports', () => ({
   __esModule: true,
   getAnalyticsReport: (...a: unknown[]) => relatorio(...a),
 }));
+jest.mock('../LinkDoGoogle', () => ({ __esModule: true, LinkDoGoogle: () => null }));
 let lojaAtual: { slug?: string } | null = { slug: 'ce-saladas' };
 jest.mock('../../../hooks/useStore', () => ({
   __esModule: true,
@@ -88,24 +90,6 @@ it('falha na primeira carga mostra erro acionável, e o retry refaz a busca', as
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });
 
-it('falha ao ATUALIZAR mantém a lista na tela e avisa pelo toast', async () => {
-  const user = userEvent.setup();
-  tela();
-
-  // Primeira carga OK.
-  await screen.findByText('Demorou demais');
-
-  // A próxima busca (trocar o filtro) cai.
-  listar.mockRejectedValueOnce(new Error('rede caiu'));
-  relatorio.mockRejectedValueOnce(new Error('rede caiu'));
-  await user.click(screen.getByRole('button', { name: '2 estrelas' }));
-
-  // A lista já carregada NÃO some, e a falha é avisada sem tela de erro.
-  await waitFor(() => expect(toastError).toHaveBeenCalled());
-  expect(screen.getByText('Demorou demais')).toBeInTheDocument();
-  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-});
-
 it('trocar de loja NÃO deixa a loja anterior ser tratada como cache (vazamento entre lojas)', async () => {
   const { rerender } = render(ui());
 
@@ -122,5 +106,35 @@ it('trocar de loja NÃO deixa a loja anterior ser tratada como cache (vazamento 
   // loja A como se fosse cache válido da loja B.
   const alerta = await screen.findByRole('alert');
   expect(alerta).toHaveTextContent('Não foi possível carregar as avaliações');
+  expect(screen.queryByText('Demorou demais')).not.toBeInTheDocument();
+});
+
+it('falha ao trocar o filtro não deixa a lista de outra nota sob o filtro novo', async () => {
+  listar.mockResolvedValueOnce(LISTA);
+  relatorio.mockResolvedValue(RESUMO);
+  tela();
+  await screen.findByText('Demorou demais');
+
+  listar.mockRejectedValueOnce(new Error('500'));
+  await userEvent.click(screen.getByRole('button', { name: '1 estrela' }));
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível carregar as avaliações');
+  expect(screen.queryByText('Demorou demais')).not.toBeInTheDocument();
+});
+
+it('resposta atrasada do filtro anterior não sobrescreve a do filtro atual', async () => {
+  relatorio.mockResolvedValue(RESUMO);
+  let responderAntiga: (v: unknown) => void = () => undefined;
+  listar.mockReturnValueOnce(new Promise((r) => { responderAntiga = r; }));
+  tela();
+
+  listar.mockResolvedValueOnce([{ ...LISTA[0], id: 'a2', comment: 'Lista nova' }]);
+  await userEvent.click(screen.getByRole('button', { name: '1 estrela' }));
+  await screen.findByText('Lista nova');
+
+  responderAntiga(LISTA);
+  await waitFor(() => expect(relatorio).toHaveBeenCalledTimes(2));
+  await new Promise((r) => setTimeout(r, 0));
+  expect(screen.getByText('Lista nova')).toBeInTheDocument();
   expect(screen.queryByText('Demorou demais')).not.toBeInTheDocument();
 });

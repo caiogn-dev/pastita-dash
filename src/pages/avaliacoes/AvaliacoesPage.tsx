@@ -12,7 +12,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { StarIcon } from '@heroicons/react/24/solid';
-import toast from 'react-hot-toast';
 
 import { Button, EmptyState, FalhaAoCarregar, Modal, PageShell } from '../../components/ui';
 import { LinkIcon } from '@heroicons/react/24/outline';
@@ -106,29 +105,28 @@ export const AvaliacoesPage: React.FC = () => {
   const [lista, setLista] = useState<Avaliacao[] | null>(null);
   const [resumo, setResumo] = useState<ResumoDeAvaliacoes | null>(null);
   const [erro, setErro] = useState(false);
-  // Espelho da lista para o `catch` saber se já há dado em cache sem entrar nas
-  // dependências de `carregar` (o que relançaria a busca a cada carga).
-  const listaRef = useRef<Avaliacao[] | null>(null);
+  // Só a busca mais recente escreve: trocar o filtro com outra em andamento não
+  // deixa a resposta atrasada sobrescrever a seleção atual.
+  const ultimaBusca = useRef(0);
 
   const carregar = useCallback(async () => {
     if (!slug) return;
+    const busca = ++ultimaBusca.current;
     try {
       const [avaliacoes, relatorio] = await Promise.all([
         avaliacoesService.listar(slug, nota),
         getAnalyticsReport<ResumoDeAvaliacoes>('reviews'),
       ]);
-      listaRef.current = avaliacoes;
+      if (busca !== ultimaBusca.current) return;
       setLista(avaliacoes);
       setResumo(relatorio);
       setErro(false);
     } catch {
+      if (busca !== ultimaBusca.current) return;
+      // Toda busca vem de trocar a loja ou o filtro: a lista em memória é de
+      // outra seleção e não pode ficar na tela sob o filtro novo.
+      setLista(null);
       setErro(true);
-      // Falha ao ATUALIZAR com a lista já na tela não pode apagá-la — seria um
-      // vazio enganoso sobre dado que o painel já tem. Mantém a lista e avisa
-      // pelo toast; só a falha SEM cache cai no ramo de erro acionável abaixo.
-      if (listaRef.current !== null) {
-        toast.error('Não foi possível atualizar as avaliações');
-      }
     }
   }, [slug, nota]);
 
@@ -136,7 +134,6 @@ export const AvaliacoesPage: React.FC = () => {
   // para a nova loja não herdar avaliações de outra — e para uma falha na nova
   // loja não ser classificada como "cache válido" (vazamento entre lojas).
   useEffect(() => {
-    listaRef.current = null;
     setLista(null);
     setResumo(null);
     setErro(false);
