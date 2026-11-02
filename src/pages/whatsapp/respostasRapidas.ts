@@ -10,6 +10,7 @@
  * cobrar a cliente — as sugestões padrão usam "pagamento" e "menu" por isso.
  */
 import { COMANDOS } from './comandos';
+import { semAcento } from '../../utils/texto';
 
 export interface RespostaRapida {
   atalho: string;
@@ -39,8 +40,6 @@ export function respostasPadrao(): RespostaRapida[] {
     },
   ];
 }
-
-const semAcento = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 export function normalizarAtalho(bruto: string): string {
   return semAcento(bruto || '')

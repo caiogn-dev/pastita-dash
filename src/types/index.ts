@@ -327,6 +327,7 @@ export interface Order {
   store: string;
   store_id?: string;
   store_name?: string;
+  store_slug?: string;
   source?: string;
   customer_name: string;
   customer_phone: string;
@@ -432,8 +433,18 @@ export interface CreateOrder {
   discount?: number;
   surcharge?: number;
   adjustment_reason?: string;
-  items: Array<{ product_id: string; quantity: number; options?: Record<string, unknown> }>;
-  payment_method?: 'pix' | 'cash' | 'card_on_delivery' | 'credit_card' | 'debit_card';
+  /** Produto, ou combo com as escolhas (`selections` = {grupo: [ids]}). */
+  items: Array<
+    | { product_id: string; quantity: number; options?: Record<string, unknown> }
+    | { combo_id: string; selections: Record<string, string[]>; quantity: number }
+  >;
+  payment_method?: 'pix' | 'cash' | 'card_on_delivery' | 'voucher_on_delivery' | 'fiado' | 'credit_card' | 'debit_card';
+  /** Cupom: o servidor confere e calcula o desconto. */
+  coupon_code?: string;
+  /** Dinheiro: troco para quanto (0 = não precisa de troco). */
+  change_for?: number;
+  /** Vale na entrega: bandeira (vr, sodexo, ticket, alelo). */
+  voucher_brand?: string;
   notes?: string;
   scheduled_date?: string;
   scheduled_time?: string;
@@ -468,6 +479,10 @@ export interface OrderAdjustPayload {
   surcharge_reason?: string;
   delivery_fee?: number;
   item_ops?: OrderItemOp[];
+  delivery_method?: 'delivery' | 'pickup';
+  delivery_address?: Record<string, string>;
+  /** '' tira o cupom. */
+  coupon_code?: string;
 }
 
 // ============================================

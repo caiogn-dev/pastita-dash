@@ -18,8 +18,8 @@ beforeEach(() => {
 });
 
 describe('opções do Novo pedido', () => {
-  it('oferece PIX, Dinheiro, Cartão na maquininha e Fiado, nessa ordem', () => {
-    expect(Object.keys(PAYMENT_LABELS)).toEqual(['pix', 'cash', 'card_on_delivery', 'fiado']);
+  it('oferece PIX, Dinheiro, Cartão na maquininha, Vale e Fiado, nessa ordem', () => {
+    expect(Object.keys(PAYMENT_LABELS)).toEqual(['pix', 'cash', 'card_on_delivery', 'voucher_on_delivery', 'fiado']);
   });
 
   it('o nome de cada forma real vem do mapa único', () => {
@@ -52,12 +52,32 @@ test('Cartão na maquininha vai para o backend como card_on_delivery', async () 
   expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'card_on_delivery' }));
 });
 
-test('Fiado continua indo como dinheiro com a nota "Fiado"', async () => {
+// 28/10: fiado ia como `cash` + nota "Fiado" — e ao entregar o pedido virava
+// PAGO no caixa (dinheiro é liquidado na entrega). Agora é forma própria.
+test('Fiado vai como fiado, não como dinheiro recebido', async () => {
   const { result } = renderHook(() => useNewOrderWizard({ storeSlug: 'loja-1' }));
   setupBase(result);
   act(() => { result.current.setPaymentMethod('fiado'); });
   await act(async () => { await result.current.handleSubmit(); });
   const arg = createOrder.mock.calls[0][0];
-  expect(arg.payment_method).toBe('cash');
-  expect(arg.notes).toContain('Fiado');
+  expect(arg.payment_method).toBe('fiado');
+});
+
+test('dinheiro leva o troco; vale leva a bandeira; cupom vai pelo código', async () => {
+  const { result } = renderHook(() => useNewOrderWizard({ storeSlug: 'loja-1' }));
+  setupBase(result);
+  act(() => {
+    result.current.setPaymentMethod('cash');
+    result.current.setTrocoPara(50);
+    result.current.setCupom({ codigo: 'VOLTA10', desconto: 2 });
+  });
+  await act(async () => { await result.current.handleSubmit(); });
+  expect(createOrder.mock.calls[0][0]).toEqual(expect.objectContaining({ change_for: 50, coupon_code: 'VOLTA10' }));
+
+  createOrder.mockClear();
+  act(() => { result.current.setPaymentMethod('voucher_on_delivery'); result.current.setBandeiraDoVale('alelo'); });
+  await act(async () => { await result.current.handleSubmit(); });
+  const arg = createOrder.mock.calls[0][0];
+  expect(arg).toEqual(expect.objectContaining({ payment_method: 'voucher_on_delivery', voucher_brand: 'alelo' }));
+  expect(arg.change_for).toBeUndefined();
 });

@@ -7,6 +7,11 @@
  */
 export const somenteDigitos = (valor: string) => (valor || '').replace(/\D/g, '');
 
+/** IE do destinatário: dígitos ou ISENTO — vazio é "não contribuinte" na SEFAZ. */
+export const ISENTO = 'ISENTO';
+export const inscricaoEstadual = (valor: string) =>
+  (valor || '').trim().toUpperCase() === ISENTO ? ISENTO : somenteDigitos(valor);
+
 export const cpfValido = (valor: string) => {
   const cpf = somenteDigitos(valor);
   if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;

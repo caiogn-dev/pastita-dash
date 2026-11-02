@@ -12,13 +12,16 @@ import {
   ChatBubbleLeftRightIcon,
   CalendarDaysIcon,
   TagIcon,
+  TrashIcon,
+  PencilSquareIcon,
+  BuildingOffice2Icon,
 } from '@heroicons/react/24/outline';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { PageLoading } from '../../components/common';
 import {
-  Button, Badge, RowActions, Input, Textarea, Switch,
+  Button, Badge, RowActions, Input, Textarea, Switch, Segmentado,
   PageShell, KpiGrid, InsightList, Tabela, SearchInput, PeriodChips,
   EmptyState, FalhaAoCarregar, SeloDeEstado, Skeleton,
   estadoDePedido, estadoDeCliente, estadoDeSegmento,
@@ -47,6 +50,9 @@ import { ExtratoDeCashback } from './ExtratoDeCashback';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
 import { formatCurrency, formatPhone, formatPhoneForWhatsApp } from '../../utils/formatters';
 import { buscarCep } from '../../services/cep';
+import { fiscalService } from '../../services/fiscal';
+import { cnpjValido, cpfValido, formatarDocumento, somenteDigitos } from '../../utils/documento';
+import { cn } from '../../utils/cn';
 
 /**
  * Telefone como uma PESSOA lê, para dentro do campo de edição.
@@ -118,7 +124,16 @@ export interface CustomerFormDrawerProps {
 }
 
 export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlug, customer, onClose, onSaved }) => {
-  const [name, setName] = useState(customer?.user_name ?? '');
+  const [tipo, setTipo] = useState<'pf' | 'pj'>(customer?.tipo_pessoa ?? 'pf');
+  const [name, setName] = useState(customer?.tipo_pessoa === 'pj' ? '' : (customer?.user_name ?? ''));
+  const [documento, setDocumento] = useState(formatarDocumento(customer?.documento ?? ''));
+  const [razaoSocial, setRazaoSocial] = useState(customer?.razao_social ?? '');
+  const [nomeFantasia, setNomeFantasia] = useState(customer?.nome_fantasia ?? '');
+  const [ie, setIe] = useState(customer?.inscricao_estadual ?? '');
+  const [email, setEmail] = useState(customer?.email ?? '');
+  const [buscandoCnpj, setBuscandoCnpj] = useState(false);
+  // Telefone já cadastrado: o servidor recusa (409) e aponta o cadastro.
+  const [existenteId, setExistenteId] = useState<string | null>(null);
   // O telefone é EXIBIDO formatado e ENVIADO em dígitos. O painel mostrava
   // "5563999192628" num campo de cadastro, que é o número como o banco guarda
   // — não como uma pessoa lê ou confere.
@@ -223,7 +238,15 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
    */
   const validar = (): Record<string, string> => {
     const achados: Record<string, string> = {};
-    if (!name.trim()) achados.name = 'Nome é obrigatório';
+    const doc = somenteDigitos(documento);
+    if (tipo === 'pf') {
+      if (!name.trim()) achados.name = 'Nome é obrigatório';
+      if (doc && !cpfValido(doc)) achados.documento = 'CPF inválido — confira o número.';
+    } else {
+      if (!razaoSocial.trim()) achados.razao_social = 'Informe a razão social.';
+      if (doc && !cnpjValido(doc)) achados.documento = 'CNPJ inválido — confira o número.';
+    }
+    if (email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim())) achados.email = 'E-mail inválido';
     const digitos = (t: string) => t.replace(/\D/g, '');
     if (phone.trim() && digitos(phone).length < 10) achados.phone = 'Telefone incompleto';
     if (whatsapp.trim() && digitos(whatsapp).length < 10) achados.whatsapp = 'WhatsApp incompleto';
@@ -236,6 +259,33 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
     return achados;
   };
 
+  const abrirExistente = async () => {
+    if (!existenteId) return;
+    try {
+      onSaved(await getCustomer(existenteId));
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    }
+  };
+
+  /** CNPJ → razão social, fantasia e e-mail pela Receita (só preenche o vazio). */
+  const buscarCnpj = async () => {
+    if (!storeSlug || buscandoCnpj) return;
+    setBuscandoCnpj(true);
+    try {
+      const d = await fiscalService.consultarCnpj(storeSlug, somenteDigitos(documento)) as
+        Awaited<ReturnType<typeof fiscalService.consultarCnpj>> & { nome_fantasia?: string };
+      if (d.nome) setRazaoSocial(d.nome);
+      if (d.nome_fantasia) setNomeFantasia((v) => v || d.nome_fantasia || '');
+      if (d.email) setEmail((v) => v || d.email || '');
+      if (d.inscricao_estadual) setIe((v) => v || d.inscricao_estadual);
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setBuscandoCnpj(false);
+    }
+  };
+
   const handleSave = async () => {
     if (saving) return;
     const achados = validar();
@@ -246,7 +296,13 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
     try {
       const address_list = buildAddressList();
       const payload = {
-        name,
+        name: tipo === 'pj' ? (nomeFantasia.trim() || razaoSocial.trim()) : name,
+        tipo_pessoa: tipo,
+        documento: somenteDigitos(documento),
+        razao_social: tipo === 'pj' ? razaoSocial.trim() : '',
+        nome_fantasia: tipo === 'pj' ? nomeFantasia.trim() : '',
+        inscricao_estadual: tipo === 'pj' ? ie.trim() : '',
+        email: email.trim(),
         // Dígitos, nunca a máscara: quem consome isto é o WhatsApp e o
         // casamento por telefone do checkout.
         phone: telefoneParaEnvio(phone),
@@ -264,6 +320,13 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
       toast.success(isEdit ? 'Cliente atualizado' : 'Cliente criado');
       onSaved(salvo);
     } catch (e) {
+      const erro = (e as { response?: { data?: { error?: { code?: string; details?: { cliente_id?: string } } } } })
+        ?.response?.data?.error;
+      if (erro?.code === 'cliente_existente' && erro.details?.cliente_id) {
+        setExistenteId(erro.details.cliente_id);
+        setErros((atual) => ({ ...atual, phone: 'Já existe um cliente com este telefone.' }));
+        return;
+      }
       toast.error(getErrorMessage(e));
     } finally {
       setSaving(false);
@@ -299,11 +362,61 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
         )}
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <Segmentado
+            rotulo="Tipo de cliente"
+            valor={tipo}
+            onChange={(v) => { setTipo(v); setErros({}); }}
+            opcoes={[
+              { valor: 'pf', rotulo: 'Pessoa física' },
+              { valor: 'pj', rotulo: 'Pessoa jurídica' },
+            ]}
+          />
+          {tipo === 'pf' ? (
+            <>
+              <Input label="Nome" value={name} error={erros.name} onChange={(e) => setName(e.target.value)} />
+              <Input
+                label="CPF"
+                inputMode="numeric"
+                value={documento}
+                error={erros.documento}
+                hint="Opcional — vai na nota fiscal"
+                onChange={(e) => setDocumento(e.target.value)}
+                onBlur={() => setDocumento(formatarDocumento(documento))}
+              />
+            </>
+          ) : (
+            <>
+              <div className="flex items-end gap-2">
+                <Input
+                  label="CNPJ"
+                  inputMode="numeric"
+                  value={documento}
+                  error={erros.documento}
+                  className="flex-1"
+                  onChange={(e) => setDocumento(e.target.value)}
+                  onBlur={() => setDocumento(formatarDocumento(documento))}
+                />
+                <Button
+                  variant="outline"
+                  isLoading={buscandoCnpj}
+                  disabled={!cnpjValido(somenteDigitos(documento))}
+                  onClick={buscarCnpj}
+                >
+                  Buscar na Receita
+                </Button>
+              </div>
+              <Input label="Razão social" value={razaoSocial} error={erros.razao_social} onChange={(e) => setRazaoSocial(e.target.value)} />
+              <Input label="Nome fantasia" value={nomeFantasia} hint="É o nome que aparece no pedido" onChange={(e) => setNomeFantasia(e.target.value)} />
+              <Input label="Inscrição estadual" value={ie} hint="Em branco = isento" onChange={(e) => setIe(e.target.value)} />
+            </>
+          )}
           <Input
-            label="Nome"
-            value={name}
-            error={erros.name}
-            onChange={(e) => setName(e.target.value)}
+            label="E-mail"
+            type="email"
+            value={email}
+            error={erros.email}
+            hint={tipo === 'pj' ? 'Recebe a nota fiscal' : undefined}
+            onChange={(e) => setEmail(e.target.value)}
           />
           <Input
             label="Telefone"
@@ -311,9 +424,14 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
             value={phone}
             error={erros.phone}
             hint="Usado para casar o pedido com o cadastro"
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => { setPhone(e.target.value); setExistenteId(null); }}
             onBlur={() => setPhone(formatPhoneParaEdicao(telefoneParaEnvio(phone)))}
           />
+          {existenteId && (
+            <Button size="sm" variant="outline" onClick={abrirExistente}>
+              Abrir cadastro existente
+            </Button>
+          )}
           <Input
             label="WhatsApp"
             inputMode="tel"
@@ -679,10 +797,29 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
                   </span>
                 </div>
               )}
-              {publicEmail(customer.user_email) && (
+              {customer.tipo_pessoa === 'pj' && (
+                <div className="flex items-start gap-3 px-4 py-3">
+                  <BuildingOffice2Icon className="h-4 w-4 mt-0.5 text-fg-muted-token shrink-0" />
+                  <span className="text-sm text-fg-token">
+                    {customer.razao_social}
+                    <span className="block text-xs text-fg-muted-token tabular-nums">
+                      {[customer.documento && `CNPJ ${formatarDocumento(customer.documento)}`,
+                        customer.inscricao_estadual ? `IE ${customer.inscricao_estadual}` : 'IE isento']
+                        .filter(Boolean).join(' · ')}
+                    </span>
+                  </span>
+                </div>
+              )}
+              {customer.tipo_pessoa !== 'pj' && customer.documento && (
+                <div className="flex items-center gap-3 px-4 py-3 text-sm text-fg-token tabular-nums">
+                  <span className="w-4 text-center text-badge font-bold text-fg-muted-token">CPF</span>
+                  {formatarDocumento(customer.documento)}
+                </div>
+              )}
+              {(customer.email || publicEmail(customer.user_email)) && (
                 <div className="flex items-center gap-3 px-4 py-3">
                   <EnvelopeIcon className="h-4 w-4 text-fg-muted-token shrink-0" />
-                  <span className="text-sm text-fg-token">{publicEmail(customer.user_email)}</span>
+                  <span className="text-sm text-fg-token">{customer.email || publicEmail(customer.user_email)}</span>
                 </div>
               )}
               {customer.last_order_at && (
@@ -923,25 +1060,35 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
           )}
         </div>
 
-        {/* Footer actions */}
-        <div className="px-6 py-4 border-t border-border-token flex gap-2">
+        {/* Rodapé: a ação destrutiva fica à parte, à esquerda e sem moldura.
+            "Excluir" entre dois botões dourados (27/10) era o botão mais
+            fácil de acertar sem querer. */}
+        <div className="px-6 py-4 border-t border-border-token flex items-center gap-2">
+          {onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mr-auto text-[var(--danger)] hover:bg-[var(--danger-soft)]"
+              leftIcon={<TrashIcon className="h-4 w-4" />}
+              onClick={() => onDelete(customer)}
+            >
+              Excluir
+            </Button>
+          )}
           {onEdit && (
             <Button
-              className="flex-1 justify-center"
+              variant="outline"
+              className={cn('justify-center', !onDelete && 'mr-auto')}
+              leftIcon={<PencilSquareIcon className="h-4 w-4" />}
               // A ficha fica aberta por baixo: salvar volta para ela já atualizada.
               onClick={() => onEdit(customer)}
             >
               Editar
             </Button>
           )}
-          {onDelete && (
-            <Button variant="danger" className="justify-center" onClick={() => onDelete(customer)}>
-              Excluir
-            </Button>
-          )}
           {cleanPhone && (
             <Button
-              className="flex-1 justify-center"
+              className="justify-center"
               leftIcon={<ChatBubbleLeftRightIcon className="h-4 w-4" />}
               onClick={() => {
                 onClose();
@@ -949,7 +1096,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
                 navigate(`/inbox/whatsapp?search=${cleanPhone}`);
               }}
             >
-              Iniciar conversa WhatsApp
+              Conversar no WhatsApp
             </Button>
           )}
         </div>
@@ -1281,10 +1428,16 @@ export const CustomersPage: React.FC = () => {
                     {formatPhone(c.whatsapp || c.phone)}
                   </div>
                 )}
-                {publicEmail(c.user_email) && (
+                {(c.email || publicEmail(c.user_email)) && (
                   <div className="flex items-center gap-1.5 text-xs text-fg-muted-token">
                     <EnvelopeIcon className="h-3 w-3 shrink-0" />
-                    {publicEmail(c.user_email)}
+                    {c.email || publicEmail(c.user_email)}
+                  </div>
+                )}
+                {c.tipo_pessoa === 'pj' && c.documento && (
+                  <div className="flex items-center gap-1.5 text-xs text-fg-muted-token tabular-nums">
+                    <BuildingOffice2Icon className="h-3 w-3 shrink-0" />
+                    {formatarDocumento(c.documento)}
                   </div>
                 )}
               </div>

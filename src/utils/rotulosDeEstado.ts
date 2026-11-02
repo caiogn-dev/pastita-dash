@@ -64,6 +64,9 @@ export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   card_on_delivery: 'Cartão na maquininha',
   voucher: 'Vale-refeição',
   voucher_link: 'Vale-refeição (link)',
+  // 28/10: vale passado na maquininha na entrega, e fiado de verdade (a receber).
+  voucher_on_delivery: 'Vale na entrega',
+  fiado: 'Fiado (a receber)',
   link: 'Link de pagamento',
   // 19/10: pedido de total zero (resgate da fidelidade na retirada) não passa
   // por cobrança nenhuma — server2 `CheckoutService.SEM_COBRANCA`.
@@ -91,7 +94,7 @@ export function rotuloDePagamento(metodo?: string | null): string {
  * entregar — não é cobrança online parada. Espelha `PAGOS_NA_ENTREGA` do
  * backend. `dinheiro` é o apelido que o checkout normaliza para `cash`.
  */
-export const PAGOS_NA_ENTREGA: ReadonlySet<string> = new Set(['cash', 'card_on_delivery', 'dinheiro']);
+export const PAGOS_NA_ENTREGA: ReadonlySet<string> = new Set(['cash', 'card_on_delivery', 'voucher_on_delivery', 'dinheiro']);
 
 export function pagoNaEntrega(metodo?: string | null): boolean {
   return PAGOS_NA_ENTREGA.has((metodo ?? '').trim().toLowerCase());
@@ -102,7 +105,7 @@ export const FORMAS_DO_BALCAO = ['cash', 'pix', 'credit_card', 'debit_card'] as 
 
 /** Formas no filtro do histórico de pedidos — as que os pedidos de fato gravam. */
 export const FORMAS_NO_FILTRO = [
-  'pix', 'cash', 'card_on_delivery', 'credit_card', 'debit_card', 'card', 'voucher', 'voucher_link',
+  'pix', 'cash', 'card_on_delivery', 'voucher_on_delivery', 'fiado', 'credit_card', 'debit_card', 'card', 'voucher', 'voucher_link',
 ] as const;
 
 /**

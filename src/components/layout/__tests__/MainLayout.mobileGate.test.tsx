@@ -6,6 +6,7 @@ jest.mock('../../../mobile/useIsMobileViewport', () => ({ useIsMobileViewport: (
 jest.mock('../../../mobile/MobileShell', () => ({ MobileShell: () => <div data-testid="mobile-shell" /> }));
 jest.mock('../Navbar', () => ({ Navbar: () => <div data-testid="desktop-navbar" /> }));
 jest.mock('../TrialBanner', () => ({ TrialBanner: () => null }));
+jest.mock('../../realtime/PedidosAoVivo', () => ({ PedidosAoVivo: () => null }));
 // A casca do desktop passou a montar a coluna lateral, que puxa `useStore` →
 // `config/storeConfig` → `import.meta.env`, sintaxe que este runner não parseia.
 // Este teste é sobre o portão mobile/desktop; a navegação tem os testes dela.

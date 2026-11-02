@@ -23,18 +23,12 @@ import {
   rotatePrintAgentKey,
 } from '../../services/printing';
 import { copyToClipboard } from '../../utils/clipboard';
+import { slugify } from '../../utils/texto';
 
 const INTERVALO_MS = 3000;
 const ETAPAS = ['Baixar', 'Chave', 'Instalar', 'Conectar'];
 
-const slugify = (text: string) =>
-  text
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 100) || 'computador';
+const slugDoComputador = (text: string) => slugify(text, { max: 100, reserva: 'computador' });
 
 const listaDe = (res: { data: unknown }): PrintAgent[] => {
   const d = res.data as { results?: PrintAgent[] } | PrintAgent[];
@@ -101,7 +95,7 @@ const AssistenteDeInstalacao: React.FC<Props> = ({ aberto, onClose, storeSlug, s
     setGerando(true);
     try {
       const slugsEmUso = agentes.map((a) => a.slug);
-      let slug = slugify(nome);
+      let slug = slugDoComputador(nome);
       if (slugsEmUso.includes(slug)) slug = `${slug}-${Date.now().toString(36)}`;
       const res = await createPrintAgent(storeSlug, {
         store: storeUuid, name: nome.trim(), slug, printer_name: '', station: estacao,

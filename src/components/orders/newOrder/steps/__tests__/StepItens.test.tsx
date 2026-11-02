@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 const getProducts = jest.fn();
 jest.mock('../../../../../services/products', () => ({ productsService: { getProducts: (...a: unknown[]) => getProducts(...a) } }));
+jest.mock('../../../../../services/storesApi', () => ({ getCombos: () => Promise.resolve({ results: [] }) }));
 jest.mock('react-hot-toast', () => ({ __esModule: true, default: { success: jest.fn(), error: jest.fn() } }));
 
 import { StepItens } from '../StepItens';

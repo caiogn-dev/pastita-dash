@@ -11,6 +11,7 @@ import logger from '../../services/logger';
 import storesApi, { Store as StoreType, StoreInput, StoreStats } from '../../services/storesApi';
 import { PageShell, KpiGrid } from '../../components/ui';
 import { formatCurrency } from '../../utils/formatters';
+import { slugify } from '../../utils/texto';
 
 const StoresPage: React.FC = () => {
   const navigate = useNavigate();
@@ -321,15 +322,6 @@ const CreateStoreModal: React.FC<CreateStoreModalProps> = ({ isOpen, onClose, on
     }
   };
 
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-  };
-
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Nova Loja" size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -341,7 +333,7 @@ const CreateStoreModal: React.FC<CreateStoreModalProps> = ({ isOpen, onClose, on
               setFormData(prev => ({
                 ...prev,
                 name: e.target.value,
-                slug: generateSlug(e.target.value)
+                slug: slugify(e.target.value)
               }));
             }}
             required

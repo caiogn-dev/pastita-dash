@@ -56,6 +56,8 @@ module.exports = {
     // tempo real. Sem o transform, importar a página num teste quebra com
     // "Cannot use 'import.meta' outside a module" — era o que a deixava intestável.
     '/src/pages/kds/(?!__tests__/).+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
+    // Dono único do tempo real (28/10), montado no layout.
+    '/src/components/realtime/(?!__tests__/).+\\.(ts|tsx)$': '<rootDir>/jestViteEnvTransform.cjs',
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
 };

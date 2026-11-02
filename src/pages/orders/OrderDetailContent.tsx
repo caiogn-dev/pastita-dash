@@ -9,6 +9,7 @@
  * the original page. The outer chrome (full-screen background vs modal panel)
  * is provided by the caller so the same content renders in both surfaces.
  */
+import { rotuloDoAgendamento } from '../../utils/rotuloDoAgendamento';
 import { copyToClipboard } from '../../utils/clipboard';
 import { SeloDeEstado } from '../../components/ui/SeloDeEstado';
 import { estadoDePedido } from '../../components/ui/estados';
@@ -166,30 +167,9 @@ const formatOrderCreatedAt = (value?: string | null) => {
   return format(parsed, "dd 'de' MMMM 'às' HH:mm", { locale: ptBR });
 };
 
-// Monta o rótulo de agendamento ("15 de janeiro às 14:30") a partir de scheduled_date/time.
 const formatScheduledLabel = (
   order: { scheduled_date?: string | null; scheduled_time?: string | null },
-): string => {
-  const { scheduled_date, scheduled_time } = order;
-  if (!scheduled_date && !scheduled_time) return '';
-
-  let datePart = '';
-  if (scheduled_date) {
-    const [y, m, d] = scheduled_date.split('-').map(Number);
-    if (y && m && d) {
-      const parsed = new Date(y, m - 1, d);
-      datePart = Number.isNaN(parsed.getTime())
-        ? scheduled_date
-        : format(parsed, "dd 'de' MMMM", { locale: ptBR });
-    } else {
-      datePart = scheduled_date;
-    }
-  }
-
-  const timePart = scheduled_time ? scheduled_time.slice(0, 5) : '';
-  if (datePart && timePart) return `${datePart} às ${timePart}`;
-  return datePart || timePart;
-};
+): string => rotuloDoAgendamento(order.scheduled_date, order.scheduled_time, 'longo');
 
 // =============================================================================
 // MAIN CONTENT COMPONENT

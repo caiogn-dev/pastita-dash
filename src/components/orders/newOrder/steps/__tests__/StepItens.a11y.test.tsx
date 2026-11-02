@@ -9,6 +9,7 @@ jest.mock('../../../../../services/products', () => ({
   productsService: { getProducts: jest.fn().mockResolvedValue({ results: [] }) },
 }));
 
+jest.mock('../../../../../services/storesApi', () => ({ getCombos: () => Promise.resolve({ results: [] }) }));
 jest.mock('react-hot-toast', () => ({
   __esModule: true,
   default: { success: jest.fn(), error: jest.fn() },

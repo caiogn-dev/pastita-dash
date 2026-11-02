@@ -55,8 +55,15 @@ describe('WebSocketClient — reconexão', () => {
     (global as unknown as { WebSocket: unknown }).WebSocket = originalWs;
   });
 
-  const makeClient = () =>
-    new WebSocketClient({ url: 'wss://host', token: 't', storeSlug: 'loja' });
+  // Cada client ouve 'online' na janela: os dos testes anteriores precisam
+  // ser desligados, senão reagem ao evento do teste seguinte.
+  let clients: WebSocketClient[] = [];
+  afterEach(() => { clients.forEach((c) => c.disconnect()); clients = []; });
+  const makeClient = () => {
+    const c = new WebSocketClient({ url: 'wss://host', token: 't', storeSlug: 'loja' });
+    clients.push(c);
+    return c;
+  };
 
   it('reconecta após queda não intencional', async () => {
     const client = makeClient();
@@ -168,5 +175,65 @@ describe('WebSocketClient — reconexão', () => {
     primeiro.fire('close');
     jest.advanceTimersByTime(60_000);
     expect(FakeWebSocket.instances.length).toBe(2);
+  });
+
+  // 28/10: Wi-Fi trocado ou notebook suspenso deixa o socket "aberto e morto" —
+  // o 'close' pode levar minutos ou nunca vir, e o quadro fica parado com selo
+  // de online. O servidor manda ping a cada 30 s: silêncio de 75 s = morto.
+  it('sem nenhuma mensagem por 75 s, derruba o socket e reconecta', async () => {
+    const client = makeClient();
+    const p = client.connect();
+    FakeWebSocket.instances[0].fire('open');
+    await p;
+
+    jest.advanceTimersByTime(76_000);
+    expect(FakeWebSocket.instances[0].readyState).toBe(3);
+    jest.advanceTimersByTime(5_000);
+    expect(FakeWebSocket.instances.length).toBe(2);
+  });
+
+  it('ping do servidor mantém a conexão viva', async () => {
+    const client = makeClient();
+    const p = client.connect();
+    const ws = FakeWebSocket.instances[0];
+    ws.fire('open');
+    await p;
+
+    for (let i = 0; i < 6; i++) {
+      jest.advanceTimersByTime(30_000);
+      ws.fire('message', { data: JSON.stringify({ type: 'ping', timestamp: 'x' }) });
+    }
+    expect(FakeWebSocket.instances.length).toBe(1);
+    expect(ws.readyState).toBe(1);
+  });
+
+  it('a rede voltou (online): reconecta na hora, sem esperar o backoff', async () => {
+    const client = makeClient();
+    const p = client.connect();
+    FakeWebSocket.instances[0].fire('open');
+    await p;
+
+    // Várias quedas seguidas: o backoff já está em 30 s.
+    for (let i = 0; i < 5; i++) {
+      FakeWebSocket.instances[FakeWebSocket.instances.length - 1].close();
+      jest.advanceTimersByTime(30_000);
+    }
+    const antes = FakeWebSocket.instances.length;
+    FakeWebSocket.instances[antes - 1].close();
+
+    window.dispatchEvent(new Event('online'));
+    expect(FakeWebSocket.instances.length).toBe(antes + 1);
+    client.disconnect();
+  });
+
+  it('online com a conexão de pé não abre outra', async () => {
+    const client = makeClient();
+    const p = client.connect();
+    FakeWebSocket.instances[0].fire('open');
+    await p;
+
+    window.dispatchEvent(new Event('online'));
+    expect(FakeWebSocket.instances.length).toBe(1);
+    client.disconnect();
   });
 });

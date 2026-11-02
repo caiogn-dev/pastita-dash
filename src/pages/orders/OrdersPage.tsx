@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { rotuloDoAgendamento } from '../../utils/rotuloDoAgendamento';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { NewOrderDrawer } from '../../components/orders/NewOrderDrawer';
 import { rascunhoDoEstado } from '../../components/orders/newOrder/rascunhoDaConversa';
 import { OrderDeliveryModal } from '../../components/OrderDeliveryModal';
 import {
@@ -60,7 +60,7 @@ import {
 import { useStore, useOrderDetailModal } from '../../hooks';
 import { CancelarPedidoModal } from '../../components/orders/CancelarPedidoModal';
 import { RegistrarPagamentoModal } from '../../components/orders/RegistrarPagamentoModal';
-import { useRealTimeOrders } from '../../hooks/useRealTimeOrders';
+import { useTempoRealDosPedidos } from '../../stores/tempoRealDosPedidos';
 import { getErrorMessage } from '../../services';
 import { useRootStore, resolveStoreKey } from '../../stores/rootStore';
 import { OrderDetailModal } from '../../components/orders/OrderDetailModal';
@@ -125,16 +125,8 @@ const formatElapsed = (minutes: number): string => {
 };
 
 // Rótulo curto de agendamento p/ o card ("15/01 14:30"). Vazio se não houver agendamento.
-const formatScheduledShort = (order: { scheduled_date?: string | null; scheduled_time?: string | null }): string => {
-  const date = order.scheduled_date;
-  const time = order.scheduled_time ? order.scheduled_time.slice(0, 5) : '';
-  let datePart = '';
-  if (date) {
-    const [, m, d] = date.split('-');
-    datePart = m && d ? `${d}/${m}` : date;
-  }
-  return [datePart, time].filter(Boolean).join('');
-};
+const formatScheduledShort = (order: { scheduled_date?: string | null; scheduled_time?: string | null }): string =>
+  rotuloDoAgendamento(order.scheduled_date, order.scheduled_time);
 
 // ─── OrderCard ────────────────────────────────────────────────────────────────
 
@@ -416,22 +408,17 @@ export const OrdersPage: React.FC = () => {
   const { storeId, storeSlug } = useStore();
   const storeQuery = storeSlug || storeId;
 
-  // ── Novo Pedido (PDV) drawer ─────────────────────────────────────────────
-  const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
-
-  // Deep-link ?novo=1 abre o wizard direto (ex.: botão "Novo pedido" do
-  // dashboard). Substituiu a antiga página /orders/new (builder duplicado).
-  const [pageParams, setPageParams] = useSearchParams();
-  // "Criar pedido desta conversa" (inbox) chega com o rascunho no state da
-  // navegação. Lido uma vez, na montagem: o setPageParams abaixo apaga o state.
+  // ── Novo pedido: página dedicada (28/10) ────────────────────────────────
+  // No celular o MainLayout troca tudo pelo MobileShell (assistente em passos);
+  // aqui, do tablet para cima, o pedido é montado numa tela só. ?novo=1 (botão
+  // do dashboard) e o rascunho da conversa (inbox) seguem para lá.
+  const [pageParams] = useSearchParams();
   const location = useLocation();
-  const [rascunho, setRascunho] = useState(() => rascunhoDoEstado(location.state));
+  const abrirNovoPedido = useCallback((state?: unknown) => {
+    navigate(storeId ? `/stores/${storeId}/orders/novo` : '/orders', { state });
+  }, [navigate, storeId]);
   useEffect(() => {
-    if (pageParams.get('novo')) {
-      setIsNewOrderOpen(true);
-      pageParams.delete('novo');
-      setPageParams(pageParams, { replace: true });
-    }
+    if (pageParams.get('novo') || rascunhoDoEstado(location.state)) abrirNovoPedido(location.state);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -451,15 +438,17 @@ export const OrdersPage: React.FC = () => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
       if (['input', 'textarea', 'select'].includes(tag)) return;
+      // Com detalhe, modal ou paleta aberta, N é letra digitada lá — não abre pedido por cima.
+      if (document.querySelector('[role="dialog"]')) return;
       if (e.key === 'n' || e.key === 'N') {
         if (!e.metaKey && !e.ctrlKey && !e.altKey) {
-          setIsNewOrderOpen(true);
+          abrirNovoPedido();
         }
       }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, []);
+  }, [abrirNovoPedido]);
 
   // Real-time orders from Zustand store + WebSocket
   // Selector estreito: re-render apenas quando os pedidos DESTA loja mudam,
@@ -481,12 +470,10 @@ export const OrdersPage: React.FC = () => {
 
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
-  // WebSocket real-time sync
-  const { isConnected: wsConnected, connectionError: wsConnectionError } = useRealTimeOrders({
-    enabled: Boolean(storeQuery),
-    apiUrl: import.meta.env.VITE_API_URL,
-    wsUrl: import.meta.env.VITE_WS_URL,
-  });
+  // Tempo real: conectado uma vez só, no layout (PedidosAoVivo). Aqui só o selo.
+  const wsConnected = useTempoRealDosPedidos((s) => s.conectado);
+  const wsConnectionError = useTempoRealDosPedidos((s) => s.falhou);
+
 
   // Aviso único quando o tempo real não conecta — o board continua funcionando
   // via refresh manual/polling, mas o operador precisa saber que não é ao vivo.
@@ -787,7 +774,7 @@ export const OrdersPage: React.FC = () => {
               )}
               {storeQuery && (
                 <Button
-                  onClick={() => setIsNewOrderOpen(true)}
+                  onClick={() => abrirNovoPedido()}
                   className="py-1.5"
                   leftIcon={<ShoppingCartIcon className="h-4 w-4" />}
                   title="Atalho: tecla N"
@@ -974,22 +961,6 @@ export const OrdersPage: React.FC = () => {
         onClose={() => setPedidoACancelar(null)}
         onConfirm={(motivo) => { if (pedidoACancelar) confirmarCancelamento(pedidoACancelar, motivo); }}
       />
-
-      {/* PDV: Novo Pedido Drawer */}
-      {storeSlug && (
-        <NewOrderDrawer
-          isOpen={isNewOrderOpen}
-          onClose={() => { setIsNewOrderOpen(false); setRascunho(null); }}
-          rascunho={rascunho}
-          storeSlug={storeSlug}
-          storeId={storeId || undefined}
-          onOrderCreated={() => {
-            setIsNewOrderOpen(false);
-            setRascunho(null);
-            loadOrders(true);
-          }}
-        />
-      )}
 
       {/* Uber Delivery Modal */}
       {uberModalOrderId && storeQuery && (

@@ -418,29 +418,7 @@ export function formatOrderStatus(status: string): string {
   return STATUS_LABELS[status] || status;
 }
 
-// ==================== Payment Status Formatting ====================
-
-export const PAYMENT_STATUS_LABELS: Record<string, string> = {
-  pending: 'Pendente',
-  processing: 'Processando',
-  approved: 'Aprovado',
-  rejected: 'Rejeitado',
-  refunded: 'Reembolsado',
-  cancelled: 'Cancelado',
-};
-
-export const PAYMENT_STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  processing: 'bg-blue-100 text-blue-800',
-  approved: 'bg-green-100 text-green-800',
-  rejected: 'bg-red-100 text-red-800',
-  refunded: 'bg-purple-100 text-purple-800',
-  cancelled: 'bg-gray-100 text-gray-800',
-};
-
-export function formatPaymentStatus(status: string): string {
-  return PAYMENT_STATUS_LABELS[status] || status;
-}
+// Rótulo de estado de pagamento: utils/rotulosDeEstado.ts (fonte única).
 
 // ==================== Message Status Formatting ====================
 

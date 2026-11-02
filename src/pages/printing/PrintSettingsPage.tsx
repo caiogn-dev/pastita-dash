@@ -31,6 +31,10 @@ import {
   deletePrintAgent,
   listPrintJobs,
   requeuePrintJob,
+  cancelPrintJob,
+  cancelarFilaDeImpressao,
+  NA_FILA,
+  podeCancelar,
   imprimeEtiquetas,
   enviarEtiquetasParaAgente,
   carregarLayouts,
@@ -178,6 +182,30 @@ const PrintSettingsPage: React.FC = () => {
       loadData();
     } catch {
       toast.error('Erro ao reimprimir');
+    }
+  };
+
+  const handleCancelar = async (job: PrintJob) => {
+    try {
+      await cancelPrintJob(job.id);
+      toast.success('Impressão cancelada');
+      loadData();
+    } catch {
+      toast.error('Erro ao cancelar');
+    }
+  };
+
+  const naFila = jobs.filter((j) => NA_FILA.includes(j.status)).length;
+  const [confirmandoFila, setConfirmandoFila] = useState(false);
+  const limparFila = async () => {
+    if (!storeId) return;
+    setConfirmandoFila(false);
+    try {
+      const { data } = await cancelarFilaDeImpressao(storeId);
+      toast.success(data.canceladas === 1 ? '1 impressão cancelada' : `${data.canceladas} impressões canceladas`);
+      loadData();
+    } catch {
+      toast.error('Erro ao cancelar a fila');
     }
   };
 
@@ -395,7 +423,21 @@ const PrintSettingsPage: React.FC = () => {
 
       {/* Fila de jobs */}
       <Card className="p-6">
-        <h2 className="text-lg font-semibold text-fg-token mb-4">Últimas impressões</h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-fg-token">Últimas impressões</h2>
+          {naFila > 0 && (
+            <div className="flex gap-2">
+              {confirmandoFila ? (
+                <>
+                  <Button variant="ghost" onClick={() => setConfirmandoFila(false)}>Manter</Button>
+                  <Button variant="danger" onClick={limparFila}>Confirmar: cancelar {naFila}</Button>
+                </>
+              ) : (
+                <Button variant="outline" onClick={() => setConfirmandoFila(true)}>Cancelar fila ({naFila})</Button>
+              )}
+            </div>
+          )}
+        </div>
         <Tabela<(typeof jobs)[number]>
           itens={jobs}
           chave={(j) => String(j.id)}
@@ -446,9 +488,23 @@ const PrintSettingsPage: React.FC = () => {
               cabecalho: 'Ações',
               alinhamento: 'direita',
               render: (j) => (
-                <Button variant="ghost" onClick={() => handleRequeue(j)}>
-                  Reimprimir
-                </Button>
+                <div className="flex justify-end gap-1">
+                  {podeCancelar(j.status) && (
+                    <Button
+                      variant="ghost"
+                      className="text-danger-token"
+                      aria-label={`Cancelar impressão ${j.order_number || j.title || j.id}`}
+                      onClick={() => handleCancelar(j)}
+                    >
+                      Cancelar
+                    </Button>
+                  )}
+                  {!NA_FILA.includes(j.status) && (
+                    <Button variant="ghost" onClick={() => handleRequeue(j)}>
+                      Reimprimir
+                    </Button>
+                  )}
+                </div>
               ),
             },
           ]}

@@ -60,11 +60,13 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
 
   // Via ref para o handler de `order.created` não entrar nas deps do efeito de
   // conexão — senão qualquer recriação da função derrubaria e reabriria o socket.
-  const { playNotificationSound } = useNotificationSound();
+  const { playNotificationSound, playPixSound } = useNotificationSound();
   const playNewOrderSoundRef = useRef(playNotificationSound);
+  const playPixSoundRef = useRef(playPixSound);
   useEffect(() => {
     playNewOrderSoundRef.current = playNotificationSound;
-  }, [playNotificationSound]);
+    playPixSoundRef.current = playPixSound;
+  }, [playNotificationSound, playPixSound]);
 
   useEffect(() => {
     if (!enabled || !authToken || !selectedStoreId || !selectedStoreSlug) {
@@ -89,27 +91,29 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
       // Reconexões em background (deploy do backend, rede) devem refletir no
       // estado — antes o hook só sabia do connect() inicial e o painel ficava
       // marcado como offline até um F5 mesmo com o WS de volta.
+      // Quedas (28/10): ao voltar depois de cair, busca o quadro — o WebSocket
+      // só entrega o que acontece com ele de pé, e o pedido que entrou na queda
+      // ficava fora até alguém clicar em Atualizar.
+      let caiu = false;
       ws.on('connected', () => {
         setIsConnected(true);
         setConnectionError(false);
+        if (caiu) {
+          caiu = false;
+          refreshOrdersFromAPI();
+        }
       });
       ws.on('disconnected', () => {
+        caiu = true;
         setIsConnected(false);
       });
       ws.on('error', () => {
         setConnectionError(true);
       });
 
-      try {
-        await ws.connect();
-        setIsConnected(true);
-        setConnectionError(false);
-      } catch {
-        setIsConnected(false);
-        setConnectionError(true);
-        return;
-      }
-
+      // Inscreve ANTES de conectar: se a primeira conexão falhava, o hook saía
+      // antes daqui, o client reconectava sozinho em segundo plano — selo
+      // "online" — e nenhum pedido chegava.
       // Subscribe to order events (sem console.log — payload contém dados de pedido)
       ws.subscribe('order.created', (event) => {
         // Venda de saldo (carteira) não é pedido: aviso do que é, sem bipe e
@@ -132,7 +136,8 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
         // na coluna "Novo" até alguém olhar para o monitor.
         // Disparar AQUI, na origem do evento, e não no board: o som toca mesmo
         // com o operador em outra tela do painel.
-        playNewOrderSoundRef.current?.();
+        // Com o id, o sino repete até o pedido ser aceito (alarmeDePedidos).
+        playNewOrderSoundRef.current?.((event as OrderRealtimeEvent).order_id);
       });
 
       ws.subscribe('order.updated', (event) => {
@@ -148,7 +153,13 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
       // e pedido cancelado eram transmitidos e o painel ignorava — a linha só
       // mudava de estado depois de um F5.
       ws.subscribe('order.paid', (event) => {
-        applyEventOrRefresh(event as OrderRealtimeEvent);
+        const e = event as OrderRealtimeEvent;
+        applyEventOrRefresh(e);
+        // PIX caiu: o pedido que estava calado (não pago) agora pede aceite.
+        const pedido = selectedStoreId
+          ? (useRootStore.getState().orders[selectedStoreId] || []).find((o) => o.id === e.order_id)
+          : undefined;
+        if (pedido?.payment_method === 'pix') playPixSoundRef.current?.(e.order_id);
       });
 
       ws.subscribe('order.cancelled', (event) => {
@@ -167,6 +178,17 @@ export function useRealTimeOrders(config: UseRealTimeOrdersConfig) {
           { duration: 15000, id: `pagamento-a-menor-${e.order_id}` },
         );
       });
+
+      try {
+        await ws.connect();
+        setIsConnected(true);
+        setConnectionError(false);
+      } catch {
+        // O client segue tentando (backoff, rede de volta, aba visível).
+        caiu = true;
+        setIsConnected(false);
+        setConnectionError(true);
+      }
     };
 
     initWebSocket();

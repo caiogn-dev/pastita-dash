@@ -14,6 +14,7 @@
  * Por isso cada parte só entra se ainda não apareceu: a rua é a fonte, o resto
  * complementa.
  */
+import { paraBusca } from '../../utils/texto';
 
 export interface EnderecoDeEntrega {
   /** Linhas prontas para exibir, na ordem de leitura. Nunca vazias por dentro. */
@@ -39,9 +40,7 @@ const texto = (v: unknown): string => (typeof v === 'string' ? v.trim() : v ? St
  * embaixo da rua que já o continha.
  */
 const normalizar = (s: string) =>
-  s.normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
+  paraBusca(s)
     .replace(/\s+([,;.-])/g, '$1')
     .replace(/\s+/g, ' ')
     .trim();

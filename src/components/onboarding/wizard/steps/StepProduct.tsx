@@ -1,11 +1,9 @@
 import { useState, type FC } from 'react';
 import productsService from '../../../../services/products';
 import { Field, TextInput, MoneyInput } from './fields';
+import { slugify } from '../../../../utils/texto';
 
-function slugify(s: string) {
-  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 40) || 'produto';
-}
+const slugDoProduto = (s: string) => slugify(s, { max: 40, reserva: 'produto' });
 
 const StepProduct: FC<{ storeId: string; onSaved: () => void }> = ({ storeId, onSaved }) => {
   const [name, setName] = useState('');
@@ -16,7 +14,7 @@ const StepProduct: FC<{ storeId: string; onSaved: () => void }> = ({ storeId, on
     setBusy(true); setErr(null);
     try {
       await productsService.createProduct({
-        name, price: Number(price), sku: `${slugify(name)}-${Date.now().toString(36)}`,
+        name, price: Number(price), sku: `${slugDoProduto(name)}-${Date.now().toString(36)}`,
         stock_quantity: 0, is_active: true, store: storeId,
       });
       onSaved();
