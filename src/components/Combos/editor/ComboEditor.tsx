@@ -229,6 +229,7 @@ export const ComboEditor: React.FC<ComboEditorProps> = ({
                   key={g.chave}
                   grupo={g}
                   produtos={produtos}
+                  precoFechado={!r.precoPelaSoma}
                   pendencia={pendenciaDoGrupo(g.chave)}
                   onMudar={mudarGrupo}
                   onRemover={() => setR(prev => ({ ...prev, grupos: prev.grupos.filter(x => x.chave !== g.chave) }))}

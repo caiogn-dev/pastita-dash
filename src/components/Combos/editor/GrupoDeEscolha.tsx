@@ -32,6 +32,8 @@ import { SeletorDeProdutos } from './SeletorDeProdutos';
 
 interface Props {
   grupo: GrupoDoCombo;
+  /** Combo de preço fechado: a opção tem acréscimo, não preço próprio. */
+  precoFechado?: boolean;
   produtos: StoreProduct[];
   pendencia?: string;
   onMudar: (g: GrupoDoCombo) => void;
@@ -68,7 +70,9 @@ const LinhaDaOpcao: React.FC<{
   maximoDoGrupo: number;
   onMudar: (o: OpcaoDoGrupo) => void;
   onRemover: () => void;
-}> = ({ opcao, podeRepetir, maximoDoGrupo, onMudar, onRemover }) => {
+  precoFechado?: boolean;
+}> = ({ opcao, podeRepetir, maximoDoGrupo, onMudar, onRemover, precoFechado = false }) => {
+  const acrescimo = opcao.acrescimo || 0;
   const [editando, setEditando] = useState(false);
   const temPrecoProprio = opcao.precoProprio !== undefined;
   const semEstoque = opcao.estoque === 0;
@@ -92,14 +96,18 @@ const LinhaDaOpcao: React.FC<{
         >
           <span className="block truncate text-sm font-medium text-fg-token">{opcao.nome}</span>
           <span className="flex items-center gap-2 text-xs">
-            {opcao.precoProprio === 0 ? (
+            {precoFechado && opcao.precoProprio !== 0 ? (
+              acrescimo > 0
+                ? <span className="font-semibold text-fg-token">+ {formatCurrency(acrescimo)}</span>
+                : <span className="text-fg-muted-token">Incluso</span>
+            ) : opcao.precoProprio === 0 ? (
               <span className="font-semibold text-success-token">Grátis</span>
             ) : (
               <span className={temPrecoProprio ? 'font-semibold text-fg-token' : 'text-fg-muted-token'}>
                 {formatCurrency(opcao.precoProprio ?? opcao.preco)}
               </span>
             )}
-            {temPrecoProprio && <span className="text-fg-muted-token line-through">{formatCurrency(opcao.preco)}</span>}
+            {!precoFechado && temPrecoProprio && <span className="text-fg-muted-token line-through">{formatCurrency(opcao.preco)}</span>}
             {podeRepetir && opcao.maximo < maximoDoGrupo && (
               <span className="text-fg-muted-token">até {opcao.maximo}×</span>
             )}
@@ -117,6 +125,15 @@ const LinhaDaOpcao: React.FC<{
       </div>
       {editando && (
         <div className="grid grid-cols-2 gap-3 border-t border-border-token p-3">
+          {precoFechado ? (
+            <NumberField
+              rotulo="Acréscimo"
+              valor={acrescimo}
+              min={0}
+              step={0.01}
+              onMudar={v => onMudar({ ...opcao, acrescimo: Math.max(0, v) })}
+            />
+          ) : (
           <div>
             <NumberField
               rotulo="Preço no combo"
@@ -135,6 +152,7 @@ const LinhaDaOpcao: React.FC<{
               </button>
             )}
           </div>
+          )}
           {podeRepetir && (
             <NumberField
               rotulo="Máximo desta opção"
@@ -151,7 +169,7 @@ const LinhaDaOpcao: React.FC<{
 };
 
 export const GrupoDeEscolha: React.FC<Props> = ({
-  grupo, produtos, pendencia, onMudar, onRemover, onSubir, onDescer,
+  grupo, produtos, pendencia, onMudar, onRemover, onSubir, onDescer, precoFechado = false,
 }) => {
   const [seletorAberto, setSeletorAberto] = useState(false);
   const [categoriasAbertas, setCategoriasAbertas] = useState(false);
@@ -295,6 +313,7 @@ export const GrupoDeEscolha: React.FC<Props> = ({
               maximoDoGrupo={grupo.maximo}
               onMudar={mudarOpcao}
               onRemover={() => onMudar(removerOpcao(grupo, o.chave))}
+              precoFechado={precoFechado}
             />
           ))}
         </ul>

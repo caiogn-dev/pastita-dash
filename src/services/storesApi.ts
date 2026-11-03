@@ -1821,6 +1821,8 @@ export interface ComboVariantLimit {
   stock: number;
   max_selections: number;
   price_override?: number;
+  /** Combo de preço fechado: quanto esta escolha soma ao preço do combo. */
+  acrescimo?: number;
 }
 
 export interface ComboProductOption {
@@ -1828,6 +1830,7 @@ export interface ComboProductOption {
   name: string;
   price: number;
   price_override?: number | null;
+  acrescimo?: number;
   stock?: number;
   max_selections: number;
   image_url?: string;
@@ -1851,12 +1854,14 @@ export interface ComboVariantLimitInput {
   variant_id: string;
   max_selections: number;
   price_override?: number;
+  acrescimo?: number;
 }
 
 export interface ComboProductOptionInput {
   product_id: string;
   max_selections: number;
   price_override?: number;
+  acrescimo?: number;
 }
 
 export interface ComboProductGroupInput {

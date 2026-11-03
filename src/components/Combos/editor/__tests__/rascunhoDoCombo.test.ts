@@ -80,7 +80,7 @@ describe('ida e volta com o formato da API', () => {
         position: 0, variant_limits: [],
         product_options: [
           { product_id: 'p1', name: 'Frango grelhado', price: 30, max_selections: 3 },
-          { product_id: 'p2', name: 'Carne de panela', price: 35, max_selections: 3, price_override: 33.95 },
+          { product_id: 'p2', name: 'Carne de panela', price: 35, max_selections: 3, price_override: 33.95, acrescimo: 2.5 },
         ],
       },
       {
@@ -104,14 +104,14 @@ describe('ida e volta com o formato da API', () => {
         product_id: null, title: 'Escolha 3 pratos', is_required: true, min_selections: 3, max_selections: 3,
         allow_duplicate_variants: true, position: 0, variant_limits: [],
         product_options: [
-          { product_id: 'p1', max_selections: 3, price_override: undefined },
-          { product_id: 'p2', max_selections: 3, price_override: 33.95 },
+          { product_id: 'p1', max_selections: 3, price_override: undefined, acrescimo: 0 },
+          { product_id: 'p2', max_selections: 3, price_override: 33.95, acrescimo: 2.5 },
         ],
       },
       {
         product_id: 'p4', title: '', is_required: false, min_selections: 0, max_selections: 1,
         allow_duplicate_variants: false, position: 1, product_options: [],
-        variant_limits: [{ variant_id: 'v1', max_selections: 1, price_override: undefined }],
+        variant_limits: [{ variant_id: 'v1', max_selections: 1, price_override: undefined, acrescimo: 0 }],
       },
     ]);
   });

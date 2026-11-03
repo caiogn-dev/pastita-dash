@@ -111,5 +111,32 @@ describe('ComboEditor', () => {
     const ids = onSalvar.mock.calls[0][0].groups[0].product_options.map((o: { product_id: string }) => o.product_id);
     expect(ids).toEqual(['p1', 'p2']);
   });
-});
 
+  it('preço fechado: a opção ganha acréscimo ("Tilápia +R$ 3,00") em vez de preço próprio (03/11)', async () => {
+    const { onSalvar } = abrir();
+    fireEvent.change(screen.getByLabelText('Nome do combo'), { target: { value: 'Salada + Suco' } });
+    preencherPreco('59.99');
+    fireEvent.click(screen.getByRole('button', { name: /escolha entre produtos/i }));
+    fireEvent.click(screen.getByRole('button', { name: /adicionar opções/i }));
+    const dialogo = screen.getByRole('dialog');
+    fireEvent.click(within(dialogo).getByRole('tab', { name: /pratos/i }));
+    fireEvent.click(within(dialogo).getByRole('button', { name: /todos de pratos/i }));
+    fireEvent.click(within(dialogo).getByRole('button', { name: /^adicionar 2$/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ajustar Carne de panela' }));
+    expect(screen.queryByRole('spinbutton', { name: 'Preço no combo' })).toBeNull();
+    const acrescimo = screen.getByRole('spinbutton', { name: 'Acréscimo' });
+    fireEvent.change(acrescimo, { target: { value: '3' } });
+    fireEvent.blur(acrescimo);
+    expect(screen.getAllByText(/\+\s*R\$\s*3,00/).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByTestId('combo-salvar'));
+    await waitFor(() => expect(onSalvar).toHaveBeenCalled());
+    const [payload] = onSalvar.mock.calls[0];
+    expect(payload.dynamic_pricing).toBe(false);
+    expect(payload.groups[0].product_options).toEqual([
+      expect.objectContaining({ product_id: 'p1', acrescimo: 0 }),
+      expect.objectContaining({ product_id: 'p2', acrescimo: 3 }),
+    ]);
+  });
+});

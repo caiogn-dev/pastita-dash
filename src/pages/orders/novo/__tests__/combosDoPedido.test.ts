@@ -50,3 +50,19 @@ it('mesmo combo com escolhas diferentes são linhas diferentes', () => {
   expect(chaveDoCombo('c1', { g1: ['p1', 'p2'] })).toBe(chaveDoCombo('c1', { g1: ['p2', 'p1'] }));
   expect(chaveDoCombo('c1', { g1: ['p1', 'p1'] })).not.toBe(chaveDoCombo('c1', { g1: ['p1', 'p2'] }));
 });
+
+it('preço fixo soma o acréscimo da opção escolhida (Tilápia +3, 03/11)', () => {
+  const comAcrescimo = {
+    ...combo,
+    groups: [
+      { ...combo.groups[0], product_options: [
+        { product_id: 'p1', name: 'Frango', price: 20, max_selections: 2, acrescimo: 0 },
+        { product_id: 'p2', name: 'Carne', price: 25, max_selections: 2, acrescimo: 3 },
+      ] },
+      { ...combo.groups[1], variant_limits: [{ id: 'l1', variant_id: 'v1', variant_name: 'Laranja', variant_sku: '', stock: 5, max_selections: 1, acrescimo: 1.5 }] },
+    ],
+  } as unknown as StoreCombo;
+  expect(precoDoCombo(comAcrescimo, { g1: ['p1', 'p1'] })).toBe(50);
+  expect(precoDoCombo(comAcrescimo, { g1: ['p1', 'p2'], g2: ['v1'] })).toBeCloseTo(54.5);
+  expect(precoDoCombo(comAcrescimo, { g1: ['p2', 'p2'] })).toBe(56);
+});

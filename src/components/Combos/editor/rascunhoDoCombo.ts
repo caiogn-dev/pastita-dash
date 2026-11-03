@@ -23,8 +23,10 @@ export interface OpcaoDoGrupo {
   nome: string;
   /** Preço do cadastro (produto ou variação). */
   preco: number;
-  /** Preço dentro do combo; vazio = usa o do cadastro. */
+  /** Preço dentro do combo; vazio = usa o do cadastro. Só vale "pela soma". */
   precoProprio?: number;
+  /** Combo de preço fechado: quanto esta escolha soma ("Tilápia +R$ 3,00"). */
+  acrescimo?: number;
   /** Quantas vezes esta opção pode entrar no grupo. */
   maximo: number;
   estoque?: number;
@@ -221,6 +223,7 @@ export const deCombo = (combo: StoreCombo, produtos: StoreProduct[]): RascunhoDo
               nome: o.name || p?.name || '',
               preco: numero(o.price ?? p?.price),
               precoProprio: opcional(o.price_override),
+              acrescimo: numero(o.acrescimo, 0),
               maximo: numero(o.max_selections, 1),
               estoque: o.stock,
               foto: o.image_url || (p ? fotoDoProduto(p) : undefined),
@@ -234,6 +237,7 @@ export const deCombo = (combo: StoreCombo, produtos: StoreProduct[]): RascunhoDo
               nome: l.variant_name || v?.name || '',
               preco: numero(v?.price ?? base?.price),
               precoProprio: opcional(l.price_override),
+              acrescimo: numero(l.acrescimo, 0),
               maximo: numero(l.max_selections, 1),
               estoque: l.stock,
               foto: v?.image_url || (base ? fotoDoProduto(base) : undefined),
@@ -284,10 +288,10 @@ export const paraPayload = (r: RascunhoDoCombo, storeId: string): StoreComboPayl
     allow_duplicate_variants: g.podeRepetir,
     position: idx,
     variant_limits: g.tipo === 'variantes'
-      ? g.opcoes.map(o => ({ variant_id: o.varianteId!, max_selections: o.maximo, price_override: o.precoProprio }))
+      ? g.opcoes.map(o => ({ variant_id: o.varianteId!, max_selections: o.maximo, price_override: o.precoProprio, acrescimo: o.acrescimo || 0 }))
       : [],
     product_options: g.tipo === 'produtos'
-      ? g.opcoes.map(o => ({ product_id: o.produtoId!, max_selections: o.maximo, price_override: o.precoProprio }))
+      ? g.opcoes.map(o => ({ product_id: o.produtoId!, max_selections: o.maximo, price_override: o.precoProprio, acrescimo: o.acrescimo || 0 }))
       : [],
   }));
 

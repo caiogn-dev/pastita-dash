@@ -8,7 +8,7 @@ import type { Product } from '../../../services/products';
 import type { ComboProductGroup, StoreCombo } from '../../../services/storesApi';
 
 export type Escolhas = Record<string, string[]>;
-export type OpcaoDoGrupo = { id: string; nome: string; preco: number; max: number };
+export type OpcaoDoGrupo = { id: string; nome: string; preco: number; max: number; acrescimo: number };
 
 export const CATEGORIA_DOS_COMBOS = 'Combos';
 
@@ -42,9 +42,11 @@ export function opcoesDoGrupo(g: ComboProductGroup): OpcaoDoGrupo[] {
   return [
     ...(g.product_options ?? []).map((o) => ({
       id: o.product_id, nome: o.name, preco: Number(o.price_override ?? o.price) || 0, max: o.max_selections || g.max_selections,
+      acrescimo: Number(o.acrescimo) || 0,
     })),
     ...(g.variant_limits ?? []).map((v) => ({
       id: v.variant_id, nome: v.variant_name, preco: Number(v.price_override ?? 0) || 0, max: v.max_selections || g.max_selections,
+      acrescimo: Number(v.acrescimo) || 0,
     })),
   ];
 }
@@ -60,10 +62,12 @@ export function escolhasProntas(combo: StoreCombo, escolhas: Escolhas): boolean 
 /** Estimativa da tela; quem cobra é o servidor (`compute_unit_price`). */
 export function precoDoCombo(combo: StoreCombo, escolhas: Escolhas): number {
   const base = Number(combo.price) || 0;
-  if (!combo.dynamic_pricing) return base;
+  // Preço fechado: base + acréscimo de cada escolha ("Tilápia +R$ 3,00").
+  // Pela soma: base + o preço de cada escolha.
+  const campo = combo.dynamic_pricing ? 'preco' : 'acrescimo';
   let total = base;
   for (const g of combo.groups) {
-    const preco = new Map(opcoesDoGrupo(g).map((o) => [o.id, o.preco]));
+    const preco = new Map(opcoesDoGrupo(g).map((o) => [o.id, o[campo]]));
     for (const id of escolhas[g.id] ?? []) total += preco.get(id) ?? 0;
   }
   return Math.round(total * 100) / 100;

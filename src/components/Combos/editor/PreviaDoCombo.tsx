@@ -69,7 +69,9 @@ export const PreviaDoCombo: React.FC<Props> = ({ rascunho, produtos, fotoLocal }
                     <li key={o.chave} className="flex items-center justify-between text-sm">
                       <span className="truncate text-fg-token">{o.nome}</span>
                       <span className="shrink-0 text-fg-muted-token">
-                        {!rascunho.precoPelaSoma ? '' : preco === 0 ? 'Grátis' : `+ ${formatCurrency(preco)}`}
+                        {!rascunho.precoPelaSoma
+                          ? ((o.acrescimo || 0) > 0 ? `+ ${formatCurrency(o.acrescimo || 0)}` : '')
+                          : preco === 0 ? 'Grátis' : `+ ${formatCurrency(preco)}`}
                       </span>
                     </li>
                   );
