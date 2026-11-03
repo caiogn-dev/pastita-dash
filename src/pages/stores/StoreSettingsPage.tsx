@@ -8,6 +8,7 @@ import {
   PauseCircleIcon,
   ChartBarIcon,
   ArrowPathIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
 import {
   getStore,
@@ -99,10 +100,12 @@ interface Salvo {
   pausas: Pausa[];
   rastreio: StoreMetaTracking;
   agendamento: Agendamento;
+  perguntarOcasiao: boolean;
 }
 
 const SALVO_VAZIO: Salvo = {
   form: FORM_VAZIO, horas: {}, pausas: [], rastreio: defaultMetaTracking, agendamento: AGENDAMENTO_PADRAO,
+  perguntarOcasiao: false,
 };
 
 const iguais = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -134,6 +137,8 @@ export const StoreSettingsPage: React.FC = () => {
   const [operatingHours, setOperatingHours] = useState<OperatingHours>({});
   const [pausas, setPausas] = useState<Pausa[]>([]);
   const [agendamento, setAgendamento] = useState<Agendamento>(AGENDAMENTO_PADRAO);
+  // Checkout pergunta "qual a ocasião?" (loja de encomenda). Sai na comanda.
+  const [perguntarOcasiao, setPerguntarOcasiao] = useState(false);
   const [metaTracking, setMetaTracking] = useState<StoreMetaTracking>(defaultMetaTracking);
   const [erros, setErros] = useState<{ latitude?: string | null; longitude?: string | null; preparo?: string | null }>({});
 
@@ -174,8 +179,10 @@ export const StoreSettingsPage: React.FC = () => {
 
       const pausasSalvas = lerPausas(data.metadata as Record<string, unknown>);
       const agendamentoSalvo = lerAgendamento(data.metadata as Record<string, unknown>);
-      setSalvo({ form, horas, pausas: pausasSalvas, rastreio, agendamento: agendamentoSalvo });
+      const ocasiaoSalva = Boolean(data.perguntar_ocasiao);
+      setSalvo({ form, horas, pausas: pausasSalvas, rastreio, agendamento: agendamentoSalvo, perguntarOcasiao: ocasiaoSalva });
       setAgendamento(agendamentoSalvo);
+      setPerguntarOcasiao(ocasiaoSalva);
       setStoreForm(form);
       setOperatingHours(horas);
       setPausas(pausasSalvas);
@@ -200,12 +207,13 @@ export const StoreSettingsPage: React.FC = () => {
   const diasMudados = DAYS.filter((d) => !iguais(operatingHours[d.key], salvo.horas[d.key]));
   const pausasMudaram = !iguais(pausas, salvo.pausas);
   const agendamentoMudou = !iguais(agendamento, salvo.agendamento);
+  const ocasiaoMudou = perguntarOcasiao !== salvo.perguntarOcasiao;
   const rastreioMudado = CAMPOS_DO_RASTREIO.filter((k) => metaTracking[k] !== salvo.rastreio[k]).length
     + (metaTracking.meta_capi_access_token?.trim() ? 1 : 0);
 
 
   const quantidade = mudouNaLoja.length + mudouNoLocal.length + diasMudados.length
-    + (preparoMudou ? 1 : 0) + (agendamentoMudou ? 1 : 0) + (pausasMudaram ? 1 : 0) + rastreioMudado;
+    + (preparoMudou ? 1 : 0) + (agendamentoMudou ? 1 : 0) + (ocasiaoMudou ? 1 : 0) + (pausasMudaram ? 1 : 0) + rastreioMudado;
 
   // Sair da página com alteração pendente perde o que foi digitado.
   useEffect(() => {
@@ -220,6 +228,7 @@ export const StoreSettingsPage: React.FC = () => {
     setOperatingHours(salvo.horas);
     setPausas(salvo.pausas);
     setAgendamento(salvo.agendamento);
+    setPerguntarOcasiao(salvo.perguntarOcasiao);
     setMetaTracking(salvo.rastreio);
     setErros({});
   };
@@ -303,6 +312,8 @@ export const StoreSettingsPage: React.FC = () => {
       mexeuNoMetadata = true;
     }
     if (mexeuNoMetadata) payload.metadata = metadata;
+    // Campo próprio no servidor (mescla no metadata lá), não via metadata.
+    if (ocasiaoMudou) payload.perguntar_ocasiao = perguntarOcasiao;
 
     setSaving(true);
     try {
@@ -377,7 +388,7 @@ export const StoreSettingsPage: React.FC = () => {
           // 26/10: Recebimento → Configurações › Pagamentos; Nota fiscal →
           // Financeiro › Notas fiscais; Atendimento → Esperando atendente;
           // Avaliações → Clientes › Avaliações. Cada uma mora com o assunto dela.
-          { id: 'entrega', rotulo: 'Horários', icone: ClockIcon, mudou: diasMudados.length > 0 || pausasMudaram || preparoMudou || agendamentoMudou },
+          { id: 'entrega', rotulo: 'Horários', icone: ClockIcon, mudou: diasMudados.length > 0 || pausasMudaram || preparoMudou || agendamentoMudou || ocasiaoMudou },
           { id: 'rastreamento', rotulo: 'Anúncios e medição', icone: ChartBarIcon, mudou: rastreioMudado > 0 },
         ]}
       >
@@ -516,6 +527,13 @@ export const StoreSettingsPage: React.FC = () => {
           </div>
         </Card>
         <AgendamentoCampos valor={agendamento} onChange={setAgendamento} horas={operatingHours} />
+        <Card className="p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-fg-token">
+            <SparklesIcon className="h-5 w-5 text-fg-muted-token" aria-hidden />
+            Ocasião
+          </h2>
+          <LinhaComChave rotulo="Perguntar a ocasião do pedido" ligado={perguntarOcasiao} onMudar={setPerguntarOcasiao} />
+        </Card>
               </>
             )}
 

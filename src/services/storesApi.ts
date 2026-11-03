@@ -87,6 +87,8 @@ export interface Store {
   is_open: boolean;
   owner: number;
   metadata: Record<string, unknown>;
+  /** Checkout pergunta "qual a ocasião?" (lido/gravado por campo próprio). */
+  perguntar_ocasiao?: boolean;
   integrations_count: number;
   /** A loja tem conta de WhatsApp CONECTADA — não é o número digitado. */
   whatsapp_conectado: boolean;

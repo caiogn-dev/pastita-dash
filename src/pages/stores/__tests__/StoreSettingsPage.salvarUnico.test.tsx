@@ -173,3 +173,23 @@ describe('Configurações: agendamento (21/10)', () => {
     expect(payload.metadata).toEqual({ google_review_url: '', outro: 1, agendamento: { intervalo: 30, antecedencia: 60 } });
   });
 });
+
+describe('Configurações: perguntar a ocasião (03/11)', () => {
+  it('ligar a chave grava perguntar_ocasiao no mesmo salvar, sem mandar metadata', async () => {
+    montar('/stores/ce-saladas/settings?aba=entrega');
+    const chave = await screen.findByRole('switch', { name: 'Perguntar a ocasião do pedido' });
+    expect(chave).toHaveAttribute('aria-checked', 'false');
+    fireEvent.click(chave);
+    expect(screen.getByRole('tab', { name: /Horários.*alterado/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(api.updateStore).toHaveBeenCalledTimes(1));
+    expect((api.updateStore as jest.Mock).mock.calls[0][1]).toEqual({ perguntar_ocasiao: true });
+  });
+
+  it('loja que já pergunta abre com a chave ligada', async () => {
+    (api.getStore as jest.Mock).mockResolvedValue({ ...loja, perguntar_ocasiao: true });
+    montar('/stores/ce-saladas/settings?aba=entrega');
+    const chave = await screen.findByRole('switch', { name: 'Perguntar a ocasião do pedido' });
+    expect(chave).toHaveAttribute('aria-checked', 'true');
+  });
+});
