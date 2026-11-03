@@ -201,8 +201,8 @@ export const WebhookDiagnosticsPage: React.FC = () => {
         />
         Auto-refresh (5s)
         </label>
-        <Button variant="secondary" onClick={fetchDiagnostics}>
-        <ArrowPathIcon className="w-5 h-5" />
+        <Button variant="secondary" onClick={fetchDiagnostics} aria-label="Atualizar" title="Atualizar">
+        <ArrowPathIcon className="w-5 h-5" aria-hidden="true" />
         </Button>
         </div>
       }
