@@ -57,7 +57,7 @@ const PAGE_SIZE = 50;
 
 
 const CANAL_LABEL: Record<string, string> = {
-  web: 'Site', whatsapp: 'WhatsApp', pdv: 'Balcão (PDV)',
+  web: 'Site', whatsapp: 'WhatsApp', pdv: 'Balcão (PDV)', '99food': '99Food',
   instagram: 'Instagram', nao_informado: 'Não informado',
 };
 
@@ -310,7 +310,7 @@ export const HistoricoPedidosPage: React.FC = () => {
               vazio="Todos os canais"
               valor={canal}
               onMudar={(v) => mudar('canal', v)}
-              opcoes={['web', 'whatsapp', 'pdv'].map((valor) => ({
+              opcoes={['web', 'whatsapp', 'pdv', '99food'].map((valor) => ({
                 valor,
                 rotulo: CANAL_LABEL[valor],
               }))}

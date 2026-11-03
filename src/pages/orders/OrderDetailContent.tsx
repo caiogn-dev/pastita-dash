@@ -110,6 +110,7 @@ const CANAL_DO_PEDIDO: Record<string, string> = {
   payment_link: 'Link de pagamento',
   carteira: 'Carteira',
   dashboard: 'Painel',
+  '99food': '99Food',
 };
 
 

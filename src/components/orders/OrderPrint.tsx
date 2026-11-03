@@ -190,6 +190,7 @@ export const useOrderPrint = () => {
     const SOURCE_LABELS: Record<string, string> = {
       whatsapp: 'WhatsApp', instagram: 'Instagram', pdv: 'PDV', balcao: 'balcao',
       web: 'site', site: 'site', storefront: 'site', payment_link: 'link de pagamento',
+      '99food': '99Food',
     };
     const canalLabel = SOURCE_LABELS[(pedido as unknown as { source?: string }).source || ''] || '';
 
