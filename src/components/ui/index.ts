@@ -106,3 +106,5 @@ export { CampoDeTelefone, mascararTelefone, limparTelefone } from './CampoDeTele
 export type { CampoDeTelefoneProps } from './CampoDeTelefone';
 export { EnvioDeImagem } from './EnvioDeImagem';
 export type { EnvioDeImagemProps } from './EnvioDeImagem';
+export { Gaveta } from './Gaveta';
+export type { GavetaProps } from './Gaveta';

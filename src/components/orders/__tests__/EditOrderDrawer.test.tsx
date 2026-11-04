@@ -159,3 +159,11 @@ it('envia item_ops com op add ao selecionar produto no seletor', async () => {
     );
   });
 });
+
+test('é um diálogo modal nomeado e o Esc fecha', () => {
+  const onClose = jest.fn();
+  render(<EditOrderDrawer order={baseOrder} onClose={onClose} onSaved={jest.fn()} />);
+  expect(screen.getByRole('dialog', { name: 'Editar pedido' })).toHaveAttribute('aria-modal', 'true');
+  fireEvent.keyDown(document, { key: 'Escape' });
+  expect(onClose).toHaveBeenCalled();
+});

@@ -1,3 +1,4 @@
+import { Gaveta } from '../ui/Gaveta';
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { XMarkIcon } from '@heroicons/react/24/outline';
@@ -184,12 +185,7 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
     'w-full px-3 py-2 superficie text-sm text-fg-token focus:outline-none focus:border-brand';
 
   return (
-    <>
-      <div
-        className="fixed inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-sm z-50"
-        onClick={onClose}
-      />
-      <div className="fixed inset-y-0 right-0 z-[60] w-full max-w-lg bg-surface border-l border-border-token shadow-2xl flex flex-col animate-slide-in-right">
+    <Gaveta rotulo="Editar pedido" onClose={onClose} larguraMax="max-w-lg">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border-token">
           <p className="font-bold text-fg-token">Editar pedido</p>
@@ -402,7 +398,6 @@ export function EditOrderDrawer({ order, onClose, onSaved }: Props) {
             {saving ? 'Salvando...' : 'Salvar'}
           </button>
         </div>
-      </div>
-    </>
+    </Gaveta>
   );
 }
