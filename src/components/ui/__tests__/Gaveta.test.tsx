@@ -53,4 +53,37 @@ describe('Gaveta', () => {
     rerender(<button>Abrir</button>);
     expect(screen.getByText('Abrir')).toHaveFocus();
   });
+
+  it('com duas gavetas empilhadas, só a de cima reage ao Esc e ao Tab', () => {
+    const fechaFicha = jest.fn();
+    const fechaForm = jest.fn();
+    render(
+      <>
+        <Gaveta rotulo="Ficha" onClose={fechaFicha}><button>Editar</button></Gaveta>
+        <Gaveta rotulo="Formulário" onClose={fechaForm}><input aria-label="Nome" /><button>Salvar</button></Gaveta>
+      </>,
+    );
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(fechaForm).toHaveBeenCalledTimes(1);
+    expect(fechaFicha).not.toHaveBeenCalled();
+    screen.getByLabelText('Nome').focus();
+    fireEvent.keyDown(document, { key: 'Tab' });
+    // Tab avança do campo para o botão da gaveta de cima, sem ser puxado de volta
+    // pela de baixo; o foco do navegador só se move no Tab real, então conferimos que não saiu do painel.
+    expect(screen.getByRole('dialog', { name: 'Formulário' }).contains(document.activeElement)).toBe(true);
+  });
+
+  it('ao fechar a de cima, a de baixo volta a tratar o teclado', () => {
+    const fechaFicha = jest.fn();
+    const tela = (comForm: boolean) => (
+      <>
+        <Gaveta rotulo="Ficha" onClose={fechaFicha}><button>Editar</button></Gaveta>
+        {comForm && <Gaveta rotulo="Formulário" onClose={jest.fn()}><button>Salvar</button></Gaveta>}
+      </>
+    );
+    const { rerender } = render(tela(true));
+    rerender(tela(false));
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(fechaFicha).toHaveBeenCalledTimes(1);
+  });
 });

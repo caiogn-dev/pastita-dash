@@ -14,6 +14,11 @@ export interface GavetaProps {
   className?: string;
 }
 
+// Gavetas montadas, da mais antiga à mais nova. Só a última trata o teclado:
+// a ficha do cliente continua montada por baixo do formulário de edição, e as
+// duas brigavam pelo foco (Tab não avançava) e fechavam juntas no Esc.
+const pilha: symbol[] = [];
+
 /**
  * Gaveta lateral do kit. Existe porque cada tela montava a sua com dois `div`
  * `fixed`: sem `role="dialog"`, sem Esc, sem trava de foco — o Tab saía para a
@@ -26,11 +31,14 @@ export const Gaveta: React.FC<GavetaProps> = ({ rotulo, onClose, children, largu
   fechar.current = onClose;
 
   useEffect(() => {
+    const id = Symbol('gaveta');
+    pilha.push(id);
     const anterior = document.activeElement as HTMLElement | null;
     const p = painel.current;
     if (p) ((p.querySelector<HTMLElement>(FOCAVEIS)) ?? p).focus();
 
     const aoTeclar = (e: KeyboardEvent) => {
+      if (pilha[pilha.length - 1] !== id) return;
       if (e.key === 'Escape') {
         fechar.current();
         return;
@@ -57,6 +65,8 @@ export const Gaveta: React.FC<GavetaProps> = ({ rotulo, onClose, children, largu
     document.addEventListener('keydown', aoTeclar);
     return () => {
       document.removeEventListener('keydown', aoTeclar);
+      const i = pilha.indexOf(id);
+      if (i >= 0) pilha.splice(i, 1);
       anterior?.focus?.();
     };
   }, []);
