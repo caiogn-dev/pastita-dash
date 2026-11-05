@@ -31,6 +31,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { dadosDa99 } from './pedidoDa99';
+import { Marca99 } from '../../components/orders/Marca99';
 
 import { Card, Badge, Button, PageShell, KpiGrid, EmptyState, Tabela, SearchInput, Select } from '../../components/ui';
 import { PageLoading } from '../../components/common';
@@ -509,7 +511,11 @@ export const HistoricoPedidosPage: React.FC = () => {
                 chave: 'canal',
                 cabecalho: 'Canal',
                 classe: 'max-xl:hidden',
-                render: (p) => CANAL_LABEL[p.source ?? ''] ?? p.source ?? '—',
+                render: (p) => {
+                  const da99 = dadosDa99(p as Parameters<typeof dadosDa99>[0]);
+                  if (da99) return <Marca99 numero={da99.numero} />;
+                  return CANAL_LABEL[p.source ?? ''] ?? p.source ?? '—';
+                },
               },
               {
                 chave: 'pagamento',

@@ -77,7 +77,8 @@ import { getStageStart, getAvgPrepMinutes, prazoDoAgendado, situacaoDoPreparo } 
 import { lojaTemUber } from './uberDaLoja';
 import { proximaAcaoDoPedido } from './proximaAcao';
 import { saldoDoPedido } from './saldoDoPedido';
-import { seloDa99 } from './pedidoDa99';
+import { dadosDa99 } from './pedidoDa99';
+import { Marca99, AMARELO_99 } from '../../components/orders/Marca99';
 import { formatCurrency } from '../../utils/formatters';
 import { pagoNaEntrega } from '../../utils/rotulosDeEstado';
 
@@ -194,10 +195,12 @@ const OrderCardBase: React.FC<CardProps> = ({
     'border-border-token';
   const pagamento = estadoDePagamento(order.payment_status, order.payment_method);
   const saldo = saldoDoPedido(order);
+  const da99 = dadosDa99(order as Parameters<typeof dadosDa99>[0]);
 
   return (
     <div
       onClick={() => !isUpdating && onDetail(order)}
+      style={da99 ? { borderLeftColor: AMARELO_99, borderLeftWidth: 5 } : undefined}
       className={`
         superficie-alta cursor-pointer border-2 text-fg-token p-2.5
         ${isDragging ? 'shadow-flutuante ring-2 ring-brand' : ''}
@@ -207,16 +210,17 @@ const OrderCardBase: React.FC<CardProps> = ({
     >
       {/* Row 1: order number + elapsed + delivery badge */}
       <div className="flex items-center justify-between gap-1 mb-1.5">
-        <span className="flex items-center gap-1">
+        {da99 ? (
+          // Na 99 o número que vale é o dela: é o que o entregador fala no balcão.
+          <span className="flex min-w-0 items-center gap-1.5" data-testid="selo-99" title={`Pedido ${order.order_number}`}>
+            <Marca99 numero={da99.numero} tamanho="md" />
+            {!da99.numero && <span className="text-badge font-bold text-fg-token">99Food</span>}
+          </span>
+        ) : (
           <span className="font-mono text-badge font-bold text-fg-muted-token">
             #{order.order_number}
           </span>
-          {seloDa99(order as Parameters<typeof seloDa99>[0]) && (
-            <SeloDeEstado tone="neutral" className="px-1.5 text-badge font-bold" data-testid="selo-99">
-              {seloDa99(order as Parameters<typeof seloDa99>[0])}
-            </SeloDeEstado>
-          )}
-        </span>
+        )}
         <div className="flex items-center gap-1">
           {isUpdating && <ArrowPathIcon className="h-3 w-3 text-brand-ink animate-spin" />}
           {isSuccess && <SeloDeEstado tone="success" className="px-1.5 text-badge">Movido</SeloDeEstado>}

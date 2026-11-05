@@ -46,6 +46,8 @@ import NotaFiscalPedido from './NotaFiscalPedido';
 import { EntregadorDoPedido } from '../../components/orders/EntregadorDoPedido';
 import { Order, Payment, OrderComboItem } from '../../types';
 import { linhasDasEscolhas } from '../../utils/escolhasDoCombo';
+import { dadosDa99 } from './pedidoDa99';
+import { Marca99 } from '../../components/orders/Marca99';
 
 // Linhas de seleção de combo: um sabor por linha, repetidos somados
 // ("2x Assadinho"). Regra única em utils/escolhasDoCombo.
@@ -551,6 +553,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
   const telefone = order.customer_phone || '';
   const zap = formatPhoneForWhatsApp(telefone);
   const canal = CANAL_DO_PEDIDO[order.source || ''] ?? null;
+  const da99 = dadosDa99(order as Parameters<typeof dadosDa99>[0]);
   // Cobranças que não viraram dinheiro ficam recolhidas: um pedido pago com 3
   // tentativas canceladas mostrava 4 linhas de mesmo valor e mesmo peso, e a
   // que importa é a que entrou.
@@ -578,13 +581,23 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
             >
               {variant === 'modal' ? <XMarkIcon className="h-5 w-5" /> : <ArrowLeftIcon className="h-5 w-5" />}
             </button>
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-sm font-semibold text-[var(--brand)]">
-              {customerInitials}
-            </div>
+            {da99 ? (
+              <Marca99 tamanho="lg" />
+            ) : (
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-sm font-semibold text-[var(--brand)]">
+                {customerInitials}
+              </div>
+            )}
             <div className="min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-[-0.02em] text-fg-token">
                 {order.customer_name || 'Cliente sem nome'}
               </h1>
+              {da99 && (
+                <p className="text-sm font-bold text-fg-token" data-testid="numero-99">
+                  {da99.numero ? <>Pedido 99 <span className="font-mono">#{da99.numero}</span></> : 'Pedido 99Food'}
+                  {da99.quemEntrega && <span className="font-normal text-fg-muted-token">{' · '}{da99.quemEntrega}</span>}
+                </p>
+              )}
               <p className="truncate text-xs text-fg-muted-token">
                 <span className="font-mono">#{order.order_number}</span>
                 {' · '}{formatOrderCreatedAt(order.created_at)}
@@ -599,6 +612,18 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
             </span>
           </div>
         </header>
+
+        {da99 && (da99.codigoEntrega || da99.codigoRetirada || da99.erro) && (
+          <div className="flex flex-wrap items-center gap-2" data-testid="dados-99">
+            {da99.codigoEntrega && (
+              <SeloDeEstado tone="neutral">Código de entrega <span className="ml-1 font-mono font-bold">{da99.codigoEntrega}</span></SeloDeEstado>
+            )}
+            {da99.codigoRetirada && (
+              <SeloDeEstado tone="neutral">Código de retirada <span className="ml-1 font-mono font-bold">{da99.codigoRetirada}</span></SeloDeEstado>
+            )}
+            {da99.erro && <span title={da99.erro}><SeloDeEstado tone="danger">99 não recebeu o último status</SeloDeEstado></span>}
+          </div>
+        )}
 
         {/* ── A régua de status, atravessando o topo ────────────────────── */}
         <div className="superficie px-5 py-4">
