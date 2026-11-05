@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { EditOrderDrawer } from '../EditOrderDrawer';
 import type { Order } from '../../../types';
 
@@ -34,5 +34,13 @@ describe('EditOrderDrawer — acessibilidade do botão de fechar', () => {
 
     const fechar = screen.getByRole('button', { name: /fechar/i });
     expect(fechar).toBeInTheDocument();
+  });
+
+  it('é um diálogo modal e Esc fecha', () => {
+    const onClose = jest.fn();
+    render(<EditOrderDrawer order={order} onClose={onClose} onSaved={jest.fn()} />);
+    expect(screen.getByRole('dialog', { name: 'Editar pedido' })).toHaveAttribute('aria-modal', 'true');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

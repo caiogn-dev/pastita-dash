@@ -23,7 +23,7 @@ import { PageLoading } from '../../components/common';
 import {
   Button, Badge, RowActions, Input, Textarea, Switch, Segmentado,
   PageShell, KpiGrid, InsightList, Tabela, SearchInput, PeriodChips,
-  EmptyState, FalhaAoCarregar, SeloDeEstado, Skeleton,
+  EmptyState, FalhaAoCarregar, SeloDeEstado, Skeleton, Gaveta,
   estadoDePedido, estadoDeCliente, estadoDeSegmento,
 } from '../../components/ui';
 import { insightsDeClientes } from './insightsDeClientes';
@@ -337,8 +337,7 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 z-[60] w-full max-w-md bg-surface border-l border-border-token shadow-2xl flex flex-col animate-slide-in-right">
+      <Gaveta ariaLabel={isEdit ? 'Editar cliente' : 'Novo cliente'} onClose={onClose} className="max-w-md">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border-token">
           <p className="font-bold text-fg-token">{isEdit ? 'Editar cliente' : 'Novo cliente'}</p>
           <button onClick={onClose} aria-label="Fechar" className="p-2 rounded text-fg-muted-token hover:text-fg-token hover:bg-surface-2">
@@ -559,7 +558,7 @@ export const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({ storeSlu
             {saving ? 'Salvando...' : 'Salvar'}
           </Button>
         </div>
-      </div>
+      </Gaveta>
     </>
   );
 };
@@ -718,14 +717,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 transition-opacity"
-        onClick={onClose}
-      />
-
-      {/* Drawer */}
-      <div className="fixed inset-y-0 right-0 z-[60] w-full max-w-lg bg-surface border-l border-border-token shadow-2xl flex flex-col animate-slide-in-right">
+      <Gaveta ariaLabel={`Ficha de ${customer.user_name || 'cliente'}`} onClose={onClose} className="max-w-lg">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border-token">
@@ -1100,7 +1092,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({
             </Button>
           )}
         </div>
-      </div>
+      </Gaveta>
     </>
   );
 };
