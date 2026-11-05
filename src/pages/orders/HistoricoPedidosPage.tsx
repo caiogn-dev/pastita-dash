@@ -31,8 +31,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { dadosDa99 } from './pedidoDa99';
-import { Marca99 } from '../../components/orders/Marca99';
+import { dadosDoApp } from './pedidoDeApp';
+import { MarcaDoApp } from '../../components/orders/MarcaDoApp';
 
 import { Card, Badge, Button, PageShell, KpiGrid, EmptyState, Tabela, SearchInput, Select } from '../../components/ui';
 import { PageLoading } from '../../components/common';
@@ -59,7 +59,7 @@ const PAGE_SIZE = 50;
 
 
 const CANAL_LABEL: Record<string, string> = {
-  web: 'Site', whatsapp: 'WhatsApp', pdv: 'Balcão (PDV)', '99food': '99Food',
+  web: 'Site', whatsapp: 'WhatsApp', pdv: 'Balcão (PDV)', '99food': '99Food', ifood: 'iFood',
   instagram: 'Instagram', nao_informado: 'Não informado',
 };
 
@@ -312,7 +312,7 @@ export const HistoricoPedidosPage: React.FC = () => {
               vazio="Todos os canais"
               valor={canal}
               onMudar={(v) => mudar('canal', v)}
-              opcoes={['web', 'whatsapp', 'pdv', '99food'].map((valor) => ({
+              opcoes={['web', 'whatsapp', 'pdv', '99food', 'ifood'].map((valor) => ({
                 valor,
                 rotulo: CANAL_LABEL[valor],
               }))}
@@ -512,8 +512,8 @@ export const HistoricoPedidosPage: React.FC = () => {
                 cabecalho: 'Canal',
                 classe: 'max-xl:hidden',
                 render: (p) => {
-                  const da99 = dadosDa99(p as Parameters<typeof dadosDa99>[0]);
-                  if (da99) return <Marca99 numero={da99.numero} />;
+                  const doApp = dadosDoApp(p as Parameters<typeof dadosDoApp>[0]);
+                  if (doApp) return <MarcaDoApp app={doApp.app} numero={doApp.numero} />;
                   return CANAL_LABEL[p.source ?? ''] ?? p.source ?? '—';
                 },
               },
