@@ -164,31 +164,30 @@ describe('PdvBalcaoPage', () => {
     });
   });
 
-  it('comanda com lojas misturadas gera um pedido por loja', async () => {
-    mockedCreate.mockImplementation(async ({ store }: { store: string }) => ({ id: `o-${store}`, total: 1 }));
-    mockedMarkPaid.mockResolvedValue({});
+  it('carrega só o cardápio da loja ativa (sem itens de outras lojas)', async () => {
+    renderPage();
+    expect(await screen.findByRole('button', { name: 'Adicionar Marmita P' })).toBeInTheDocument();
+    expect(mockedGetProducts).toHaveBeenCalled();
+    mockedGetProducts.mock.calls.forEach(([params]) => expect(params.store).toBe('loja-1'));
+    expect(screen.queryByRole('button', { name: 'Adicionar Salgadinho' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/lojas/)).not.toBeInTheDocument();
+  });
+
+  it('código de produto de outra loja não entra na comanda', async () => {
     renderPage();
     await waitFor(() => expect(mockedGetProducts).toHaveBeenCalled());
+    scan('789200000002'); // Salgadinho é da loja-2
+    expect(await screen.findByText('Código não cadastrado')).toBeInTheDocument();
+    expect(screen.queryByTestId('pdv-comanda')).not.toBeInTheDocument();
+    expect(screen.getByTestId('pdv-total')).toHaveTextContent('0,00');
+  });
 
-    scan('2000042003501'); // loja-1
-    await within(await screen.findByTestId('pdv-comanda')).findByText('Marmita P');
-    await act(() => new Promise((r) => setTimeout(r, 320)));
-    scan('789200000002'); // loja-2
-    await within(screen.getByTestId('pdv-comanda')).findByText('Salgadinho');
-
-    // agrupamento visível por loja
-    expect(within(screen.getByTestId('pdv-comanda')).getByText('Loja Um')).toBeInTheDocument();
-    expect(within(screen.getByTestId('pdv-comanda')).getByText('Loja Dois')).toBeInTheDocument();
-
-    await userEvent.click(screen.getByTestId('pdv-finalizar'));
-    await waitFor(() => expect(mockedCreate).toHaveBeenCalledTimes(2));
-    expect(mockedCreate).toHaveBeenCalledWith(expect.objectContaining({
-      store: 'loja-1', items: [{ product_id: 'p1', quantity: 1 }],
-    }));
-    expect(mockedCreate).toHaveBeenCalledWith(expect.objectContaining({
-      store: 'loja-2', items: [{ product_id: 'p9', quantity: 1 }],
-    }));
-    await waitFor(() => expect(mockedMarkPaid).toHaveBeenCalledTimes(2));
+  it('busca de cliente fica na loja ativa', async () => {
+    mockedGetCustomers.mockResolvedValue(page([]));
+    renderPage();
+    await userEvent.click(await screen.findByText('Vincular cliente'));
+    await userEvent.type(screen.getByPlaceholderText('Buscar por nome ou telefone…'), 'jo');
+    await waitFor(() => expect(mockedGetCustomers).toHaveBeenCalledWith(expect.objectContaining({ store: 'loja-1' })));
   });
 
   it('vincular cliente manda nome e telefone reais no pedido', async () => {
