@@ -14,7 +14,7 @@ import { validarProduto, type AbaDoProduto, type ErroDeProduto } from './validar
 import { regrasParaGravar } from './regrasDeVenda';
 import RegrasDeVendaCampos from './RegrasDeVendaCampos';
 import { FormChecklist, FormSummary, ChoiceCards, FormStepper, StringListField } from '../../components/ui';
-import { Card, Button, KpiGrid } from '../../components/ui';
+import { Card, Button, KpiGrid, Switch } from '../../components/ui';
 import { Modal } from '../../components/common';
 import VariantsManager from '../../components/products/VariantsManager';
 // Lazy de propósito: a aba Nutricional é a menos usada do formulário, e o
@@ -822,15 +822,14 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       required
                     />
                   </div>
-                  <label className="mt-2 flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={!!formData.is_brinde}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, is_brinde: e.target.checked }))}
-                      className="rounded border-border-token text-brand-ink focus:ring-brand"
+                  <div className="mt-2 flex items-center gap-2">
+                    <Switch
+                      ligado={!!formData.is_brinde}
+                      onMudar={(v) => setFormData((prev) => ({ ...prev, is_brinde: v }))}
+                      rotulo="Brinde (pode ficar a R$ 0,00)"
                     />
                     <span className="text-sm">Brinde (pode ficar a R$ 0,00)</span>
-                  </label>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-fg-token mb-1">
@@ -1032,15 +1031,14 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       />
                       <span className="text-sm">Permitir venda sem estoque</span>
                     </label>
-                    <label className="flex items-center gap-2 pb-2">
-                      <input
-                        type="checkbox"
-                        checked={!!formData.pausar_ao_zerar}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, pausar_ao_zerar: e.target.checked }))}
-                        className="rounded border-border-token text-brand-ink focus:ring-brand"
+                    <div className="flex items-center gap-2 pb-2">
+                      <Switch
+                        ligado={!!formData.pausar_ao_zerar}
+                        onMudar={(v) => setFormData((prev) => ({ ...prev, pausar_ao_zerar: v }))}
+                        rotulo="Pausar ao zerar o estoque"
                       />
                       <span className="text-sm">Pausar ao zerar o estoque</span>
-                    </label>
+                    </div>
                   </div>
                 </div>
               )}

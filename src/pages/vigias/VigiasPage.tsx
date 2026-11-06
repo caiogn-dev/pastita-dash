@@ -384,7 +384,7 @@ export const VigiasPage: React.FC = () => {
                           />
                         </div>
                         <blockquote className="rounded-md bg-surface-2 px-2.5 py-2 text-xs leading-relaxed text-fg-muted-token">
-                          <span className="mr-1.5 rounded bg-surface px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                          <span className="mr-1.5 rounded bg-surface px-1.5 py-0.5 text-badge font-bold uppercase tracking-wide">
                             Exemplo
                           </span>
                           {vigia.exemplo}
