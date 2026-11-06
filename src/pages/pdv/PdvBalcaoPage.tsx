@@ -27,7 +27,7 @@ import { FORMAS_DO_BALCAO, rotuloDePagamento } from '../../utils/rotulosDeEstado
 
 type PaymentChoice = (typeof FORMAS_DO_BALCAO)[number];
 
-/** Produto anotado com a loja dona — o balcão vende itens de todas as lojas do usuário. */
+/** Produto anotado com a loja dona — sempre a loja ativa (a da rota). */
 interface CatalogEntry {
   product: StoreProduct;
   storeSlug: string;
@@ -77,7 +77,6 @@ const beep = (ok: boolean) => {
 const PdvBalcaoPage: React.FC = () => {
   const { storeId } = useParams<{ storeId: string }>();
   const [catalog, setCatalog] = useState<CatalogEntry[]>([]);
-  const [storeCount, setStoreCount] = useState(1);
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ComandaItem[]>([]);
   const [payment, setPayment] = useState<PaymentChoice>('cash');
@@ -112,36 +111,25 @@ const PdvBalcaoPage: React.FC = () => {
     if (!storeId) return;
     setLoading(true);
     try {
-      // Todas as lojas ativas do usuário: o balcão físico vende produto de qualquer uma.
-      let stores: { slug: string; name: string }[] = [];
+      // Só a loja ativa. Antes o balcão juntava o cardápio de todas as lojas
+      // do usuário e a Cê vendia prato do Agrião, da Ivoneth e da Pastita.
+      let storeName = storeId;
       try {
         const res = await getStores();
-        stores = (res.results || [])
-          .filter((s) => s.status === 'active')
-          .map((s) => ({ slug: s.slug, name: s.name }));
+        storeName = (res.results || []).find((s) => s.slug === storeId || s.id === storeId)?.name || storeId;
       } catch {
-        /* sem lista de lojas → opera só com a loja da rota */
+        /* sem lista de lojas → mostra o slug no lugar do nome */
       }
-      if (!stores.some((s) => s.slug === storeId)) {
-        stores.push({ slug: storeId, name: storeId });
+      const all: CatalogEntry[] = [];
+      let page = 1;
+      // pagina até esgotar — catálogo de loja é pequeno (centenas no máximo)
+      for (;;) {
+        const res = await getProducts({ store: storeId, status: 'active', page, page_size: 200 });
+        all.push(...res.results.map((product) => ({ product, storeSlug: storeId, storeName })));
+        if (!res.next) break;
+        page += 1;
       }
-      setStoreCount(stores.length);
-
-      const perStore = await Promise.all(
-        stores.map(async (s) => {
-          const all: CatalogEntry[] = [];
-          let page = 1;
-          // pagina até esgotar — catálogo de loja é pequeno (centenas no máximo)
-          for (;;) {
-            const res = await getProducts({ store: s.slug, status: 'active', page, page_size: 200 });
-            all.push(...res.results.map((product) => ({ product, storeSlug: s.slug, storeName: s.name })));
-            if (!res.next) break;
-            page += 1;
-          }
-          return all;
-        }),
-      );
-      setCatalog(perStore.flat());
+      setCatalog(all);
     } catch {
       toast.error('Erro ao carregar o catálogo');
     } finally {
@@ -153,18 +141,12 @@ const PdvBalcaoPage: React.FC = () => {
 
   const byCode = useMemo(() => {
     const map = new Map<string, CatalogEntry>();
-    // Loja da rota entra por último: em código duplicado entre lojas, ela vence.
-    const sorted = [...catalog].sort((a, b) => {
-      if (a.storeSlug === storeId && b.storeSlug !== storeId) return 1;
-      if (b.storeSlug === storeId && a.storeSlug !== storeId) return -1;
-      return 0;
-    });
-    sorted.forEach((entry) => {
+    catalog.forEach((entry) => {
       if (entry.product.barcode) map.set(entry.product.barcode.trim(), entry);
       if (entry.product.sku) map.set(entry.product.sku.trim(), entry);
     });
     return map;
-  }, [catalog, storeId]);
+  }, [catalog]);
 
   const addEntry = useCallback((entry: CatalogEntry) => {
     setItems((prev) => {
@@ -199,7 +181,7 @@ const PdvBalcaoPage: React.FC = () => {
     disabled: unknownCode !== null || submitting || pixCharges !== null || customerModal,
   });
 
-  // Busca de clientes (todas as lojas do usuário) com debounce
+  // Busca de clientes da loja ativa, com debounce
   useEffect(() => {
     if (!customerModal) return undefined;
     const term = custSearch.trim();
@@ -210,7 +192,7 @@ const PdvBalcaoPage: React.FC = () => {
     const t = setTimeout(async () => {
       setCustSearching(true);
       try {
-        const res = await getCustomers({ search: term, page_size: 8 });
+        const res = await getCustomers({ store: storeId, search: term, page_size: 8 });
         setCustResults(res.results);
       } catch {
         setCustResults([]);
@@ -219,7 +201,7 @@ const PdvBalcaoPage: React.FC = () => {
       }
     }, 300);
     return () => clearTimeout(t);
-  }, [custSearch, customerModal]);
+  }, [custSearch, customerModal, storeId]);
 
   const pickCustomer = (c: StoreCustomer) => {
     const email = c.user_email && !c.user_email.endsWith('local.invalid') ? c.user_email : undefined;
@@ -260,9 +242,9 @@ const PdvBalcaoPage: React.FC = () => {
   const naComanda = useMemo(() => Object.fromEntries(items.map((i) => [i.product.id, i.quantity])), [items]);
   const produtosDaGrade = useMemo(() => catalog.map((c) => ({
     id: c.product.id, nome: c.product.name, preco: precoVigenteDoProduto(c.product),
-    categoria: c.product.category_name || undefined, loja: storeCount > 1 ? c.storeName : undefined,
+    categoria: c.product.category_name || undefined,
     semEstoque: Boolean(c.product.track_stock) && Number(c.product.stock_quantity ?? 1) <= 0,
-  })), [catalog, storeCount]);
+  })), [catalog]);
   const addPorId = (id: string) => { const e = catalog.find((c) => c.product.id === id); if (e) { addEntry(e); beep(true); } };
 
   /** Itens agrupados por loja, na ordem em que cada loja apareceu na comanda. */
@@ -442,7 +424,6 @@ const PdvBalcaoPage: React.FC = () => {
       filtros={
         <span className="inline-flex items-center gap-2 text-xs text-fg-muted-token" title="Bipe a qualquer momento: não precisa clicar antes">
           <span className="h-2 w-2 rounded-full bg-success-token" aria-hidden /> Leitor pronto
-          {storeCount > 1 && <span>· {storeCount} lojas</span>}
           <span className="hidden sm:inline">· F2 buscar · F9 finalizar</span>
           {storeId && <EstadoDoCaixa loja={storeId} />}
         </span>
@@ -456,7 +437,7 @@ const PdvBalcaoPage: React.FC = () => {
               onBuscar={setManualSearch}
               candidatos={manualMatches}
               onEscolher={addManual}
-              totalDeLojas={storeCount}
+              totalDeLojas={1}
               formatarValor={formatCurrency}
             />
           </div>
@@ -536,7 +517,7 @@ const PdvBalcaoPage: React.FC = () => {
         candidatos={linkCandidates}
         onEscolher={handleLinkProduct}
         vinculando={linking}
-        totalDeLojas={storeCount}
+        totalDeLojas={1}
         formatarValor={formatCurrency}
       />
 
