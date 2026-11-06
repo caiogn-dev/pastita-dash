@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import logger from '../../services/logger';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, formatPercentValue } from '../../utils/formatters';
 import {
   PlusIcon,
   PencilIcon,
@@ -86,6 +86,7 @@ export const CouponsPage: React.FC = () => {
   const [falhou, setFalhou] = useState(false);
   const [search, setSearch] = useState('');
   const [filterActive, setFilterActive] = useState<boolean | undefined>(undefined);
+  const [filterExpired, setFilterExpired] = useState(false);
   const [filterType, setFilterType] = useState<'percentage' | 'fixed' | ''>('');
 
   // O cupom aberto mora na URL: recarregar a página (ou mandar o link) volta
@@ -157,6 +158,7 @@ export const CouponsPage: React.FC = () => {
           store: storeId,
           search: search || undefined,
           is_active: filterActive,
+          expired: filterExpired || undefined,
           discount_type: filterType || undefined,
           // Sem `page`, o backend devolve a primeira página e a tela some
           // com o resto sem avisar: a Cê Saladas tem 35 cupons e via 20.
@@ -176,7 +178,7 @@ export const CouponsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, filterActive, filterType, storeId, page]);
+  }, [search, filterActive, filterExpired, filterType, storeId, page]);
 
   // Reload when store changes
   useEffect(() => {
@@ -187,7 +189,7 @@ export const CouponsPage: React.FC = () => {
   // resultado que agora tem uma página só devolveria uma lista vazia.
   useEffect(() => {
     setPage(1);
-  }, [search, filterActive, filterType, storeId]);
+  }, [search, filterActive, filterExpired, filterType, storeId]);
 
   // Update form data when store changes
   useEffect(() => {
@@ -393,7 +395,7 @@ export const CouponsPage: React.FC = () => {
 
   const formatDiscount = (coupon: Coupon) => {
     if (coupon.discount_type === 'percentage') {
-      return `${coupon.discount_value}%`;
+      return `${formatPercentValue(Number(coupon.discount_value), Number.isInteger(Number(coupon.discount_value)) ? 0 : 1)}`;
     }
     return formatCurrency(coupon.discount_value);
   };
@@ -478,11 +480,15 @@ export const CouponsPage: React.FC = () => {
                 <Select
                   rotuloOculto="Filtrar por status"
                   vazio="Todos os status"
-                  valor={filterActive === undefined ? '' : String(filterActive)}
-                  onMudar={(v) => setFilterActive(v === '' ? undefined : v === 'true')}
+                  valor={filterExpired ? 'expired' : filterActive === undefined ? '' : String(filterActive)}
+                  onMudar={(v) => {
+                    setFilterExpired(v === 'expired');
+                    setFilterActive(v === '' || v === 'expired' ? undefined : v === 'true');
+                  }}
                   opcoes={[
                     { valor: 'true', rotulo: 'Ativos' },
                     { valor: 'false', rotulo: 'Inativos' },
+                    { valor: 'expired', rotulo: 'Expirados' },
                   ]}
                 />
                 <Select
