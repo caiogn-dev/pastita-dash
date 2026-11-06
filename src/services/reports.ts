@@ -532,3 +532,40 @@ export const getCarrinhosAbandonados = async (store: string, dias = 7): Promise<
   });
   return response.data;
 };
+
+// ── Extrato de repasse da 99 ────────────────────────────────────────────────
+
+export interface LinhaDoExtrato99 {
+  pedido: string;
+  data: string | null;
+  venda: string | null;
+  recebido: string;
+  situacao: 'conciliado' | 'sem_pedido' | 'divergente';
+  numero_do_pedido: string | null;
+}
+
+export interface ResultadoDoExtrato99 {
+  conciliados: number;
+  sem_pedido: number;
+  divergentes: number;
+  venda: string;
+  recebido: string;
+  gravado: boolean;
+  linhas: LinhaDoExtrato99[];
+}
+
+/** Envia o extrato (texto colado do 99store, CSV ou .xlsx). Sem `gravar` é só prévia. */
+export const importarExtrato99 = async (
+  { texto, arquivo, gravar }: { texto: string; arquivo: File | null; gravar: boolean },
+): Promise<ResultadoDoExtrato99> => {
+  const params = { store: getStoreParam() };
+  if (arquivo) {
+    const form = new FormData();
+    form.append('arquivo', arquivo);
+    form.append('gravar', gravar ? 'true' : 'false');
+    const response = await api.post(`${BASE_URL}/99food/extrato/`, form, { params });
+    return response.data as ResultadoDoExtrato99;
+  }
+  const response = await api.post(`${BASE_URL}/99food/extrato/`, { texto, gravar }, { params });
+  return response.data as ResultadoDoExtrato99;
+};

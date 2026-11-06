@@ -11,6 +11,7 @@ import { useAnalyticsReport } from '../../../hooks/queries/useReports';
 import { DonutChart } from '../../../components/reports/DonutChart';
 import { SectionCard, EmptyNote, RankedList, ExportCsvButton, formatBRL, paymentLabel, deliveryLabel } from './shared';
 import { linhaDoCanal } from './linhaDoCanal';
+import { ImportarExtrato99 } from './ImportarExtrato99';
 import { formatPercentValue } from '../../../utils/formatters';
 
 const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
@@ -98,7 +99,7 @@ export const ChannelsSection: React.FC<{ range: DateRange; enabled: boolean }> =
   const mixCard = (
     title: string,
     subtitle: string | undefined,
-    rows: Array<{ label: string; sub: string; value: number }>,
+    rows: Array<{ label: string; sub: string; value: number; actions?: React.ReactNode }>,
   ) => {
     const total = rows.reduce((acc, r) => acc + r.value, 0);
     return (
@@ -128,7 +129,10 @@ export const ChannelsSection: React.FC<{ range: DateRange; enabled: boolean }> =
       {mixCard(
         'Por canal',
         'Bot × Cardápio × PDV',
-        (d?.by_source ?? []).map(linhaDoCanal),
+        (d?.by_source ?? []).map((r) => ({
+          ...linhaDoCanal(r),
+          actions: r.channel === '99food' ? <ImportarExtrato99 /> : undefined,
+        })),
       )}
       {mixCard(
         'Por pagamento',
