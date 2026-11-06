@@ -101,6 +101,12 @@ describe('VigiasPage', () => {
     expect(screen.getByDisplayValue('(63) 99911-2233')).toBeInTheDocument();
   });
 
+  it('o texto de cada vigia é rotulado como exemplo', async () => {
+    renderizar();
+    await screen.findByText('Resumo do dia');
+    expect(screen.getAllByText('Exemplo').length).toBeGreaterThanOrEqual(CATALOGO.length);
+  });
+
   it('desligar um vigia grava a lista de desligados', async () => {
     renderizar();
     fireEvent.click(await screen.findByRole('switch', { name: 'Sabor em queda' }));
