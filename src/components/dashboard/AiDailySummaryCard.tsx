@@ -194,6 +194,9 @@ export const AiDailySummaryCard: React.FC<AiDailySummaryCardProps> = ({ store, c
             {data.stats.cancelled > 0 && (
               <MiniStat label="Cancelados" value={data.stats.cancelled} danger />
             )}
+            {data.referencia && data.referencia.receita > 0 && (
+              <MiniStat label={`Média das ${data.referencia.janela}`} value={formatCurrency(data.referencia.receita)} />
+            )}
           </div>
 
           {data.stats.top_products?.length > 0 && (

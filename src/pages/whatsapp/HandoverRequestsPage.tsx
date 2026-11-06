@@ -70,16 +70,18 @@ const LinhaDaFila: React.FC<LinhaProps> = ({ item, esperando, acao, erro, onAssu
         >
           Assumir
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          leftIcon={<ArrowUturnLeftIcon className="h-4 w-4" />}
-          onClick={() => onDevolver(item.id)}
-          disabled={ocupado}
-          title="O atendimento acabou: o bot volta a responder"
-        >
-          Devolver ao bot
-        </Button>
+        {(item.modo ?? 'human') === 'human' && (
+          <Button
+            size="sm"
+            variant="outline"
+            leftIcon={<ArrowUturnLeftIcon className="h-4 w-4" />}
+            onClick={() => onDevolver(item.id)}
+            disabled={ocupado}
+            title="O atendimento acabou: o bot volta a responder"
+          >
+            Devolver ao bot
+          </Button>
+        )}
         <Link
           to={`/inbox/whatsapp?conversation=${item.id}`}
           className="inline-flex items-center gap-1 self-center text-caption text-fg-muted-token underline"
@@ -235,7 +237,7 @@ export const HandoverRequestsPage: React.FC = () => {
               {
                 label: 'Esperando',
                 value: balcao.resumo.esperando,
-                definicao: 'Clientes que escreveram e ainda não tiveram resposta de uma pessoa.',
+                definicao: 'Clientes que escreveram e ainda não tiveram resposta (48 h).',
                 tone: balcao.resumo.esperando > 0 ? 'warning' : 'default',
                 icone: <UserGroupIcon className="h-5 w-5" />,
               },

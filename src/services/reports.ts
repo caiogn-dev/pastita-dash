@@ -379,8 +379,19 @@ export interface GeographyReport {
   zones: Array<{ name: string; orders: number; revenue: number }>;
 }
 
-export interface SlaStage { stage: string; count: number; avg_minutes: number | null; p90_minutes: number | null }
-export interface SlaReport { stages: SlaStage[] }
+export interface SlaStage {
+  stage: string;
+  count: number;
+  avg_minutes: number | null;
+  p90_minutes: number | null;
+  /** Pedidos que ficaram abertos > 24 h nesta etapa — fora da média e do p90. */
+  esquecidos?: number;
+}
+export interface SlaReport {
+  stages: SlaStage[];
+  /** Maior número de esquecidos (> 24 h) entre as etapas. */
+  esquecidos?: number;
+}
 
 export interface FinanceReport {
   summary: { gross: number; fees: number; net: number; refunded: number };

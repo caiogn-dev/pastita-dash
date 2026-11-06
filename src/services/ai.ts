@@ -76,6 +76,8 @@ export interface AiDailySummary {
   forecast?: AiForecast;
   /** Opcional: backend antigo (ou cache velho) ainda devolve só `summary`. */
   blocos?: BlocoDoResumo[];
+  /** Média de referência única do Início (a mesma do vigia), com a janela escrita. */
+  referencia?: { receita: number; janela: string; dias: string[]; variacao_pct: number | null };
   summary: string;
   source: 'llm' | 'template';
   cached: boolean;

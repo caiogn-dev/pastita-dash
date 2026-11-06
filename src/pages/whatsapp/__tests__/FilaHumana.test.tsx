@@ -185,6 +185,16 @@ it('Devolver ao bot tira da fila', async () => {
   await waitFor(() => expect(screen.queryByText('Joana')).not.toBeInTheDocument());
 });
 
+it('conversa do bot sem resposta entra na fila, mas sem "Devolver ao bot" (06/11)', async () => {
+  getFilaHumana.mockResolvedValue(fila([item({ modo: 'auto' })]));
+
+  renderizar();
+
+  const linha = (await screen.findByText('Joana')).closest('li') as HTMLElement;
+  expect(within(linha).getByRole('button', { name: /assumir/i })).toBeInTheDocument();
+  expect(within(linha).queryByRole('button', { name: /devolver ao bot/i })).not.toBeInTheDocument();
+});
+
 it('Devolver que falha põe o cliente de volta e avisa', async () => {
   getFilaHumana.mockResolvedValue(fila([item({})]));
   devolverAoBot.mockRejectedValue(new Error('500'));

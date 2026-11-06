@@ -64,7 +64,9 @@ export function resumoDeCampanha(c: Metricas): ResumoDeCampanha {
   const enviadas = c.messages_sent ?? 0;
   const publicoN = c.total_recipients ?? 0;
 
-  const taxaEntrega = pct(c.messages_delivered ?? 0, enviadas);
+  // Entrega = entregues ÷ público total (régua única com o servidor, 06/11):
+  // sobre o enviado, 30 de 561 entregues aparecia "100% entregues".
+  const taxaEntrega = enviadas > 0 ? pct(c.messages_delivered ?? 0, publicoN) : null;
   const taxaLeitura = pct(c.messages_read ?? 0, enviadas);
 
   const metricas: MetricaDeCampanha[] = [];
@@ -73,7 +75,7 @@ export function resumoDeCampanha(c: Metricas): ResumoDeCampanha {
     metricas.push({
       rotulo: 'Entregues',
       valor: String(c.messages_delivered ?? 0),
-      detalhe: taxaEntrega === null ? undefined : `${taxaEntrega}% do enviado`,
+      detalhe: taxaEntrega === null ? undefined : `${taxaEntrega}% do público`,
       tom: taxaEntrega !== null && taxaEntrega < ENTREGA_ACEITAVEL ? 'perigo' : 'neutro',
     });
     metricas.push({
@@ -164,9 +166,11 @@ export function insightsDeCampanhas(campanhas: Campaign[]): InsightDeCampanha[] 
   const comAmostra = campanhas.filter(
     (c) => (c.messages_sent ?? 0) >= AMOSTRA_MINIMA
   );
+  // Entrega sobre o público só fecha quando a campanha termina de sair.
+  const encerradas = comAmostra.filter((c) => !['running', 'scheduled', 'draft'].includes(c.status));
 
   // 2. Entrega baixa antes de leitura: com a lista errada, o texto não importa.
-  const ruim = comAmostra
+  const ruim = encerradas
     .map((c) => ({ c, taxa: resumoDeCampanha(c).taxaEntrega ?? 100 }))
     .filter((x) => x.taxa < ENTREGA_ACEITAVEL)
     .sort((a, b) => a.taxa - b.taxa)[0];
@@ -175,7 +179,7 @@ export function insightsDeCampanhas(campanhas: Campaign[]): InsightDeCampanha[] 
       chave: 'entrega_baixa',
       direcao: 'baixa',
       titulo: `Entrega baixa em "${ruim.c.name}"`,
-      valor: `${ruim.taxa}% das mensagens chegaram`,
+      valor: `${ruim.taxa}% do público recebeu`,
       recomendacao: 'confira os números da lista e a janela de 24h — não é o texto',
     });
   }
