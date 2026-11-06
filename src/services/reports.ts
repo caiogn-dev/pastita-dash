@@ -38,6 +38,28 @@ export interface RevenueDataPoint {
   total_discounts: number;
 }
 
+export interface VendasPorDia {
+  date: string;
+  pedidos: number;
+  pagos: number;
+  cancelados: number;
+  faturamento: string;
+}
+
+/** Volume e dinheiro do período, na mesma régua do Histórico de pedidos. */
+export interface VendasDoPeriodo {
+  pedidos: number;
+  pagos: number;
+  cancelados: number;
+  cancelados_pct: number;
+  reembolsados: number;
+  faturamento: string;
+  frete: string;
+  ticket_medio: string | null;
+  por_status: Record<string, number>;
+  por_dia: VendasPorDia[];
+}
+
 export interface RevenueReport {
   period: {
     start: string;
@@ -46,6 +68,7 @@ export interface RevenueReport {
   };
   summary: RevenueSummary;
   data: RevenueDataPoint[];
+  vendas?: VendasDoPeriodo;
 }
 
 export interface TopProduct {

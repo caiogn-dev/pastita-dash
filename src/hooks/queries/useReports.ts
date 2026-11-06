@@ -22,41 +22,9 @@ import {
   DashboardStats,
   DateRange,
 } from '../../services/reports';
-import { dashboardService } from '../../services/dashboard';
 import { getStoreSlugWithFallback } from '../useStore';
-import type { DashboardCharts } from '../../types/dashboard';
 
-// Deriva de DateRange em vez de repetir a lista: duas definições da mesma
-// coisa divergem na primeira vez que alguém adiciona um período (foi o que
-// aconteceu ao entrar 'hoje'/'ontem'/'mes').
-type Period = NonNullable<DateRange['period']>;
 type GroupBy = 'day' | 'week' | 'month';
-
-// A rota de charts aceita no máximo 90 dias; 1y é limitado a 90.
-const PERIOD_TO_DAYS: Record<Period, number> = {
-  hoje: 1,
-  ontem: 1,
-  '7d': 7,
-  '30d': 30,
-  // Mês corrente varia de 1 a 31 dias; 31 é o teto seguro para a rota de charts.
-  mes: 31,
-  '90d': 90,
-  '1y': 90,
-};
-
-// Deriva a janela em dias de um DateRange (para a rota de charts, que só aceita
-// `days`). Intervalo personalizado → diferença em dias (clampada 1-90).
-const rangeToDays = (range: DateRange): number => {
-  if (range.start_date && range.end_date) {
-    const start = new Date(range.start_date).getTime();
-    const end = new Date(range.end_date).getTime();
-    if (!Number.isNaN(start) && !Number.isNaN(end) && end >= start) {
-      const days = Math.ceil((end - start) / 86_400_000) + 1;
-      return Math.max(1, Math.min(days, 90));
-    }
-  }
-  return PERIOD_TO_DAYS[range.period ?? '30d'];
-};
 
 // TODAS as queryKeys carregam a loja selecionada — sem isso, trocar de loja
 // no seletor mostrava o cache da loja anterior (dados "zerados"/errados).
@@ -108,18 +76,6 @@ export function useAnalyticsReport<T>(path: string, range: DateRange, enabled: b
   return useQuery<T>({
     queryKey: ['reports', 'analytics', path, storeKey(), range],
     queryFn: () => reportsService.getAnalyticsReport<T>(path, range),
-    enabled,
-  });
-}
-
-// Aba Pedidos: séries por dia (contagem) + distribuição por status, do endpoint
-// /core/dashboard/charts/. Escopo de loja via getStoreSlugWithFallback (mesmo
-// padrão dos demais relatórios).
-export function useOrdersCharts(range: DateRange, enabled: boolean) {
-  const store = getStoreSlugWithFallback() || undefined;
-  return useQuery<DashboardCharts>({
-    queryKey: ['reports', 'orders-charts', range, store],
-    queryFn: () => dashboardService.getCharts({ days: rangeToDays(range), store }),
     enabled,
   });
 }
