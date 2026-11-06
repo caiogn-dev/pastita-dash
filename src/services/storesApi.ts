@@ -310,6 +310,8 @@ export interface StoreProduct {
   stock_quantity: number;
   low_stock_threshold: number;
   allow_backorder: boolean;
+  pausar_ao_zerar?: boolean;
+  is_brinde?: boolean;
   is_low_stock: boolean;
   is_in_stock: boolean;
   paused_until?: string | null;
@@ -364,6 +366,8 @@ export interface StoreProductInput {
   stock_quantity?: number;
   low_stock_threshold?: number;
   allow_backorder?: boolean;
+  pausar_ao_zerar?: boolean;
+  is_brinde?: boolean;
   status?: string;
   featured?: boolean;
   main_image?: File | null;

@@ -55,7 +55,7 @@ describe('StatCard — dia que não começou não é queda', () => {
         comparativo={{ variacaoPct: -42, rotulo: 'vs ontem' }}
       />
     );
-    expect(screen.getByText(/42\.0%/)).toBeInTheDocument();
+    expect(screen.getByText(/42,0%/)).toBeInTheDocument();
   });
 
   it('zero com queda parcial não é silenciado', () => {
@@ -64,6 +64,18 @@ describe('StatCard — dia que não começou não é queda', () => {
     render(
       <StatCard label="x" value={0} comparativo={{ variacaoPct: -30, rotulo: 'vs ontem' }} />
     );
-    expect(screen.getByText(/30\.0%/)).toBeInTheDocument();
+    expect(screen.getByText(/30,0%/)).toBeInTheDocument();
+  });
+
+  it('variação absurda de base pequena vira "novo", não "▲ 1800,0%"', () => {
+    render(
+      <StatCard
+        label="Pedidos"
+        value="19"
+        comparativo={{ variacaoPct: 1800, rotulo: 'vs ontem' }}
+      />,
+    );
+    expect(screen.getByText('novo')).toBeInTheDocument();
+    expect(screen.queryByText(/1800|1\.800/)).not.toBeInTheDocument();
   });
 });

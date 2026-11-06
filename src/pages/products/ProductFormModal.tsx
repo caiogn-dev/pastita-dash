@@ -147,6 +147,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     stock_quantity: 0,
     low_stock_threshold: 5,
     allow_backorder: false,
+    pausar_ao_zerar: false,
+    is_brinde: false,
     status: 'active',
     featured: false,
     tags: [],
@@ -181,6 +183,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         stock_quantity: p.stock_quantity || 0,
         low_stock_threshold: p.low_stock_threshold || 5,
         allow_backorder: p.allow_backorder ?? false,
+        pausar_ao_zerar: p.pausar_ao_zerar ?? false,
+        is_brinde: p.is_brinde ?? false,
         status: p.status || 'active',
         featured: p.featured ?? false,
         tags: p.tags || [],
@@ -213,6 +217,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         stock_quantity: 0,
         low_stock_threshold: 5,
         allow_backorder: false,
+        pausar_ao_zerar: false,
+        is_brinde: false,
         status: 'active',
         featured: false,
         tags: [],
@@ -816,6 +822,15 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       required
                     />
                   </div>
+                  <label className="mt-2 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={!!formData.is_brinde}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, is_brinde: e.target.checked }))}
+                      className="rounded border-border-token text-brand-ink focus:ring-brand"
+                    />
+                    <span className="text-sm">Brinde (pode ficar a R$ 0,00)</span>
+                  </label>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-fg-token mb-1">
@@ -1016,6 +1031,15 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         className="rounded border-border-token text-brand-ink focus:ring-brand"
                       />
                       <span className="text-sm">Permitir venda sem estoque</span>
+                    </label>
+                    <label className="flex items-center gap-2 pb-2">
+                      <input
+                        type="checkbox"
+                        checked={!!formData.pausar_ao_zerar}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, pausar_ao_zerar: e.target.checked }))}
+                        className="rounded border-border-token text-brand-ink focus:ring-brand"
+                      />
+                      <span className="text-sm">Pausar ao zerar o estoque</span>
                     </label>
                   </div>
                 </div>
