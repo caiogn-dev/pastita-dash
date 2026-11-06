@@ -28,13 +28,20 @@ describe('resumoDeCampanha', () => {
     expect(campanha({ total_recipients: 2 }).publico).toBe('2 destinatários');
   });
 
-  it('taxas saem do que foi ENVIADO, não do público total', () => {
-    // Campanha pela metade tem 50 enviadas de 100 destinatários. Dividir as
-    // entregues por 100 mostraria 45% de entrega numa campanha que está
-    // entregando 90% — e alguém pausaria a campanha por causa disso.
-    const r = campanha({ messages_sent: 50, messages_delivered: 45, messages_read: 25 });
-    expect(r.taxaEntrega).toBe(90);
+  it('entrega é entregues ÷ público total (régua única do painel, 06/11)', () => {
+    // 30 de 561 enviadas e todas entregues aparecia "100% entregues".
+    const r = campanha({ total_recipients: 561, messages_sent: 30, messages_delivered: 30, messages_read: 15 });
+    expect(r.taxaEntrega).toBe(5);
+    expect(r.metricas.find((m) => m.rotulo === 'Entregues')?.detalhe).toBe('5% do público');
+    // Leitura continua sobre o enviado.
     expect(r.taxaLeitura).toBe(50);
+  });
+
+  it('campanha ainda rodando não vira alerta de entrega baixa', () => {
+    const itens = insightsDeCampanhas([
+      { status: 'running', name: 'Rodando', total_recipients: 100, messages_sent: 20, messages_delivered: 20, messages_read: 5, messages_failed: 0 },
+    ] as Parameters<typeof insightsDeCampanhas>[0]);
+    expect(itens.some((i) => i.chave === 'entrega_baixa')).toBe(false);
   });
 
   it('campanha sem envio não divide por zero', () => {

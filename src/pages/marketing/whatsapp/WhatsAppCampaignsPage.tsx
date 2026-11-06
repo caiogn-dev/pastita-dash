@@ -220,6 +220,10 @@ export const WhatsAppCampaignsPage: React.FC = () => {
       campaigns.reduce((a, c) => a + (c[campo] ?? 0), 0);
     const enviadas = soma('messages_sent');
     const entregues = soma('messages_delivered');
+    // Público das campanhas que já saíram: entrega = entregues ÷ público.
+    const publico = campaigns
+      .filter((c) => (c.messages_sent ?? 0) > 0)
+      .reduce((a, c) => a + (c.total_recipients ?? 0), 0);
     const lidas = soma('messages_read');
     return {
       enviadasNoMes: campaigns
@@ -227,9 +231,10 @@ export const WhatsAppCampaignsPage: React.FC = () => {
         .reduce((a, c) => a + (c.messages_sent ?? 0), 0),
       enviadas,
       entregues,
+      publico,
       lidas,
       // `null` sem envio: "0%" acusaria um canal ruim que nem foi usado.
-      taxaEntrega: pct(entregues, enviadas),
+      taxaEntrega: pct(entregues, publico),
       taxaLeitura: pct(lidas, enviadas),
       agendadas: campaigns.filter((c) => c.status === 'scheduled').length,
     };
@@ -340,7 +345,7 @@ export const WhatsAppCampaignsPage: React.FC = () => {
                 definicao:
                   numeros.taxaEntrega === null
                     ? 'nenhuma mensagem enviada ainda'
-                    : `${numeros.entregues} de ${numeros.enviadas} enviadas chegaram no aparelho`,
+                    : `${numeros.entregues} de ${numeros.publico} pessoas do público`,
               },
               {
                 label: 'Lidas',

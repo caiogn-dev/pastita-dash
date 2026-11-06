@@ -12,6 +12,7 @@ import type {
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
 import { SectionCard, EmptyNote, RankedList, ExportCsvButton, formatBRL } from './shared';
 import { Tabela } from '../../../components/ui';
+import { formatarDuracao } from '../../../utils/duracao';
 
 const STAGE_LABELS: Record<string, string> = {
   confirmacao: 'Até confirmar',
@@ -20,7 +21,7 @@ const STAGE_LABELS: Record<string, string> = {
   total: 'Total (criado→entregue)',
 };
 
-const fmtMin = (v: number | null) => (v == null ? '—' : v >= 90 ? `${(v / 60).toFixed(1)}h` : `${Math.round(v)}min`);
+const fmtMin = (v: number | null) => formatarDuracao(v);
 const fmtDate = (v: string) => { try { return format(parseISO(v), 'dd/MM'); } catch { return v; } };
 
 export const OperationsSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ range, enabled }) => {
@@ -33,7 +34,13 @@ export const OperationsSection: React.FC<{ range: DateRange; enabled: boolean }>
   return (
     <div className="flex flex-col gap-6">
       {/* SLA por etapa */}
-      <SectionCard title="Tempo por etapa" subtitle="Média e p90 dos pedidos do período" loading={sla.isLoading} error={sla.isError} onRetry={() => { void sla.refetch(); }}>
+      <SectionCard
+        title="Tempo por etapa"
+        subtitle={
+          (sla.data?.esquecidos ?? 0) > 0
+            ? `Média e p90 do período · ${sla.data?.esquecidos} esquecido(s) > 24 h à parte`
+            : 'Média e p90 dos pedidos do período'
+        } loading={sla.isLoading} error={sla.isError} onRetry={() => { void sla.refetch(); }}>
         <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
           {(sla.data?.stages ?? []).map((s) => (
             <StatCard

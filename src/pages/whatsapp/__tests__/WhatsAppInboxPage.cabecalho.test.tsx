@@ -112,6 +112,18 @@ it('o chip "Esperando" conta pela mesma fila da tela Esperando atendente', async
   expect(within(lista).getByText('Maria Souza')).toBeInTheDocument();
 });
 
+it('o chip "Esperando" mostra o total da fila, mesmo fora da página carregada (06/11)', async () => {
+  // A lista carrega uma página; a fila tinha 13 e o chip mostrava 10.
+  getFilaHumana.mockResolvedValue({
+    esperando: [{ id: 'conv-1' }, { id: 'conv-fora-da-pagina' }], em_atendimento: [],
+    total_esperando: 2, total_em_atendimento: 0,
+    resumo: { esperando: 2, em_atendimento: 0, mais_antiga_segundos: 0 },
+  });
+  renderizar();
+  const filtros = await screen.findByRole('tablist', { name: /filtrar conversas/i });
+  expect(await within(filtros).findByRole('tab', { name: /esperando\s*2/i })).toBeInTheDocument();
+});
+
 it('Resolver mora no cabeçalho do chat', async () => {
   renderizar();
   fireEvent.click(await screen.findByRole('button', { name: 'Resolver' }));

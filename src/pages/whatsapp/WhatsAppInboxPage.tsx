@@ -133,9 +133,8 @@ const WhatsAppInboxPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') ?? '');
   const [listFilter, setListFilter] = useState<'all' | 'unread' | 'esperando' | 'auto'>('all');
-  // Quem espera resposta de uma pessoa: a MESMA fila da tela "Esperando
-  // atendente" (modo humano + o cliente escreveu depois da nossa última
-  // resposta). Até 26/10 o chip "Humano" contava toda conversa em modo humano
+  // Quem espera resposta: a MESMA fila da tela "Esperando atendente" e do
+  // card do Início (cliente falou por último, sem resposta, 48 h). Até 26/10 o chip "Humano" contava toda conversa em modo humano
   // e os dois números nunca batiam.
   const [esperandoIds, setEsperandoIds] = useState<Set<string>>(() => new Set());
   const [acaoDaConversa, setAcaoDaConversa] = useState<'resolve' | 'close' | 'reopen' | null>(null);
@@ -586,10 +585,10 @@ const WhatsAppInboxPage: React.FC = () => {
   // persiste a leitura para o backend não acumular unread_count.
   const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
 
-  // A fila muda quando uma conversa em modo humano recebe ou manda mensagem:
+  // A fila muda quando uma conversa recebe ou manda mensagem (conversa do bot
+  // sem resposta também entra na fila desde 06/11):
   // é isso que a chave acompanha (o WebSocket atualiza a lista).
   const chaveDaFila = conversations
-    .filter((c) => c.mode === 'human')
     .map((c) => `${c.id}:${c.last_message_at ?? ''}:${c.last_message_preview ?? ''}`)
     .join('|');
   useEffect(() => {
@@ -708,7 +707,11 @@ const WhatsAppInboxPage: React.FC = () => {
 
   const unreadTotal = searchedConversations.filter((c) => (c.unread_count || 0) > 0).length;
   const humanTotal = searchedConversations.filter((c) => c.mode === 'human').length;
-  const esperandoTotal = searchedConversations.filter((c) => esperandoIds.has(c.id)).length;
+  // Sem busca, o chip mostra a fila inteira (mesmo número do Início e de
+  // Esperando atendente); a lista só carrega uma página e contava menos.
+  const esperandoTotal = searchTerm.trim()
+    ? searchedConversations.filter((c) => esperandoIds.has(c.id)).length
+    : esperandoIds.size;
 
   const filteredConversations = searchedConversations.filter((conv) => {
     if (listFilter === 'unread') return (conv.unread_count || 0) > 0;

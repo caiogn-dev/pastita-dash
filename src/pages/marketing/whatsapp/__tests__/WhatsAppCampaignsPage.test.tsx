@@ -68,9 +68,9 @@ it('mostra os quatro números que importam', async () => {
   // Enviadas no mês: só a campanha que começou este mês (40), não a de 2020.
   expect(within(numeros).getByText('Enviadas no mês')).toBeInTheDocument();
   expect(within(numeros).getByText('40')).toBeInTheDocument();
-  // Entregues sobre o total enviado: 81 de 90 = 90%.
+  // Entregues sobre o público das campanhas que saíram: 81 de 150 = 54%.
   expect(within(numeros).getByText('Entregues')).toBeInTheDocument();
-  expect(within(numeros).getByText('90%')).toBeInTheDocument();
+  expect(within(numeros).getByText('54%')).toBeInTheDocument();
   // Lidas: 50 de 90 = 56%.
   expect(within(numeros).getByText('Lidas')).toBeInTheDocument();
   expect(within(numeros).getByText('56%')).toBeInTheDocument();
@@ -95,7 +95,8 @@ it('entregues e lidas viram barra pequena, com nome acessível', async () => {
   await screen.findAllByText('Promo de terça');
 
   const barras = screen.getAllByRole('progressbar', { name: 'Entregues em Promo de terça' });
-  expect(barras[0]).toHaveAttribute('aria-valuenow', '90');
+  // 36 entregues de 100 no público.
+  expect(barras[0]).toHaveAttribute('aria-valuenow', '36');
   expect(screen.getAllByRole('progressbar', { name: 'Lidas em Promo de terça' })[0]).toHaveAttribute('aria-valuenow', '50');
 });
 

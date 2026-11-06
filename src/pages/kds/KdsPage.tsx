@@ -11,6 +11,7 @@ import { getErrorMessage } from '../../services/api';
 import { getStageStart } from '../orders/orderSla';
 import { Skeleton } from '../../components/ui';
 import { linhasDasEscolhas } from '../../utils/escolhasDoCombo';
+import { formatarDuracao } from '../../utils/duracao';
 
 const EMPTY_ORDERS: StoreOrder[] = [];
 
@@ -204,7 +205,7 @@ const KdsPage: React.FC = () => {
                               urgent ? 'text-danger-token' : 'text-fg-muted-token'
                             }`}
                           >
-                            {minutes}min
+                            {formatarDuracao(minutes)}
                           </span>
                         </div>
 

@@ -35,6 +35,8 @@ export interface ItemDaFilaHumana {
   /** Segundos de espera no momento da resposta (contrato de 26/09). */
   esperando_ha_segundos?: number | null;
   ultima_mensagem: string;
+  /** Modo da conversa (06/11): conversa do bot sem resposta também entra na fila. */
+  modo?: 'auto' | 'human' | string;
 }
 
 export interface ResumoDaFilaHumana {
