@@ -10,9 +10,9 @@ import type {
 import { useAnalyticsReport } from '../../../hooks/queries/useReports';
 import { DonutChart } from '../../../components/reports/DonutChart';
 import { SectionCard, EmptyNote, RankedList, ExportCsvButton, formatBRL, paymentLabel, deliveryLabel } from './shared';
+import { linhaDoCanal } from './linhaDoCanal';
 
 const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-const CHANNEL_LABELS: Record<string, string> = { web: 'Cardápio Web', bot: 'Bot WhatsApp', pdv: 'PDV/Balcão' };
 
 export const HeatmapSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ range, enabled }) => {
   const q = useAnalyticsReport<HeatmapReport>('heatmap', range, enabled);
@@ -127,11 +127,7 @@ export const ChannelsSection: React.FC<{ range: DateRange; enabled: boolean }> =
       {mixCard(
         'Por canal',
         'Bot × Cardápio × PDV',
-        (d?.by_source ?? []).map((r) => ({
-          label: CHANNEL_LABELS[r.channel] || r.channel,
-          sub: `${r.orders} pedidos · ticket ${formatBRL(r.avg_ticket)}`,
-          value: r.revenue,
-        })),
+        (d?.by_source ?? []).map(linhaDoCanal),
       )}
       {mixCard(
         'Por pagamento',

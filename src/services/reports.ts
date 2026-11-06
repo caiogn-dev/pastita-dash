@@ -358,7 +358,11 @@ export interface AbcReport {
   summary: { total_revenue: number; a_count: number; b_count: number; c_count: number };
 }
 
-export interface ChannelRow { channel: string; orders: number; revenue: number; avg_ticket: number }
+export interface ChannelRow {
+  channel: string; orders: number; revenue: number; avg_ticket: number;
+  // Só app de entrega (99Food): revenue = venda de cardápio; o resto vem do extrato de repasse.
+  desconto_plataforma?: number; comissao_taxas?: number; recebido?: number; conciliados?: number;
+}
 export interface DimensionRow { [key: string]: string | number }
 export interface ChannelsReport {
   by_source: ChannelRow[]; by_payment_method: DimensionRow[]; by_delivery_method: DimensionRow[];
