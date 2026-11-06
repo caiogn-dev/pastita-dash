@@ -30,8 +30,8 @@ import {
   useProductsReport,
   useStockReport,
   useCustomersReport,
-  useOrdersCharts,
 } from '../../hooks/queries/useReports';
+import { cardsDeVendas } from './vendasDoPeriodo';
 import { HeatmapSection, ChannelsSection, AbcBasketSection, MenuMatrixSection } from './sections/SalesSections';
 import { GeographySection } from './sections/GeographySection';
 import { OperationsSection } from './sections/OperationsSections';
@@ -72,7 +72,6 @@ type GroupBy = 'day' | 'week' | 'month';
 // TabValue e o mapa de relatórios moram em `relatorios.ts` — a página deixou
 // de ser dona da navegação dela.
 
-const NEGATIVE_STATUSES = new Set(['cancelled', 'refunded', 'failed']);
 
 // ─── KpiCard ─────────────────────────────────────────────────────────────────
 // Adapta as KPIs ao StatCard canônico (tone via tokens) preservando os dados
@@ -172,15 +171,12 @@ const AnalyticsPage: React.FC = () => {
   const productsQuery = useProductsReport(range, needsProducts);
   const stockQuery = useStockReport(activeTab === 'stock');
   const customersQuery = useCustomersReport(range, needsCustomers);
-  const ordersQuery = useOrdersCharts(range, activeTab === 'orders');
 
   const dashboardStats = statsQuery.data ?? null;
   const revenueReport = revenueQuery.data ?? null;
   const productsReport = productsQuery.data ?? null;
   const stockReport = stockQuery.data ?? null;
   const customersReport = customersQuery.data ?? null;
-  const ordersCharts = ordersQuery.data ?? null;
-  const ordersLoading = ordersQuery.isLoading;
 
   // Loadings granulares: cada seção mostra spinner só enquanto o SEU dado carrega.
   const statsLoading = statsQuery.isLoading;
@@ -191,20 +187,20 @@ const AnalyticsPage: React.FC = () => {
 
   // Erro derivado de qualquer query ativa (sem setState no render).
   const hasError = [
-    statsQuery, revenueQuery, productsQuery, stockQuery, customersQuery, ordersQuery,
+    statsQuery, revenueQuery, productsQuery, stockQuery, customersQuery,
   ].some(q => q.isError);
   const error = hasError && !errorDismissed
     ? 'Erro ao carregar relatórios. Tente novamente.'
     : null;
 
   const activeTabLoading =
-    activeTab === 'orders' ? ordersLoading || revenueLoading
+    activeTab === 'orders' ? revenueLoading
     : activeTab === 'products' ? productsLoading
     : activeTab === 'stock' ? stockLoading
     : activeTab === 'crm' ? customersLoading
     : statsLoading;
   const anyFetching = [
-    statsQuery, revenueQuery, productsQuery, stockQuery, customersQuery, ordersQuery,
+    statsQuery, revenueQuery, productsQuery, stockQuery, customersQuery,
   ].some(q => q.isFetching);
 
   // "Atualizar" reativa o banner de erro e invalida os relatórios em cache.
@@ -383,33 +379,23 @@ const AnalyticsPage: React.FC = () => {
   // ─── Pedidos Tab ───────────────────────────────────────────────────────────
 
   const renderOrders = () => {
-    const perDay = ordersCharts?.orders_per_day ?? [];
-    const statuses = ordersCharts?.order_statuses ?? {};
-    const totalOrders = perDay.reduce((acc, d) => acc + (d.count || 0), 0);
-    const totalRevenue = perDay.reduce((acc, d) => acc + (d.revenue || 0), 0);
-    const avgTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-    const avgPerDay = perDay.length > 0 ? totalOrders / perDay.length : 0;
-    const cancelled = Object.entries(statuses)
-      .filter(([k]) => NEGATIVE_STATUSES.has(k))
-      .reduce((acc, [, v]) => acc + (Number(v) || 0), 0);
-    const cancelPct = totalOrders > 0 ? (cancelled / totalOrders) * 100 : 0;
-
-    const statusItems = Object.entries(statuses)
-      .map(([k, v]) => ({
-        label: STATUS_LABELS[k] || k,
-        value: Number(v) || 0,
-        danger: NEGATIVE_STATUSES.has(k),
-      }))
-      .filter((s) => s.value > 0)
-      .sort((a, b) => b.value - a.value);
+    // Todos os cards da aba saem do MESMO bloco (`vendas`) do relatório de
+    // faturamento, na janela do filtro — inclusive o personalizado.
+    const vendas = cardsDeVendas(revenueReport?.vendas);
+    const ordersLoading = revenueLoading;
+    const statusItems = vendas.status.map((s) => ({
+      label: STATUS_LABELS[s.status] || s.status,
+      value: s.value,
+      danger: s.danger,
+    }));
 
     return (
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
-          <KpiCard title="Faturamento pago" value={formatCurrency(revenueReport?.summary.total_revenue || 0)} tone="brand" loading={revenueLoading} />
-          <KpiCard title="Pedidos no período" value={totalOrders} subtitle={`${avgPerDay.toFixed(1).replace('.', ',')} por dia`} loading={ordersLoading} />
-          <KpiCard title="Ticket médio" value={formatCurrency(revenueReport?.summary.avg_order_value || avgTicket)} subtitle={`Taxas de entrega: ${formatCurrency(revenueReport?.summary.total_delivery_fees || 0)}`} loading={revenueLoading} />
-          <KpiCard title="Cancelados" value={cancelled} subtitle={`${cancelPct.toFixed(1)}% do total`} tone="warning" loading={ordersLoading} />
+          <KpiCard title="Faturamento pago" value={formatCurrency(vendas.faturamento)} subtitle={`${vendas.pagos} pagos`} tone="brand" loading={revenueLoading} />
+          <KpiCard title="Pedidos no período" value={vendas.pedidos} subtitle={`${vendas.porDia.toFixed(1).replace('.', ',')} por dia`} loading={ordersLoading} />
+          <KpiCard title="Ticket médio" value={vendas.ticketMedio != null ? formatCurrency(vendas.ticketMedio) : '—'} subtitle={`Taxas de entrega: ${formatCurrency(vendas.frete)}`} loading={revenueLoading} />
+          <KpiCard title="Cancelados" value={vendas.cancelados} subtitle={`${vendas.canceladosPct.toFixed(1).replace('.', ',')}% dos pedidos`} tone="warning" loading={ordersLoading} />
         </div>
 
         {/* Faturamento por período (fundido da antiga aba Faturamento) */}
@@ -455,7 +441,7 @@ const AnalyticsPage: React.FC = () => {
             </div>
           ) : (
             <TimeSeriesChart
-              data={perDay}
+              data={vendas.serie}
               xKey="date"
               yKey="count"
               label="Pedidos"
