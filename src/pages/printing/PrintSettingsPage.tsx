@@ -41,6 +41,7 @@ import {
   LayoutDeEtiqueta,
 } from '../../services/printing';
 import { PageShell, Tabela, RowActions } from '../../components/ui';
+import { usePolling } from '../../hooks/usePolling';
 import AssistenteDeInstalacao from './AssistenteDeInstalacao';
 import {
   ROTULO_DA_SITUACAO,
@@ -97,9 +98,8 @@ const PrintSettingsPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 30000);
-    return () => clearInterval(interval);
   }, [loadData]);
+  usePolling(loadData, 30000);
 
   const handleSelectPrinter = async (agent: PrintAgent, printerName: string) => {
     if (!storeId || !printerName) return;

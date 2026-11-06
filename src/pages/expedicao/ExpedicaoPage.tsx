@@ -3,6 +3,7 @@ import { QrCodeIcon } from '@heroicons/react/24/outline';
 
 import { PageShell } from '../../components/ui';
 import { useStore } from '../../hooks';
+import { usePolling } from '../../hooks/usePolling';
 import { getErrorMessage } from '../../services';
 import { getOrders, updateOrderStatus } from '../../services/storesApi';
 import type { Order } from '../../types';
@@ -50,11 +51,8 @@ const ExpedicaoPage: React.FC = () => {
       // A lista é apoio; a bipagem continua funcionando sem ela.
     }
   }, [loja]);
-  useEffect(() => {
-    void carregarProntos();
-    const id = window.setInterval(() => { void carregarProntos(); }, 30000);
-    return () => window.clearInterval(id);
-  }, [carregarProntos]);
+  useEffect(() => { void carregarProntos(); }, [carregarProntos]);
+  usePolling(carregarProntos, 30000);
 
   const registrar = (codigo: string, tipo: Registro['tipo'], texto: string) => {
     seq.current += 1;
