@@ -6,7 +6,7 @@
  */
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Button, Modal, Textarea } from '../../../components/ui';
+import { Button, Input, Modal, Textarea } from '../../../components/ui';
 import { importarExtrato99, type ResultadoDoExtrato99 } from '../../../services/reports';
 import { formatBRL } from './shared';
 
@@ -66,15 +66,12 @@ export const ImportarExtrato99: React.FC = () => {
             value={texto}
             onChange={(e) => { setTexto(e.target.value); setPrevia(null); }}
           />
-          <label className="text-sm text-fg-muted-token">
-            ou envie o arquivo (.csv, .xlsx)
-            <input
-              type="file"
-              accept=".csv,.xlsx,text/csv"
-              className="block mt-1 text-sm"
-              onChange={(e) => { setArquivo(e.target.files?.[0] ?? null); setPrevia(null); }}
-            />
-          </label>
+          <Input
+            type="file"
+            label="ou envie o arquivo (.csv, .xlsx)"
+            accept=".csv,.xlsx,text/csv"
+            onChange={(e) => { setArquivo(e.target.files?.[0] ?? null); setPrevia(null); }}
+          />
 
           {erro && <p role="alert" className="text-sm text-danger-token">{erro}</p>}
 
