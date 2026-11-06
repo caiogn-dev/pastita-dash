@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { useRootStore } from '../../stores/rootStore';
 import { MobileStoreSwitcher } from '../MobileStoreSwitcher';
@@ -11,7 +12,7 @@ beforeEach(() => {
 
 test('lists stores and selecting one updates + closes', () => {
   const onClose = jest.fn();
-  render(<MobileStoreSwitcher open onClose={onClose} />);
+  render(<MemoryRouter><MobileStoreSwitcher open onClose={onClose} /></MemoryRouter>);
   fireEvent.click(screen.getByRole('button', { name: /loja 2/i }));
   expect(useRootStore.getState().selectedStoreId).toBe('s2');
   expect(onClose).toHaveBeenCalled();

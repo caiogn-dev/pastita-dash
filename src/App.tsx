@@ -17,6 +17,7 @@ import api from './services/api';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { WhatsAppWsProvider } from './context/WhatsAppWsContext';
 import { useBootstrapStores } from './mobile/useBootstrapStores';
+import { LojaDaUrl } from './components/layout/LojaDaUrl';
 import './App.css';
 
 // Lazy load pages for better performance
@@ -171,7 +172,7 @@ const AppContent: React.FC = () => {
       {/* KDS fullscreen — sem sidebar, para a tela da cozinha */}
       <Route path="/stores/:storeId/kds" element={
         <ProtectedRoute>
-          <PageBoundary><KdsPage /></PageBoundary>
+          <LojaDaUrl><PageBoundary><KdsPage /></PageBoundary></LojaDaUrl>
         </ProtectedRoute>
       } />
 
@@ -234,37 +235,40 @@ const AppContent: React.FC = () => {
         
         {/* Stores Routes */}
         <Route path="stores" element={<PageBoundary><StoresPage /></PageBoundary>} />
-        <Route path="stores/:storeId" element={<PageBoundary><StoreDetailPage /></PageBoundary>} />
-        <Route path="stores/:storeId/products" element={<PageBoundary><ProductsPage /></PageBoundary>} />
-        <Route path="stores/:storeId/combos" element={<PageBoundary><ComboListPage /></PageBoundary>} />
-        <Route path="stores/:storeId/combos/new" element={<PageBoundary><ComboFormPage /></PageBoundary>} />
-        <Route path="stores/:storeId/combos/:comboId/edit" element={<PageBoundary><ComboFormPage /></PageBoundary>} />
-        <Route path="stores/:storeId/orders" element={<PageBoundary><OrdersPage /></PageBoundary>} />
-        <Route path="stores/:storeId/customers" element={<PageBoundary><CustomersPage /></PageBoundary>} />
-        <Route path="stores/:storeId/expedicao" element={<PageBoundary><ExpedicaoPage /></PageBoundary>} />
-        {/* Antes de `:id`: senão "historico" casaria como id de pedido. */}
-        <Route path="stores/:storeId/orders/novo" element={<PageBoundary><NovoPedidoPage /></PageBoundary>} />
-        <Route path="stores/:storeId/orders/historico" element={<PageBoundary><HistoricoPedidosPage /></PageBoundary>} />
-        <Route path="stores/:storeId/orders/:id" element={<PageBoundary><OrderDetailPage /></PageBoundary>} />
-        <Route path="stores/:storeId/coupons" element={<PageBoundary><CouponsPage /></PageBoundary>} />
-        <Route path="stores/:storeId/fidelidade" element={<PageBoundary><FidelidadePage /></PageBoundary>} />
-        <Route path="stores/:storeId/link-bio" element={<PageBoundary><LinkBioPage /></PageBoundary>} />
-        <Route path="stores/:storeId/payments" element={<PageBoundary><PagamentosDaLojaPage /></PageBoundary>} />
-        <Route path="stores/:storeId/pagamentos-recebidos" element={<PageBoundary><PaymentsPage /></PageBoundary>} />
-        <Route path="stores/:storeId/settings" element={<PageBoundary><StoreSettingsPage /></PageBoundary>} />
-        <Route path="stores/:storeId/aparencia" element={<PageBoundary><StorefrontPage /></PageBoundary>} />
-        {/* Endereço antigo: favoritos e links de suporte continuam abrindo. */}
-        <Route path="stores/:storeId/storefront" element={<PageBoundary><StorefrontPage /></PageBoundary>} />
-        <Route path="stores/:storeId/delivery" element={<PageBoundary><DeliveryZonesPage /></PageBoundary>} />
-        <Route path="stores/:storeId/printing" element={<PageBoundary><PrintSettingsPage /></PageBoundary>} />
-        <Route path="stores/:storeId/printing/comanda" element={<PageBoundary><LayoutDaComandaPage /></PageBoundary>} />
-        <Route path="stores/:storeId/notas-fiscais" element={<PageBoundary><NotasFiscaisPage /></PageBoundary>} />
-        <Route path="stores/:storeId/cash" element={<PageBoundary><CashPage /></PageBoundary>} />
-        <Route path="stores/:storeId/pdv" element={<PageBoundary><PdvBalcaoPage /></PageBoundary>} />
-        <Route path="stores/:storeId/etiquetas" element={<PageBoundary><EtiquetasPage /></PageBoundary>} />
-        <Route path="stores/:storeId/lotes" element={<PageBoundary><LotesPage /></PageBoundary>} />
-        <Route path="stores/:storeId/etiquetas/desenho/:modelo" element={<PageBoundary><DesignerDeEtiqueta /></PageBoundary>} />
-        <Route path="stores/:storeId/ingredientes" element={<PageBoundary><IngredientsPage /></PageBoundary>} />
+        {/* O endereço manda na loja ativa: LojaDaUrl troca a loja antes de a tela montar. */}
+        <Route path="stores/:storeId" element={<LojaDaUrl />}>
+          <Route index element={<PageBoundary><StoreDetailPage /></PageBoundary>} />
+          <Route path="products" element={<PageBoundary><ProductsPage /></PageBoundary>} />
+          <Route path="combos" element={<PageBoundary><ComboListPage /></PageBoundary>} />
+          <Route path="combos/new" element={<PageBoundary><ComboFormPage /></PageBoundary>} />
+          <Route path="combos/:comboId/edit" element={<PageBoundary><ComboFormPage /></PageBoundary>} />
+          <Route path="orders" element={<PageBoundary><OrdersPage /></PageBoundary>} />
+          <Route path="customers" element={<PageBoundary><CustomersPage /></PageBoundary>} />
+          <Route path="expedicao" element={<PageBoundary><ExpedicaoPage /></PageBoundary>} />
+          {/* Antes de `:id`: senão "historico" casaria como id de pedido. */}
+          <Route path="orders/novo" element={<PageBoundary><NovoPedidoPage /></PageBoundary>} />
+          <Route path="orders/historico" element={<PageBoundary><HistoricoPedidosPage /></PageBoundary>} />
+          <Route path="orders/:id" element={<PageBoundary><OrderDetailPage /></PageBoundary>} />
+          <Route path="coupons" element={<PageBoundary><CouponsPage /></PageBoundary>} />
+          <Route path="fidelidade" element={<PageBoundary><FidelidadePage /></PageBoundary>} />
+          <Route path="link-bio" element={<PageBoundary><LinkBioPage /></PageBoundary>} />
+          <Route path="payments" element={<PageBoundary><PagamentosDaLojaPage /></PageBoundary>} />
+          <Route path="pagamentos-recebidos" element={<PageBoundary><PaymentsPage /></PageBoundary>} />
+          <Route path="settings" element={<PageBoundary><StoreSettingsPage /></PageBoundary>} />
+          <Route path="aparencia" element={<PageBoundary><StorefrontPage /></PageBoundary>} />
+          {/* Endereço antigo: favoritos e links de suporte continuam abrindo. */}
+          <Route path="storefront" element={<PageBoundary><StorefrontPage /></PageBoundary>} />
+          <Route path="delivery" element={<PageBoundary><DeliveryZonesPage /></PageBoundary>} />
+          <Route path="printing" element={<PageBoundary><PrintSettingsPage /></PageBoundary>} />
+          <Route path="printing/comanda" element={<PageBoundary><LayoutDaComandaPage /></PageBoundary>} />
+          <Route path="notas-fiscais" element={<PageBoundary><NotasFiscaisPage /></PageBoundary>} />
+          <Route path="cash" element={<PageBoundary><CashPage /></PageBoundary>} />
+          <Route path="pdv" element={<PageBoundary><PdvBalcaoPage /></PageBoundary>} />
+          <Route path="etiquetas" element={<PageBoundary><EtiquetasPage /></PageBoundary>} />
+          <Route path="lotes" element={<PageBoundary><LotesPage /></PageBoundary>} />
+          <Route path="etiquetas/desenho/:modelo" element={<PageBoundary><DesignerDeEtiqueta /></PageBoundary>} />
+          <Route path="ingredientes" element={<PageBoundary><IngredientsPage /></PageBoundary>} />
+        </Route>
         
         {/* Marketing Routes */}
         <Route path="marketing" element={<Navigate to="/marketing/whatsapp" replace />} />

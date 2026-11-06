@@ -14,6 +14,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useWsConnected } from '../../stores/chatStore';
 import { useAccountStore } from '../../stores/accountStore';
 import { StoreSelector } from './StoreSelector';
+import { LojaAtivaNoTopo } from './LojaAtivaNoTopo';
 import { CentralDePedidosLink } from './CentralDePedidosLink';
 import { ThemeToggle } from '../theme';
 import { NotificationDropdown } from '../notifications';
@@ -390,6 +391,11 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
                 quando o logo da loja ficava aqui e o nome dela na outra ponta. */}
             <div className="block max-sm:hidden lg:hidden">
               <StoreSelector />
+            </div>
+            {/* lg+: o seletor mora na coluna. Em Relatórios/Marketing/Atendimento
+                (sem loja no endereço) o nome fica aqui também, para quem tem várias. */}
+            <div className="hidden lg:flex">
+              <LojaAtivaNoTopo />
             </div>
 
             {/* O ponto de conexão colado na loja: é o estado DELA (recebendo

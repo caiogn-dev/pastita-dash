@@ -14,6 +14,7 @@
  * verdade e olha o elemento: o que importa é onde ele ancora, não como o
  * atributo foi escrito.
  */
+import { MemoryRouter } from 'react-router-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
@@ -27,7 +28,7 @@ const DUAS = [
 
 function abrirOMenu() {
   useRootStore.setState({ stores: DUAS, selectedStoreId: '1' } as never);
-  render(<StoreSelector />);
+  render(<MemoryRouter><StoreSelector /></MemoryRouter>);
   fireEvent.click(screen.getByRole('button', { name: /trocar de loja/i }));
   return screen.getByRole('menu', { name: /trocar de loja/i });
 }

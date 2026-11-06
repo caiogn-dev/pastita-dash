@@ -22,6 +22,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { CheckIcon, ChevronUpDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 import { cn } from '../../utils/cn';
+import { useTrocarDeLoja } from './LojaDaUrl';
 import { useRootStore } from '../../stores/rootStore';
 
 /** Acima disto a lista deixa de ser varrível de relance e ganha busca. */
@@ -56,7 +57,7 @@ export const StoreSelector: React.FC<StoreSelectorProps> = ({
 }) => {
   const stores = useRootStore((s) => s.stores);
   const selectedStoreId = useRootStore((s) => s.selectedStoreId);
-  const setSelectedStore = useRootStore((s) => s.setSelectedStore);
+  const setSelectedStore = useTrocarDeLoja();
 
   const [aberto, setAberto] = useState(false);
   const [termo, setTermo] = useState('');

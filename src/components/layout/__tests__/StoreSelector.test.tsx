@@ -10,6 +10,7 @@
  * Com uma loja, o nome vira identidade (você lê e sabe onde está). Com duas ou
  * mais, vira botão de verdade, com busca quando a lista cresce.
  */
+import { MemoryRouter } from 'react-router-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
@@ -20,7 +21,7 @@ type Loja = { id: string; name: string; slug?: string; logo_url?: string | null 
 
 function montar(stores: Loja[], selectedStoreId: string | null = stores[0]?.id ?? null) {
   useRootStore.setState({ stores, selectedStoreId } as never);
-  return render(<StoreSelector />);
+  return render(<MemoryRouter><StoreSelector /></MemoryRouter>);
 }
 
 const UMA = [{ id: '1', name: 'Cê Saladas' }];
