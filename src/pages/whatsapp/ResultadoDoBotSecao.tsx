@@ -27,7 +27,7 @@ import {
 } from '../../components/ui';
 import { conversaoDoBotService, type ConversaPerdida, type MotivoDaPerda } from '../../services/atendimentoBot';
 import { useStore } from '../../hooks/useStore';
-import { formatCurrency, formatPhone } from '../../utils/formatters';
+import { formatCurrency, formatDecimal, formatPercentValue, formatPhone } from '../../utils/formatters';
 
 const PERIODOS = [
   { value: '7', label: '7 dias' },
@@ -55,8 +55,8 @@ export function motivoDeAtendente(bruto: string): string {
   return m || 'Sem motivo registrado';
 }
 
-const pct = (n: number) => `${n.toFixed(1).replace('.', ',')}%`;
-const pontos = (n: number) => `${n > 0 ? '+' : ''}${n.toFixed(1).replace('.', ',')} pontos`;
+const pct = (n: number) => formatPercentValue(n);
+const pontos = (n: number) => `${n > 0 ? '+' : ''}${formatDecimal(n)} pontos`;
 const variacao = (agora: number, antes: number) => (antes ? ((agora - antes) / antes) * 100 : null);
 const diaMes = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 

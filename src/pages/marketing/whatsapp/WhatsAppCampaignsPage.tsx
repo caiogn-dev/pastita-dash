@@ -41,6 +41,7 @@ import { estadoDaLista } from '../../../utils/estadoDaLista';
 import { PediramParaParar } from './PediramParaParar';
 import { QuemRecebeu } from './QuemRecebeu';
 import { insightsDeCampanhas, resumoDeCampanha } from './resumoDeCampanha';
+import { formatPercentValue } from '../../../utils/formatters';
 
 type RelatorioDaCampanha = {
   id: string;
@@ -426,12 +427,12 @@ export const WhatsAppCampaignsPage: React.FC = () => {
                 { label: 'Enviadas', value: relatorio.messages_sent, definicao: 'saíram do nosso lado; não garante que chegaram' },
                 {
                   label: 'Entregues',
-                  value: relatorio.delivery_rate != null ? `${relatorio.messages_delivered} · ${relatorio.delivery_rate.toFixed(0)}%` : relatorio.messages_delivered,
+                  value: relatorio.delivery_rate != null ? `${relatorio.messages_delivered} · ${formatPercentValue(relatorio.delivery_rate, 0)}` : relatorio.messages_delivered,
                   definicao: 'confirmadas pelo WhatsApp no aparelho do cliente',
                 },
                 {
                   label: 'Lidas',
-                  value: relatorio.read_rate != null ? `${relatorio.messages_read} · ${relatorio.read_rate.toFixed(0)}%` : relatorio.messages_read,
+                  value: relatorio.read_rate != null ? `${relatorio.messages_read} · ${formatPercentValue(relatorio.read_rate, 0)}` : relatorio.messages_read,
                   definicao: 'a métrica que mostra atenção de verdade',
                 },
               ]}

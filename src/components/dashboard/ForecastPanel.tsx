@@ -23,7 +23,7 @@ import {
 import { Card } from '../ui';
 import TimeSeriesChart from '../reports/TimeSeriesChart';
 import RankBarList from '../reports/RankBarList';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, formatDecimal, formatPercentValue } from '../../utils/formatters';
 
 export interface ForecastDaily {
   date: string;
@@ -51,7 +51,7 @@ export interface ForecastData {
 
 
 const moneyShort = (v: number) =>
-  v >= 1000 ? `R$ ${(v / 1000).toFixed(1)}k` : `R$ ${Math.round(v ?? 0)}`;
+  v >= 1000 ? `R$ ${formatDecimal(v / 1000)}k` : formatCurrency(v ?? 0);
 
 const diaCurto = (iso: string) => {
   const [, m, d] = iso.split('-');
@@ -88,7 +88,7 @@ const TrendHero: React.FC<{ pct: number; recentAvg?: number; reliable?: boolean;
       <div className="flex items-center gap-2">
         {!estavel && <Icon className="h-6 w-6 shrink-0" style={{ color: tone }} aria-hidden="true" />}
         <span className="text-3xl font-semibold leading-none" style={{ color: tone }}>
-          {pct > 0 ? '+' : ''}{pct.toFixed(0)}%
+          {pct > 0 ? '+' : ''}{formatPercentValue(pct, 0)}
         </span>
       </div>
       <span className="text-xs text-fg-muted-token">
