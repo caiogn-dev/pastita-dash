@@ -51,7 +51,7 @@ import type { ProjectHealth } from '../../types/dashboard';
 import { useAvaliacoesDaLoja } from '../../hooks/queries/useAvaliacoesDaLoja';
 import { CarrinhosAbandonadosCard } from '../../components/dashboard/CarrinhosAbandonadosCard';
 import { leituraDeAvaliacoes } from './leituraDeAvaliacoes';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, formatDecimal } from '../../utils/formatters';
 import { proximaAcaoDoPedido } from '../orders/proximaAcao';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -651,7 +651,7 @@ export const DashboardPage: React.FC = () => {
                     <p className={`text-xl font-bold leading-none ${
                       i === 0 && (p.media as number) < 4.5 ? 'text-warning-token' : 'text-fg-token'
                     }`}>
-                      {(p.media as number).toFixed(1).replace('.', ',')}
+                      {formatDecimal(p.media as number)}
                     </p>
                     {/* O volume junto: cada pilar tem o seu, porque responder é
                         opcional e quem retira não avalia entrega. */}

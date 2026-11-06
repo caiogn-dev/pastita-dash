@@ -9,6 +9,7 @@ import { Card } from '../../../components/ui';
 import type { DateRange } from '../../../services/reports';
 import { useAnalyticsReport, useDashboardStats } from '../../../hooks/queries/useReports';
 import { SectionCard, DeltaPill, Spinner, formatBRL } from './shared';
+import { formatDecimal } from '../../../utils/formatters';
 
 interface OverviewReport {
   current: {
@@ -121,7 +122,7 @@ export const OverviewSummarySection: React.FC<{ range: DateRange; enabled: boole
           />
           <MiniStat
             label="Nota média"
-            value={cur?.avg_rating != null ? `${cur.avg_rating.toFixed(1)} ★` : '—'}
+            value={cur?.avg_rating != null ? `${formatDecimal(cur.avg_rating)} ★` : '—'}
             sub={cur?.reviews ? `${cur.reviews} avaliações` : 'sem avaliações'}
           />
           <MiniStat

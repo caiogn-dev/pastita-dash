@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom';
 import { SectionCard, EmptyNote, RankedList, ExportCsvButton, formatBRL, paymentLabel, gatewayLabel } from './shared';
 import { urlDeClienteBuscado } from '../../customers/buscaPelaUrl';
 import { useStore } from '../../../hooks/useStore';
+import { formatDecimal, formatPercentValue } from '../../../utils/formatters';
 
 // ─── Clientes (RFM + inativos) ───────────────────────────────────────────────
 
@@ -160,7 +161,7 @@ export const CrmSection: React.FC<{ range: DateRange; enabled: boolean }> = ({ r
                 `${c.days_since} dias sem pedir`,
                 `${c.total_orders} pedido${c.total_orders > 1 ? 's' : ''}`,
                 c.typical_gap_days ? `pedia a cada ~${c.typical_gap_days}d` : null,
-                c.overdue_factor && c.overdue_factor >= 2 ? `${c.overdue_factor.toFixed(0)}× atrasado` : null,
+                c.overdue_factor && c.overdue_factor >= 2 ? `${formatDecimal(c.overdue_factor, 0)}× atrasado` : null,
               ].filter(Boolean).join(' · '),
               value: c.total_spent,
               valueLabel: formatBRL(c.total_spent),
@@ -236,7 +237,7 @@ export const CohortSection: React.FC<{ range: DateRange; enabled: boolean }> = (
                           className="inline-block min-w-[3.2rem] rounded px-1.5 py-0.5 text-xs font-semibold tabular-nums text-fg-token"
                           style={{ backgroundColor: `color-mix(in srgb, var(--brand) ${Math.max(8, Math.min(pct, 100))}%, transparent)` }}
                         >
-                          {pct.toFixed(0)}%
+                          {formatPercentValue(pct, 0)}
                         </span>
                       )}
                     </td>
@@ -380,7 +381,7 @@ export const BotReviewsSection: React.FC<{ range: DateRange; enabled: boolean }>
 
       <SectionCard
         title="Avaliações"
-        subtitle={rsum?.count ? `Nota média ${rsum.avg_rating?.toFixed(1)} ★ em ${rsum.count} avaliações` : undefined}
+        subtitle={rsum?.count ? `Nota média ${formatDecimal(rsum.avg_rating)} ★ em ${rsum.count} avaliações` : undefined}
         loading={reviews.isLoading}
         error={reviews.isError}
         onRetry={() => { void reviews.refetch(); }}
@@ -422,7 +423,7 @@ export const BotReviewsSection: React.FC<{ range: DateRange; enabled: boolean }>
                       label: p.product_name,
                       sub: `${p.count} avaliaç${p.count > 1 ? 'ões' : 'ão'}`,
                       value: p.avg_rating,
-                      valueLabel: `${p.avg_rating.toFixed(1)} ★`,
+                      valueLabel: `${formatDecimal(p.avg_rating)} ★`,
                       danger: p.avg_rating < 3.5,
                     }))}
                   />

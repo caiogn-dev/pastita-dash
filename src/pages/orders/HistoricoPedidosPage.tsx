@@ -50,6 +50,7 @@ import {
 import { baixarCsv, pedidosParaCsv } from './exportarPedidos';
 import {
   STATUS_LABELS as STATUS_LABEL,
+  OPCOES_DE_STATUS,
   FORMAS_NO_FILTRO,
   rotuloDePagamento,
 } from '../../utils/rotulosDeEstado';
@@ -293,7 +294,7 @@ export const HistoricoPedidosPage: React.FC = () => {
               vazio="Todos os status"
               valor={status}
               onMudar={(v) => mudar('status', v)}
-              opcoes={Object.entries(STATUS_LABEL).map(([valor, rotulo]) => ({ valor, rotulo }))}
+              opcoes={OPCOES_DE_STATUS}
             />
 
             <Select

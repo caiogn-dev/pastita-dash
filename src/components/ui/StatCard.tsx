@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import { cn } from '../../utils/cn';
+import { formatPercentValue, variacaoComBasePequena } from '../../utils/formatters';
 import { Card } from './Card';
 import { Sparkline } from './Sparkline';
 import { useNumeroQueSobe } from '../../hooks/useNumeroQueSobe';
@@ -172,6 +173,11 @@ export const StatCard: React.FC<StatCardProps> = ({
           {pct === null ? (
             // Sem período anterior não há percentual honesto a mostrar.
             <span className="text-fg-muted-token">sem base de comparação</span>
+          ) : variacaoComBasePequena(pct) ? (
+            <>
+              <span className="font-semibold text-fg-muted-token">novo</span>
+              <span className="text-fg-muted-token">{comparativo.rotulo}</span>
+            </>
           ) : semBase ? (
             <span className="text-fg-muted-token">ainda sem movimento hoje</span>
           ) : (
@@ -184,7 +190,7 @@ export const StatCard: React.FC<StatCardProps> = ({
                   !subiu && !caiu && 'text-fg-muted-token'
                 )}
               >
-                {subiu ? '▲' : caiu ? '▼' : '='} {Math.abs(pct ?? 0).toFixed(1)}%
+                {subiu ? '▲' : caiu ? '▼' : '='} {formatPercentValue(Math.abs(pct ?? 0))}
               </span>
               <span className="text-fg-muted-token">{comparativo.rotulo}</span>
             </>

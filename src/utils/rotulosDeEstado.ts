@@ -29,6 +29,14 @@ export const STATUS_LABELS: Record<string, string> = {
   failed: 'Falhou',
 };
 
+/** Opções do filtro de status: dois status internos com o mesmo rótulo aparecem uma vez só. */
+export const OPCOES_DE_STATUS: Array<{ valor: string; rotulo: string }> = (() => {
+  const vistos = new Set<string>();
+  return Object.entries(STATUS_LABELS)
+    .filter(([, rotulo]) => (vistos.has(rotulo) ? false : (vistos.add(rotulo), true)))
+    .map(([valor, rotulo]) => ({ valor, rotulo }));
+})();
+
 export const PAYMENT_STATUS_LABELS: Record<string, string> = {
   pending: 'Pendente',
   processing: 'Processando',

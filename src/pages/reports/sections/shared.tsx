@@ -4,6 +4,7 @@ import { ArrowDownTrayIcon, ExclamationTriangleIcon } from '@heroicons/react/24/
 import { Card } from '../../../components/ui';
 import { toCsv, downloadCsv } from '../../../utils/csv';
 import { rotuloDePagamento } from '../../../utils/rotulosDeEstado';
+import { formatPercentValue, variacaoComBasePequena } from '../../../utils/formatters';
 import { Loading } from '../../../components/common';
 
 // A lista ranqueada mudou de casa para `components/ui` — é o formato
@@ -96,6 +97,13 @@ export const SectionCard: React.FC<{
 /** Pill de variação ▲/▼ — verde quando bom, vermelho quando ruim. */
 export const DeltaPill: React.FC<{ pct: number | null | undefined; invert?: boolean }> = ({ pct, invert }) => {
   if (pct == null) return null;
+  if (variacaoComBasePequena(pct)) {
+    return (
+      <span className="inline-flex items-center rounded-full bg-surface-2 px-2 py-0.5 text-xs font-bold text-fg-muted-token">
+        novo
+      </span>
+    );
+  }
   const good = invert ? pct <= 0 : pct >= 0;
   return (
     <span
@@ -105,7 +113,7 @@ export const DeltaPill: React.FC<{ pct: number | null | undefined; invert?: bool
           : 'bg-danger-soft text-danger-token'
       }`}
     >
-      {pct >= 0 ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}%
+      {pct >= 0 ? '▲' : '▼'} {formatPercentValue(Math.abs(pct))}
     </span>
   );
 };

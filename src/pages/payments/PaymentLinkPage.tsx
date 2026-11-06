@@ -58,7 +58,7 @@ const formatDate = (iso?: string | null) => {
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
     ? ''
-    : d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    : d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
 /**
@@ -251,7 +251,7 @@ export const PaymentLinkPage: React.FC = () => {
                   vazio="Cobrança avulsa — sem pedido"
                   opcoes={pedidos.map((p) => ({
                     valor: String(p.id),
-                    rotulo: `${p.order_number} — ${p.customer_name || 'Sem nome'} — R$ ${p.total}`,
+                    rotulo: `${p.order_number} — ${p.customer_name || 'Sem nome'} — ${formatCurrency(Number(p.total ?? 0))}`,
                   }))}
                 />
                 {/* Aviso, não bloqueio: cobrar avulso um valor que coincide com um

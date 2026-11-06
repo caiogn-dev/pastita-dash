@@ -17,6 +17,7 @@
  * aviso âmbar existe para cobrar o lojista do que é dele, e repetido em duas
  * mil linhas que ele não pode revisar vira ruído que ensina a ignorar.
  */
+import { mapaDeCategorias } from './categoriasDeIngrediente';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatarNutriente } from './rotulosDeNutriente';
 import { useParams, useSearchParams } from 'react-router-dom';
@@ -98,9 +99,11 @@ function IngredientesDaLoja() {
   }, [storeId, buscaBase]);
   useEffect(() => { load(); }, [load]);
 
+  const mapaDeCategoria = useMemo(() => mapaDeCategorias(items.map(i => i.category || '')), [items]);
+  const categoriaDe = (i: { category?: string }) => mapaDeCategoria[i.category || ''] ?? '';
   const categories = useMemo(
-    () => [...new Set(items.map(i => i.category).filter(Boolean))].sort(),
-    [items],
+    () => [...new Set(Object.values(mapaDeCategoria).filter(Boolean))].sort(),
+    [mapaDeCategoria],
   );
   // A base pública enterrava tudo que é da loja — inclusive o construtor de
   // receita, que ficava abaixo da dobra.
@@ -108,7 +111,7 @@ function IngredientesDaLoja() {
   const daBase = items.filter(i => !i.store);
   const fonte = aba === 'loja' ? daLoja : daBase;
   const visible = fonte.filter(i =>
-    (!category || i.category === category)
+    (!category || categoriaDe(i) === category)
     && (!search || i.display_name.toLowerCase().includes(search.toLowerCase())));
 
   const naoRevisados = daLoja.filter(i => !i.allergens_reviewed).length;
@@ -228,7 +231,7 @@ function IngredientesDaLoja() {
               render: (i) => (
                 <div className="min-w-0">
                   <span className="font-medium text-fg-token">{i.display_name}</span>
-                  <div className="text-xs text-fg-muted-token">{i.category || 'Sem categoria'}</div>
+                  <div className="text-xs text-fg-muted-token">{categoriaDe(i) || 'Sem categoria'}</div>
                 </div>
               ),
             },

@@ -13,7 +13,7 @@ import {
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toCsv, downloadCsv } from '../../utils/csv';
-import { formatAxisCurrency, formatCurrency } from '../../utils/formatters';
+import { formatAxisCurrency, formatCurrency, formatDecimal, formatPercentValue } from '../../utils/formatters';
 import { Aviso, Card, Button, Badge, StatCard, PageShell, KpiGrid } from '../../components/ui';
 import { relatorioPorSlug, type TabValue } from './relatorios';
 import { EquipeSection } from './sections/EquipeSection';
@@ -91,7 +91,7 @@ interface KpiCardProps {
 const KpiCard: React.FC<KpiCardProps> = ({ title, value, subtitle, change, tone = 'default', loading }) => {
   const isPositive = (change ?? 0) >= 0;
   const changeText =
-    change !== undefined ? `${isPositive ? '+' : ''}${change.toFixed(1)}% vs ontem` : undefined;
+    change !== undefined ? `${isPositive ? '+' : ''}${formatPercentValue(change)} vs ontem` : undefined;
   const sub = [subtitle, changeText].filter(Boolean).join(' · ') || undefined;
 
   if (loading) {
@@ -393,9 +393,9 @@ const AnalyticsPage: React.FC = () => {
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
           <KpiCard title="Faturamento pago" value={formatCurrency(vendas.faturamento)} subtitle={`${vendas.pagos} pagos`} tone="brand" loading={revenueLoading} />
-          <KpiCard title="Pedidos no período" value={vendas.pedidos} subtitle={`${vendas.porDia.toFixed(1).replace('.', ',')} por dia`} loading={ordersLoading} />
+          <KpiCard title="Pedidos no período" value={vendas.pedidos} subtitle={`${formatDecimal(vendas.porDia)} por dia`} loading={ordersLoading} />
           <KpiCard title="Ticket médio" value={vendas.ticketMedio != null ? formatCurrency(vendas.ticketMedio) : '—'} subtitle={`Taxas de entrega: ${formatCurrency(vendas.frete)}`} loading={revenueLoading} />
-          <KpiCard title="Cancelados" value={vendas.cancelados} subtitle={`${vendas.canceladosPct.toFixed(1).replace('.', ',')}% dos pedidos`} tone="warning" loading={ordersLoading} />
+          <KpiCard title="Cancelados" value={vendas.cancelados} subtitle={`${formatPercentValue(vendas.canceladosPct)} dos pedidos`} tone="warning" loading={ordersLoading} />
         </div>
 
         {/* Faturamento por período (fundido da antiga aba Faturamento) */}

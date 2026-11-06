@@ -121,6 +121,35 @@ export function formatPercent(value: number, decimals: number = 1): string {
   }).format(value / 100);
 }
 
+/**
+ * Percentual que JÁ está em pontos (16.2 -> "16,2%"). Fonte única das telas:
+ * `n.toFixed(1)` mostrava "16.2%" com ponto.
+ */
+export function formatPercentValue(value: number | null | undefined, decimals: number = 1): string {
+  if (value == null || !Number.isFinite(value)) return '—';
+  return `${new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value)}%`;
+}
+
+/** Número decimal pt-BR com casas fixas (4.5 -> "4,5"). Substitui `n.toFixed(d)` nas telas. */
+export function formatDecimal(value: number | null | undefined, decimals: number = 1): string {
+  if (value == null || !Number.isFinite(value)) return '—';
+  return new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value);
+}
+
+/** Acima disto a base de comparação era tão pequena que o percentual engana. */
+export const LIMITE_VARIACAO_BASE_PEQUENA = 1000;
+
+/** "▲ 1800,0%" vindo de uma base de 1 pedido não informa nada: vira "novo". */
+export function variacaoComBasePequena(pct: number | null | undefined): boolean {
+  return typeof pct === 'number' && Number.isFinite(pct) && Math.abs(pct) >= LIMITE_VARIACAO_BASE_PEQUENA;
+}
+
 // ==================== Date/Time Formatting ====================
 
 /**
@@ -142,6 +171,15 @@ export function formatDate(
     year: 'numeric',
     ...options,
   }).format(d);
+}
+
+/**
+ * Troca toda data ISO (aaaa-mm-dd) dentro de um texto por dd/mm/aaaa.
+ * Serve a nomes gerados pelo servidor ("Promo 2026-11-06") e a legados.
+ */
+export function datasIsoParaBr(texto: string | null | undefined): string {
+  if (!texto) return '';
+  return texto.replace(/\b(\d{4})-(\d{2})-(\d{2})\b(?!T\d)/g, '$3/$2/$1');
 }
 
 /**

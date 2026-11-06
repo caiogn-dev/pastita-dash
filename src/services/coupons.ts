@@ -85,6 +85,8 @@ export interface CouponStats {
 export interface CouponFilters {
   store?: string;
   is_active?: boolean;
+  /** true: só cupons com validade vencida. */
+  expired?: boolean;
   discount_type?: 'percentage' | 'fixed';
   search?: string;
   page?: number;
@@ -104,6 +106,9 @@ class CouponsService {
     }
     if (filters?.is_active !== undefined) {
       params.append('is_active', String(filters.is_active));
+    }
+    if (filters?.expired) {
+      params.append('expired', 'true');
     }
     if (filters?.discount_type) {
       params.append('discount_type', filters.discount_type);
