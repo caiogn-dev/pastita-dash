@@ -23,6 +23,7 @@ import { Button, EmptyState, FalhaAoCarregar, KpiGrid, Modal, PageShell, Secao, 
 import { getStore, type Store } from '../../services/storesApi';
 import AvisoFilaHumanaSection from '../stores/AvisoFilaHumanaSection';
 import { estadoDaLista } from '../../utils/estadoDaLista';
+import { usePolling } from '../../hooks/usePolling';
 import { montarBalcao, type ItemNoBalcao } from './filaHumana';
 import { rotuloDoMotivo } from './motivoDoModoHumano';
 import { haQuanto, tomDaEspera } from './tempoDeEspera';
@@ -136,9 +137,8 @@ export const HandoverRequestsPage: React.FC = () => {
 
   useEffect(() => {
     void carregar();
-    const t = setInterval(() => { void carregar(); }, REFRESCO_MS);
-    return () => clearInterval(t);
   }, [carregar]);
+  usePolling(carregar, REFRESCO_MS);
 
   useEffect(() => {
     const t = setInterval(() => setAgora(Date.now()), RELOGIO_MS);
