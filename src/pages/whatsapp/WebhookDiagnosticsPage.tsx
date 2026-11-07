@@ -5,6 +5,7 @@
  * helping identify and fix issues with message reception.
  */
 import React, { useState, useEffect, useCallback } from 'react';
+import { usePolling } from '../../hooks/usePolling';
 import {
   CheckCircleIcon,
   XCircleIcon,
@@ -120,12 +121,8 @@ export const WebhookDiagnosticsPage: React.FC = () => {
     fetchDiagnostics();
   }, [fetchDiagnostics]);
 
-  useEffect(() => {
-    if (autoRefresh) {
-      const interval = setInterval(fetchDiagnostics, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [autoRefresh, fetchDiagnostics]);
+  // Só com a aba visível: o painel de depuração esquecido aberto não bate na API de 5 em 5 s.
+  usePolling(() => { if (autoRefresh) void fetchDiagnostics(); }, 5000);
 
   const handleReprocess = async (action: string) => {
     setReprocessing(true);
