@@ -18,6 +18,7 @@ import { automationLogService } from '../../services/automation';
 import toast from 'react-hot-toast';
 import type { Conversation, Message, IntentLog, AutomationLog } from '../../types';
 import { Tabela } from '../../components/ui';
+import { usePolling } from '../../hooks/usePolling';
 import './DebugDashboard.css';
 
 // Note: DebugDashboardPage uses CSS classes from DebugDashboard.css
@@ -94,11 +95,8 @@ const DebugDashboardPage: React.FC = () => {
     refreshAll();
   }, []);
 
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const interval = setInterval(refreshAll, 5000);
-    return () => clearInterval(interval);
-  }, [autoRefresh]);
+  // Só com a aba visível: o painel de depuração esquecido aberto não bate na API de 5 em 5 s.
+  usePolling(() => { if (autoRefresh) void refreshAll(); }, 5000);
 
   useEffect(() => {
     if (selectedConversation) {
