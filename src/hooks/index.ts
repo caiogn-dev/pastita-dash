@@ -75,8 +75,3 @@ export { default as useMessengerWS } from './useMessengerWS';
 
 export { default as useInstagram } from './useInstagram';
 
-// =============================================================================
-// HANDOVER PROTOCOL
-// =============================================================================
-
-export { default as useHandover } from './useHandover';
