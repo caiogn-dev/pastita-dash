@@ -165,7 +165,18 @@ const DebugDashboardPage: React.FC = () => {
                     <div
                       key={conv.id}
                       className={`conversation-card ${selectedConversation?.id === conv.id ? 'active' : ''}`}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Ver mensagens de ${conv.contact_name || conv.phone_number}`}
+                      aria-pressed={selectedConversation?.id === conv.id}
                       onClick={() => handleSelectConversation(conv)}
+                      onKeyDown={(e) => {
+                        if (e.target !== e.currentTarget) return;
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          void handleSelectConversation(conv);
+                        }
+                      }}
                     >
                       <div className="card-header">
                         <h3>{conv.contact_name || conv.phone_number}</h3>
@@ -195,7 +206,7 @@ const DebugDashboardPage: React.FC = () => {
               <div className="messages-panel">
                 <div className="panel-header">
                   <h2>Mensagens - {selectedConversation.contact_name || selectedConversation.phone_number}</h2>
-                  <button onClick={() => loadMessages(selectedConversation.id)} className="mini-refresh">
+                  <button type="button" onClick={() => loadMessages(selectedConversation.id)} className="mini-refresh" aria-label="Atualizar mensagens" title="Atualizar mensagens">
                     <ArrowPathIcon className="w-4 h-4" />
                   </button>
                 </div>
