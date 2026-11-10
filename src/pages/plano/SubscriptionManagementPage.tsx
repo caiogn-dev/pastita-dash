@@ -153,13 +153,21 @@ export default function SubscriptionManagementPage() {
       }
     };
 
+    // Aba escondida não consulta: o painel fica aberto o dia todo. Ao voltar,
+    // se ainda há fatura em aberto, atualiza na hora.
+    const visivel = () => document.visibilityState !== 'hidden';
     void fetchInvoice();
     intervalId = setInterval(() => {
-      void fetchInvoice();
+      if (visivel()) void fetchInvoice();
     }, INVOICE_POLL_MS);
+    const aoVoltar = () => {
+      if (visivel() && intervalId !== null) void fetchInvoice();
+    };
+    document.addEventListener('visibilitychange', aoVoltar);
 
     return () => {
       cancelled = true;
+      document.removeEventListener('visibilitychange', aoVoltar);
       if (intervalId !== null) clearInterval(intervalId);
     };
   }, [slug]);
