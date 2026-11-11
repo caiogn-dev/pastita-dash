@@ -1,6 +1,7 @@
 // MediaViewer - Versão simplificada
 import React from 'react';
 import './MediaViewer.css';
+import { urlSegura } from '../../utils/urlSegura';
 
 export interface MediaViewerProps {
   url: string;
@@ -11,16 +12,18 @@ export interface MediaViewerProps {
 }
 
 export const MediaViewer: React.FC<MediaViewerProps> = ({
-  url,
+  url: urlBruta,
   type,
   fileName,
   onClose,
 }) => {
+  const url = urlSegura(urlBruta);
   const isImage = type.startsWith('image/') || ['image', 'sticker'].includes(type);
   const isVideo = type.startsWith('video/') || type === 'video';
   const isAudio = type.startsWith('audio/') || type === 'audio';
 
   const handleDownload = () => {
+    if (!url) return;
     const link = document.createElement('a');
     link.href = url;
     link.download = fileName || 'download';
@@ -65,7 +68,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
             <div className="viewer-document">
               <div className="doc-icon">📄</div>
               <div className="doc-name">{fileName || 'Documento'}</div>
-              <a href={url} download className="doc-download">Baixar</a>
+              {url && <a href={url} download className="doc-download">Baixar</a>}
             </div>
           )}
         </div>

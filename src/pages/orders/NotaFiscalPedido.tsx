@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { ordersService, getErrorMessage } from '../../services';
 import type { NotaFiscal } from '../../services/orders';
 import logger from '../../services/logger';
+import { urlSegura } from '../../utils/urlSegura';
 import { classificarDocumento, somenteDigitos } from '../../utils/documento';
 
 interface NotaFiscalPedidoProps {
@@ -205,9 +206,9 @@ export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, sto
               <div className="mt-2 grid gap-1">
                 <p>Nº {nota.numero}/{nota.serie}</p>
                 {nota.chave_acesso && <p className="break-all">Chave: {nota.chave_acesso}</p>}
-                {nota.danfe_url && (
+                {urlSegura(nota.danfe_url) && (
                   <a
-                    href={nota.danfe_url}
+                    href={urlSegura(nota.danfe_url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 text-[var(--brand)] hover:underline"
@@ -216,9 +217,9 @@ export const NotaFiscalPedido: React.FC<NotaFiscalPedidoProps> = ({ orderId, sto
                     Abrir {modelo === '55' ? 'DANFE' : 'cupom (DANFE)'}
                   </a>
                 )}
-                {nota.xml_url && (
+                {urlSegura(nota.xml_url) && (
                   <a
-                    href={nota.xml_url}
+                    href={urlSegura(nota.xml_url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     download
