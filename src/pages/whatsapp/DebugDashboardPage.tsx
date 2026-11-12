@@ -2,7 +2,7 @@
  * Debug Dashboard - Página consolidada para debug de chat, mensagens e handlers
  * Mostra em tempo real: conversas, mensagens, status dos handlers e logs
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -81,14 +81,23 @@ const DebugDashboardPage: React.FC = () => {
     await loadMessages(conversation.id);
   };
 
+  // "Carregando..." só na primeira carga. Nas atualizações seguintes (a cada 5 s)
+  // a tela atual fica no lugar — antes ela era trocada por "Carregando..." e o
+  // painel de mensagens aberto sumia a cada ciclo. Uma atualização por vez.
+  const emAndamento = useRef(false);
   const refreshAll = async () => {
-    setLoading(true);
-    await Promise.all([
-      loadConversations(),
-      loadIntentLogs(),
-      loadAutomationLogs(),
-    ]);
-    setLoading(false);
+    if (emAndamento.current) return;
+    emAndamento.current = true;
+    try {
+      await Promise.all([
+        loadConversations(),
+        loadIntentLogs(),
+        loadAutomationLogs(),
+      ]);
+    } finally {
+      emAndamento.current = false;
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
