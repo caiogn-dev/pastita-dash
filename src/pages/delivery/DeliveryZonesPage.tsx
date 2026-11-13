@@ -313,11 +313,64 @@ export const DeliveryZonesPage: React.FC = () => {
     <PageShell titulo="Entrega">
       {(storeSlug || storeId) && <ComoOClienteRecebe loja={(storeSlug || storeId)!} />}
 
-      {/* Store Location Card - Read Only */}
+      {/* O PREÇO mora aqui, não nas 16 faixas. Cada loja tinha uma faixa por
+          quilômetro — três números digitados dezesseis vezes, com uma
+          irregularidade escondida (a faixa 3-5km cobria 2 km). E a fórmula que
+          o dono editava em Configurações não valia nada, porque as faixas têm
+          precedência: duas telas discordando sobre o mesmo número. */}
+      {storeId && (
+        <FormulaDeEntregaCard
+          key={storeId}
+          metadataAtual={storeMetadata ?? {}}
+          faixasAtivas={zones.filter((z) => z.is_active).length}
+          onSalvar={async (novoMetadata) => {
+            await updateStore(storeId, { metadata: novoMetadata });
+            setStoreMetadata(novoMetadata);
+          }}
+        />
+      )}
+
+      {/* A promoção vem logo abaixo do preço porque ela SOBRESCREVE o preço:
+          quem lê a fórmula precisa ver, na mesma rolagem, que existe um raio
+          onde ela não vale. */}
+      {storeId && (
+        <FreteGratisCard
+          key={storeId}
+          metadataAtual={storeMetadata ?? {}}
+          onSalvar={async (novoMetadata) => {
+            await updateStore(storeId, { metadata: novoMetadata });
+            setStoreMetadata(novoMetadata);
+          }}
+        />
+      )}
+
+      {/* Confere o preço que o cliente vai ver, pelo cálculo do checkout. */}
+      {storeSlug && (
+        <SimuladorDeFreteCard key={storeSlug} storeSlug={storeSlug} metadataAtual={storeMetadata ?? {}} />
+      )}
+
+      {/* Exceções (condomínio longe, portaria demorada). No servidor valem ANTES
+          da fórmula, mas na tela vêm depois: a regra geral é o que se ajusta
+          todo dia, a exceção é cadastrada uma vez (reordenado 13/11). */}
+      {storeId && (
+        <ZonasDePrecoFixoCard
+          key={storeId}
+          metadataAtual={storeMetadata}
+          categorias={categoriasDaLoja}
+          onSalvar={async (fixedPriceZones) => {
+            const atual = storeMetadata ?? {};
+            const novo = { ...atual, fixed_price_zones: fixedPriceZones };
+            await updateStore(storeId, { metadata: novo });
+            setStoreMetadata(novo);
+          }}
+        />
+      )}
+
+      {/* O mapa vem depois do preço: é conferência, não configuração. */}
       <Card className="p-4 md:p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-fg-token">Localização da Loja</h2>
+            <h2 className="text-lg font-semibold text-fg-token">Área de entrega</h2>
             <p className="text-sm text-fg-muted-token mt-1">
               A localização é usada para calcular a distância de entrega.
             </p>
@@ -463,59 +516,6 @@ export const DeliveryZonesPage: React.FC = () => {
           </div>
         )}
       </Card>
-
-      {/* O PREÇO mora aqui, não nas 16 faixas. Cada loja tinha uma faixa por
-          quilômetro — três números digitados dezesseis vezes, com uma
-          irregularidade escondida (a faixa 3-5km cobria 2 km). E a fórmula que
-          o dono editava em Configurações não valia nada, porque as faixas têm
-          precedência: duas telas discordando sobre o mesmo número. */}
-      {storeId && (
-        <FormulaDeEntregaCard
-          key={storeId}
-          metadataAtual={storeMetadata ?? {}}
-          faixasAtivas={zones.filter((z) => z.is_active).length}
-          onSalvar={async (novoMetadata) => {
-            await updateStore(storeId, { metadata: novoMetadata });
-            setStoreMetadata(novoMetadata);
-          }}
-        />
-      )}
-
-      {/* Ordem da tela = ordem do servidor (26/10): a zona de preço fixo vale
-          ANTES da fórmula; o frete grátis vem por último e zera o resultado.
-          As zonas resolvem as exceções (condomínio longe, portaria demorada). */}
-      {storeId && (
-        <ZonasDePrecoFixoCard
-          key={storeId}
-          metadataAtual={storeMetadata}
-          categorias={categoriasDaLoja}
-          onSalvar={async (fixedPriceZones) => {
-            const atual = storeMetadata ?? {};
-            const novo = { ...atual, fixed_price_zones: fixedPriceZones };
-            await updateStore(storeId, { metadata: novo });
-            setStoreMetadata(novo);
-          }}
-        />
-      )}
-
-      {/* A promoção vem logo abaixo do preço porque ela SOBRESCREVE o preço:
-          quem lê a fórmula precisa ver, na mesma rolagem, que existe um raio
-          onde ela não vale. */}
-      {storeId && (
-        <FreteGratisCard
-          key={storeId}
-          metadataAtual={storeMetadata ?? {}}
-          onSalvar={async (novoMetadata) => {
-            await updateStore(storeId, { metadata: novoMetadata });
-            setStoreMetadata(novoMetadata);
-          }}
-        />
-      )}
-
-      {/* Confere o preço que o cliente vai ver, pelo cálculo do checkout. */}
-      {storeSlug && (
-        <SimuladorDeFreteCard key={storeSlug} storeSlug={storeSlug} metadataAtual={storeMetadata ?? {}} />
-      )}
 
       {temFaixas && (
         <>

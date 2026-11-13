@@ -10,6 +10,8 @@ import {
   precoParaDistancia,
   previaDePrecos,
   problemasDaFormula,
+  fraseDoPreco,
+  distanciasDaPrevia,
   type FormulaDeEntrega,
 } from '../precoDaEntrega';
 
@@ -114,5 +116,37 @@ describe('problemasDaFormula — avisa antes de salvar um preço incoerente', ()
   it('valores negativos', () => {
     expect(problemasDaFormula({ ...CE_SALADAS, taxaBase: -1 }).join(' ')).toMatch(/negativa/i);
     expect(problemasDaFormula({ ...CE_SALADAS, raioMaximoKm: 0 }).join(' ')).toMatch(/maior que zero/i);
+  });
+});
+
+describe('fraseDoPreco — a regra dita como o dono fala', () => {
+  const FIXA: FormulaDeEntrega = {
+    taxaBase: 5, raioPlanoKm: 5, porKm: 1, raioMaximoKm: 5,
+  };
+
+  it('valor fixo sem entrega além do raio', () => {
+    expect(fraseDoPreco(FIXA)).toBe('R$ 5,00 em qualquer entrega até 5 km. Acima disso, não entrega.');
+  });
+
+  it('valor fixo e depois por km', () => {
+    expect(fraseDoPreco({ ...FIXA, raioMaximoKm: 12 }))
+      .toBe('R$ 5,00 em qualquer entrega até 5 km. Depois, + R$ 1,00 por km, até 12 km.');
+  });
+
+  it('km quebrado sai com vírgula', () => {
+    expect(fraseDoPreco({ ...FIXA, raioPlanoKm: 2.5, raioMaximoKm: 2.5 }))
+      .toBe('R$ 5,00 em qualquer entrega até 2,5 km. Acima disso, não entrega.');
+  });
+});
+
+describe('distanciasDaPrevia — a prévia mostra a borda do valor fixo', () => {
+  it('inclui o raio fixo e o primeiro km depois dele', () => {
+    expect(distanciasDaPrevia({ taxaBase: 5, raioPlanoKm: 5, porKm: 1, raioMaximoKm: 5 }))
+      .toEqual([2, 5, 6, 10, 15]);
+  });
+
+  it('não repete distância', () => {
+    expect(distanciasDaPrevia({ taxaBase: 7, raioPlanoKm: 2, porKm: 1, raioMaximoKm: 16 }))
+      .toEqual([2, 3, 5, 10, 15]);
   });
 });

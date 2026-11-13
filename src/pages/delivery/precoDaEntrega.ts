@@ -123,3 +123,29 @@ export function problemasDaFormula(f: FormulaDeEntrega): string[] {
   }
   return p;
 }
+
+const km = (v: number) =>
+  new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(num(v));
+const brl = (v: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num(v)).replace(/\u00a0/g, ' ');
+
+/** Não entrega além do raio fixo: o máximo coincide com o raio plano. */
+export const soValorFixo = (f: FormulaDeEntrega): boolean =>
+  num(f.raioMaximoKm) <= num(f.raioPlanoKm);
+
+/** A regra numa frase — é o que o dono confere antes de salvar. */
+export function fraseDoPreco(f: FormulaDeEntrega): string {
+  const fixo = `${brl(f.taxaBase)} em qualquer entrega até ${km(f.raioPlanoKm)} km.`;
+  if (soValorFixo(f)) return `${fixo} Acima disso, não entrega.`;
+  return `${fixo} Depois, + ${brl(f.porKm)} por km, até ${km(f.raioMaximoKm)} km.`;
+}
+
+/**
+ * Distâncias da prévia: as de referência mais a borda do valor fixo (o último
+ * km dele e o primeiro depois) — é onde o preço muda, e onde o dono olha.
+ */
+export function distanciasDaPrevia(f: FormulaDeEntrega): number[] {
+  const plano = num(f.raioPlanoKm);
+  const todas = new Set([...DISTANCIAS_DA_PREVIA, ...(plano > 0 ? [plano, plano + 1] : [])]);
+  return [...todas].sort((a, b) => a - b);
+}
