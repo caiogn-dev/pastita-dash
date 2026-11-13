@@ -534,8 +534,8 @@ export const useOrderPrint = () => {
 
         <!-- Faixa 4: calma quando pago, grito quando não -->
         <div class="band">${pedido.payment_status === 'paid'
-          ? `${getPaymentMethod()} - PAGO`
-          : `!! ${getPaymentStatus()} - ${getPaymentMethod()} !!`}</div>
+          ? `${escapeHtml(getPaymentMethod())} - PAGO`
+          : `!! ${escapeHtml(getPaymentStatus())} - ${escapeHtml(getPaymentMethod())} !!`}</div>
         ${trocoHtml}
         `}
 
