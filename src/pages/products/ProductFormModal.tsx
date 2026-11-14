@@ -807,13 +807,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       required
                     />
                   </div>
-                  <div className="mt-2">
-                    <LigaDesliga
-                      rotulo="Brinde (pode ficar a R$ 0,00)"
-                      ligado={!!formData.is_brinde}
-                      onMudar={(is_brinde) => setFormData((prev) => ({ ...prev, is_brinde }))}
-                    />
-                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-fg-token mb-1">
@@ -839,13 +832,43 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   <p className="text-xs text-fg-muted-token mt-1">Para mostrar desconto</p>
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-fg-token mb-1">
+                    Custo
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted-token">R$</span>
+                    <input
+                      type="number"
+                      value={formData.cost_price ?? ''}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          cost_price: e.target.value ? Number(e.target.value) : undefined,
+                        }))
+                      }
+                      className="w-full pl-10 pr-3 py-2 border border-border-token rounded bg-surface text-fg-token focus:ring-2 focus:ring-brand"
+                      step="0.01"
+                      min="0"
+                      placeholder="Custo do produto"
+                    />
+                  </div>
+                  <p className="text-xs text-fg-muted-token mt-1">Para cálculo de margem</p>
+                </div>
+                <div className="sm:col-span-3">
+                    <LigaDesliga
+                      rotulo="Brinde (pode ficar a R$ 0,00)"
+                      ligado={!!formData.is_brinde}
+                      onMudar={(is_brinde) => setFormData((prev) => ({ ...prev, is_brinde }))}
+                    />
+                </div>
                 {/* Promoção que se repete toda semana — "quarta da almôndega".
                     O preço normal NUNCA é alterado: o sistema decide na hora de
                     mostrar. Foi de propósito: uma tarefa que troca o preço na
                     quarta e devolve na quinta deixa o preço errado para sempre
                     se falhar, e foi assim que a Almôndega ficou a R$ 42,99 por
                     dois dias sem ninguém ver. */}
-                <div className="sm:col-span-2 superficie-2 p-3">
+                <div className="sm:col-span-3 superficie-2 p-3">
                   <p className="text-sm font-medium text-fg-token mb-1">
                     Promoção semanal <span className="font-normal text-fg-muted-token">(opcional)</span>
                   </p>
@@ -910,29 +933,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       O preço da promoção precisa ser menor que R$ {formData.price} — senão ela é ignorada.
                     </p>
                   )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-fg-token mb-1">
-                    Custo
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted-token">R$</span>
-                    <input
-                      type="number"
-                      value={formData.cost_price ?? ''}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          cost_price: e.target.value ? Number(e.target.value) : undefined,
-                        }))
-                      }
-                      className="w-full pl-10 pr-3 py-2 border border-border-token rounded bg-surface text-fg-token focus:ring-2 focus:ring-brand"
-                      step="0.01"
-                      min="0"
-                      placeholder="Custo do produto"
-                    />
-                  </div>
-                  <p className="text-xs text-fg-muted-token mt-1">Para cálculo de margem</p>
                 </div>
               </div>
 

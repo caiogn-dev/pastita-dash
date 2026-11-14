@@ -28,10 +28,19 @@ export const Switch: React.FC<SwitchProps> = ({
     lg: 'w-14 h-8',
   };
 
+  // Borda nos DOIS estados e folga fixa por dentro: antes a borda só existia
+  // desligado, e a bolinha encostava nela de um lado e sobrava do outro (13/11).
+  // Conta: trilho − 2×borda − 2×folga − bolinha = quanto a bolinha anda.
+  const paddingClasses = {
+    sm: 'p-px',     // 32 − 2 − 2 − 12 = 16 → translate-x-4
+    md: 'p-[3px]',  // 44 − 2 − 6 − 16 = 20 → translate-x-5
+    lg: 'p-[3px]',  // 56 − 2 − 6 − 24 = 24 → translate-x-6
+  };
+
   const thumbSizeClasses = {
-    sm: 'w-3 h-3 translate-x-0.5',
-    md: 'w-4 h-4 translate-x-0.5',
-    lg: 'w-6 h-6 translate-x-1',
+    sm: 'w-3 h-3',
+    md: 'w-4 h-4',
+    lg: 'w-6 h-6',
   };
 
   const thumbCheckedClasses = {
@@ -50,7 +59,9 @@ export const Switch: React.FC<SwitchProps> = ({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        'relative inline-flex items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2',
+        // shrink-0: numa coluna estreita, ao lado de um rótulo longo, o trilho
+        // encolhia e a bolinha saía do lugar.
+        'relative inline-flex shrink-0 items-center rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2',
         // Ligado usa a cor do PAINEL, não a da loja.
         //
         // Era `bg-primary-500`, que é a cor da marca do lojista: na Cê Saladas
@@ -58,7 +69,8 @@ export const Switch: React.FC<SwitchProps> = ({
         // aparece vermelha — a cor que o resto do painel usa para erro e para
         // excluir. Uma tela com quatro chaves ligadas parecia quatro alertas.
         // O ouro é o mesmo do botão primário e do anel de foco.
-        checked ? 'bg-brand' : 'bg-surface-2 border border-border-token',
+        checked ? 'bg-brand border-brand' : 'bg-surface-2 border-[var(--border-strong)]',
+        paddingClasses[size],
         disabled && 'opacity-50 cursor-not-allowed',
         sizeClasses[size],
         className
