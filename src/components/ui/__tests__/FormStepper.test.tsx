@@ -222,4 +222,20 @@ describe('FormStepper — opções do assistente de página', () => {
     );
     expect(screen.getByRole('button', { name: /enviando…/i })).toBeDisabled();
   });
+
+  // 13/11, medido a 390 px: a trilha virava 4 linhas com "›" solto no começo
+  // de cada uma, e o rodapé grudava 16 px ACIMA da borda — os campos passavam
+  // por baixo dele, à vista.
+  it('trilha numa linha só, com rolagem lateral no celular', () => {
+    montar();
+    const trilha = screen.getByRole('list');
+    expect(trilha).toHaveClass('flex-nowrap', 'overflow-x-auto');
+  });
+
+  it('rodapé gruda na borda de baixo do corpo do modal (compensa o py-4)', () => {
+    montar();
+    const rodape = screen.getByText(/Passo 1 de 3/).closest('div')!;
+    expect(rodape).toHaveClass('sticky', '-bottom-4');
+  });
 });
+

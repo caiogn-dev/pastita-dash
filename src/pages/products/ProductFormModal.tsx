@@ -14,7 +14,7 @@ import { validarProduto, type AbaDoProduto, type ErroDeProduto } from './validar
 import { regrasParaGravar } from './regrasDeVenda';
 import RegrasDeVendaCampos from './RegrasDeVendaCampos';
 import { FormChecklist, FormSummary, ChoiceCards, FormStepper, StringListField } from '../../components/ui';
-import { Card, Button, KpiGrid, Switch } from '../../components/ui';
+import { Card, Button, KpiGrid } from '../../components/ui';
 import { Modal } from '../../components/common';
 import VariantsManager from '../../components/products/VariantsManager';
 // Lazy de propósito: a aba Nutricional é a menos usada do formulário, e o
@@ -35,6 +35,7 @@ import logger from '../../services/logger';
 import { compressImage } from '../../utils/compressImage';
 import { PaywallModal } from '../../components/billing/PaywallModal';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
+import LigaDesliga from './LigaDesliga';
 
 export interface ProductFormModalProps {
   isOpen: boolean;
@@ -370,17 +371,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
       }
 
       case 'boolean':
-        return (
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={Boolean(value)}
-              onChange={(e) => updateField(e.target.checked)}
-              className="rounded border-border-token text-brand-ink focus:ring-brand"
-            />
-            <span className="text-sm">{field.label}</span>
-          </label>
-        );
+        return <LigaDesliga rotulo={field.label} ligado={Boolean(value)} onMudar={updateField} />;
 
       case 'number':
         return (
@@ -742,17 +733,11 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.featured}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, featured: e.target.checked }))}
-                    className="rounded border-border-token text-brand-ink focus:ring-brand"
-                  />
-                  <span className="text-sm">Produto em destaque</span>
-                </label>
-              </div>
+              <LigaDesliga
+                rotulo="Produto em destaque"
+                ligado={!!formData.featured}
+                onMudar={(featured) => setFormData((prev) => ({ ...prev, featured }))}
+              />
 
               <StringListField
                 label="O que já vem incluso"
@@ -822,18 +807,17 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       required
                     />
                   </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Switch
-                      ligado={!!formData.is_brinde}
-                      onMudar={(v) => setFormData((prev) => ({ ...prev, is_brinde: v }))}
+                  <div className="mt-2">
+                    <LigaDesliga
                       rotulo="Brinde (pode ficar a R$ 0,00)"
+                      ligado={!!formData.is_brinde}
+                      onMudar={(is_brinde) => setFormData((prev) => ({ ...prev, is_brinde }))}
                     />
-                    <span className="text-sm">Brinde (pode ficar a R$ 0,00)</span>
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-fg-token mb-1">
-                    Preço Comparativo
+                    Preço antes (riscado)
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted-token">R$</span>
@@ -985,18 +969,14 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           {/* Inventory Tab */}
           {passoAtivo === 'inventory' && (
             <div className="space-y-4">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formData.track_stock}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, track_stock: e.target.checked }))}
-                  className="rounded border-border-token text-brand-ink focus:ring-brand"
-                />
-                <span className="text-sm font-medium">Controlar estoque</span>
-              </label>
+              <LigaDesliga
+                rotulo="Controlar estoque"
+                ligado={!!formData.track_stock}
+                onMudar={(track_stock) => setFormData((prev) => ({ ...prev, track_stock }))}
+              />
 
               {formData.track_stock && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-fg-token mb-1">
                       Quantidade em Estoque
@@ -1021,25 +1001,23 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       min="0"
                     />
                   </div>
-                  <div className="flex items-end">
-                    <label className="flex items-center gap-2 pb-2">
-                      <input
-                        type="checkbox"
-                        checked={formData.allow_backorder}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, allow_backorder: e.target.checked }))}
-                        className="rounded border-border-token text-brand-ink focus:ring-brand"
-                      />
-                      <span className="text-sm">Permitir venda sem estoque</span>
-                    </label>
-                    <div className="flex items-center gap-2 pb-2">
-                      <Switch
-                        ligado={!!formData.pausar_ao_zerar}
-                        onMudar={(v) => setFormData((prev) => ({ ...prev, pausar_ao_zerar: v }))}
-                        rotulo="Pausar ao zerar o estoque"
-                      />
-                      <span className="text-sm">Pausar ao zerar o estoque</span>
-                    </div>
-                  </div>
+                </div>
+              )}
+
+              {/* Pilha própria: espremidos lado a lado num terço da linha, os
+                  dois rótulos quebravam em três linhas cada (13/11). */}
+              {formData.track_stock && (
+                <div className="space-y-3">
+                  <LigaDesliga
+                    rotulo="Permitir venda sem estoque"
+                    ligado={!!formData.allow_backorder}
+                    onMudar={(allow_backorder) => setFormData((prev) => ({ ...prev, allow_backorder }))}
+                  />
+                  <LigaDesliga
+                    rotulo="Pausar ao zerar o estoque"
+                    ligado={!!formData.pausar_ao_zerar}
+                    onMudar={(pausar_ao_zerar) => setFormData((prev) => ({ ...prev, pausar_ao_zerar }))}
+                  />
                 </div>
               )}
 
@@ -1225,7 +1203,15 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           )}
         </div>
 
-          <aside className="flex flex-col gap-3 2xl:sticky 2xl:top-0 2xl:self-start max-2xl:order-first max-2xl:flex-row max-2xl:flex-wrap max-2xl:[&>*]:flex-1">
+          {/* Abaixo de 2xl, checklist + resumo iam para o TOPO de toda aba e
+              ocupavam a primeira tela inteira do celular — os campos ficavam
+              fora da vista (13/11). Agora só o checklist, e só se falta algo. */}
+          {pendencias.length > 0 && (
+            <div className="order-first 2xl:hidden">
+              <FormChecklist itens={checklist} />
+            </div>
+          )}
+          <aside className="hidden flex-col gap-3 2xl:sticky 2xl:top-0 2xl:flex 2xl:self-start">
             <FormChecklist itens={checklist} />
             {/* Seis abas: você marca algo em Preços, passa por Estoque e Mídia
                 e ao chegar em salvar não lembra o que escolheu. Conferir custa

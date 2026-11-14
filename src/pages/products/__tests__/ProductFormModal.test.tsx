@@ -332,3 +332,39 @@ describe('ProductFormModal — rascunho', () => {
     expect(api.createProduct).toHaveBeenCalledWith(expect.objectContaining({ name: 'Prato novo', status: 'draft' }));
   });
 });
+
+// 13/11: "Brinde" era interruptor; "Produto em destaque", "Controlar estoque"
+// e "Permitir venda sem estoque" eram caixinhas nativas azuis, do navegador.
+// Liga/desliga no painel é um controle só.
+describe('ProductFormModal — liga/desliga é sempre interruptor', () => {
+  const abrirEm = (aba?: string) => {
+    render(
+      <ProductFormModal
+        isOpen
+        product={makeProduct('p1', 'Arroz')}
+        categories={[]}
+        flatProducts={flat}
+        onClose={jest.fn()}
+        onSaved={jest.fn()}
+        storeId="store1"
+      />
+    );
+    if (aba) fireEvent.click(screen.getByText(aba));
+  };
+
+  it('Básico: destaque é interruptor', () => {
+    abrirEm();
+    expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
+    const destaque = screen.getByRole('switch', { name: 'Produto em destaque' });
+    fireEvent.click(destaque);
+    expect(destaque).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('Estoque: controlar estoque e vender sem estoque são interruptores', () => {
+    abrirEm('Estoque');
+    expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
+    expect(screen.getByRole('switch', { name: 'Controlar estoque' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('switch', { name: 'Permitir venda sem estoque' })).toBeInTheDocument();
+  });
+});
+

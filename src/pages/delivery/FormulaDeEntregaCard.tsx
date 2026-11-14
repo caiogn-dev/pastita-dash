@@ -13,7 +13,7 @@
  */
 import React, { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Card, Button } from '../../components/ui';
+import { Card, Button, Segmentado } from '../../components/ui';
 import {
   distanciasDaPrevia,
   fraseDoPreco,
@@ -105,6 +105,24 @@ interface CampoProps {
   opcional?: boolean;
 }
 
+/** O único campo numérico desta tela: vazio vira null, não 0. */
+const NumeroNaFrase: React.FC<{
+  id?: string;
+  rotulo?: string;
+  valor: number | null | undefined;
+  onChange: (v: number | null) => void;
+  className: string;
+}> = ({ id, rotulo, valor, onChange, className }) => (
+  <input
+    id={id}
+    aria-label={rotulo}
+    type="number" min="0" step="0.5" inputMode="decimal"
+    value={valor ?? ''}
+    onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+    className={className}
+  />
+);
+
 /** Um campo numérico com unidade e explicação — repetido 6 vezes, escrito 1. */
 const Campo: React.FC<CampoProps> = ({
   id, rotulo, ajuda, valor, onChange, prefixo, sufixo, opcional,
@@ -116,14 +134,10 @@ const Campo: React.FC<CampoProps> = ({
     </label>
     <div className="mt-1 flex items-center gap-2">
       {prefixo && <span className="text-sm text-fg-muted-token">{prefixo}</span>}
-      <input
+      <NumeroNaFrase
         id={id}
-        type="number"
-        min="0"
-        step="0.5"
-        inputMode="decimal"
-        value={valor ?? ''}
-        onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+        valor={valor}
+        onChange={onChange}
         className="w-28 rounded border border-border-token bg-transparent px-3 py-2 text-sm text-fg-token"
       />
       {sufixo && <span className="text-sm text-fg-muted-token">{sufixo}</span>}
@@ -194,7 +208,6 @@ export const FormulaDeEntregaCard: React.FC<Props> = ({
     }
   };
 
-  const numero = (v: string) => (v === '' ? null : Number(v));
 
   return (
     <Card className="p-4 md:p-6">
@@ -224,19 +237,17 @@ export const FormulaDeEntregaCard: React.FC<Props> = ({
           <div className="flex flex-wrap items-center gap-2 text-base text-fg-token">
             <span className="font-medium">Entrega</span>
             <span className="text-fg-muted-token">R$</span>
-            <input
-              aria-label="Valor fixo da entrega"
-              type="number" min="0" step="0.5" inputMode="decimal"
-              value={formula.taxaBase ?? ''}
-              onChange={(e) => campo('taxaBase')(numero(e.target.value))}
+            <NumeroNaFrase
+              rotulo="Valor fixo da entrega"
+              valor={formula.taxaBase}
+              onChange={campo('taxaBase')}
               className={inputNumero}
             />
             <span className="font-medium">até</span>
-            <input
-              aria-label="Distância do valor fixo (km)"
-              type="number" min="0" step="0.5" inputMode="decimal"
-              value={formula.raioPlanoKm ?? ''}
-              onChange={(e) => campo('raioPlanoKm')(numero(e.target.value))}
+            <NumeroNaFrase
+              rotulo="Distância do valor fixo (km)"
+              valor={formula.raioPlanoKm}
+              onChange={campo('raioPlanoKm')}
               className={inputNumero}
             />
             <span className="font-medium">km</span>
@@ -246,24 +257,12 @@ export const FormulaDeEntregaCard: React.FC<Props> = ({
             <legend className="mb-2 text-sm font-medium text-fg-token">
               Depois de {formatNumber(Number(formula.raioPlanoKm) || 0, { maximumFractionDigits: 2 })} km
             </legend>
-            <div className="flex flex-wrap gap-2">
-              {OPCOES_DEPOIS.map((o) => (
-                <label
-                  key={o.valor}
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border-token px-3 py-2 text-sm text-fg-token has-[:checked]:border-brand has-[:checked]:bg-surface-2 has-[:checked]:font-semibold"
-                >
-                  <input
-                    type="radio"
-                    name="depois-do-fixo"
-                    value={o.valor}
-                    checked={depois === o.valor}
-                    onChange={() => escolherDepois(o.valor)}
-                    className="accent-[var(--brand)]"
-                  />
-                  {o.rotulo}
-                </label>
-              ))}
-            </div>
+            <Segmentado
+              rotulo={`Depois de ${formatNumber(Number(formula.raioPlanoKm) || 0, { maximumFractionDigits: 2 })} km`}
+              opcoes={OPCOES_DEPOIS}
+              valor={depois}
+              onChange={escolherDepois}
+            />
 
             {depois === 'porKm' && (
               <div className="mt-4 space-y-4">

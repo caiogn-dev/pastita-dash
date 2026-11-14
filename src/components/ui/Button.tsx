@@ -39,8 +39,10 @@ export interface ButtonProps
   mt?: number;
 }
 
+// `whitespace-nowrap`: a altura é fixa (ver SIZES), então rótulo que quebra
+// vira duas linhas espremidas — "Nova variante" em 390 px, 13/11.
 const BASE =
-  'inline-flex items-center justify-center gap-2 rounded font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none';
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none';
 
 // Variantes canônicas mantendo tokens de marca; aliases legados mapeiam para elas.
 const VARIANTS: Record<ButtonVariant, string> = {

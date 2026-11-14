@@ -1,3 +1,4 @@
+import { formatCurrency, formatNumber } from '../../utils/formatters';
 /**
  * A matemática da taxa de entrega — espelho do backend.
  *
@@ -124,10 +125,8 @@ export function problemasDaFormula(f: FormulaDeEntrega): string[] {
   return p;
 }
 
-const km = (v: number) =>
-  new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(num(v));
-const brl = (v: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num(v)).replace(/\u00a0/g, ' ');
+const km = (v: number) => formatNumber(num(v), { maximumFractionDigits: 2 });
+const brl = (v: number) => formatCurrency(num(v));
 
 /** Não entrega além do raio fixo: o máximo coincide com o raio plano. */
 export const soValorFixo = (f: FormulaDeEntrega): boolean =>

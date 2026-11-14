@@ -94,7 +94,7 @@ export const StringListField: React.FC<StringListFieldProps> = ({
           type="button"
           onClick={adicionar}
           disabled={!rascunho.trim()}
-          className="shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded border border-border-token text-sm text-fg-token hover:bg-surface-2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="shrink-0 inline-flex items-center gap-1 whitespace-nowrap px-3 py-2 rounded border border-border-token text-sm text-fg-token hover:bg-surface-2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <PlusIcon className="w-4 h-4" />
           {addLabel}

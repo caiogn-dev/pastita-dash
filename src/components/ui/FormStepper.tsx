@@ -22,7 +22,7 @@
  * A trilha permite pular direto para qualquer passo: quem já conhece o
  * formulário não deve ser obrigado a percorrer a sequência.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { CheckIcon } from '@heroicons/react/24/outline';
 
 import { cn } from '../../utils/cn';
@@ -134,6 +134,13 @@ export const FormStepper: React.FC<FormStepperProps> = ({
   const atual = passos[i];
   const ultimo = i === passos.length - 1;
 
+  // Trilha rola de lado: o passo ativo sempre visível.
+  const trilhaRef = useRef<HTMLOListElement>(null);
+  useEffect(() => {
+    const ativo = trilhaRef.current?.querySelector<HTMLElement>('[data-ativo]');
+    ativo?.scrollIntoView?.({ block: 'nearest', inline: 'center' });
+  }, [i]);
+
   const irPara = (idx: number) => {
     const alvo = passos[idx];
     if (!alvo) return;
@@ -156,14 +163,19 @@ export const FormStepper: React.FC<FormStepperProps> = ({
   return (
     <div className={cn('flex flex-col gap-5', className)}>
       {/* Trilha */}
-      <ol className="flex flex-wrap items-center gap-x-1 gap-y-2 border-b border-border-token pb-3">
+      {/* Uma linha só. Quebrando, no celular eram 4 linhas com o "›" solto no
+          começo de cada uma (13/11). Rola de lado e o passo ativo entra na vista. */}
+      <ol
+        ref={trilhaRef}
+        className="-mx-1 flex flex-nowrap items-center gap-x-1 overflow-x-auto border-b border-border-token px-1 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         {passos.map((p, idx) => {
           const Icone = p.icone;
           const ativo = idx === i;
           const passado = idx < i;
           const bloqueado = !permitirPularAdiante && idx > i;
           return (
-            <li key={p.id} className="flex items-center gap-1">
+            <li key={p.id} className="flex shrink-0 items-center gap-1" data-ativo={ativo || undefined}>
               {idx > 0 && (
                 <span className="px-1 text-fg-muted-token" aria-hidden>›</span>
               )}
@@ -173,7 +185,7 @@ export const FormStepper: React.FC<FormStepperProps> = ({
                 disabled={bloqueado}
                 onClick={() => irPara(idx)}
                 className={cn(
-                  'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-body font-medium transition-colors',
+                  'flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-body font-medium transition-colors',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                   'disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-fg-muted-token',
                   ativo
@@ -211,14 +223,17 @@ export const FormStepper: React.FC<FormStepperProps> = ({
           base, ele está sempre onde a mão espera.
           `-mx-*` + `px-*` para o fundo cobrir toda a largura do corpo do
           modal, senão o conteúdo passa por baixo pelas beiradas. */}
-      <div className="sticky bottom-0 -mx-6 -mb-4 flex flex-wrap items-center justify-between gap-3 border-t border-border-token bg-surface px-6 py-3">
+      {/* `-bottom-4` e não `bottom-0`: o corpo do Modal tem py-4, e o sticky
+          respeita esse respiro — grudava 16 px acima da borda e os campos
+          passavam por baixo do rodapé, à vista (13/11). */}
+      <div className="sticky -bottom-4 z-10 -mx-6 -mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-border-token bg-surface px-6 py-3">
         {/* Progresso em TEXTO: a trilha colorida não existe para quem usa
             leitor de tela, e some para quem não distingue as cores. */}
-        <p className="text-caption text-fg-muted-token">
+        <p className="text-caption text-fg-muted-token max-sm:sr-only">
           Passo {i + 1} de {passos.length} · {atual.rotulo}
         </p>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2 max-sm:w-full">
           {onCancelar && (
             <Button type="button" variant="ghost" onClick={onCancelar}>
               Cancelar

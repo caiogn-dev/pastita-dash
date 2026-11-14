@@ -26,4 +26,12 @@ describe('Button (canônico)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Bloqueado' }));
     expect(onClick).not.toHaveBeenCalled();
   });
+
+  // Altura é fixa (h-8/h-10): rótulo que quebra vira duas linhas espremidas
+  // ou cortadas ("Nova variante" em 390 px, 13/11).
+  it('o rótulo nunca quebra linha', () => {
+    render(<Button>Nova variante</Button>);
+    expect(screen.getByRole('button', { name: 'Nova variante' })).toHaveClass('whitespace-nowrap');
+  });
 });
+

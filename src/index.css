@@ -271,6 +271,14 @@ textarea::placeholder {
     @apply rounded-xl border border-border-token bg-surface shadow-repouso;
   }
 
+  /* Caixa rebaixada DENTRO de um cartão (promoção semanal, regras de venda).
+     Era usada em 6 telas e nunca foi definida: o padding vinha, o fundo e a
+     borda não — o conteúdo parecia recuado à toa (13/11). */
+  .superficie-2,
+  .superficie-2-token {
+    @apply rounded-lg border border-border-token bg-surface-2;
+  }
+
   /* Controle de formulário fora das primitivas (um `select` nativo, por
      exemplo, que o `Input` não cobre). Mesma altura e mesma borda do resto —
      ver a escala em ui/Button.tsx. */
