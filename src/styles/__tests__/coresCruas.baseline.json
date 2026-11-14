@@ -1,6 +1,5 @@
 {
   "components/chat/MessageInput.tsx": 3,
-  "components/chat/NewConversationModal.tsx": 1,
   "components/common/Skeleton.tsx": 2,
   "components/dashboard/AiDailySummaryCard.tsx": 2,
   "components/molecules/Toast.tsx": 2,

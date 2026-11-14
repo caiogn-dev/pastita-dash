@@ -6,8 +6,6 @@
   "components/chat/ChatToolsPanel.tsx": 13,
   "components/chat/MessageBubble.tsx": 1,
   "components/chat/MessageInput.tsx": 2,
-  "components/chat/NewConversationModal.tsx": 6,
-  "components/chat/TemplateSelector.tsx": 2,
   "components/common/Textarea.tsx": 1,
   "components/crm/CustomerSearchInput.tsx": 1,
   "components/layout/CommandPalette.tsx": 1,
