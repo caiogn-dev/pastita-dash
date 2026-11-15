@@ -24,7 +24,7 @@
  */
 import React, { useMemo, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowDownTrayIcon,
   ReceiptPercentIcon,
@@ -55,6 +55,7 @@ import {
   rotuloDePagamento,
 } from '../../utils/rotulosDeEstado';
 import { formatCurrency } from '../../utils/formatters';
+import { manterDaMesmaLoja } from '../../utils/manterDaMesmaLoja';
 
 const PAGE_SIZE = 50;
 
@@ -69,6 +70,9 @@ const tonalidadeDaLinha = (status: string) =>
   status === 'cancelled' || status === 'refunded' || status === 'failed'
     ? 'opacity-60'
     : '';
+
+/** A loja vive dentro do objeto de filtros, no 2º item da chave. */
+const lojaDoFiltro = (chave: readonly unknown[]) => (chave[1] as { store?: string } | undefined)?.store;
 
 export const HistoricoPedidosPage: React.FC = () => {
   const { storeId, storeSlug } = useStore();
@@ -122,14 +126,14 @@ export const HistoricoPedidosPage: React.FC = () => {
     queryKey: ['historico-pedidos', filtros, pagina],
     queryFn: () => getOrders({ ...filtros, page: pagina, page_size: PAGE_SIZE }),
     enabled: Boolean(storeQuery),
-    placeholderData: keepPreviousData,
+    placeholderData: manterDaMesmaLoja(storeQuery, lojaDoFiltro),
   });
 
   const resumoQuery = useQuery({
     queryKey: ['historico-resumo', filtros],
     queryFn: () => getOrdersResumo(filtros),
     enabled: Boolean(storeQuery),
-    placeholderData: keepPreviousData,
+    placeholderData: manterDaMesmaLoja(storeQuery, lojaDoFiltro),
   });
 
   const pedidos = listaQuery.data?.results ?? [];

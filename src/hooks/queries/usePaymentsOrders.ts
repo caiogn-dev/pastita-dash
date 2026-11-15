@@ -1,5 +1,6 @@
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { ordersService } from '../../services/orders';
+import { manterDaMesmaLoja } from '../../utils/manterDaMesmaLoja';
 
 /**
  * Lista paginada de pedidos para a PaymentsPage, com filtro por
@@ -9,7 +10,7 @@ import { ordersService } from '../../services/orders';
  * portanto NÃO baixamos os 500 pedidos nem filtramos/paginamos em memória.
  *
  * `queryKey` inclui `storeId`, `page` e `statusFilter` para que cada combinação
- * tenha cache próprio (dedup). `keepPreviousData` evita piscar a tabela ao
+ * tenha cache próprio (dedup). a tabela anterior é mantida (só na mesma loja) para evitar piscar a tabela ao
  * trocar de página/filtro.
  *
  * @param storeId      slug/id da loja (`enabled` só quando presente)
@@ -31,6 +32,6 @@ export function usePaymentsOrders(
         ...(statusFilter ? { payment_status: statusFilter } : {}),
       }),
     enabled: !!storeId,
-    placeholderData: keepPreviousData,
+    placeholderData: manterDaMesmaLoja(storeId, (k) => k[2]),
   });
 }

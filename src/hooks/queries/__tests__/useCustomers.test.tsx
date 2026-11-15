@@ -1,5 +1,5 @@
 import React from 'react';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as storesApi from '../../../services/storesApi';
 import { useCustomers } from '../useCustomers';
@@ -92,5 +92,25 @@ describe('useCustomers', () => {
 
     expect(result.current.fetchStatus).toBe('idle');
     expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('trocar de loja não deixa os clientes da loja anterior na tela', async () => {
+    let liberaB!: (v: unknown) => void;
+    jest.spyOn(storesApi, 'getCustomers').mockImplementation(((p: { store?: string }) =>
+      p.store === 'a'
+        ? Promise.resolve(paginated([{ id: 'ca', user_name: 'Cliente da A' }]))
+        : new Promise((r) => { liberaB = r; })) as never);
+
+    const { result, rerender } = renderHook(({ loja }) => useCustomers(loja, '', 1), {
+      wrapper: makeWrapper(),
+      initialProps: { loja: 'a' },
+    });
+    await waitFor(() => expect(result.current.data?.results).toHaveLength(1));
+
+    rerender({ loja: 'b' });
+    expect(result.current.data).toBeUndefined();
+
+    await act(async () => { liberaB(paginated([{ id: 'cb' }])); });
+    await waitFor(() => expect(result.current.data?.results).toEqual([{ id: 'cb' }]));
   });
 });
