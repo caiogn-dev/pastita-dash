@@ -14,7 +14,7 @@ import { validarProduto, type AbaDoProduto, type ErroDeProduto } from './validar
 import { regrasParaGravar } from './regrasDeVenda';
 import RegrasDeVendaCampos from './RegrasDeVendaCampos';
 import { FormChecklist, FormSummary, ChoiceCards, FormStepper, StringListField } from '../../components/ui';
-import { Card, Button, KpiGrid } from '../../components/ui';
+import { Card, Button, KpiGrid, CampoDeDinheiro } from '../../components/ui';
 import { Modal } from '../../components/common';
 import VariantsManager from '../../components/products/VariantsManager';
 // Lazy de propósito: a aba Nutricional é a menos usada do formulário, e o
@@ -791,70 +791,23 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           {passoAtivo === 'pricing' && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-fg-token mb-1">
-                    Preço de Venda *
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted-token">R$</span>
-                    <input
-                      type="number"
-                      value={formData.price || ''}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, price: Number(e.target.value) }))}
-                      className="w-full pl-10 pr-3 py-2 border border-border-token rounded bg-surface text-fg-token focus:ring-2 focus:ring-brand"
-                      step="0.01"
-                      min="0"
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-fg-token mb-1">
-                    Preço antes (riscado)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted-token">R$</span>
-                    <input
-                      type="number"
-                      value={formData.compare_at_price ?? ''}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          compare_at_price: e.target.value ? Number(e.target.value) : undefined,
-                        }))
-                      }
-                      className="w-full pl-10 pr-3 py-2 border border-border-token rounded bg-surface text-fg-token focus:ring-2 focus:ring-brand"
-                      step="0.01"
-                      min="0"
-                      placeholder="Preço original"
-                    />
-                  </div>
-                  <p className="text-xs text-fg-muted-token mt-1">Para mostrar desconto</p>
-                </div>
+                <CampoDeDinheiro
+                  rotulo="Preço de venda"
+                  obrigatorio
+                  valor={formData.price || null}
+                  onMudar={(v) => setFormData((prev) => ({ ...prev, price: v ?? 0 }))}
+                />
+                <CampoDeDinheiro
+                  rotulo="Preço antes (riscado)"
+                  valor={formData.compare_at_price ?? null}
+                  onMudar={(v) => setFormData((prev) => ({ ...prev, compare_at_price: v ?? undefined }))}
+                />
 
-                <div>
-                  <label className="block text-sm font-medium text-fg-token mb-1">
-                    Custo
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted-token">R$</span>
-                    <input
-                      type="number"
-                      value={formData.cost_price ?? ''}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          cost_price: e.target.value ? Number(e.target.value) : undefined,
-                        }))
-                      }
-                      className="w-full pl-10 pr-3 py-2 border border-border-token rounded bg-surface text-fg-token focus:ring-2 focus:ring-brand"
-                      step="0.01"
-                      min="0"
-                      placeholder="Custo do produto"
-                    />
-                  </div>
-                  <p className="text-xs text-fg-muted-token mt-1">Para cálculo de margem</p>
-                </div>
+                <CampoDeDinheiro
+                  rotulo="Custo"
+                  valor={formData.cost_price ?? null}
+                  onMudar={(v) => setFormData((prev) => ({ ...prev, cost_price: v ?? undefined }))}
+                />
                 <div className="sm:col-span-3">
                     <LigaDesliga
                       rotulo="Brinde (pode ficar a R$ 0,00)"
@@ -873,29 +826,11 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     Promoção semanal <span className="font-normal text-fg-muted-token">(opcional)</span>
                   </p>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div>
-                      <label className="block text-xs font-medium text-fg-token mb-1" htmlFor="promo_price">
-                        Preço no dia
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted-token">R$</span>
-                        <input
-                          id="promo_price"
-                          type="number"
-                          value={formData.promo_price ?? ''}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              promo_price: e.target.value ? Number(e.target.value) : undefined,
-                            }))
-                          }
-                          className="w-full pl-10 pr-3 py-2 border border-border-token rounded bg-surface text-fg-token focus:ring-2 focus:ring-brand"
-                          step="0.01"
-                          min="0"
-                          placeholder="30,75"
-                        />
-                      </div>
-                    </div>
+                    <CampoDeDinheiro
+                      rotulo="Preço no dia"
+                      valor={formData.promo_price ?? null}
+                      onMudar={(v) => setFormData((prev) => ({ ...prev, promo_price: v ?? undefined }))}
+                    />
                     <div>
                       <label className="block text-xs font-medium text-fg-token mb-1" htmlFor="promo_weekday">
                         Dia da semana
@@ -930,7 +865,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   {formData.promo_price != null
                     && formData.promo_price >= (formData.price || 0) && (
                     <p className="mt-2 text-xs text-[var(--warning)]">
-                      O preço da promoção precisa ser menor que R$ {formData.price} — senão ela é ignorada.
+                      O preço da promoção precisa ser menor que {formatCurrency(formData.price || 0)} — senão ela é ignorada.
                     </p>
                   )}
                 </div>

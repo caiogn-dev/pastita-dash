@@ -77,8 +77,9 @@ describe('VariantsManager — UI', () => {
     expect(screen.getByRole('button', { name: 'Salvar' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Lombo' } });
-    fireEvent.change(screen.getByLabelText('Preço'), { target: { value: '30' } });
-    fireEvent.change(screen.getByLabelText('Preço antes (riscado)'), { target: { value: '36' } });
+    fireEvent.change(screen.getByLabelText('Preço'), { target: { value: '3000' } });
+    fireEvent.change(screen.getByLabelText('Preço antes (riscado)'), { target: { value: '3600' } });
+    expect(screen.getByLabelText('Preço')).toHaveValue('30,00');
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
     await waitFor(() => expect(api.createProductVariant).toHaveBeenCalledWith('p1', expect.objectContaining({
       name: 'Lombo', price: 30, compare_at_price: 36, is_active: true,
@@ -88,7 +89,7 @@ describe('VariantsManager — UI', () => {
   it('editar carrega o preço "de" do sabor', async () => {
     render(<VariantsManager productId="p1" />);
     fireEvent.click(await screen.findByRole('button', { name: 'Editar variante Camarão' }));
-    expect(screen.getByLabelText('Preço antes (riscado)')).toHaveValue(40);
+    expect(screen.getByLabelText('Preço antes (riscado)')).toHaveValue('40,00');
   });
 
   it('"Nova variante" não quebra linha', async () => {

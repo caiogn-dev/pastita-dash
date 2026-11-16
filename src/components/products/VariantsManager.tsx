@@ -25,6 +25,7 @@ import {
 import logger from '../../services/logger';
 import { useConfirm } from '../../hooks/useConfirm';
 import { formatCurrency } from '../../utils/formatters';
+import { CampoDeDinheiro } from '../ui/CampoDeDinheiro';
 
 interface VariantsManagerProps {
   productId: string;
@@ -194,28 +195,16 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({ productId, bas
             className={CAMPO}
           />
         </div>
-        <div>
-          <label htmlFor={campo('price')} className={ROTULO}>Preço</label>
-          <input
-            id={campo('price')}
-            type="number" inputMode="decimal" min="0" step="0.01"
-            value={form.price}
-            onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-            placeholder={basePrice != null ? formatCurrency(basePrice) : ''}
-            className={`${CAMPO} tabular-nums`}
-          />
-        </div>
-        <div>
-          <label htmlFor={campo('compare_at_price')} className={ROTULO}>Preço antes (riscado)</label>
-          <input
-            id={campo('compare_at_price')}
-            type="number" inputMode="decimal" min="0" step="0.01"
-            value={form.compare_at_price}
-            onChange={(e) => setForm((f) => ({ ...f, compare_at_price: e.target.value }))}
-            placeholder="Sem desconto"
-            className={`${CAMPO} tabular-nums`}
-          />
-        </div>
+        <CampoDeDinheiro
+          rotulo="Preço"
+          valor={numeroOuNulo(form.price)}
+          onMudar={(v) => setForm((f) => ({ ...f, price: v == null ? '' : String(v) }))}
+        />
+        <CampoDeDinheiro
+          rotulo="Preço antes (riscado)"
+          valor={numeroOuNulo(form.compare_at_price)}
+          onMudar={(v) => setForm((f) => ({ ...f, compare_at_price: v == null ? '' : String(v) }))}
+        />
         <div>
           <label htmlFor={campo('stock_quantity')} className={ROTULO}>Estoque</label>
           <input

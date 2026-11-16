@@ -368,3 +368,34 @@ describe('ProductFormModal — liga/desliga é sempre interruptor', () => {
   });
 });
 
+
+describe('ProductFormModal — dinheiro em R$ (padrão do painel)', () => {
+  const abrirPrecos = () => {
+    render(
+      <ProductFormModal
+        isOpen
+        product={makeProduct('p1', 'Arroz')}
+        categories={[]}
+        flatProducts={flat}
+        onClose={jest.fn()}
+        onSaved={jest.fn()}
+        storeId="store1"
+      />
+    );
+    fireEvent.click(screen.getByText('Preços'));
+  };
+
+  it('preço aparece como 10,00 e não 10; nenhum campo numérico cru', () => {
+    abrirPrecos();
+    expect(screen.getByLabelText(/Preço de venda/i)).toHaveValue('10,00');
+    expect(screen.queryAllByRole('spinbutton')).toHaveLength(0);
+  });
+
+  it('digitar enche pelos centavos, como na maquininha', () => {
+    abrirPrecos();
+    fireEvent.change(screen.getByLabelText(/Preço antes/i), { target: { value: '4990' } });
+    expect(screen.getByLabelText(/Preço antes/i)).toHaveValue('49,90');
+    fireEvent.change(screen.getByLabelText(/^Custo/i), { target: { value: '1250' } });
+    expect(screen.getByLabelText(/^Custo/i)).toHaveValue('12,50');
+  });
+});
