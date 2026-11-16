@@ -308,7 +308,12 @@ export const StoreSettingsPage: React.FC = () => {
       mexeuNoMetadata = true;
     }
     if (agendamentoMudou) {
-      metadata.agendamento = agendamento;
+      // Mescla: o servidor guarda outras chaves aqui (dias_de_antecedencia da
+      // encomenda, Ivoneth 16/11) que esta tela não edita e não pode apagar.
+      metadata.agendamento = {
+        ...((metadata.agendamento as Record<string, unknown> | undefined) ?? {}),
+        ...agendamento,
+      };
       mexeuNoMetadata = true;
     }
     if (mexeuNoMetadata) payload.metadata = metadata;
