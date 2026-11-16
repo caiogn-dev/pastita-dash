@@ -1,5 +1,6 @@
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { getCustomers } from '../../services/storesApi';
+import { manterDaMesmaLoja } from '../../utils/manterDaMesmaLoja';
 
 /**
  * Busca os clientes de uma loja com paginação e busca server-side.
@@ -9,7 +10,7 @@ import { getCustomers } from '../../services/storesApi';
  * filtramos/paginamos em memória.
  *
  * `queryKey` inclui `storeId`, `search` e `page` para que cada combinação
- * tenha cache próprio (dedup). Use `keepPreviousData` para não piscar a
+ * tenha cache próprio (dedup). Mantém a tabela anterior (só na mesma loja) para não piscar a
  * tabela ao trocar de página/busca.
  *
  * @param storeId  slug/id da loja (`enabled` só quando presente)
@@ -35,6 +36,6 @@ export function useCustomers(
         segmento: segmento || undefined,
       }),
     enabled: !!storeId,
-    placeholderData: keepPreviousData,
+    placeholderData: manterDaMesmaLoja(storeId, (k) => k[1]),
   });
 }
