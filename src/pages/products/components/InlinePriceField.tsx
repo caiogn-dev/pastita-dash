@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { formatCurrency, lerDinheiro } from '../../../utils/formatters';
+import { Input } from '../../../components/ui/input';
 
 interface Props {
   value: number;
@@ -37,13 +38,14 @@ export const InlinePriceField: React.FC<Props> = ({ value, onCommit }) => {
   };
 
   return (
-    <div className="flex w-28 items-center rounded border border-border-token bg-surface focus-within:ring-2 focus-within:ring-brand">
-      <span className="pl-2 text-xs text-fg-muted-token">R$</span>
-      <input
+    <div className="w-28">
+      <Input
+        size="sm"
         aria-label="preço"
         inputMode="numeric"
         autoComplete="off"
-        className="w-full min-w-0 bg-transparent px-1.5 py-1 text-right tabular-nums text-fg-token outline-none"
+        leftElement={<span className="text-xs font-medium">R$</span>}
+        className="pl-8 pr-2 text-right tabular-nums"
         value={rascunho === null ? '' : formatCurrency(rascunho, { semSimbolo: true })}
         onChange={(e) => digitar(e.target.value)}
         onPaste={colar}

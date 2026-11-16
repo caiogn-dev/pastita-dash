@@ -48,9 +48,9 @@ export const CampoDeDinheiro: React.FC<CampoDeDinheiroProps> = ({
       <Input
         inputMode="numeric"
         autoComplete="off"
-        leftAddon="R$"
+        leftElement={<span className="text-sm font-medium">R$</span>}
         placeholder="0,00"
-        className="tabular-nums"
+        className="pl-9 tabular-nums"
         value={texto}
         disabled={desabilitado}
         onChange={(e) => digitar(e.target.value)}
