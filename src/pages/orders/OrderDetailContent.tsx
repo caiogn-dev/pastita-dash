@@ -93,6 +93,7 @@ import {
   rotuloDePagamento,
 } from '../../utils/rotulosDeEstado';
 import { formatCurrency, formatPhone, formatPhoneForWhatsApp } from '../../utils/formatters';
+import { urlSegura } from '../../utils/urlSegura';
 
 // =============================================================================
 // STATUS CONFIGURATION
@@ -715,7 +716,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               )}
               {!ehRetirada && !ehDigital && entrega.mapa && (
                 <a
-                  href={entrega.mapa}
+                  href={urlSegura(entrega.mapa)}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-lg border border-border-token px-2.5 py-1 text-xs font-semibold text-fg-token transition hover:bg-surface-2"
@@ -954,7 +955,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
 
               {paymentLink && (
                 <a
-                  href={paymentLink}
+                  href={urlSegura(paymentLink)}
                   target="_blank"
                   rel="noreferrer"
                   className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border-token px-3 py-2 text-xs font-semibold text-fg-token transition hover:bg-surface-2"
@@ -1033,7 +1034,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                   )}
                   {generatedPix.ticket_url && (
                     <a
-                      href={generatedPix.ticket_url}
+                      href={urlSegura(generatedPix.ticket_url)}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border-token px-3 py-2 text-xs font-semibold transition hover:bg-surface-2"
@@ -1063,7 +1064,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                             mandar ao cliente. */}
                         {payment.payment_url && payment.status === 'pending' && (
                           <a
-                            href={payment.payment_url}
+                            href={urlSegura(payment.payment_url)}
                             target="_blank"
                             rel="noreferrer"
                             className="rounded-full border border-border-token px-2 py-0.5 font-medium text-fg-token hover:bg-surface-2"
