@@ -5,6 +5,7 @@ import {
 import toast from 'react-hot-toast';
 import { Card, Button, Input, Modal, ModalHeader, ModalBody, SearchInput, PageShell } from '../../components/ui';
 import { ModalCobrancaPix } from './ModalCobrancaPix';
+import { useAcompanharPix } from './useAcompanharPix';
 import { ComandaDoBalcao } from './ComandaDoBalcao';
 import { ModalVincularCodigo } from './ModalVincularCodigo';
 import { ClienteDaVenda } from './ClienteDaVenda';
@@ -344,34 +345,11 @@ const PdvBalcaoPage: React.FC = () => {
     }
   };
 
-  // ── Acompanhamento das cobranças PIX (polling até todas pagarem) ──────────
-  useEffect(() => {
-    if (!pixCharges || pixCharges.every((c) => c.paid)) return undefined;
-    const timer = setInterval(async () => {
-      const pending = pixCharges.filter((c) => !c.paid);
-      const updates = await Promise.all(pending.map(async (c) => {
-        try {
-          const fresh = await ordersService.getOrder(c.order.id, c.storeSlug);
-          return { id: c.order.id, paid: fresh.payment_status === 'paid' };
-        } catch {
-          return { id: c.order.id, paid: false };
-        }
-      }));
-      setPixCharges((prev) => {
-        if (!prev) return prev;
-        const next = prev.map((c) => {
-          const u = updates.find((x) => x.id === c.order.id);
-          return u && u.paid ? { ...c, paid: true } : c;
-        });
-        if (next.every((c) => c.paid) && !prev.every((c) => c.paid)) {
-          beep(true);
-          toast.success('PIX pago! Venda concluída.');
-        }
-        return next;
-      });
-    }, 4000);
-    return () => clearInterval(timer);
-  }, [pixCharges]);
+  // ── Acompanhamento das cobranças PIX (até todas pagarem; pausa com a aba escondida) ──
+  useAcompanharPix(pixCharges, setPixCharges, () => {
+    beep(true);
+    toast.success('PIX pago! Venda concluída.');
+  });
 
   const copyPix = async (code?: string) => {
     if (!code) return;
