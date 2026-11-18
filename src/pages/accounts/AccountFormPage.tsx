@@ -173,6 +173,7 @@ export const AccountFormPage: React.FC = () => {
                 Agente Padrão
               </label>
               <select
+                aria-label="Agente padrão"
                 value={formData.default_agent}
                 onChange={(e) => setFormData({ ...formData, default_agent: e.target.value })}
                 className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent text-sm"
