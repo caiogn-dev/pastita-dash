@@ -237,6 +237,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                 Status
               </label>
               <select
+                aria-label="Status"
                 value={formData.status || 'draft'}
                 onChange={e => handleChange('status', e.target.value)}
                 className={cn(
@@ -292,6 +293,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
                 Modelo
               </label>
               <select
+                aria-label="Modelo"
                 value={formData.model_name || ''}
                 onChange={e => handleChange('model_name', e.target.value)}
                 className={cn(

@@ -349,6 +349,7 @@ const CreateStoreModal: React.FC<CreateStoreModalProps> = ({ isOpen, onClose, on
         <div>
           <label className="block text-sm font-medium text-fg-token dark:text-[var(--dark-text-primary,#FAF9F7)] mb-1">Tipo de Loja</label>
           <select
+            aria-label="Tipo de loja"
             value={formData.store_type}
             onChange={e => setFormData(prev => ({ ...prev, store_type: e.target.value }))}
             className="w-full px-3 py-2 border border-border-token rounded-lg focus:ring-2 focus:ring-brand"
