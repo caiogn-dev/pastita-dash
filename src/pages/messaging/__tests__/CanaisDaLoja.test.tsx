@@ -14,6 +14,11 @@ jest.mock('../../../services/api', () => ({
   default: { get: (...a: unknown[]) => get(...a), post: (...a: unknown[]) => post(...a) },
 }));
 
+jest.mock('../LojaNoIfood', () => ({
+  __esModule: true,
+  LojaNoIfood: ({ storeId }: { storeId: string }) => <div data-testid="loja-no-ifood">{storeId}</div>,
+}));
+
 let loja: { storeId: string | null; storeSlug: string | null } = { storeId: 'id-1', storeSlug: 'ce' };
 jest.mock('../../../hooks/useStore', () => ({
   __esModule: true,
@@ -232,5 +237,29 @@ describe('Entregas iFood', () => {
     fireEvent.change(within(c).getByLabelText('Chamar entregador'), { target: { value: 'pronto' } });
     fireEvent.click(within(c).getByRole('button', { name: 'Salvar entregas' }));
     expect(await within(cartao('iFood')).findByRole('alert')).toHaveTextContent('Acréscimo inválido');
+  });
+});
+
+describe('Loja no iFood', () => {
+  const abrir = async (ifood: Record<string, unknown>) => {
+    get.mockResolvedValue({ data: estado({ ifood: ifoodBase({ disponivel: true, ...ifood }) }) });
+    renderizar();
+    await screen.findByRole('heading', { name: 'iFood' });
+    return cartao('iFood');
+  };
+
+  it('aparece com ID salvo e conectado', async () => {
+    const c = await abrir({ merchant_id: 'm-1', conectado: true });
+    expect(within(c).getByTestId('loja-no-ifood')).toHaveTextContent('id-1');
+  });
+
+  it('não aparece aguardando autorização', async () => {
+    const c = await abrir({ merchant_id: 'm-1', conectado: false });
+    expect(within(c).queryByTestId('loja-no-ifood')).toBeNull();
+  });
+
+  it('não aparece sem ID', async () => {
+    const c = await abrir({ conectado: false });
+    expect(within(c).queryByTestId('loja-no-ifood')).toBeNull();
   });
 });

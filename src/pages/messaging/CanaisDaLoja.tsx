@@ -20,6 +20,7 @@ import { useStore } from '../../hooks/useStore';
 import { IfoodIcon, MercadoPagoIcon, NinetyNineFoodIcon } from '../../components/brand/BrandIcons';
 import { Switch } from '../../components/common/Switch';
 import { Select } from '../../components/ui';
+import { LojaNoIfood } from './LojaNoIfood';
 import { Beneficio, Cartao, Grupo, Selo, botaoDiscreto, botaoPrimario, botaoSecundario } from './pecasDeIntegracao';
 
 type ChamarEntregador = 'manual' | 'confirmado' | 'pronto';
@@ -329,6 +330,7 @@ export const CanaisDaLoja: React.FC = () => {
           {(ifood.disponivel || ifood.entregas_disponivel) && (
             <div className="mt-auto flex flex-col gap-5">
               <ConexaoDoIfood storeId={storeId} ifood={ifood} aoMudar={mudarIfood} />
+              {ifood.merchant_id && ifood.conectado && <LojaNoIfood storeId={storeId} />}
               {ifood.entregas_disponivel && ifood.merchant_id && (
                 <EntregasDoIfood storeId={storeId} ifood={ifood} aoMudar={mudarIfood} />
               )}
