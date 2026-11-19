@@ -34,7 +34,6 @@ jest.mock('../../../components/orders/OrderPrint', () => ({
   __esModule: true,
   useOrderPrint: () => ({ printOrder: jest.fn() }),
 }));
-jest.mock('../../../components/OrderDeliveryModal', () => ({ __esModule: true, OrderDeliveryModal: () => null }));
 jest.mock('../../../components/orders/EditOrderDrawer', () => ({ __esModule: true, EditOrderDrawer: () => null }));
 
 import { OrderDetailPage } from '../OrderDetailPage';

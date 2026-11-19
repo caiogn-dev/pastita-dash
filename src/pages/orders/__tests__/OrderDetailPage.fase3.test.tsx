@@ -53,7 +53,6 @@ jest.mock('../../../services/printing', () => ({
   previaDaComanda: (...a: unknown[]) => mockPrevia(...a),
   getLayoutDaComanda: (...a: unknown[]) => mockGetLayout(...a),
 }));
-jest.mock('../../../components/OrderDeliveryModal', () => ({ __esModule: true, OrderDeliveryModal: () => null }));
 jest.mock('../../../components/orders/EditOrderDrawer', () => ({ __esModule: true, EditOrderDrawer: () => null }));
 
 import { OrderDetailPage } from '../OrderDetailPage';

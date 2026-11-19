@@ -5,7 +5,7 @@
  *  - OrderDetailModal (overlay opened from the dashboard via `?pedido=<id>`)
  *
  * It owns ALL data fetching, status transitions, printing, editing, cancel,
- * Uber dispatch and PIX charge generation — nothing was lost in the split from
+ * courier dispatch and PIX charge generation — nothing was lost in the split from
  * the original page. The outer chrome (full-screen background vs modal panel)
  * is provided by the caller so the same content renders in both surfaces.
  */
@@ -40,7 +40,6 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { Button, Modal, PageLoading } from '../../components/common';
-import { OrderDeliveryModal } from '../../components/OrderDeliveryModal';
 import { ordersService, paymentsService, getErrorMessage } from '../../services';
 import NotaFiscalPedido from './NotaFiscalPedido';
 import { EntregadorDoPedido } from '../../components/orders/EntregadorDoPedido';
@@ -194,7 +193,7 @@ export interface OrderDetailContentProps {
   /** 'page' keeps the ArrowLeft label as "voltar"; 'modal' as "fechar". */
   variant?: 'page' | 'modal';
   /**
-   * Avisa quando um sub-modal interno (cancelar, editar, Uber) abre/fecha.
+   * Avisa quando um sub-modal interno (cancelar, editar, pagamento) abre/fecha.
    * O <OrderDetailModal /> externo usa isso pra desligar Escape/click-fora
    * enquanto um sub-modal está por cima — senão o Escape fecharia os dois.
    */
@@ -218,7 +217,6 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [showUberModal, setShowUberModal] = useState(false);
   const [editing, setEditing] = useState(false);
   // Fase 3 — geração de cobrança PIX (link de pagamento)
   const [chargeAmount, setChargeAmount] = useState<string>('');
@@ -299,9 +297,9 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // Reporta pro modal externo quando um sub-modal está aberto (cancelar/editar/Uber),
+  // Reporta pro modal externo quando um sub-modal está aberto (cancelar/editar/pagamento),
   // pra ele suspender o fechamento por Escape / click-fora enquanto isso.
-  const nestedOpen = showCancelModal || showUberModal || editing || registrandoPagamento;
+  const nestedOpen = showCancelModal || editing || registrandoPagamento;
   useEffect(() => {
     onNestedOpenChange?.(nestedOpen);
   }, [nestedOpen, onNestedOpenChange]);
@@ -1130,15 +1128,6 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               />
             )}
 
-            {order.delivery_method === 'delivery' && !isCancelled && !isCompleted && (
-              <button
-                onClick={() => setShowUberModal(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border-token px-3 py-2 text-xs font-medium text-fg-token transition hover:bg-surface-2"
-              >
-                <TruckIcon className="h-4 w-4" />
-                Uber Direct
-              </button>
-            )}
 
             {/* Sempre visível: pedido de convidado responde 'sem_cliente' e o
                 toast explica — esconder daria a impressão de bug. */}
@@ -1222,21 +1211,6 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
         onConfirm={(motivo) => handleAction('cancelled', motivo)}
       />
 
-      {/* Uber Delivery Modal */}
-      {order && (
-        <OrderDeliveryModal
-          orderId={order.id}
-          storeSlug={store?.slug || ''}
-          isOpen={showUberModal}
-          onClose={() => setShowUberModal(false)}
-          onAccept={(driver) => {
-            toast.success(`Motorista ${driver.name} confirmado!`);
-            setShowUberModal(false);
-            // Recarrega: confirmar motorista altera status/entrega no backend.
-            loadOrder();
-          }}
-        />
-      )}
     </>
   );
 };

@@ -2,7 +2,6 @@ import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { rotuloDoAgendamento } from '../../utils/rotuloDoAgendamento';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { rascunhoDoEstado } from '../../components/orders/newOrder/rascunhoDaConversa';
-import { OrderDeliveryModal } from '../../components/OrderDeliveryModal';
 import {
   DndContext,
   DragOverlay,
@@ -74,7 +73,6 @@ import { pedidosDaColuna, ENTREGUES_DE_HOJE } from './pedidosDoQuadro';
 import { filtrarPedidosDoQuadro } from './buscaNoQuadro';
 import type { ColumnId } from './orderColumns';
 import { getStageStart, getAvgPrepMinutes, prazoDoAgendado, situacaoDoPreparo } from './orderSla';
-import { lojaTemUber } from './uberDaLoja';
 import { proximaAcaoDoPedido } from './proximaAcao';
 import { saldoDoPedido } from './saldoDoPedido';
 import { dadosDoApp } from './pedidoDeApp';
@@ -132,7 +130,7 @@ const formatScheduledShort = (order: { scheduled_date?: string | null; scheduled
 
 // ─── OrderCard ────────────────────────────────────────────────────────────────
 
-// Botão de ícone do cartão (Uber, lançar pagamento, cancelar): neutro. A cor
+// Botão de ícone do cartão (lançar pagamento, cancelar): neutro. A cor
 // do cartão é do estado do pedido, não das ações.
 const BOTAO_ICONE =
   'flex h-7 w-7 shrink-0 items-center justify-center rounded border border-border-token ' +
@@ -150,13 +148,11 @@ interface CardProps {
   onPay: (o: StoreOrder) => void;
   onCancel: (o: StoreOrder) => void;
   onDetail: (o: StoreOrder) => void;
-  onUberClick?: (o: StoreOrder) => void;
-  storeSlug?: string;
 }
 
 const OrderCardBase: React.FC<CardProps> = ({
   order, advancing, cancelling, isUpdating, isSuccess, isDragging,
-  onAdvance, onPay, onCancel, onDetail, onUberClick, storeSlug,
+  onAdvance, onPay, onCancel, onDetail,
 }) => {
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -179,11 +175,6 @@ const OrderCardBase: React.FC<CardProps> = ({
       ? (agendado.atrasadoMin > 0 ? 'critical' : agendado.faltamMin <= 30 ? 'warning' : 'ok')
       : getElapsedUrgency(elapsed, order.status);
   const isPickup = order.delivery_method === 'pickup' || order.delivery_method === 'digital';
-  const canRequestUber =
-    onUberClick && storeSlug &&
-    order.delivery_method === 'delivery' &&
-    ['confirmed', 'preparing'].includes(order.status) &&
-    (!order.delivery_provider || order.delivery_provider === 'none');
 
   // A borda é o único lugar em que o prazo pinta o cartão inteiro: atrasado
   // precisa ser visto de longe, no quadro cheio.
@@ -309,23 +300,6 @@ const OrderCardBase: React.FC<CardProps> = ({
 
       {/* Action buttons — stopPropagation so card click (→ detail) doesn't trigger */}
       <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-        {canRequestUber && (
-          <button
-            onClick={() => onUberClick?.(order)}
-            disabled={isUpdating}
-            title="Solicitar motorista Uber"
-            aria-label="Solicitar motorista Uber"
-            className={BOTAO_ICONE}
-          >
-            <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-              <circle cx="12" cy="8.5" r="1.5" />
-              <circle cx="8.5" cy="12" r="1.5" />
-              <circle cx="15.5" cy="12" r="1.5" />
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
-            </svg>
-          </button>
-        )}
-
         {hasPendingPayment && (
           <button
             onClick={() => onPay(order)}
@@ -433,9 +407,6 @@ export const OrdersPage: React.FC = () => {
     if (pageParams.get('novo') || rascunhoDoEstado(location.state)) abrirNovoPedido(location.state);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // ── Uber Delivery Modal ──────────────────────────────────────────────────
-  const [uberModalOrderId, setUberModalOrderId] = useState<string | undefined>();
 
   // ── Loading state (local) ────────────────────────────────────────────────
   const [loading, setLoading] = useState(true);
@@ -602,11 +573,6 @@ export const OrdersPage: React.FC = () => {
     patchOrder(o.id, { status: o.status, payment_status: o.payment_status });
   }, [patchOrder]);
 
-  const uberLigado = useRootStore((s) =>
-    lojaTemUber(s.stores.find((l) => l.id === storeQuery || l.slug === storeQuery)));
-  const handleUberClick = useCallback((o: StoreOrder) => {
-    setUberModalOrderId(o.id);
-  }, []);
 
   // DnD sensors
   const sensors = useSensors(
@@ -911,8 +877,6 @@ export const OrdersPage: React.FC = () => {
                           onPay={handlePay}
                           onCancel={handleCancel}
                           onDetail={handleDetail}
-                          onUberClick={uberLigado ? handleUberClick : undefined}
-                          storeSlug={storeSlug || undefined}
                         />
                       ))
                     )}
@@ -974,19 +938,6 @@ export const OrdersPage: React.FC = () => {
         onConfirm={(motivo) => { if (pedidoACancelar) confirmarCancelamento(pedidoACancelar, motivo); }}
       />
 
-      {/* Uber Delivery Modal */}
-      {uberModalOrderId && storeQuery && (
-        <OrderDeliveryModal
-          orderId={uberModalOrderId}
-          storeSlug={storeQuery}
-          isOpen={Boolean(uberModalOrderId)}
-          onClose={() => setUberModalOrderId(undefined)}
-          onAccept={() => {
-            setUberModalOrderId(undefined);
-            loadOrders(true);
-          }}
-        />
-      )}
 
       {/* Detalhe do pedido em modal (aberto via ?pedido=<id>) */}
       <OrderDetailModal onOrderChanged={handleModalOrderChanged} siblings={modalSiblings} />

@@ -33,7 +33,7 @@ interface OrderDetailModalProps {
 
 export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ onOrderChanged, siblings }) => {
   const { orderId, openOrder, closeOrder } = useOrderDetailModal();
-  // Quando um sub-modal interno (cancelar/editar/Uber) está aberto, suspende o
+  // Quando um sub-modal interno (cancelar/editar/pagamento) está aberto, suspende o
   // fechamento por Escape / click-fora — senão o Escape fecharia o pedido inteiro
   // (e destruiria a gaveta de edição no meio, perdendo o que foi digitado).
   const [nestedOpen, setNestedOpen] = useState(false);

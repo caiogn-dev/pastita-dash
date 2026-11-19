@@ -396,28 +396,6 @@ export const ordersService = {
     const response = await api.get(`${getBaseUrl(storeSlug)}/stats/`, { params: apiParams });
     return response.data;
   },
-
-  createDeliveryRequest: async (storeSlug: string, orderId: number | string) => {
-    const response = await api.post(
-      `/stores/${storeSlug}/orders/${orderId}/create-delivery-request/`,
-      {}
-    );
-    return response.data;
-  },
-
-  pollDeliveryStatus: async (storeSlug: string, orderId: number | string) => {
-    const response = await api.get(
-      `/stores/${storeSlug}/orders/${orderId}/delivery-request-status/`
-    );
-    return response.data;
-  },
-
-  cancelDeliveryRequest: async (storeSlug: string, orderId: number | string) => {
-    const response = await api.delete(
-      `/stores/${storeSlug}/orders/${orderId}/delivery-request/`
-    );
-    return response.data;
-  },
 };
 
 export default ordersService;

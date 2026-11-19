@@ -453,8 +453,6 @@ export interface StoreOrder {
   delivery_address: DeliveryAddress;
   delivery_notes: string;
   delivery_provider?: 'none' | 'toca' | 'uber';
-  uber_driver_name?: string;
-  uber_eta_minutes?: number | null;
   scheduled_date?: string;
   scheduled_time: string;
   tracking_code: string;
