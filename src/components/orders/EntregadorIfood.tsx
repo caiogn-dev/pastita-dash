@@ -20,14 +20,6 @@ import { ConfirmModal } from '../ui';
 
 const ATUALIZAR_A_CADA_MS = 30_000;
 
-/**
- * Terminou sem entregar: dá para chamar de novo. O contrato não traz o código
- * de sucesso, então "falhou" é reconhecido pelo código cru OU pelo texto.
- */
-const FALHA = /cancel|fail|falh|reject|recus|expir|erro|error/i;
-const terminouSemEntregar = (e: EntregaIfood) =>
-  e.chamado && !e.ativo && (FALHA.test(e.status) || FALHA.test(e.status_texto));
-
 const botao =
   'inline-flex items-center gap-1.5 rounded-lg border border-border-token px-3 py-2 text-xs font-medium text-fg-token transition hover:bg-surface-2 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
 
@@ -86,6 +78,7 @@ export const EntregadorIfood: React.FC<Props> = ({ pedidoId }) => {
   };
 
   if (!entrega.chamado) {
+    if (!entrega.pode_chamar) return null;
     return (
       <button type="button" onClick={chamar} disabled={ocupado} className={botao}>
         <IfoodIcon size={16} />
@@ -162,7 +155,7 @@ export const EntregadorIfood: React.FC<Props> = ({ pedidoId }) => {
         </button>
       )}
 
-      {terminouSemEntregar(entrega) && (
+      {entrega.pode_chamar && (
         <button type="button" onClick={chamar} disabled={ocupado} className={botao}>
           Chamar de novo
         </button>

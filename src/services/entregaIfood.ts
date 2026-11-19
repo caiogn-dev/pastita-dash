@@ -10,6 +10,8 @@ export interface EntregaIfood {
   disponivel: boolean;
   /** Já existe entrega iFood para o pedido. */
   chamado: boolean;
+  /** O servidor permite (re)chamar agora: "Chamar entregador iFood" / "Chamar de novo". */
+  pode_chamar: boolean;
   /** Código cru do iFood. */
   status: string;
   status_texto: string;

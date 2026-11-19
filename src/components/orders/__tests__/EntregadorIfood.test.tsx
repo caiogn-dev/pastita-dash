@@ -23,6 +23,7 @@ import { EntregadorIfood } from '../EntregadorIfood';
 const entrega = (over: Record<string, unknown> = {}) => ({
   disponivel: true,
   chamado: false,
+  pode_chamar: true,
   status: '',
   status_texto: '',
   ativo: false,
@@ -36,6 +37,7 @@ const entrega = (over: Record<string, unknown> = {}) => ({
 
 const emAndamento = entrega({
   chamado: true,
+  pode_chamar: false,
   status: 'ASSIGNED',
   status_texto: 'Entregador a caminho da loja',
   ativo: true,
@@ -80,7 +82,7 @@ it('falha ao carregar não mostra nada (nem quebra o modal)', async () => {
 
 it('chamar mostra o status devolvido', async () => {
   estado.mockResolvedValue(entrega());
-  chamar.mockResolvedValue(entrega({ chamado: true, ativo: true, status: 'REQUESTED', status_texto: 'Procurando entregador' }));
+  chamar.mockResolvedValue(entrega({ chamado: true, pode_chamar: false, ativo: true, status: 'REQUESTED', status_texto: 'Procurando entregador' }));
   render(<EntregadorIfood pedidoId="p1" />);
   fireEvent.click(await screen.findByRole('button', { name: 'Chamar entregador iFood' }));
   expect(await screen.findByText('Procurando entregador')).toBeInTheDocument();
@@ -116,7 +118,7 @@ it('em andamento: status, entregador, valor, código, rastreio e cancelar', asyn
 
 it('cancelar pede confirmação e envia', async () => {
   estado.mockResolvedValue(emAndamento);
-  cancelar.mockResolvedValue({ ...emAndamento, ativo: false, status: 'CANCELLED', status_texto: 'Cancelada' });
+  cancelar.mockResolvedValue({ ...emAndamento, ativo: false, pode_chamar: true, status: 'CANCELLED', status_texto: 'Cancelada' });
   render(<EntregadorIfood pedidoId="p1" />);
   fireEvent.click(await screen.findByRole('button', { name: 'Cancelar entregador' }));
   expect(cancelar).not.toHaveBeenCalled();
@@ -127,8 +129,8 @@ it('cancelar pede confirmação e envia', async () => {
 });
 
 it('falhou: mostra o erro e "Chamar de novo" usa o mesmo chamar', async () => {
-  estado.mockResolvedValue(entrega({ chamado: true, status: 'FAILED', status_texto: 'Falhou', erro: 'Nenhum entregador aceitou' }));
-  chamar.mockResolvedValue(entrega({ chamado: true, ativo: true, status: 'REQUESTED', status_texto: 'Procurando entregador' }));
+  estado.mockResolvedValue(entrega({ chamado: true, pode_chamar: true, status: 'FAILED', status_texto: 'Falhou', erro: 'Nenhum entregador aceitou' }));
+  chamar.mockResolvedValue(entrega({ chamado: true, pode_chamar: false, ativo: true, status: 'REQUESTED', status_texto: 'Procurando entregador' }));
   render(<EntregadorIfood pedidoId="p1" />);
   expect(await screen.findByText('Nenhum entregador aceitou')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Cancelar entregador' })).toBeNull();
@@ -138,7 +140,7 @@ it('falhou: mostra o erro e "Chamar de novo" usa o mesmo chamar', async () => {
 });
 
 it('entregue: sem cancelar nem chamar de novo', async () => {
-  estado.mockResolvedValue(entrega({ chamado: true, status: 'DELIVERED', status_texto: 'Entregue' }));
+  estado.mockResolvedValue(entrega({ chamado: true, pode_chamar: false, status: 'DELIVERED', status_texto: 'Entregue' }));
   render(<EntregadorIfood pedidoId="p1" />);
   await screen.findByText('Entregue');
   expect(screen.queryByRole('button', { name: 'Cancelar entregador' })).toBeNull();
@@ -151,10 +153,30 @@ it('em andamento atualiza a cada 30 s; parado não', async () => {
   const { unmount } = render(<EntregadorIfood pedidoId="p1" />);
   await act(async () => { await Promise.resolve(); });
   expect(estado).toHaveBeenCalledTimes(1);
-  estado.mockResolvedValue(entrega({ chamado: true, status: 'DELIVERED', status_texto: 'Entregue' }));
+  estado.mockResolvedValue(entrega({ chamado: true, pode_chamar: false, status: 'DELIVERED', status_texto: 'Entregue' }));
   await act(async () => { jest.advanceTimersByTime(30_000); });
   expect(estado).toHaveBeenCalledTimes(2);
   await act(async () => { jest.advanceTimersByTime(60_000); });
   expect(estado).toHaveBeenCalledTimes(2);
   unmount();
+});
+
+it('quem decide "Chamar de novo" é pode_chamar, não o texto do status', async () => {
+  estado.mockResolvedValue(entrega({ chamado: true, pode_chamar: true, status: 'XYZ', status_texto: 'Sem entregador' }));
+  render(<EntregadorIfood pedidoId="p1" />);
+  expect(await screen.findByRole('button', { name: 'Chamar de novo' })).toBeInTheDocument();
+});
+
+it('cancelada sem pode_chamar não oferece chamar de novo', async () => {
+  estado.mockResolvedValue(entrega({ chamado: true, pode_chamar: false, status: 'CANCELLED', status_texto: 'Cancelada' }));
+  render(<EntregadorIfood pedidoId="p1" />);
+  await screen.findByText('Cancelada');
+  expect(screen.queryByRole('button', { name: 'Chamar de novo' })).toBeNull();
+});
+
+it('sem entrega e sem pode_chamar não mostra o botão de chamar', async () => {
+  estado.mockResolvedValue(entrega({ pode_chamar: false }));
+  const { container } = render(<EntregadorIfood pedidoId="p1" />);
+  await waitFor(() => expect(estado).toHaveBeenCalled());
+  expect(container).toBeEmptyDOMElement();
 });
