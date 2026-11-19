@@ -8,18 +8,21 @@
  *
  * 99Food não tem botão de conectar: a credencial é da plataforma e a loja é
  * reconhecida pelo aviso da 99. iFood fica "Em breve" até a plataforma ter o
- * aplicativo homologado no iFood.
+ * aplicativo homologado no iFood; com ele, o lojista conecta aqui: pega o
+ * código, autoriza no Portal do Parceiro e cola o código de autorização.
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { useStore } from '../../hooks/useStore';
 import { IfoodIcon, MercadoPagoIcon, NinetyNineFoodIcon } from '../../components/brand/BrandIcons';
-import { Beneficio, Cartao, Grupo, Selo, botaoPrimario, botaoSecundario } from './pecasDeIntegracao';
+import { Beneficio, Cartao, Grupo, Selo, botaoDiscreto, botaoPrimario, botaoSecundario } from './pecasDeIntegracao';
+
+interface EstadoIfood { disponivel: boolean; conectado: boolean; loja: string; erro: string }
 
 interface EstadoDosCanais {
   '99food': { ativo: boolean; ultimo_pedido_em: string | null; pedidos_30_dias: number };
-  ifood: { disponivel: boolean; conectado: boolean; loja: string; erro: string };
+  ifood: EstadoIfood;
   mercado_pago: { conectado: boolean };
 }
 
@@ -27,6 +30,93 @@ const quando = (iso: string | null) => {
   if (!iso) return '';
   const data = new Date(iso);
   return data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+};
+
+const motivo = (erro: unknown) =>
+  (erro as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+  || 'Não deu certo. Tente de novo.';
+
+/** Conectar, concluir e desconectar o iFood dentro do cartão. */
+const AcoesDoIfood: React.FC<{
+  storeId: string;
+  ifood: EstadoIfood;
+  aoMudar: (novo: EstadoIfood) => void;
+}> = ({ storeId, ifood, aoMudar }) => {
+  const [passo, setPasso] = useState<{ user_code: string; url: string } | null>(null);
+  const [codigo, setCodigo] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  const [erro, setErro] = useState('');
+  const params = { params: { store: storeId } };
+
+  const executar = async (acao: () => Promise<void>) => {
+    setOcupado(true);
+    setErro('');
+    try { await acao(); } catch (e) { setErro(motivo(e)); } finally { setOcupado(false); }
+  };
+
+  const iniciar = () => executar(async () => {
+    const r = await api.post('/stores/integracoes/ifood/iniciar/', null, params);
+    setPasso(r.data as { user_code: string; url: string });
+  });
+  const concluir = () => executar(async () => {
+    const r = await api.post('/stores/integracoes/ifood/concluir/', { authorization_code: codigo.trim() }, params);
+    setPasso(null);
+    setCodigo('');
+    aoMudar(r.data as EstadoIfood);
+  });
+  const desconectar = () => executar(async () => {
+    const r = await api.post('/stores/integracoes/ifood/desconectar/', null, params);
+    aoMudar(r.data as EstadoIfood);
+  });
+
+  const aviso = erro && <p role="alert" className="text-sm text-danger-token">{erro}</p>;
+
+  if (passo) {
+    return (
+      <div className="mt-auto flex flex-col gap-4">
+        <div className="flex flex-col items-center gap-1 rounded-xl bg-surface-muted-token px-4 py-4">
+          <span className="font-mono text-2xl font-bold tracking-widest text-fg-token">{passo.user_code}</span>
+        </div>
+        <a href={passo.url} target="_blank" rel="noopener noreferrer" className={`${botaoSecundario} justify-center`}>
+          Abrir portal do iFood
+        </a>
+        <form
+          className="flex flex-wrap items-end gap-2"
+          onSubmit={(e) => { e.preventDefault(); if (codigo.trim()) concluir(); }}
+        >
+          <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-semibold text-fg-token">
+            Código de autorização
+            <input
+              value={codigo}
+              onChange={(e) => setCodigo(e.target.value)}
+              autoComplete="off"
+              className="h-11 rounded-xl border border-border-token bg-surface-token px-3 font-mono text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            />
+          </label>
+          <button type="submit" disabled={ocupado || !codigo.trim()} className={botaoPrimario}>Concluir</button>
+          <button type="button" onClick={() => setPasso(null)} className={botaoDiscreto}>Cancelar</button>
+        </form>
+        {aviso}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-auto flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {!ifood.conectado && (
+          <button type="button" onClick={iniciar} disabled={ocupado} className={botaoPrimario}>Conectar iFood</button>
+        )}
+        {ifood.conectado && ifood.erro && (
+          <button type="button" onClick={iniciar} disabled={ocupado} className={botaoPrimario}>Reconectar</button>
+        )}
+        {ifood.conectado && (
+          <button type="button" onClick={desconectar} disabled={ocupado} className={botaoDiscreto}>Desconectar</button>
+        )}
+      </div>
+      {aviso}
+    </div>
+  );
 };
 
 export const CanaisDaLoja: React.FC = () => {
@@ -97,12 +187,19 @@ export const CanaisDaLoja: React.FC = () => {
           subtitulo={ifood.conectado ? (ifood.loja || 'Loja conectada') : 'Pedidos do iFood no mesmo painel'}
           selo={ifood.conectado
             ? (ifood.erro ? <Selo tom="perigo">Precisa reconectar</Selo> : <Selo tom="ok">Recebendo pedidos</Selo>)
-            : <Selo tom="breve">Em breve</Selo>}
+            : ifood.disponivel ? <Selo tom="neutro">Não conectado</Selo> : <Selo tom="breve">Em breve</Selo>}
         >
           <ul className="flex flex-col gap-3">
             <Beneficio titulo="Um quadro só">para site, WhatsApp, 99 e iFood.</Beneficio>
             <Beneficio titulo="Comanda única">na mesma impressora.</Beneficio>
           </ul>
+          {ifood.disponivel && (
+            <AcoesDoIfood
+              storeId={storeId}
+              ifood={ifood}
+              aoMudar={(novo) => setEstado((atual) => (atual ? { ...atual, ifood: novo } : atual))}
+            />
+          )}
         </Cartao>
       </Grupo>
 

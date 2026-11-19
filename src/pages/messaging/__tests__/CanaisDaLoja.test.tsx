@@ -3,14 +3,15 @@
  * de GET /stores/integracoes/?store=<loja>.
  */
 import React from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { CanaisDaLoja } from '../CanaisDaLoja';
 
 const get = jest.fn();
+const post = jest.fn();
 jest.mock('../../../services/api', () => ({
   __esModule: true,
-  default: { get: (...a: unknown[]) => get(...a) },
+  default: { get: (...a: unknown[]) => get(...a), post: (...a: unknown[]) => post(...a) },
 }));
 
 let loja: { storeId: string | null; storeSlug: string | null } = { storeId: 'id-1', storeSlug: 'ce' };
@@ -31,6 +32,7 @@ const cartao = (nome: string) => screen.getByRole('heading', { name: nome }).clo
 
 beforeEach(() => {
   get.mockReset();
+  post.mockReset();
   loja = { storeId: 'id-1', storeSlug: 'ce' };
 });
 
@@ -94,4 +96,66 @@ it('sem loja selecionada não chama a API', () => {
   loja = { storeId: null, storeSlug: null };
   renderizar();
   expect(get).not.toHaveBeenCalled();
+});
+
+describe('conectar o iFood', () => {
+  const disponivel = { disponivel: true, conectado: false, loja: '', erro: '' };
+
+  it('mostra o código e o link do portal depois de "Conectar iFood"', async () => {
+    get.mockResolvedValue({ data: estado({ ifood: disponivel }) });
+    post.mockResolvedValue({ data: { user_code: 'ABCD-1234', url: 'https://portal.ifood.com.br/apps/code?c=ABCD-1234' } });
+    renderizar();
+    await screen.findByRole('heading', { name: 'iFood' });
+    fireEvent.click(within(cartao('iFood')).getByRole('button', { name: 'Conectar iFood' }));
+    expect(await screen.findByText('ABCD-1234')).toBeInTheDocument();
+    expect(post).toHaveBeenCalledWith('/stores/integracoes/ifood/iniciar/', null, { params: { store: 'id-1' } });
+    expect(within(cartao('iFood')).getByRole('link', { name: /portal do iFood/i }))
+      .toHaveAttribute('href', 'https://portal.ifood.com.br/apps/code?c=ABCD-1234');
+  });
+
+  it('colar o código de autorização conclui e mostra conectado', async () => {
+    get.mockResolvedValue({ data: estado({ ifood: disponivel }) });
+    post
+      .mockResolvedValueOnce({ data: { user_code: 'ABCD-1234', url: 'https://portal.ifood.com.br/x' } })
+      .mockResolvedValueOnce({ data: { disponivel: true, conectado: true, loja: 'Cê no iFood', erro: '' } });
+    renderizar();
+    await screen.findByRole('heading', { name: 'iFood' });
+    fireEvent.click(within(cartao('iFood')).getByRole('button', { name: 'Conectar iFood' }));
+    await screen.findByText('ABCD-1234');
+    fireEvent.change(screen.getByLabelText('Código de autorização'), { target: { value: 'XYZ-99' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Concluir' }));
+    expect(await screen.findByText('Cê no iFood')).toBeInTheDocument();
+    expect(post).toHaveBeenLastCalledWith('/stores/integracoes/ifood/concluir/', { authorization_code: 'XYZ-99' }, { params: { store: 'id-1' } });
+  });
+
+  it('código recusado mostra o motivo do iFood', async () => {
+    get.mockResolvedValue({ data: estado({ ifood: disponivel }) });
+    post
+      .mockResolvedValueOnce({ data: { user_code: 'ABCD-1234', url: 'https://portal.ifood.com.br/x' } })
+      .mockRejectedValueOnce({ response: { data: { detail: 'O iFood recusou: código inválido' } } });
+    renderizar();
+    await screen.findByRole('heading', { name: 'iFood' });
+    fireEvent.click(within(cartao('iFood')).getByRole('button', { name: 'Conectar iFood' }));
+    await screen.findByText('ABCD-1234');
+    fireEvent.change(screen.getByLabelText('Código de autorização'), { target: { value: 'ERRADO' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Concluir' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('código inválido');
+  });
+
+  it('conectado tem botão de desconectar', async () => {
+    get.mockResolvedValue({ data: estado({ ifood: { disponivel: true, conectado: true, loja: 'Cê', erro: '' } }) });
+    post.mockResolvedValue({ data: { disponivel: true, conectado: false, loja: 'Cê', erro: '' } });
+    renderizar();
+    await screen.findByRole('heading', { name: 'iFood' });
+    fireEvent.click(within(cartao('iFood')).getByRole('button', { name: 'Desconectar' }));
+    expect(await within(cartao('iFood')).findByRole('button', { name: 'Conectar iFood' })).toBeInTheDocument();
+    expect(post).toHaveBeenCalledWith('/stores/integracoes/ifood/desconectar/', null, { params: { store: 'id-1' } });
+  });
+
+  it('conectado com erro pede para reconectar', async () => {
+    get.mockResolvedValue({ data: estado({ ifood: { disponivel: true, conectado: true, loja: 'Cê', erro: 'token recusado' } }) });
+    renderizar();
+    await screen.findByRole('heading', { name: 'iFood' });
+    expect(within(cartao('iFood')).getByRole('button', { name: 'Reconectar' })).toBeInTheDocument();
+  });
 });
