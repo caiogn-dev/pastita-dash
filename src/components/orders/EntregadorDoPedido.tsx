@@ -1,6 +1,9 @@
 /**
  * Quem levou este pedido — base do ranking em Equipe e entregas (do Prefiro).
- * Some quando a loja não cadastrou entregador nenhum.
+ * O seletor some quando a loja não cadastrou entregador nenhum.
+ *
+ * Ao lado, o entregador do iFood (iFood Entrega) para pedido que NÃO veio do
+ * iFood/99 — esses já têm entrega do próprio marketplace.
  */
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -10,15 +13,21 @@ import { getErrorMessage } from '../../services';
 import { Select } from '../ui';
 import { copyToClipboard } from '../../utils/clipboard';
 import { operacaoService, type Entregador } from '../../services/operacao';
+import { EntregadorIfood } from './EntregadorIfood';
+
+/** Pedido de marketplace: a entrega é do próprio marketplace. */
+const ORIGEM_COM_ENTREGA_PROPRIA = new Set(['ifood', '99food']);
 
 interface Props {
   storeSlug: string;
   pedidoId: string;
   atual?: string | null;
   atualNome?: string | null;
+  /** `order.source`: decide se o pedido pode chamar entregador iFood. */
+  origem?: string | null;
 }
 
-export const EntregadorDoPedido: React.FC<Props> = ({ storeSlug, pedidoId, atual = null, atualNome = null }) => {
+export const EntregadorDoPedido: React.FC<Props> = ({ storeSlug, pedidoId, atual = null, atualNome = null, origem = null }) => {
   const [lista, setLista] = useState<Entregador[]>([]);
   const [escolhido, setEscolhido] = useState<string>(atual ?? '');
   const [enviando, setEnviando] = useState(false);
@@ -33,7 +42,8 @@ export const EntregadorDoPedido: React.FC<Props> = ({ storeSlug, pedidoId, atual
 
   // Desligado continua aparecendo se for o deste pedido: o histórico não muda.
   const opcoes = lista.filter((e) => e.is_active || e.id === atual);
-  if (opcoes.length === 0 && !atual) return null;
+  const ifood = ORIGEM_COM_ENTREGA_PROPRIA.has(origem ?? '') ? null : <EntregadorIfood pedidoId={pedidoId} />;
+  if (opcoes.length === 0 && !atual) return ifood;
 
   const mudar = async (id: string) => {
     const antes = escolhido;
@@ -75,6 +85,7 @@ export const EntregadorDoPedido: React.FC<Props> = ({ storeSlug, pedidoId, atual
   const botao = 'inline-flex items-center rounded-lg border border-border-token p-2 text-fg-token transition hover:bg-surface-2';
 
   return (
+    <>
     <span className="inline-flex items-center gap-1">
       <Select
         rotuloOculto="Entregador"
@@ -91,6 +102,8 @@ export const EntregadorDoPedido: React.FC<Props> = ({ storeSlug, pedidoId, atual
         <ClipboardDocumentIcon className="h-4 w-4" />
       </button>
     </span>
+    {ifood}
+    </>
   );
 };
 

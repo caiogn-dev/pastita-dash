@@ -1126,6 +1126,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                 pedidoId={order.id}
                 atual={order.entregador}
                 atualNome={order.entregador_nome}
+                origem={order.source}
               />
             )}
 

@@ -16,6 +16,10 @@ jest.mock('../../../services/operacao', () => ({
     enviar: (...a: unknown[]) => enviar(...a),
   },
 }));
+jest.mock('../EntregadorIfood', () => ({
+  __esModule: true,
+  EntregadorIfood: ({ pedidoId }: { pedidoId: string }) => <span data-testid="entregador-ifood">{pedidoId}</span>,
+}));
 jest.mock('../../../services', () => ({ getErrorMessage: (e: unknown) => String(e) }));
 jest.mock('react-hot-toast', () => ({ __esModule: true, default: { error: jest.fn(), success: jest.fn() } }));
 
@@ -39,9 +43,28 @@ it('atribui o entregador e esconde quem foi desligado', async () => {
 
 it('loja sem entregador não mostra nada', async () => {
   entregadores.mockResolvedValue([]);
-  const { container } = render(<EntregadorDoPedido storeSlug="loja" pedidoId="p1" />);
+  const { container } = render(<EntregadorDoPedido storeSlug="loja" pedidoId="p1" origem="ifood" />);
   await waitFor(() => expect(entregadores).toHaveBeenCalled());
   expect(container).toBeEmptyDOMElement();
+});
+
+describe('entregador iFood', () => {
+  it('pedido do site/WhatsApp ganha o bloco do iFood', async () => {
+    render(<EntregadorDoPedido storeSlug="loja" pedidoId="p1" origem="whatsapp" />);
+    expect(await screen.findByTestId('entregador-ifood')).toHaveTextContent('p1');
+  });
+
+  it('aparece mesmo sem entregador próprio cadastrado', async () => {
+    entregadores.mockResolvedValue([]);
+    render(<EntregadorDoPedido storeSlug="loja" pedidoId="p1" origem="web" />);
+    expect(await screen.findByTestId('entregador-ifood')).toBeInTheDocument();
+  });
+
+  it.each(['ifood', '99food'])('pedido vindo do %s não chama entregador iFood', async (origem) => {
+    render(<EntregadorDoPedido storeSlug="loja" pedidoId="p1" origem={origem} />);
+    await screen.findByLabelText('Entregador');
+    expect(screen.queryByTestId('entregador-ifood')).toBeNull();
+  });
 });
 
 describe('mensagem para o entregador', () => {
