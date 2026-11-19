@@ -100,6 +100,8 @@ describe('pedido do iFood: motivo do iFood', () => {
     await waitFor(() => expect(onCancelado).toHaveBeenCalled());
     expect(cancelar).toHaveBeenCalledWith('p9', '503', 'Acabou o salmão');
     expect(onConfirm).not.toHaveBeenCalled();
+    // o iFood confirma pelo evento CAN; até lá o pedido segue aberto
+    expect(jest.requireMock('react-hot-toast').default.success).toHaveBeenCalledWith('Cancelamento enviado ao iFood');
   });
 
   it('sem detalhe envia só o código', async () => {

@@ -8,8 +8,8 @@
  *
  * Pedido que veio do iFood cancela NO iFood, com um dos motivos que o próprio
  * iFood devolve para aquele pedido (critério de homologação): o modal busca a
- * lista, envia e devolve o controle por `onCancelado` — o servidor já muda o
- * pedido para cancelado.
+ * lista, envia e devolve o controle por `onCancelado`. Quem cancela é o iFood:
+ * o pedido só vira cancelado quando chega o evento CAN (CARF = negado).
  */
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -74,6 +74,7 @@ const CancelarNoIfood: React.FC<Omit<Props, 'onConfirm' | 'loading' | 'origem'> 
     setEnviando(true);
     try {
       await ifoodPedidoService.cancelar(pedidoId, codigo, detalhe.trim() || undefined);
+      toast.success('Cancelamento enviado ao iFood');
       onCancelado?.();
     } catch (e) {
       toast.error(getErrorMessage(e));
