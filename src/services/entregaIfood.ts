@@ -25,13 +25,31 @@ export interface EntregaIfood {
   valor: number | null;
   /** Última falha, curta. */
   erro: string;
+  /** Cliente pediu para entregar em outro endereço; a loja aceita ou recusa. */
+  mudanca_endereco: MudancaDeEndereco | null;
 }
+
+export interface MudancaDeEndereco {
+  status: 'PEDIDA';
+  /** Endereço novo, pronto para ler. */
+  texto: string;
+  /** ISO, ou "" sem prazo. */
+  prazo: string;
+  endereco: Record<string, unknown>;
+}
+
+export interface MotivoDeCancelamentoDaEntrega { codigo: string; descricao: string }
 
 const base = (pedidoId: string) => `/stores/orders/${pedidoId}/entrega-ifood/`;
 
 export const entregaIfoodService = {
   estado: async (pedidoId: string): Promise<EntregaIfood> => (await api.get(base(pedidoId))).data,
   chamar: async (pedidoId: string): Promise<EntregaIfood> => (await api.post(`${base(pedidoId)}chamar/`)).data,
-  cancelar: async (pedidoId: string, motivo?: string): Promise<EntregaIfood> =>
-    (await api.post(`${base(pedidoId)}cancelar/`, motivo ? { motivo } : {})).data,
+  /** Vazia = o iFood não deixa mais cancelar. */
+  motivosDeCancelamento: async (pedidoId: string): Promise<MotivoDeCancelamentoDaEntrega[]> =>
+    ((await api.get(`${base(pedidoId)}motivos-cancelamento/`)).data as { motivos?: MotivoDeCancelamentoDaEntrega[] }).motivos ?? [],
+  cancelar: async (pedidoId: string, codigo: string): Promise<EntregaIfood> =>
+    (await api.post(`${base(pedidoId)}cancelar/`, { codigo })).data,
+  responderEndereco: async (pedidoId: string, aceitar: boolean): Promise<EntregaIfood> =>
+    (await api.post(`${base(pedidoId)}endereco/`, { aceitar })).data,
 };

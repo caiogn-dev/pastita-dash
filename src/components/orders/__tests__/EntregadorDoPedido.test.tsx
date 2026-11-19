@@ -18,7 +18,9 @@ jest.mock('../../../services/operacao', () => ({
 }));
 jest.mock('../EntregadorIfood', () => ({
   __esModule: true,
-  EntregadorIfood: ({ pedidoId }: { pedidoId: string }) => <span data-testid="entregador-ifood">{pedidoId}</span>,
+  EntregadorIfood: ({ pedidoId, aoMudarPedido }: { pedidoId: string; aoMudarPedido?: () => void }) => (
+    <button type="button" data-testid="entregador-ifood" onClick={aoMudarPedido}>{pedidoId}</button>
+  ),
 }));
 jest.mock('../../../services', () => ({ getErrorMessage: (e: unknown) => String(e) }));
 jest.mock('react-hot-toast', () => ({ __esModule: true, default: { error: jest.fn(), success: jest.fn() } }));
@@ -52,6 +54,13 @@ describe('entregador iFood', () => {
   it('pedido do site/WhatsApp ganha o bloco do iFood', async () => {
     render(<EntregadorDoPedido storeSlug="loja" pedidoId="p1" origem="whatsapp" />);
     expect(await screen.findByTestId('entregador-ifood')).toHaveTextContent('p1');
+  });
+
+  it('repassa o aviso de pedido alterado', async () => {
+    const aoMudarPedido = jest.fn();
+    render(<EntregadorDoPedido storeSlug="loja" pedidoId="p1" origem="web" aoMudarPedido={aoMudarPedido} />);
+    fireEvent.click(await screen.findByTestId('entregador-ifood'));
+    expect(aoMudarPedido).toHaveBeenCalled();
   });
 
   it('aparece mesmo sem entregador próprio cadastrado', async () => {

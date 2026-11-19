@@ -1148,6 +1148,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                 atual={order.entregador}
                 atualNome={order.entregador_nome}
                 origem={order.source}
+                aoMudarPedido={recarregarSemPiscar}
               />
             )}
 

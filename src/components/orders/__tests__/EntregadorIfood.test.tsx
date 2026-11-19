@@ -7,12 +7,16 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 const estado = jest.fn();
 const chamar = jest.fn();
 const cancelar = jest.fn();
+const motivosDeCancelamento = jest.fn();
+const responderEndereco = jest.fn();
 jest.mock('../../../services/entregaIfood', () => ({
   __esModule: true,
   entregaIfoodService: {
     estado: (...a: unknown[]) => estado(...a),
     chamar: (...a: unknown[]) => chamar(...a),
     cancelar: (...a: unknown[]) => cancelar(...a),
+    motivosDeCancelamento: (...a: unknown[]) => motivosDeCancelamento(...a),
+    responderEndereco: (...a: unknown[]) => responderEndereco(...a),
   },
 }));
 jest.mock('../../../services', () => ({ getErrorMessage: (e: unknown) => String(e) }));
@@ -32,6 +36,7 @@ const entrega = (over: Record<string, unknown> = {}) => ({
   entregador: null,
   valor: null,
   erro: '',
+  mudanca_endereco: null,
   ...over,
 });
 
@@ -53,6 +58,11 @@ beforeEach(() => {
   estado.mockReset();
   chamar.mockReset();
   cancelar.mockReset();
+  motivosDeCancelamento.mockReset().mockResolvedValue([
+    { codigo: '809', descricao: 'Pedido cancelado pelo cliente' },
+    { codigo: '810', descricao: 'Loja errou o endereço' },
+  ]);
+  responderEndereco.mockReset();
   toast().error.mockReset();
   toast().success.mockReset();
 });
@@ -116,16 +126,128 @@ it('em andamento: status, entregador, valor, código, rastreio e cancelar', asyn
   expect(within(bloco).queryByRole('button', { name: 'Chamar de novo' })).toBeNull();
 });
 
-it('cancelar pede confirmação e envia', async () => {
-  estado.mockResolvedValue(emAndamento);
-  cancelar.mockResolvedValue({ ...emAndamento, ativo: false, pode_chamar: true, status: 'CANCELLED', status_texto: 'Cancelada' });
-  render(<EntregadorIfood pedidoId="p1" />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Cancelar entregador' }));
-  expect(cancelar).not.toHaveBeenCalled();
-  fireEvent.click(await screen.findByRole('button', { name: 'Sim, cancelar' }));
-  expect(await screen.findByText('Cancelada')).toBeInTheDocument();
-  expect(cancelar).toHaveBeenCalledWith('p1');
-  expect(screen.getByRole('button', { name: 'Chamar de novo' })).toBeInTheDocument();
+describe('cancelar entregador com motivo do iFood', () => {
+  it('busca os motivos, deixa escolher e envia o código', async () => {
+    estado.mockResolvedValue(emAndamento);
+    cancelar.mockResolvedValue({ ...emAndamento, ativo: false, pode_chamar: true, status: 'CANCELLED', status_texto: 'Cancelada' });
+    render(<EntregadorIfood pedidoId="p1" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancelar entregador' }));
+    const dialogo = await screen.findByRole('dialog');
+    expect(motivosDeCancelamento).toHaveBeenCalledWith('p1');
+    const confirmar = within(dialogo).getByRole('button', { name: 'Confirmar cancelamento' });
+    expect(confirmar).toBeDisabled();
+    fireEvent.click(within(dialogo).getByRole('radio', { name: 'Loja errou o endereço' }));
+    fireEvent.click(confirmar);
+    expect(await screen.findByText('Cancelada')).toBeInTheDocument();
+    expect(cancelar).toHaveBeenCalledWith('p1', '810');
+    expect(screen.getByRole('button', { name: 'Chamar de novo' })).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('lista vazia: avisa que não dá mais para cancelar', async () => {
+    estado.mockResolvedValue(emAndamento);
+    motivosDeCancelamento.mockResolvedValue([]);
+    render(<EntregadorIfood pedidoId="p1" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancelar entregador' }));
+    await waitFor(() => expect(toast().error).toHaveBeenCalledWith('O iFood não permite mais cancelar esta entrega'));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(cancelar).not.toHaveBeenCalled();
+  });
+
+  it('erro ao buscar motivos vira toast', async () => {
+    estado.mockResolvedValue(emAndamento);
+    motivosDeCancelamento.mockRejectedValue('iFood fora do ar');
+    render(<EntregadorIfood pedidoId="p1" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancelar entregador' }));
+    await waitFor(() => expect(toast().error).toHaveBeenCalledWith('iFood fora do ar'));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('erro ao cancelar vira toast e o diálogo continua', async () => {
+    estado.mockResolvedValue(emAndamento);
+    cancelar.mockRejectedValue('Entregador já saiu');
+    render(<EntregadorIfood pedidoId="p1" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancelar entregador' }));
+    const dialogo = await screen.findByRole('dialog');
+    fireEvent.click(within(dialogo).getByRole('radio', { name: 'Pedido cancelado pelo cliente' }));
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Confirmar cancelamento' }));
+    await waitFor(() => expect(toast().error).toHaveBeenCalledWith('Entregador já saiu'));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+});
+
+describe('cliente pediu outro endereço', () => {
+  const AGORA = new Date('2026-11-19T15:00:00Z').getTime();
+  const comMudanca = (over: Record<string, unknown> = {}) => ({
+    ...emAndamento,
+    mudanca_endereco: {
+      status: 'PEDIDA',
+      texto: 'Quadra 104 Norte, Alameda 5, 12',
+      prazo: new Date(AGORA + 2 * 60_000 + 30_000).toISOString(),
+      endereco: { rua: 'Alameda 5' },
+      ...over,
+    },
+  });
+
+  it('faixa com texto, contagem e botões', async () => {
+    jest.useFakeTimers({ now: AGORA });
+    estado.mockResolvedValue(comMudanca());
+    render(<EntregadorIfood pedidoId="p1" />);
+    const faixa = await screen.findByRole('region', { name: 'Cliente pediu outro endereço' });
+    expect(within(faixa).getByText('Quadra 104 Norte, Alameda 5, 12')).toBeInTheDocument();
+    expect(within(faixa).getByRole('timer').textContent).toMatch(/^2:[23]\d$/);
+    expect(within(faixa).getByRole('button', { name: 'Aceitar' })).toBeInTheDocument();
+    expect(within(faixa).getByRole('button', { name: 'Recusar' })).toBeInTheDocument();
+  });
+
+  it('sem prazo não mostra contagem', async () => {
+    estado.mockResolvedValue(comMudanca({ prazo: '' }));
+    render(<EntregadorIfood pedidoId="p1" />);
+    const faixa = await screen.findByRole('region', { name: 'Cliente pediu outro endereço' });
+    expect(within(faixa).queryByRole('timer')).toBeNull();
+  });
+
+  it('sem pedido de endereço não há faixa', async () => {
+    estado.mockResolvedValue(emAndamento);
+    render(<EntregadorIfood pedidoId="p1" />);
+    await screen.findByRole('group', { name: 'Entregador iFood' });
+    expect(screen.queryByRole('region', { name: 'Cliente pediu outro endereço' })).toBeNull();
+  });
+
+  it('aceitar envia true, some a faixa e relê o pedido', async () => {
+    estado.mockResolvedValue(comMudanca());
+    responderEndereco.mockResolvedValue(emAndamento);
+    const aoMudarPedido = jest.fn();
+    render(<EntregadorIfood pedidoId="p1" aoMudarPedido={aoMudarPedido} />);
+    const faixa = await screen.findByRole('region', { name: 'Cliente pediu outro endereço' });
+    fireEvent.click(within(faixa).getByRole('button', { name: 'Aceitar' }));
+    await waitFor(() => expect(responderEndereco).toHaveBeenCalledWith('p1', true));
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Cliente pediu outro endereço' })).toBeNull());
+    expect(toast().success).toHaveBeenCalled();
+    expect(aoMudarPedido).toHaveBeenCalled();
+  });
+
+  it('recusar envia false e não relê o pedido', async () => {
+    estado.mockResolvedValue(comMudanca());
+    responderEndereco.mockResolvedValue(emAndamento);
+    const aoMudarPedido = jest.fn();
+    render(<EntregadorIfood pedidoId="p1" aoMudarPedido={aoMudarPedido} />);
+    const faixa = await screen.findByRole('region', { name: 'Cliente pediu outro endereço' });
+    fireEvent.click(within(faixa).getByRole('button', { name: 'Recusar' }));
+    await waitFor(() => expect(responderEndereco).toHaveBeenCalledWith('p1', false));
+    await waitFor(() => expect(toast().success).toHaveBeenCalled());
+    expect(aoMudarPedido).not.toHaveBeenCalled();
+  });
+
+  it('erro ao responder vira toast e a faixa fica', async () => {
+    estado.mockResolvedValue(comMudanca());
+    responderEndereco.mockRejectedValue('Prazo encerrado');
+    render(<EntregadorIfood pedidoId="p1" />);
+    const faixa = await screen.findByRole('region', { name: 'Cliente pediu outro endereço' });
+    fireEvent.click(within(faixa).getByRole('button', { name: 'Aceitar' }));
+    await waitFor(() => expect(toast().error).toHaveBeenCalledWith('Prazo encerrado'));
+    expect(screen.getByRole('region', { name: 'Cliente pediu outro endereço' })).toBeInTheDocument();
+  });
 });
 
 it('falhou: mostra o erro e "Chamar de novo" usa o mesmo chamar', async () => {

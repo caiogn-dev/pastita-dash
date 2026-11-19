@@ -7,30 +7,88 @@
  * carrega: um botão de chamar que talvez não funcione é pior que nenhum.
  * Enquanto a entrega está em andamento, relê a cada 30 s (o modal aberto é o
  * único consumidor; nada de polling em segundo plano).
+ *
+ * Cancelar exige um dos motivos que o iFood devolve para a entrega; lista
+ * vazia = o iFood não deixa mais cancelar. Quando o cliente pede outro
+ * endereço, uma faixa com prazo pede aceitar ou recusar.
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { ArrowTopRightOnSquareIcon, PhoneIcon } from '@heroicons/react/24/outline';
 
 import { getErrorMessage } from '../../services';
-import { entregaIfoodService, type EntregaIfood } from '../../services/entregaIfood';
+import {
+  entregaIfoodService,
+  type EntregaIfood,
+  type MotivoDeCancelamentoDaEntrega,
+} from '../../services/entregaIfood';
 import { formatCurrency } from '../../utils/formatters';
 import { IfoodIcon } from '../brand/BrandIcons';
-import { ConfirmModal } from '../ui';
+import { Button, Modal } from '../common';
+import { ContagemRegressiva } from './ContagemRegressiva';
 
 const ATUALIZAR_A_CADA_MS = 30_000;
 
 const botao =
   'inline-flex items-center gap-1.5 rounded-lg border border-border-token px-3 py-2 text-xs font-medium text-fg-token transition hover:bg-surface-2 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
 
+const SEM_CANCELAMENTO = 'O iFood não permite mais cancelar esta entrega';
+
 interface Props {
   pedidoId: string;
+  /** O pedido mudou no servidor (endereço novo aceito): relê sem piscar. */
+  aoMudarPedido?: () => void;
 }
 
-export const EntregadorIfood: React.FC<Props> = ({ pedidoId }) => {
+/** Escolher o motivo do iFood e cancelar o entregador. */
+const CancelarEntregador: React.FC<{
+  motivos: MotivoDeCancelamentoDaEntrega[] | null;
+  enviando: boolean;
+  onConfirmar: (codigo: string) => void;
+  onFechar: () => void;
+}> = ({ motivos, enviando, onConfirmar, onFechar }) => {
+  const [codigo, setCodigo] = useState('');
+
+  useEffect(() => { if (motivos) setCodigo(''); }, [motivos]);
+
+  return (
+    <Modal isOpen={motivos !== null} onClose={onFechar} title="Cancelar entregador iFood">
+      <div className="space-y-4">
+        <div role="radiogroup" aria-label="Motivo do cancelamento" className="grid gap-2 sm:grid-cols-2">
+          {(motivos ?? []).map((m) => (
+            <label
+              key={m.codigo}
+              className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
+                codigo === m.codigo ? 'border-brand bg-brand-soft text-fg-token' : 'border-border-token text-fg-token hover:bg-surface-2'
+              }`}
+            >
+              <input
+                type="radio"
+                name="motivo-cancelamento-entrega-ifood"
+                value={m.codigo}
+                checked={codigo === m.codigo}
+                onChange={() => setCodigo(m.codigo)}
+                className="accent-[var(--brand)]"
+              />
+              {m.descricao}
+            </label>
+          ))}
+        </div>
+        <div className="flex justify-end gap-3 pt-2">
+          <Button variant="secondary" onClick={onFechar}>Voltar</Button>
+          <Button variant="danger" disabled={!codigo || enviando} isLoading={enviando} onClick={() => onConfirmar(codigo)}>
+            Confirmar cancelamento
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+export const EntregadorIfood: React.FC<Props> = ({ pedidoId, aoMudarPedido }) => {
   const [entrega, setEntrega] = useState<EntregaIfood | null>(null);
   const [ocupado, setOcupado] = useState(false);
-  const [confirmando, setConfirmando] = useState(false);
+  const [motivos, setMotivos] = useState<MotivoDeCancelamentoDaEntrega[] | null>(null);
 
   const carregar = useCallback(async () => {
     try {
@@ -58,12 +116,31 @@ export const EntregadorIfood: React.FC<Props> = ({ pedidoId }) => {
 
   if (!entrega?.disponivel) return null;
 
-  const executar = async (acao: () => Promise<EntregaIfood>, sucesso: string) => {
-    if (ocupado) return;
+  /** true = deu certo. */
+  const executar = async (acao: () => Promise<EntregaIfood>, sucesso: string): Promise<boolean> => {
+    if (ocupado) return false;
     setOcupado(true);
     try {
       setEntrega(await acao());
       toast.success(sucesso);
+      return true;
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+      return false;
+    } finally {
+      setOcupado(false);
+    }
+  };
+
+  const chamar = () => executar(() => entregaIfoodService.chamar(pedidoId), 'Entregador iFood chamado');
+
+  const pedirCancelamento = async () => {
+    if (ocupado) return;
+    setOcupado(true);
+    try {
+      const lista = await entregaIfoodService.motivosDeCancelamento(pedidoId);
+      if (lista.length === 0) toast.error(SEM_CANCELAMENTO);
+      else setMotivos(lista);
     } catch (e) {
       toast.error(getErrorMessage(e));
     } finally {
@@ -71,10 +148,16 @@ export const EntregadorIfood: React.FC<Props> = ({ pedidoId }) => {
     }
   };
 
-  const chamar = () => executar(() => entregaIfoodService.chamar(pedidoId), 'Entregador iFood chamado');
-  const cancelar = async () => {
-    await executar(() => entregaIfoodService.cancelar(pedidoId), 'Entregador cancelado');
-    setConfirmando(false);
+  const cancelar = async (codigo: string) => {
+    if (await executar(() => entregaIfoodService.cancelar(pedidoId, codigo), 'Entregador cancelado')) setMotivos(null);
+  };
+
+  const responderEndereco = async (aceitar: boolean) => {
+    const ok = await executar(
+      () => entregaIfoodService.responderEndereco(pedidoId, aceitar),
+      aceitar ? 'Endereço novo aceito' : 'Endereço novo recusado',
+    );
+    if (ok && aceitar) aoMudarPedido?.();
   };
 
   if (!entrega.chamado) {
@@ -87,9 +170,35 @@ export const EntregadorIfood: React.FC<Props> = ({ pedidoId }) => {
     );
   }
 
-  const { entregador } = entrega;
+  const { entregador, mudanca_endereco: mudanca } = entrega;
 
   return (
+    <>
+    {mudanca && (
+      <section
+        aria-label="Cliente pediu outro endereço"
+        className="flex w-full flex-wrap items-center gap-3 rounded-lg border border-warning-token bg-warning-soft px-3 py-2 text-sm text-fg-token"
+      >
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold">Cliente pediu outro endereço</p>
+          {mudanca.texto && <p>{mudanca.texto}</p>}
+        </div>
+        {mudanca.prazo && <ContagemRegressiva ate={mudanca.prazo} className="font-mono text-base font-bold tabular-nums" />}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => responderEndereco(true)}
+            disabled={ocupado}
+            className="inline-flex items-center rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-on-brand transition hover:bg-brand-hover disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            Aceitar
+          </button>
+          <button type="button" onClick={() => responderEndereco(false)} disabled={ocupado} className={botao}>
+            Recusar
+          </button>
+        </div>
+      </section>
+    )}
     <div
       role="group"
       aria-label="Entregador iFood"
@@ -147,7 +256,7 @@ export const EntregadorIfood: React.FC<Props> = ({ pedidoId }) => {
       {entrega.ativo && (
         <button
           type="button"
-          onClick={() => setConfirmando(true)}
+          onClick={pedirCancelamento}
           disabled={ocupado}
           className="font-semibold text-danger-token underline-offset-2 hover:underline disabled:opacity-50"
         >
@@ -161,17 +270,14 @@ export const EntregadorIfood: React.FC<Props> = ({ pedidoId }) => {
         </button>
       )}
 
-      <ConfirmModal
-        open={confirmando}
-        title="Cancelar entregador iFood?"
-        confirmText="Sim, cancelar"
-        cancelText="Voltar"
-        variant="danger"
-        loading={ocupado}
-        onConfirm={cancelar}
-        onClose={() => setConfirmando(false)}
+      <CancelarEntregador
+        motivos={motivos}
+        enviando={ocupado}
+        onConfirmar={cancelar}
+        onFechar={() => setMotivos(null)}
       />
     </div>
+    </>
   );
 };
 

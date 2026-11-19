@@ -25,9 +25,11 @@ interface Props {
   atualNome?: string | null;
   /** `order.source`: decide se o pedido pode chamar entregador iFood. */
   origem?: string | null;
+  /** O pedido mudou no servidor por ação do iFood (ex.: endereço novo aceito). */
+  aoMudarPedido?: () => void;
 }
 
-export const EntregadorDoPedido: React.FC<Props> = ({ storeSlug, pedidoId, atual = null, atualNome = null, origem = null }) => {
+export const EntregadorDoPedido: React.FC<Props> = ({ storeSlug, pedidoId, atual = null, atualNome = null, origem = null, aoMudarPedido }) => {
   const [lista, setLista] = useState<Entregador[]>([]);
   const [escolhido, setEscolhido] = useState<string>(atual ?? '');
   const [enviando, setEnviando] = useState(false);
@@ -42,8 +44,10 @@ export const EntregadorDoPedido: React.FC<Props> = ({ storeSlug, pedidoId, atual
 
   // Desligado continua aparecendo se for o deste pedido: o histórico não muda.
   const opcoes = lista.filter((e) => e.is_active || e.id === atual);
-  const ifood = ORIGEM_COM_ENTREGA_PROPRIA.has(origem ?? '') ? null : <EntregadorIfood pedidoId={pedidoId} />;
-  if (opcoes.length === 0 && !atual) return ifood;
+  const ifood = ORIGEM_COM_ENTREGA_PROPRIA.has(origem ?? '') ? null : <EntregadorIfood pedidoId={pedidoId} aoMudarPedido={aoMudarPedido} />;
+  // Mesma árvore com ou sem seletor: trocar a forma do retorno remontava o
+  // bloco do iFood (e refazia o GET) quando a lista de entregadores chegava.
+  const semSeletor = opcoes.length === 0 && !atual;
 
   const mudar = async (id: string) => {
     const antes = escolhido;
@@ -86,6 +90,7 @@ export const EntregadorDoPedido: React.FC<Props> = ({ storeSlug, pedidoId, atual
 
   return (
     <>
+    {!semSeletor && (
     <span className="inline-flex items-center gap-1">
       <Select
         rotuloOculto="Entregador"
@@ -102,6 +107,7 @@ export const EntregadorDoPedido: React.FC<Props> = ({ storeSlug, pedidoId, atual
         <ClipboardDocumentIcon className="h-4 w-4" />
       </button>
     </span>
+    )}
     {ifood}
     </>
   );

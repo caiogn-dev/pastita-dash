@@ -21,6 +21,7 @@ import {
 } from '../../services/ifoodPedido';
 import { formatCurrency } from '../../utils/formatters';
 import { Select } from '../ui';
+import { ContagemRegressiva } from './ContagemRegressiva';
 
 const ATUALIZAR_A_CADA_MS = 30_000;
 
@@ -74,28 +75,6 @@ const centavos = (texto: string): number | null => {
   const t = texto.trim().replace(/\./g, '').replace(',', '.');
   if (!/^\d+(\.\d{1,2})?$/.test(t)) return null;
   return Math.round(Number(t) * 100);
-};
-
-const Contagem: React.FC<{ ate: string }> = ({ ate }) => {
-  const alvo = new Date(ate).getTime();
-  const [agora, setAgora] = useState(() => Date.now());
-
-  useEffect(() => {
-    const id = window.setInterval(() => setAgora(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  const resto = Number.isNaN(alvo) ? 0 : Math.max(0, Math.floor((alvo - agora) / 1000));
-  const h = Math.floor(resto / 3600);
-  const m = Math.floor((resto % 3600) / 60);
-  const s = String(resto % 60).padStart(2, '0');
-  const texto = h > 0 ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
-
-  return (
-    <span role="timer" aria-label="Tempo para responder" className="font-mono text-lg font-bold tabular-nums">
-      {texto}
-    </span>
-  );
 };
 
 type Resposta =
@@ -283,7 +262,7 @@ export const NegociacaoIfood: React.FC<Props> = ({ pedidoId, aoResponder }) => {
           {disputa.mensagem && <p className="text-sm">“{disputa.mensagem}”</p>}
         </div>
         <div className="flex flex-col items-end">
-          <Contagem ate={disputa.expira_em} />
+          <ContagemRegressiva ate={disputa.expira_em} />
           {semResposta && <span className="text-xs font-medium">{semResposta}</span>}
         </div>
       </div>
