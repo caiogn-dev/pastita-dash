@@ -166,7 +166,7 @@ export const NovaPromocao: React.FC<Props> = ({ contaId, onCriada, onCancelar })
         <p className="text-base font-semibold text-fg-token">O Instagram precisa ser reconectado</p>
         <p className="mt-1 text-sm text-fg-muted-token">
           A Meta recusou o acesso a esta conta, então não dá para ler as publicações. Reconecte em
-          Conexões e volte aqui.
+          Integrações e volte aqui.
         </p>
       </section>
     );

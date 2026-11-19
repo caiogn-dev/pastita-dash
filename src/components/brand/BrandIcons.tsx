@@ -56,3 +56,32 @@ export const FacebookMark: React.FC<Props> = ({ size = 20, className }) => (
     />
   </svg>
 );
+
+/* Apps de delivery e pagamento — mesmo quadrado de 44 com canto 12, para os
+ * cartões da aba Integrações ficarem alinhados com WhatsApp e Instagram. As
+ * cores são as de `COR_DO_APP` (MarcaDoApp), as do quadro de pedidos. */
+const FONTE = 'Arial, Helvetica, sans-serif';
+
+export const NinetyNineFoodIcon: React.FC<Props> = ({ size = 40, className }) => (
+  <svg width={size} height={size} viewBox="0 0 44 44" className={className} aria-hidden focusable="false">
+    <rect width="44" height="44" rx="12" fill="#FFD400" />
+    <text x="22" y="27.5" textAnchor="middle" fontSize="19" fontWeight="900" fontFamily={FONTE} fill="#111" letterSpacing="-1">99</text>
+    <text x="22" y="36" textAnchor="middle" fontSize="6.4" fontWeight="800" fontFamily={FONTE} fill="#111" letterSpacing="0.6">FOOD</text>
+  </svg>
+);
+
+export const IfoodIcon: React.FC<Props> = ({ size = 40, className }) => (
+  <svg width={size} height={size} viewBox="0 0 44 44" className={className} aria-hidden focusable="false">
+    <rect width="44" height="44" rx="12" fill="#EA1D2C" />
+    <text x="22" y="26.5" textAnchor="middle" fontSize="13" fontWeight="900" fontStyle="italic" fontFamily={FONTE} fill="#fff" letterSpacing="-0.5">iFood</text>
+  </svg>
+);
+
+export const MercadoPagoIcon: React.FC<Props> = ({ size = 40, className }) => (
+  <svg width={size} height={size} viewBox="0 0 44 44" className={className} aria-hidden focusable="false">
+    <rect width="44" height="44" rx="12" fill="#00B1EA" />
+    <ellipse cx="22" cy="22" rx="14" ry="9.5" fill="#fff" />
+    <path d="M12.5 21.5l4.2-2.6 3.6 2.4 3.4-2.4 3.4 2.4 3.6-2.4 4.2 2.6" fill="none" stroke="#00B1EA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M16.8 24.2l2.6 2.1M20.4 23.6l2.8 2.4M24.2 23.4l2.4 2.2" stroke="#00B1EA" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+);

@@ -285,6 +285,7 @@ const AppContent: React.FC = () => {
         
         {/* WhatsApp Routes */}
         <Route path="connections" element={<PageBoundary><ConnectionsPage /></PageBoundary>} />
+        <Route path="integracoes" element={<Navigate to="/connections" replace />} />
         
         {/* Legacy Routes (mantidas para compatibilidade) */}
         

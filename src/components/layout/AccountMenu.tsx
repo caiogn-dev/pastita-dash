@@ -20,7 +20,7 @@ export const ACCOUNT_LINKS: AccountLink[] = [
   // 'Contas WhatsApp' (/accounts) saiu: era a MESMA lista de 'Conexões', e as
   // duas chamavam `whatsappService.getAccounts`. Dois caminhos para a mesma
   // tela ensinam o operador duas vezes e nenhuma delas por inteiro.
-  { name: 'Conexões',        href: '/connections', icon: LinkIcon, sectionHeader: 'Integrações' },
+  { name: 'Integrações',     href: '/connections', icon: LinkIcon, sectionHeader: 'Integrações' },
   { name: 'Preferências',    href: '/settings',    icon: Cog6ToothIcon, sectionHeader: 'Conta' },
   // 'Plano' (/plano) saiu: era o MESMO catálogo de 'Assinatura', com outro
   // desenho e sem o estado da cobrança. Duas portas para a mesma decisão.

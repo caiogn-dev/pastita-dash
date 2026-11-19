@@ -42,6 +42,9 @@ jest.mock('../../../components/whatsapp/ConnectWhatsAppButton', () => ({
   ConnectWhatsAppButton: ({ rotulo }: { rotulo?: string }) => <button type="button">{rotulo || 'Conectar o WhatsApp'}</button>,
 }));
 
+// Delivery e pagamento têm teste próprio (CanaisDaLoja.test.tsx).
+jest.mock('../CanaisDaLoja', () => ({ __esModule: true, CanaisDaLoja: () => null }));
+
 const confirmar = jest.fn(async () => true);
 jest.mock('../../../hooks', () => ({
   __esModule: true,
@@ -145,7 +148,7 @@ it('Instagram fora do ar não vira "não conectado" — mostra erro acionável',
   // Espera a tela terminar de carregar (o cartão do WhatsApp aparece).
   await screen.findByRole('heading', { name: 'WhatsApp' });
   // O aviso de falha aparece…
-  expect(screen.getByText(/não conseguimos carregar suas conexões/i)).toBeInTheDocument();
+  expect(screen.getByText(/não conseguimos carregar whatsapp e instagram/i)).toBeInTheDocument();
   // …e a tela NÃO afirma que o Instagram está desconectado.
   expect(screen.queryByRole('button', { name: /entrar com o instagram/i })).not.toBeInTheDocument();
   expect(screen.queryByText(/ainda não conectado/i)).not.toBeInTheDocument();
@@ -161,7 +164,7 @@ it('"Tentar de novo" refaz a busca do Instagram que havia caído', async () => {
   fireEvent.click(await screen.findByRole('button', { name: /tentar de novo/i }));
 
   expect(await screen.findByText('@cesaladas')).toBeInTheDocument();
-  expect(screen.queryByText(/não conseguimos carregar suas conexões/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/não conseguimos carregar whatsapp e instagram/i)).not.toBeInTheDocument();
 });
 
 it('desconectar pede confirmação e só pausa (as conversas ficam)', async () => {

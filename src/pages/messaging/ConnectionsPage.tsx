@@ -1,5 +1,6 @@
 /**
- * Conexões — onde o lojista liga o WhatsApp e o Instagram da loja.
+ * Integrações — onde o lojista liga WhatsApp, Instagram, apps de delivery e
+ * a conta que recebe o dinheiro. (Até 19/11 se chamava Conexões.)
  *
  * É tela de PRODUTO, não de suporte: o lojista entra com a conta dele pelo
  * login oficial (WhatsApp pelo Facebook, com coexistência — ele continua
@@ -20,6 +21,10 @@ import { InstagramIcon, WhatsAppIcon } from '../../components/brand/BrandIcons';
 import { PageShell } from '../../components/ui';
 import { estadoDoInstagram } from './estadoDoInstagram';
 import { useAuthStore } from '../../stores/authStore';
+import { CanaisDaLoja } from './CanaisDaLoja';
+import {
+  Beneficio, Cartao, Grupo, Selo, botaoDiscreto, botaoPrimario, botaoSecundario, type Tom,
+} from './pecasDeIntegracao';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -55,58 +60,17 @@ export function estadoDoWhatsApp(conta: ContaWhatsApp): Estado {
   return conta.status === 'active' ? 'funcionando' : 'pausado';
 }
 
-const SELO: Record<Estado, { rotulo: string; classe: string; ponto: string }> = {
-  funcionando: { rotulo: 'Funcionando', classe: 'bg-success-soft text-success-token', ponto: 'bg-success-token' },
-  desconectado: { rotulo: 'Desconectado no celular', classe: 'bg-danger-soft text-danger-token', ponto: 'bg-danger-token' },
-  pausado: { rotulo: 'Pausado', classe: 'bg-surface-muted-token text-fg-muted-token', ponto: 'bg-fg-muted-token' },
+const SELO: Record<Estado, { rotulo: string; tom: Tom }> = {
+  funcionando: { rotulo: 'Funcionando', tom: 'ok' },
+  desconectado: { rotulo: 'Desconectado no celular', tom: 'perigo' },
+  pausado: { rotulo: 'Pausado', tom: 'neutro' },
 };
-
-// ─── Peças ────────────────────────────────────────────────────────────────────
 
 /** `rotulo` troca só o texto: "desconectado no celular" é coisa de WhatsApp
  *  com coexistência; no Instagram a mesma cor significa outra frase. */
-const Selo: React.FC<{ estado: Estado; rotulo?: string }> = ({ estado, rotulo }) => (
-  <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${SELO[estado].classe}`}>
-    <span className={`h-2 w-2 rounded-full ${SELO[estado].ponto}`} aria-hidden />
-    {rotulo ?? SELO[estado].rotulo}
-  </span>
+const SeloDoCanal: React.FC<{ estado: Estado; rotulo?: string }> = ({ estado, rotulo }) => (
+  <Selo tom={SELO[estado].tom}>{rotulo ?? SELO[estado].rotulo}</Selo>
 );
-
-const Beneficio: React.FC<{ titulo: string; children: React.ReactNode }> = ({ titulo, children }) => (
-  <li className="flex gap-3 text-sm leading-relaxed text-fg-token">
-    <svg width="20" height="20" viewBox="0 0 24 24" className="mt-0.5 shrink-0 text-success-token" aria-hidden>
-      <path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-    <span><strong className="font-semibold">{titulo}</strong> {children}</span>
-  </li>
-);
-
-const Cartao: React.FC<{
-  icone: React.ReactNode;
-  titulo: string;
-  subtitulo: string;
-  selo?: React.ReactNode;
-  children: React.ReactNode;
-}> = ({ icone, titulo, subtitulo, selo, children }) => (
-  <section className="flex flex-col gap-5 superficie p-6">
-    <header className="flex items-center gap-3.5">
-      {icone}
-      <div className="min-w-0 flex-1">
-        <h2 className="text-lg font-bold text-fg-token">{titulo}</h2>
-        <p className="truncate text-sm text-fg-muted-token">{subtitulo}</p>
-      </div>
-      {selo}
-    </header>
-    {children}
-  </section>
-);
-
-const botaoSecundario =
-  'inline-flex h-11 items-center superficie px-4 text-sm font-semibold text-fg-token hover:bg-surface-muted-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
-const botaoPrimario =
-  'inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand';
-const botaoDiscreto =
-  'inline-flex h-11 items-center rounded-xl px-3 text-sm font-semibold text-fg-muted-token hover:text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
 
 // ─── Tela ─────────────────────────────────────────────────────────────────────
 
@@ -277,21 +241,20 @@ export default function ConnectionsPage() {
   return (
     <PageShell
       className="mx-auto max-w-6xl"
-      titulo="Conexões"
-     
+      titulo="Integrações"
     >
       {erro && (
         <div role="alert" className="mb-6 flex items-center gap-3 rounded-xl border border-border-token bg-danger-soft px-5 py-4">
-          <span className="flex-1 text-sm text-fg-token">Não conseguimos carregar suas conexões agora.</span>
+          <span className="flex-1 text-sm text-fg-token">Não conseguimos carregar WhatsApp e Instagram agora.</span>
           <button type="button" onClick={() => carregar()} className="text-sm font-semibold underline">Tentar de novo</button>
         </div>
       )}
 
       {carregando ? (
-        <p role="status" className="text-sm text-fg-muted-token">Carregando suas conexões…</p>
+        <p role="status" className="text-sm text-fg-muted-token">Carregando suas integrações…</p>
       ) : (
         <div className="flex flex-col gap-6">
-          <div className="grid gap-5 lg:grid-cols-2">
+          <Grupo titulo="Atendimento">
             {/* ── WhatsApp ── */}
             {whatsapps.length === 0 && !erroWhatsapp && (
               <Cartao icone={<WhatsAppIcon size={48} />} titulo="WhatsApp" subtitulo="Ainda não conectado">
@@ -315,7 +278,7 @@ export default function ConnectionsPage() {
                   icone={<WhatsAppIcon size={48} />}
                   titulo="WhatsApp"
                   subtitulo={[conta.name, conta.display_phone_number || conta.phone_number].filter(Boolean).join(' · ')}
-                  selo={<Selo estado={estado} />}
+                  selo={<SeloDoCanal estado={estado} />}
                 >
                   <ul className="flex flex-col gap-3">
                     <Beneficio titulo="Seus clientes recebem sozinhos">a confirmação do pedido, o PIX e cada mudança de status.</Beneficio>
@@ -350,7 +313,7 @@ export default function ConnectionsPage() {
                 titulo="Instagram"
                 subtitulo={instagramAtivo.name || 'Conta profissional'}
                 selo={(
-                  <Selo
+                  <SeloDoCanal
                     estado={estadoIg ?? 'funcionando'}
                     rotulo={estadoIg === 'desconectado' ? 'Precisa reconectar' : undefined}
                   />
@@ -405,7 +368,9 @@ export default function ConnectionsPage() {
                 </div>
               </Cartao>
             )}
-          </div>
+          </Grupo>
+
+          <CanaisDaLoja />
 
           {/* ── Avisos ── */}
           <section className="superficie px-6 py-5" aria-labelledby="avisos-titulo">
