@@ -936,6 +936,14 @@ export const OrdersPage: React.FC = () => {
         loading={pedidoACancelar !== null && cancellingId === pedidoACancelar.id}
         onClose={() => setPedidoACancelar(null)}
         onConfirm={(motivo) => { if (pedidoACancelar) confirmarCancelamento(pedidoACancelar, motivo); }}
+        pedidoId={pedidoACancelar?.id}
+        origem={pedidoACancelar?.source}
+        onCancelado={() => {
+          if (!pedidoACancelar) return;
+          patchOrder(pedidoACancelar.id, { status: 'cancelled' });
+          toast.success(`Pedido #${pedidoACancelar.order_number} cancelado no iFood`);
+          setPedidoACancelar(null);
+        }}
       />
 
 

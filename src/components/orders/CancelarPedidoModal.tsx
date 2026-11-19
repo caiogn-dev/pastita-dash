@@ -5,9 +5,17 @@
  * soube gravar (`cancel_reason`), mas as duas telas cancelavam com um "tem
  * certeza?" e nada mais. Os motivos prontos são os que acontecem numa
  * operação de delivery; "Outro" pede o texto.
+ *
+ * Pedido que veio do iFood cancela NO iFood, com um dos motivos que o próprio
+ * iFood devolve para aquele pedido (critério de homologação): o modal busca a
+ * lista, envia e devolve o controle por `onCancelado` — o servidor já muda o
+ * pedido para cancelado.
  */
 import React, { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { Button, Modal } from '../common';
+import { getErrorMessage } from '../../services';
+import { ifoodPedidoService, type MotivoDeCancelamentoIfood } from '../../services/ifoodPedido';
 
 export const MOTIVOS_DE_CANCELAMENTO = [
   'Cliente desistiu',
@@ -26,9 +34,101 @@ interface Props {
   loading: boolean;
   onClose: () => void;
   onConfirm: (motivo: string) => void;
+  /** Necessário para o fluxo do iFood. */
+  pedidoId?: string;
+  /** `order.source`; `'ifood'` cancela no iFood. */
+  origem?: string | null;
+  /** Cancelado no iFood (o servidor já gravou o status). */
+  onCancelado?: () => void;
 }
 
-export const CancelarPedidoModal: React.FC<Props> = ({ open, orderNumber, loading, onClose, onConfirm }) => {
+const opcao = (marcada: boolean) =>
+  `flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer transition ${
+    marcada ? 'border-brand bg-brand-soft text-fg-token' : 'border-border-token text-fg-token hover:bg-surface-2'
+  }`;
+
+const campo = 'mt-1 w-full superficie px-3 py-2 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand';
+
+const CancelarNoIfood: React.FC<Omit<Props, 'onConfirm' | 'loading' | 'origem'> & { pedidoId: string }> = ({
+  open, orderNumber, onClose, pedidoId, onCancelado,
+}) => {
+  const [motivos, setMotivos] = useState<MotivoDeCancelamentoIfood[] | null>(null);
+  const [codigo, setCodigo] = useState('');
+  const [detalhe, setDetalhe] = useState('');
+  const [enviando, setEnviando] = useState(false);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    let vivo = true;
+    setMotivos(null);
+    setCodigo('');
+    setDetalhe('');
+    ifoodPedidoService.motivosDeCancelamento(pedidoId)
+      .then((m) => { if (vivo) setMotivos(m); })
+      .catch((e) => { if (vivo) { setMotivos([]); toast.error(getErrorMessage(e)); } });
+    return () => { vivo = false; };
+  }, [open, pedidoId]);
+
+  const confirmar = async () => {
+    if (!codigo || enviando) return;
+    setEnviando(true);
+    try {
+      await ifoodPedidoService.cancelar(pedidoId, codigo, detalhe.trim() || undefined);
+      onCancelado?.();
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={open} onClose={onClose} title="Cancelar pedido no iFood">
+      <div className="space-y-4">
+        <p className="text-fg-muted-token">
+          Pedido <strong className="text-fg-token">#{orderNumber}</strong>
+        </p>
+        {motivos === null ? (
+          <p role="status" className="text-sm text-fg-muted-token">Carregando motivos…</p>
+        ) : (
+          <div role="radiogroup" aria-label="Motivo do cancelamento" className="grid gap-2 sm:grid-cols-2">
+            {motivos.map((m) => (
+              <label key={m.codigo} className={opcao(codigo === m.codigo)}>
+                <input
+                  type="radio"
+                  name="motivo-cancelamento-ifood"
+                  value={m.codigo}
+                  checked={codigo === m.codigo}
+                  onChange={() => setCodigo(m.codigo)}
+                  className="accent-[var(--brand)]"
+                />
+                {m.descricao}
+              </label>
+            ))}
+          </div>
+        )}
+        <label className="block text-sm text-fg-token">
+          Detalhe
+          <input type="text" value={detalhe} maxLength={140} onChange={(e) => setDetalhe(e.target.value)} className={campo} />
+        </label>
+        <p className="text-sm text-danger-token">O cancelamento não pode ser desfeito.</p>
+        <div className="flex justify-end gap-3 pt-2">
+          <Button variant="secondary" onClick={onClose}>Voltar</Button>
+          <Button variant="danger" disabled={!codigo || enviando} isLoading={enviando} onClick={confirmar}>
+            Confirmar cancelamento
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+export const CancelarPedidoModal: React.FC<Props> = (props) =>
+  props.origem === 'ifood' && props.pedidoId
+    ? <CancelarNoIfood {...props} pedidoId={props.pedidoId} />
+    : <CancelarDaLoja {...props} />;
+
+const CancelarDaLoja: React.FC<Props> = ({ open, orderNumber, loading, onClose, onConfirm }) => {
   const [escolha, setEscolha] = useState('');
   const [texto, setTexto] = useState('');
 
@@ -46,12 +146,7 @@ export const CancelarPedidoModal: React.FC<Props> = ({ open, orderNumber, loadin
         </p>
         <div role="radiogroup" aria-label="Motivo do cancelamento" className="grid gap-2 sm:grid-cols-2">
           {[...MOTIVOS_DE_CANCELAMENTO, OUTRO].map((m) => (
-            <label
-              key={m}
-              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer transition ${
-                escolha === m ? 'border-brand bg-brand-soft text-fg-token' : 'border-border-token text-fg-token hover:bg-surface-2'
-              }`}
-            >
+            <label key={m} className={opcao(escolha === m)}>
               <input
                 type="radio"
                 name="motivo-cancelamento"
@@ -72,7 +167,7 @@ export const CancelarPedidoModal: React.FC<Props> = ({ open, orderNumber, loadin
               value={texto}
               maxLength={140}
               onChange={(e) => setTexto(e.target.value)}
-              className="mt-1 w-full superficie px-3 py-2 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
+              className={campo}
               autoFocus
             />
           </label>

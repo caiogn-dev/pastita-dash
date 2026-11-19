@@ -43,6 +43,7 @@ import { Button, Modal, PageLoading } from '../../components/common';
 import { ordersService, paymentsService, getErrorMessage } from '../../services';
 import NotaFiscalPedido from './NotaFiscalPedido';
 import { EntregadorDoPedido } from '../../components/orders/EntregadorDoPedido';
+import { NegociacaoIfood } from '../../components/orders/NegociacaoIfood';
 import { Order, Payment, OrderComboItem } from '../../types';
 import { linhasDasEscolhas } from '../../utils/escolhasDoCombo';
 import { dadosDoApp } from './pedidoDeApp';
@@ -418,6 +419,23 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
     }
   };
 
+  /**
+   * Relê o pedido sem o PageLoading: usado depois de ações do iFood que mudam
+   * o pedido no servidor (cancelar, responder negociação).
+   */
+  const recarregarSemPiscar = async () => {
+    if (!id) return;
+    const idDestaCarga = id;
+    try {
+      const atualizado = await ordersService.getOrder(idDestaCarga);
+      if (idEmVooRef.current !== null && idEmVooRef.current !== idDestaCarga) return;
+      setOrder(atualizado);
+      onOrderChanged?.(atualizado);
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
+  };
+
   const [recalculandoFidelidade, setRecalculandoFidelidade] = useState(false);
 
   /**
@@ -612,6 +630,11 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
             </span>
           </div>
         </header>
+
+        {/* Disputa aberta tem prazo: fica acima de tudo, logo abaixo do cabeçalho. */}
+        {order.source === 'ifood' && (
+          <NegociacaoIfood pedidoId={order.id} aoResponder={recarregarSemPiscar} />
+        )}
 
         {doApp && (doApp.codigoEntrega || doApp.codigoRetirada || doApp.erro) && (
           <div className="flex flex-wrap items-center gap-2" data-testid="dados-app">
@@ -1209,6 +1232,13 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
         loading={actionLoading === 'cancelled'}
         onClose={() => setShowCancelModal(false)}
         onConfirm={(motivo) => handleAction('cancelled', motivo)}
+        pedidoId={order.id}
+        origem={order.source}
+        onCancelado={() => {
+          setShowCancelModal(false);
+          toast.success('Pedido cancelado no iFood');
+          recarregarSemPiscar();
+        }}
       />
 
     </>

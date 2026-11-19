@@ -53,6 +53,10 @@ jest.mock('../../../services/printing', () => ({
   previaDaComanda: (...a: unknown[]) => mockPrevia(...a),
   getLayoutDaComanda: (...a: unknown[]) => mockGetLayout(...a),
 }));
+jest.mock('../../../components/orders/NegociacaoIfood', () => ({
+  __esModule: true,
+  NegociacaoIfood: ({ pedidoId }: { pedidoId: string }) => <div data-testid="negociacao-ifood">{pedidoId}</div>,
+}));
 jest.mock('../../../components/orders/EditOrderDrawer', () => ({ __esModule: true, EditOrderDrawer: () => null }));
 
 import { OrderDetailPage } from '../OrderDetailPage';
@@ -366,5 +370,20 @@ describe('OrderDetailPage — Imprimir (print agent)', () => {
     render(<OrderDetailPage />);
     fireEvent.click(await screen.findByRole('button', { name: 'Imprimir' }));
     await waitFor(() => expect(mockPrintHtml).toHaveBeenCalled());
+  });
+});
+
+describe('OrderDetailPage — negociação do iFood', () => {
+  it('pedido do iFood mostra a negociação no topo', async () => {
+    mockGetOrder.mockResolvedValue({ ...baseOrder, source: 'ifood' });
+    render(<OrderDetailPage />);
+    expect(await screen.findByTestId('negociacao-ifood')).toHaveTextContent('o1');
+  });
+
+  it('pedido do site não mostra', async () => {
+    mockGetOrder.mockResolvedValue({ ...baseOrder, source: 'web' });
+    render(<OrderDetailPage />);
+    await screen.findByText('Maria Souza');
+    expect(screen.queryByTestId('negociacao-ifood')).toBeNull();
   });
 });
