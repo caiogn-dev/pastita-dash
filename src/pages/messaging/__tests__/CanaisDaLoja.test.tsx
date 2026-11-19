@@ -3,7 +3,7 @@
  * de GET /stores/integracoes/?store=<loja>.
  */
 import React from 'react';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { CanaisDaLoja } from '../CanaisDaLoja';
 
@@ -20,9 +20,23 @@ jest.mock('../../../hooks/useStore', () => ({
   useStore: () => loja,
 }));
 
+const ifoodBase = (over: Record<string, unknown> = {}) => ({
+  disponivel: false,
+  entregas_disponivel: false,
+  merchant_id: '',
+  conectado: false,
+  loja: '',
+  erro: '',
+  frete_pelo_ifood: false,
+  acrescimo_frete: '0.00',
+  chamar_entregador: 'manual',
+  tempo_preparo_min: 20,
+  ...over,
+});
+
 const estado = (over: Record<string, unknown> = {}) => ({
   '99food': { ativo: false, ultimo_pedido_em: null, pedidos_30_dias: 0 },
-  ifood: { disponivel: false, conectado: false, loja: '', erro: '' },
+  ifood: ifoodBase(),
   mercado_pago: { conectado: false },
   ...over,
 });
@@ -62,11 +76,11 @@ it('iFood sem app da plataforma aparece como em breve, sem botão', async () => 
 });
 
 it('iFood conectado mostra o nome da loja no iFood', async () => {
-  get.mockResolvedValue({ data: estado({ ifood: { disponivel: true, conectado: true, loja: 'Cê Saladas Palmas', erro: '' } }) });
+  get.mockResolvedValue({ data: estado({ ifood: ifoodBase({ disponivel: true, merchant_id: 'abc', conectado: true, loja: 'Cê Saladas Palmas' }) }) });
   renderizar();
   await screen.findByRole('heading', { name: 'iFood' });
   expect(within(cartao('iFood')).getByText('Cê Saladas Palmas')).toBeInTheDocument();
-  expect(within(cartao('iFood')).getByText('Recebendo pedidos')).toBeInTheDocument();
+  expect(within(cartao('iFood')).getByText('Conectado')).toBeInTheDocument();
 });
 
 it('Mercado Pago sem conta leva para conectar em Pagamentos', async () => {
@@ -98,64 +112,125 @@ it('sem loja selecionada não chama a API', () => {
   expect(get).not.toHaveBeenCalled();
 });
 
-describe('conectar o iFood', () => {
-  const disponivel = { disponivel: true, conectado: false, loja: '', erro: '' };
+describe('iFood pelo ID da loja', () => {
+  const MERCHANT = '3f1c2b9a-0d4e-4c5f-9a1b-2c3d4e5f6a7b';
+  const params = { params: { store: 'id-1' } };
 
-  it('mostra o código e o link do portal depois de "Conectar iFood"', async () => {
-    get.mockResolvedValue({ data: estado({ ifood: disponivel }) });
-    post.mockResolvedValue({ data: { user_code: 'ABCD-1234', url: 'https://portal.ifood.com.br/apps/code?c=ABCD-1234' } });
+  const abrir = async (ifood: Record<string, unknown>) => {
+    get.mockResolvedValue({ data: estado({ ifood: ifoodBase(ifood) }) });
     renderizar();
     await screen.findByRole('heading', { name: 'iFood' });
-    fireEvent.click(within(cartao('iFood')).getByRole('button', { name: 'Conectar iFood' }));
-    expect(await screen.findByText('ABCD-1234')).toBeInTheDocument();
-    expect(post).toHaveBeenCalledWith('/stores/integracoes/ifood/iniciar/', null, { params: { store: 'id-1' } });
-    expect(within(cartao('iFood')).getByRole('link', { name: /portal do iFood/i }))
-      .toHaveAttribute('href', 'https://portal.ifood.com.br/apps/code?c=ABCD-1234');
+    return cartao('iFood');
+  };
+
+  it('sem ID: campo vazio e salvar envia o ID digitado (sem espaços)', async () => {
+    const c = await abrir({ disponivel: true });
+    const campo = within(c).getByLabelText('ID da loja no iFood') as HTMLInputElement;
+    expect(campo.value).toBe('');
+    expect(within(c).getByRole('button', { name: 'Salvar' })).toBeDisabled();
+    post.mockResolvedValue({ data: ifoodBase({ disponivel: true, merchant_id: MERCHANT }) });
+    fireEvent.change(campo, { target: { value: `  ${MERCHANT} ` } });
+    fireEvent.click(within(c).getByRole('button', { name: 'Salvar' }));
+    expect(await within(cartao('iFood')).findByText('Aguardando autorização')).toBeInTheDocument();
+    expect(post).toHaveBeenCalledWith('/stores/integracoes/ifood/', { merchant_id: MERCHANT }, params);
   });
 
-  it('colar o código de autorização conclui e mostra conectado', async () => {
-    get.mockResolvedValue({ data: estado({ ifood: disponivel }) });
-    post
-      .mockResolvedValueOnce({ data: { user_code: 'ABCD-1234', url: 'https://portal.ifood.com.br/x' } })
-      .mockResolvedValueOnce({ data: { disponivel: true, conectado: true, loja: 'Cê no iFood', erro: '' } });
-    renderizar();
-    await screen.findByRole('heading', { name: 'iFood' });
-    fireEvent.click(within(cartao('iFood')).getByRole('button', { name: 'Conectar iFood' }));
-    await screen.findByText('ABCD-1234');
-    fireEvent.change(screen.getByLabelText('Código de autorização'), { target: { value: 'XYZ-99' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Concluir' }));
-    expect(await screen.findByText('Cê no iFood')).toBeInTheDocument();
-    expect(post).toHaveBeenLastCalledWith('/stores/integracoes/ifood/concluir/', { authorization_code: 'XYZ-99' }, { params: { store: 'id-1' } });
+  it('não mostra o fluxo antigo de código de autorização', async () => {
+    const c = await abrir({ disponivel: true });
+    expect(within(c).queryByRole('button', { name: 'Conectar iFood' })).toBeNull();
+    expect(within(c).queryByLabelText('Código de autorização')).toBeNull();
   });
 
-  it('código recusado mostra o motivo do iFood', async () => {
-    get.mockResolvedValue({ data: estado({ ifood: disponivel }) });
-    post
-      .mockResolvedValueOnce({ data: { user_code: 'ABCD-1234', url: 'https://portal.ifood.com.br/x' } })
-      .mockRejectedValueOnce({ response: { data: { detail: 'O iFood recusou: código inválido' } } });
-    renderizar();
-    await screen.findByRole('heading', { name: 'iFood' });
-    fireEvent.click(within(cartao('iFood')).getByRole('button', { name: 'Conectar iFood' }));
-    await screen.findByText('ABCD-1234');
-    fireEvent.change(screen.getByLabelText('Código de autorização'), { target: { value: 'ERRADO' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Concluir' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('código inválido');
+  it('ID inválido mostra o motivo do servidor', async () => {
+    const c = await abrir({ disponivel: true });
+    post.mockRejectedValue({ response: { data: { detail: 'ID da loja inválido' } } });
+    fireEvent.change(within(c).getByLabelText('ID da loja no iFood'), { target: { value: 'xyz' } });
+    fireEvent.click(within(c).getByRole('button', { name: 'Salvar' }));
+    expect(await within(cartao('iFood')).findByRole('alert')).toHaveTextContent('ID da loja inválido');
   });
 
-  it('conectado tem botão de desconectar', async () => {
-    get.mockResolvedValue({ data: estado({ ifood: { disponivel: true, conectado: true, loja: 'Cê', erro: '' } }) });
-    post.mockResolvedValue({ data: { disponivel: true, conectado: false, loja: 'Cê', erro: '' } });
-    renderizar();
-    await screen.findByRole('heading', { name: 'iFood' });
-    fireEvent.click(within(cartao('iFood')).getByRole('button', { name: 'Desconectar' }));
-    expect(await within(cartao('iFood')).findByRole('button', { name: 'Conectar iFood' })).toBeInTheDocument();
-    expect(post).toHaveBeenCalledWith('/stores/integracoes/ifood/desconectar/', null, { params: { store: 'id-1' } });
+  it('ID salvo e conectado: selo, nome da loja e desconectar', async () => {
+    const c = await abrir({ disponivel: true, merchant_id: MERCHANT, conectado: true, loja: 'Cê no iFood' });
+    expect(within(c).getByText('Conectado')).toBeInTheDocument();
+    expect(within(c).getByText('Cê no iFood')).toBeInTheDocument();
+    expect((within(c).getByLabelText('ID da loja no iFood') as HTMLInputElement).value).toBe(MERCHANT);
+    post.mockResolvedValue({ data: ifoodBase({ disponivel: true }) });
+    fireEvent.click(within(c).getByRole('button', { name: 'Desconectar' }));
+    await waitFor(() => expect(within(cartao('iFood')).queryByRole('button', { name: 'Desconectar' })).toBeNull());
+    expect(post).toHaveBeenCalledWith('/stores/integracoes/ifood/desconectar/', null, params);
+    expect((within(cartao('iFood')).getByLabelText('ID da loja no iFood') as HTMLInputElement).value).toBe('');
   });
 
-  it('conectado com erro pede para reconectar', async () => {
-    get.mockResolvedValue({ data: estado({ ifood: { disponivel: true, conectado: true, loja: 'Cê', erro: 'token recusado' } }) });
+  it('ID salvo e não autorizado: aguardando + erro curto', async () => {
+    const c = await abrir({ disponivel: true, merchant_id: MERCHANT, erro: 'App não autorizado no Portal' });
+    expect(within(c).getByText('Aguardando autorização')).toBeInTheDocument();
+    expect(within(c).getByText('App não autorizado no Portal')).toBeInTheDocument();
+    expect(within(c).getByRole('button', { name: 'Desconectar' })).toBeInTheDocument();
+  });
+
+  it('sem app de pedidos mas com app de entregas, ainda pede o ID', async () => {
+    const c = await abrir({ entregas_disponivel: true });
+    expect(within(c).queryByText('Em breve')).toBeNull();
+    expect(within(c).getByLabelText('ID da loja no iFood')).toBeInTheDocument();
+  });
+});
+
+describe('Entregas iFood', () => {
+  const params = { params: { store: 'id-1' } };
+  const ligado = { disponivel: true, entregas_disponivel: true, merchant_id: 'm-1', conectado: true, loja: 'Cê' };
+
+  const abrir = async (ifood: Record<string, unknown>) => {
+    get.mockResolvedValue({ data: estado({ ifood: ifoodBase(ifood) }) });
     renderizar();
     await screen.findByRole('heading', { name: 'iFood' });
-    expect(within(cartao('iFood')).getByRole('button', { name: 'Reconectar' })).toBeInTheDocument();
+    return cartao('iFood');
+  };
+
+  it('não aparece sem o app de entregas', async () => {
+    const c = await abrir({ ...ligado, entregas_disponivel: false });
+    expect(within(c).queryByText('Entregas iFood')).toBeNull();
+  });
+
+  it('não aparece sem ID da loja salvo', async () => {
+    const c = await abrir({ ...ligado, merchant_id: '', conectado: false });
+    expect(within(c).queryByText('Entregas iFood')).toBeNull();
+  });
+
+  it('acréscimo só com frete pelo iFood ligado; preparo só ao confirmar', async () => {
+    const c = await abrir(ligado);
+    expect(within(c).getByText('Entregas iFood')).toBeInTheDocument();
+    expect(within(c).queryByLabelText('Acréscimo no frete (R$)')).toBeNull();
+    expect(within(c).queryByLabelText('Tempo de preparo (min)')).toBeNull();
+    fireEvent.click(within(c).getByRole('switch', { name: 'Frete pelo iFood' }));
+    expect(within(c).getByLabelText('Acréscimo no frete (R$)')).toBeInTheDocument();
+    fireEvent.change(within(c).getByLabelText('Chamar entregador'), { target: { value: 'confirmado' } });
+    expect(within(c).getByLabelText('Tempo de preparo (min)')).toBeInTheDocument();
+  });
+
+  it('salva só o que mudou e mostra o que o servidor devolveu', async () => {
+    const c = await abrir(ligado);
+    const salvar = () => within(cartao('iFood')).getByRole('button', { name: 'Salvar entregas' });
+    expect(salvar()).toBeDisabled();
+    fireEvent.click(within(c).getByRole('switch', { name: 'Frete pelo iFood' }));
+    fireEvent.change(within(c).getByLabelText('Acréscimo no frete (R$)'), { target: { value: '2,50' } });
+    fireEvent.change(within(c).getByLabelText('Chamar entregador'), { target: { value: 'confirmado' } });
+    fireEvent.change(within(c).getByLabelText('Tempo de preparo (min)'), { target: { value: '25' } });
+    post.mockResolvedValue({ data: ifoodBase({
+      ...ligado, frete_pelo_ifood: true, acrescimo_frete: '2.50', chamar_entregador: 'confirmado', tempo_preparo_min: 25,
+    }) });
+    fireEvent.click(salvar());
+    await waitFor(() => expect(salvar()).toBeDisabled());
+    expect(post).toHaveBeenCalledWith('/stores/integracoes/ifood/', {
+      frete_pelo_ifood: true, acrescimo_frete: '2.50', chamar_entregador: 'confirmado', tempo_preparo_min: 25,
+    }, params);
+    expect((within(cartao('iFood')).getByLabelText('Acréscimo no frete (R$)') as HTMLInputElement).value).toBe('2,50');
+  });
+
+  it('erro ao salvar mostra o motivo', async () => {
+    const c = await abrir(ligado);
+    post.mockRejectedValue({ response: { data: { detail: 'Acréscimo inválido' } } });
+    fireEvent.change(within(c).getByLabelText('Chamar entregador'), { target: { value: 'pronto' } });
+    fireEvent.click(within(c).getByRole('button', { name: 'Salvar entregas' }));
+    expect(await within(cartao('iFood')).findByRole('alert')).toHaveTextContent('Acréscimo inválido');
   });
 });

@@ -7,18 +7,40 @@
  * conectar o Mercado Pago que já recebe o dinheiro dele.
  *
  * 99Food não tem botão de conectar: a credencial é da plataforma e a loja é
- * reconhecida pelo aviso da 99. iFood fica "Em breve" até a plataforma ter o
- * aplicativo homologado no iFood; com ele, o lojista conecta aqui: pega o
- * código, autoriza no Portal do Parceiro e cola o código de autorização.
+ * reconhecida pelo aviso da 99. iFood é centralizado: o app do Cardapidex tem
+ * uma credencial só; a loja cola o ID dela no iFood (merchant UUID) e aprova o
+ * app no Portal do Parceiro. Com o app de entregas, a loja também chama
+ * entregador do iFood e pode cobrar o frete pela cotação dele. Sem nenhum dos
+ * dois apps configurados na plataforma, o cartão fica "Em breve".
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { useStore } from '../../hooks/useStore';
 import { IfoodIcon, MercadoPagoIcon, NinetyNineFoodIcon } from '../../components/brand/BrandIcons';
+import { Switch } from '../../components/common/Switch';
+import { Select } from '../../components/ui';
 import { Beneficio, Cartao, Grupo, Selo, botaoDiscreto, botaoPrimario, botaoSecundario } from './pecasDeIntegracao';
 
-interface EstadoIfood { disponivel: boolean; conectado: boolean; loja: string; erro: string }
+type ChamarEntregador = 'manual' | 'confirmado' | 'pronto';
+
+interface EstadoIfood {
+  /** App de pedidos da plataforma configurado. */
+  disponivel: boolean;
+  /** App de entregas (iFood Entrega) da plataforma configurado. */
+  entregas_disponivel: boolean;
+  /** Merchant UUID colado pelo lojista; "" se não informado. */
+  merchant_id: string;
+  /** O iFood confirmou acesso à loja (app aprovado no Portal do Parceiro). */
+  conectado: boolean;
+  loja: string;
+  erro: string;
+  frete_pelo_ifood: boolean;
+  /** Decimal em string, "0.00". */
+  acrescimo_frete: string;
+  chamar_entregador: ChamarEntregador;
+  tempo_preparo_min: number;
+}
 
 interface EstadoDosCanais {
   '99food': { ativo: boolean; ultimo_pedido_em: string | null; pedidos_30_dias: number };
@@ -36,87 +58,199 @@ const motivo = (erro: unknown) =>
   (erro as { response?: { data?: { detail?: string } } })?.response?.data?.detail
   || 'Não deu certo. Tente de novo.';
 
-/** Conectar, concluir e desconectar o iFood dentro do cartão. */
-const AcoesDoIfood: React.FC<{
+const campo =
+  'h-11 w-full rounded-xl border border-border-token bg-surface-token px-3 text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
+
+/** POST no iFood da loja com aviso de erro e trava de clique duplo. */
+const useSalvarIfood = (storeId: string, aoMudar: (novo: EstadoIfood) => void) => {
+  const [ocupado, setOcupado] = useState(false);
+  const [erro, setErro] = useState('');
+
+  const enviar = async (url: string, corpo: Record<string, unknown> | null) => {
+    if (ocupado) return;
+    setOcupado(true);
+    setErro('');
+    try {
+      const r = await api.post(url, corpo, { params: { store: storeId } });
+      aoMudar(r.data as EstadoIfood);
+    } catch (e) {
+      setErro(motivo(e));
+    } finally {
+      setOcupado(false);
+    }
+  };
+
+  return { ocupado, erro, setErro, enviar };
+};
+
+/** ID da loja no iFood: colar, salvar, desconectar. */
+const ConexaoDoIfood: React.FC<{
   storeId: string;
   ifood: EstadoIfood;
   aoMudar: (novo: EstadoIfood) => void;
 }> = ({ storeId, ifood, aoMudar }) => {
-  const [passo, setPasso] = useState<{ user_code: string; url: string } | null>(null);
-  const [codigo, setCodigo] = useState('');
-  const [ocupado, setOcupado] = useState(false);
-  const [erro, setErro] = useState('');
-  const params = { params: { store: storeId } };
+  const [id, setId] = useState(ifood.merchant_id);
+  const { ocupado, erro, enviar } = useSalvarIfood(storeId, aoMudar);
 
-  const executar = async (acao: () => Promise<void>) => {
-    setOcupado(true);
-    setErro('');
-    try { await acao(); } catch (e) { setErro(motivo(e)); } finally { setOcupado(false); }
-  };
+  useEffect(() => { setId(ifood.merchant_id); }, [ifood.merchant_id]);
 
-  const iniciar = () => executar(async () => {
-    const r = await api.post('/stores/integracoes/ifood/iniciar/', null, params);
-    setPasso(r.data as { user_code: string; url: string });
-  });
-  const concluir = () => executar(async () => {
-    const r = await api.post('/stores/integracoes/ifood/concluir/', { authorization_code: codigo.trim() }, params);
-    setPasso(null);
-    setCodigo('');
-    aoMudar(r.data as EstadoIfood);
-  });
-  const desconectar = () => executar(async () => {
-    const r = await api.post('/stores/integracoes/ifood/desconectar/', null, params);
-    aoMudar(r.data as EstadoIfood);
-  });
-
-  const aviso = erro && <p role="alert" className="text-sm text-danger-token">{erro}</p>;
-
-  if (passo) {
-    return (
-      <div className="mt-auto flex flex-col gap-4">
-        <div className="flex flex-col items-center gap-1 rounded-xl bg-surface-muted-token px-4 py-4">
-          <span className="font-mono text-2xl font-bold tracking-widest text-fg-token">{passo.user_code}</span>
-        </div>
-        <a href={passo.url} target="_blank" rel="noopener noreferrer" className={`${botaoSecundario} justify-center`}>
-          Abrir portal do iFood
-        </a>
-        <form
-          className="flex flex-wrap items-end gap-2"
-          onSubmit={(e) => { e.preventDefault(); if (codigo.trim()) concluir(); }}
-        >
-          <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-semibold text-fg-token">
-            Código de autorização
-            <input
-              value={codigo}
-              onChange={(e) => setCodigo(e.target.value)}
-              autoComplete="off"
-              className="h-11 rounded-xl border border-border-token bg-surface-token px-3 font-mono text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-            />
-          </label>
-          <button type="submit" disabled={ocupado || !codigo.trim()} className={botaoPrimario}>Concluir</button>
-          <button type="button" onClick={() => setPasso(null)} className={botaoDiscreto}>Cancelar</button>
-        </form>
-        {aviso}
-      </div>
-    );
-  }
+  const limpo = id.trim();
+  const mudou = limpo !== ifood.merchant_id;
 
   return (
-    <div className="mt-auto flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2">
-        {!ifood.conectado && (
-          <button type="button" onClick={iniciar} disabled={ocupado} className={botaoPrimario}>Conectar iFood</button>
+    <div className="flex flex-col gap-2">
+      <form
+        className="flex flex-wrap items-end gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (limpo && mudou) enviar('/stores/integracoes/ifood/', { merchant_id: limpo });
+        }}
+      >
+        <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-semibold text-fg-token">
+          ID da loja no iFood
+          <input
+            value={id}
+            onChange={(e) => setId(e.target.value)}
+            autoComplete="off"
+            spellCheck={false}
+            className={`${campo} min-w-[16rem] font-mono text-sm`}
+          />
+        </label>
+        <button type="submit" disabled={ocupado || !limpo || !mudou} className={botaoPrimario}>Salvar</button>
+        {ifood.merchant_id && (
+          <button
+            type="button"
+            onClick={() => enviar('/stores/integracoes/ifood/desconectar/', null)}
+            disabled={ocupado}
+            className={botaoDiscreto}
+          >
+            Desconectar
+          </button>
         )}
-        {ifood.conectado && ifood.erro && (
-          <button type="button" onClick={iniciar} disabled={ocupado} className={botaoPrimario}>Reconectar</button>
-        )}
-        {ifood.conectado && (
-          <button type="button" onClick={desconectar} disabled={ocupado} className={botaoDiscreto}>Desconectar</button>
-        )}
-      </div>
-      {aviso}
+      </form>
+      {ifood.merchant_id && !ifood.conectado && ifood.erro && (
+        <p className="text-sm text-fg-muted-token">{ifood.erro}</p>
+      )}
+      {erro && <p role="alert" className="text-sm text-danger-token">{erro}</p>}
     </div>
   );
+};
+
+const QUANDO_CHAMAR: { valor: ChamarEntregador; rotulo: string }[] = [
+  { valor: 'manual', rotulo: 'Manual' },
+  { valor: 'confirmado', rotulo: 'Ao confirmar o pedido' },
+  { valor: 'pronto', rotulo: 'Quando ficar pronto' },
+];
+
+/** "2.50" (servidor) ⇄ "2,50" (tela). */
+const paraTela = (decimal: string) => (decimal || '0.00').replace('.', ',');
+const paraServidor = (texto: string): string | null => {
+  const t = texto.trim().replace(',', '.');
+  if (t === '') return '0.00';
+  if (!/^\d+(\.\d{1,2})?$/.test(t)) return null;
+  return Number(t).toFixed(2);
+};
+
+/** Frete pela cotação do iFood e quando chamar o entregador. */
+const EntregasDoIfood: React.FC<{
+  storeId: string;
+  ifood: EstadoIfood;
+  aoMudar: (novo: EstadoIfood) => void;
+}> = ({ storeId, ifood, aoMudar }) => {
+  const [frete, setFrete] = useState(ifood.frete_pelo_ifood);
+  const [acrescimo, setAcrescimo] = useState(paraTela(ifood.acrescimo_frete));
+  const [chamar, setChamar] = useState<ChamarEntregador>(ifood.chamar_entregador);
+  const [preparo, setPreparo] = useState(String(ifood.tempo_preparo_min ?? ''));
+  const { ocupado, erro, setErro, enviar } = useSalvarIfood(storeId, aoMudar);
+
+  // O servidor é a verdade: depois de salvar, o rascunho vira o que ele devolveu.
+  useEffect(() => {
+    setFrete(ifood.frete_pelo_ifood);
+    setAcrescimo(paraTela(ifood.acrescimo_frete));
+    setChamar(ifood.chamar_entregador);
+    setPreparo(String(ifood.tempo_preparo_min ?? ''));
+  }, [ifood.frete_pelo_ifood, ifood.acrescimo_frete, ifood.chamar_entregador, ifood.tempo_preparo_min]);
+
+  const mudancas: Record<string, unknown> = {};
+  if (frete !== ifood.frete_pelo_ifood) mudancas.frete_pelo_ifood = frete;
+  if (frete && paraServidor(acrescimo) !== paraServidor(paraTela(ifood.acrescimo_frete))) {
+    mudancas.acrescimo_frete = paraServidor(acrescimo);
+  }
+  if (chamar !== ifood.chamar_entregador) mudancas.chamar_entregador = chamar;
+  if (chamar === 'confirmado' && Number(preparo) !== ifood.tempo_preparo_min) {
+    mudancas.tempo_preparo_min = Number(preparo);
+  }
+  const mudou = Object.keys(mudancas).length > 0;
+
+  const salvar = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mudou) return;
+    if (mudancas.acrescimo_frete === null) { setErro('Acréscimo inválido'); return; }
+    if ('tempo_preparo_min' in mudancas && !(Number.isInteger(mudancas.tempo_preparo_min) && Number(preparo) > 0)) {
+      setErro('Tempo de preparo inválido');
+      return;
+    }
+    enviar('/stores/integracoes/ifood/', mudancas);
+  };
+
+  return (
+    <form onSubmit={salvar} className="flex flex-col gap-4 border-t border-border-token pt-5">
+      <h3 className="text-sm font-bold text-fg-token">Entregas iFood</h3>
+
+      <div className="flex items-center justify-between gap-3">
+        <span id={`frete-ifood-${storeId}`} className="text-sm font-semibold text-fg-token">Frete pelo iFood</span>
+        <Switch checked={frete} onChange={setFrete} ariaLabelledby={`frete-ifood-${storeId}`} />
+      </div>
+
+      {frete && (
+        <label className="flex flex-col gap-1 text-sm font-semibold text-fg-token">
+          Acréscimo no frete (R$)
+          <input
+            value={acrescimo}
+            onChange={(e) => setAcrescimo(e.target.value)}
+            inputMode="decimal"
+            autoComplete="off"
+            className={`${campo} max-w-[10rem]`}
+          />
+        </label>
+      )}
+
+      <Select
+        rotulo="Chamar entregador"
+        valor={chamar}
+        onMudar={(v) => setChamar(v as ChamarEntregador)}
+        opcoes={QUANDO_CHAMAR}
+        className="max-w-xs"
+      />
+
+      {chamar === 'confirmado' && (
+        <label className="flex flex-col gap-1 text-sm font-semibold text-fg-token">
+          Tempo de preparo (min)
+          <input
+            type="number"
+            min={1}
+            step={1}
+            value={preparo}
+            onChange={(e) => setPreparo(e.target.value)}
+            inputMode="numeric"
+            className={`${campo} max-w-[10rem]`}
+          />
+        </label>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="submit" disabled={ocupado || !mudou} className={botaoPrimario}>Salvar entregas</button>
+      </div>
+      {erro && <p role="alert" className="text-sm text-danger-token">{erro}</p>}
+    </form>
+  );
+};
+
+const seloDoIfood = (ifood: EstadoIfood) => {
+  if (!ifood.disponivel && !ifood.entregas_disponivel) return <Selo tom="breve">Em breve</Selo>;
+  if (!ifood.merchant_id) return <Selo tom="neutro">Não conectado</Selo>;
+  if (ifood.conectado) return <Selo tom="ok">Conectado</Selo>;
+  return <Selo tom="breve">Aguardando autorização</Selo>;
 };
 
 export const CanaisDaLoja: React.FC = () => {
@@ -156,6 +290,7 @@ export const CanaisDaLoja: React.FC = () => {
   const noventa = estado['99food'];
   const ifood = estado.ifood;
   const mp = estado.mercado_pago;
+  const mudarIfood = (novo: EstadoIfood) => setEstado((atual) => (atual ? { ...atual, ifood: novo } : atual));
 
   return (
     <>
@@ -185,20 +320,19 @@ export const CanaisDaLoja: React.FC = () => {
           icone={<IfoodIcon size={48} />}
           titulo="iFood"
           subtitulo={ifood.conectado ? (ifood.loja || 'Loja conectada') : 'Pedidos do iFood no mesmo painel'}
-          selo={ifood.conectado
-            ? (ifood.erro ? <Selo tom="perigo">Precisa reconectar</Selo> : <Selo tom="ok">Recebendo pedidos</Selo>)
-            : ifood.disponivel ? <Selo tom="neutro">Não conectado</Selo> : <Selo tom="breve">Em breve</Selo>}
+          selo={seloDoIfood(ifood)}
         >
           <ul className="flex flex-col gap-3">
             <Beneficio titulo="Um quadro só">para site, WhatsApp, 99 e iFood.</Beneficio>
             <Beneficio titulo="Comanda única">na mesma impressora.</Beneficio>
           </ul>
-          {ifood.disponivel && (
-            <AcoesDoIfood
-              storeId={storeId}
-              ifood={ifood}
-              aoMudar={(novo) => setEstado((atual) => (atual ? { ...atual, ifood: novo } : atual))}
-            />
+          {(ifood.disponivel || ifood.entregas_disponivel) && (
+            <div className="mt-auto flex flex-col gap-5">
+              <ConexaoDoIfood storeId={storeId} ifood={ifood} aoMudar={mudarIfood} />
+              {ifood.entregas_disponivel && ifood.merchant_id && (
+                <EntregasDoIfood storeId={storeId} ifood={ifood} aoMudar={mudarIfood} />
+              )}
+            </div>
           )}
         </Cartao>
       </Grupo>
