@@ -19,9 +19,9 @@ import api from '../../services/api';
 import { useStore } from '../../hooks/useStore';
 import { IfoodIcon, MercadoPagoIcon, NinetyNineFoodIcon } from '../../components/brand/BrandIcons';
 import { Switch } from '../../components/common/Switch';
-import { Select } from '../../components/ui';
+import { Gaveta, Select } from '../../components/ui';
 import { LojaNoIfood } from './LojaNoIfood';
-import { Beneficio, Cartao, Grupo, Selo, botaoDiscreto, botaoPrimario, botaoSecundario } from './pecasDeIntegracao';
+import { Acoes, Cartao, Grupo, Selo, botaoDiscreto, botaoPrimario, botaoSecundario } from './pecasDeIntegracao';
 
 type ChamarEntregador = 'manual' | 'confirmado' | 'pronto';
 
@@ -257,6 +257,7 @@ const seloDoIfood = (ifood: EstadoIfood) => {
 export const CanaisDaLoja: React.FC = () => {
   const { storeId, storeSlug } = useStore();
   const [estado, setEstado] = useState<EstadoDosCanais | null>(null);
+  const [configurandoIfood, setConfigurandoIfood] = useState(false);
   const [falhou, setFalhou] = useState(false);
 
   const carregar = useCallback(async () => {
@@ -293,70 +294,84 @@ export const CanaisDaLoja: React.FC = () => {
   const mp = estado.mercado_pago;
   const mudarIfood = (novo: EstadoIfood) => setEstado((atual) => (atual ? { ...atual, ifood: novo } : atual));
 
+  const ifoodLigavel = ifood.disponivel || ifood.entregas_disponivel;
+
   return (
     <>
       <Grupo titulo="Delivery">
         <Cartao
-          icone={<NinetyNineFoodIcon size={48} />}
+          icone={<NinetyNineFoodIcon size={44} />}
           titulo="99Food"
+          categoria="delivery"
+          ativo={noventa.ativo}
           subtitulo={noventa.ativo
             ? `${noventa.pedidos_30_dias} pedidos em 30 dias${noventa.ultimo_pedido_em ? ` · último ${quando(noventa.ultimo_pedido_em)}` : ''}`
             : 'Ainda não ativado'}
           selo={noventa.ativo ? <Selo tom="ok">Recebendo pedidos</Selo> : <Selo tom="neutro">Desligado</Selo>}
         >
-          <ul className="flex flex-col gap-3">
-            <Beneficio titulo="Pedido da 99 no seu quadro,">com o número da 99 na comanda.</Beneficio>
-            <Beneficio titulo="Aceite automático">e impressão na hora.</Beneficio>
-            <Beneficio titulo="Repasse conferido">pedido a pedido.</Beneficio>
-          </ul>
           {noventa.ativo && (
-            <div className="mt-auto flex flex-wrap items-center gap-2">
+            <Acoes>
               <Link to={`${loja('orders/historico')}?canal=99food`} className={botaoPrimario}>Ver pedidos</Link>
               <Link to="/analytics/vendas" className={botaoSecundario}>Importar repasse</Link>
-            </div>
+            </Acoes>
           )}
         </Cartao>
 
         <Cartao
-          icone={<IfoodIcon size={48} />}
+          icone={<IfoodIcon size={44} />}
           titulo="iFood"
-          subtitulo={ifood.conectado ? (ifood.loja || 'Loja conectada') : 'Pedidos do iFood no mesmo painel'}
+          categoria="delivery"
+          ativo={ifood.conectado}
+          subtitulo={ifood.conectado ? (ifood.loja || 'Loja conectada') : 'Ainda não conectado'}
           selo={seloDoIfood(ifood)}
         >
-          <ul className="flex flex-col gap-3">
-            <Beneficio titulo="Um quadro só">para site, WhatsApp, 99 e iFood.</Beneficio>
-            <Beneficio titulo="Comanda única">na mesma impressora.</Beneficio>
-          </ul>
-          {(ifood.disponivel || ifood.entregas_disponivel) && (
-            <div className="mt-auto flex flex-col gap-5">
-              <ConexaoDoIfood storeId={storeId} ifood={ifood} aoMudar={mudarIfood} />
-              {ifood.merchant_id && ifood.conectado && <LojaNoIfood storeId={storeId} />}
-              {ifood.entregas_disponivel && ifood.merchant_id && (
-                <EntregasDoIfood storeId={storeId} ifood={ifood} aoMudar={mudarIfood} />
-              )}
-            </div>
+          {ifoodLigavel && (
+            <Acoes>
+              <button type="button" className={ifood.conectado ? botaoSecundario : botaoPrimario} onClick={() => setConfigurandoIfood(true)}>
+                {ifood.merchant_id ? 'Configurar' : 'Conectar'}
+              </button>
+            </Acoes>
           )}
         </Cartao>
       </Grupo>
 
       <Grupo titulo="Pagamento">
         <Cartao
-          icone={<MercadoPagoIcon size={48} />}
+          icone={<MercadoPagoIcon size={44} />}
           titulo="Mercado Pago"
+          categoria="pagamento"
+          ativo={mp.conectado}
           subtitulo="PIX e cartão do cardápio"
           selo={mp.conectado ? <Selo tom="ok">Recebendo na sua conta</Selo> : <Selo tom="neutro">Não conectado</Selo>}
         >
-          <ul className="flex flex-col gap-3">
-            <Beneficio titulo="O dinheiro cai direto">na sua conta do Mercado Pago.</Beneficio>
-            <Beneficio titulo="Pedido confirmado sozinho">quando o PIX é pago.</Beneficio>
-          </ul>
-          <div className="mt-auto flex flex-wrap items-center gap-2">
+          <Acoes>
             <Link to={loja('payments')} className={mp.conectado ? botaoSecundario : botaoPrimario}>
               {mp.conectado ? 'Gerenciar' : 'Conectar'}
             </Link>
-          </div>
+          </Acoes>
         </Cartao>
       </Grupo>
+
+      {configurandoIfood && ifoodLigavel && (
+        <Gaveta ariaLabel="iFood" onClose={() => setConfigurandoIfood(false)} className="max-w-xl">
+          <div className="flex flex-col gap-6 p-6">
+            <header className="flex items-center gap-3">
+              <IfoodIcon size={40} />
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg font-bold text-fg-token">iFood</h2>
+                <p className="truncate text-sm text-fg-muted-token">{ifood.loja || 'Loja no iFood'}</p>
+              </div>
+              {seloDoIfood(ifood)}
+            </header>
+            <ConexaoDoIfood storeId={storeId} ifood={ifood} aoMudar={mudarIfood} />
+            {ifood.merchant_id && ifood.conectado && <LojaNoIfood storeId={storeId} />}
+            {ifood.entregas_disponivel && ifood.merchant_id && (
+              <EntregasDoIfood storeId={storeId} ifood={ifood} aoMudar={mudarIfood} />
+            )}
+            <button type="button" className={`${botaoDiscreto} self-end`} onClick={() => setConfigurandoIfood(false)}>Fechar</button>
+          </div>
+        </Gaveta>
+      )}
     </>
   );
 };

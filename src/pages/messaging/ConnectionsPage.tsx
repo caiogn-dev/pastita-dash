@@ -11,6 +11,7 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../hooks';
 import * as whatsappService from '../../services/whatsapp';
@@ -23,7 +24,7 @@ import { estadoDoInstagram } from './estadoDoInstagram';
 import { useAuthStore } from '../../stores/authStore';
 import { CanaisDaLoja } from './CanaisDaLoja';
 import {
-  Beneficio, Cartao, Grupo, Selo, botaoDiscreto, botaoPrimario, botaoSecundario, type Tom,
+  Cartao, FiltroDasIntegracoes, Grupo, Selo, type Filtro, botaoDiscreto, botaoPrimario, botaoSecundario, type Tom,
 } from './pecasDeIntegracao';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -74,6 +75,15 @@ const SeloDoCanal: React.FC<{ estado: Estado; rotulo?: string }> = ({ estado, ro
 
 // ─── Tela ─────────────────────────────────────────────────────────────────────
 
+const FILTROS: { valor: Filtro; rotulo: string }[] = [
+  { valor: 'todas', rotulo: 'Todas' },
+  { valor: 'ativas', rotulo: 'Ativas' },
+  { valor: 'desligadas', rotulo: 'Desligadas' },
+  { valor: 'atendimento', rotulo: 'Atendimento' },
+  { valor: 'delivery', rotulo: 'Delivery' },
+  { valor: 'pagamento', rotulo: 'Pagamento' },
+];
+
 export default function ConnectionsPage() {
   const [ConfirmDialog, confirm] = useConfirm();
   const usuario = useAuthStore((s) => s.user) as { is_superuser?: boolean; is_staff?: boolean } | null;
@@ -89,6 +99,8 @@ export default function ConnectionsPage() {
   const [instagramIndisponivel, setInstagramIndisponivel] = useState(false);
   const [conectandoInstagram, setConectandoInstagram] = useState(false);
   const limparLoginInstagram = useRef<(() => void) | null>(null);
+  const [filtro, setFiltro] = useState<Filtro>('todas');
+  const [busca, setBusca] = useState('');
 
   const carregar = useCallback(async () => {
     const [wa, ig] = await Promise.allSettled([
@@ -250,6 +262,38 @@ export default function ConnectionsPage() {
         </div>
       )}
 
+      <div className="mb-6 flex flex-col gap-3">
+        <label className="relative block max-w-sm">
+          <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted-token" aria-hidden />
+          <input
+            type="search"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar integração"
+            aria-label="Buscar integração"
+            className="h-10 w-full rounded-xl border border-border-token bg-surface-token pl-9 pr-3 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
+          />
+        </label>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar integrações">
+          {FILTROS.map((f) => (
+            <button
+              key={f.valor}
+              type="button"
+              aria-pressed={filtro === f.valor}
+              onClick={() => setFiltro(f.valor)}
+              className={`h-8 rounded-full border px-3.5 text-sm font-semibold transition ${
+                filtro === f.valor
+                  ? 'border-brand bg-brand-soft text-brand-ink'
+                  : 'border-border-token text-fg-muted-token hover:text-fg-token'
+              }`}
+            >
+              {f.rotulo}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <FiltroDasIntegracoes.Provider value={{ filtro, busca }}>
       {carregando ? (
         <p role="status" className="text-sm text-fg-muted-token">Carregando suas integrações…</p>
       ) : (
@@ -257,13 +301,8 @@ export default function ConnectionsPage() {
           <Grupo titulo="Atendimento">
             {/* ── WhatsApp ── */}
             {whatsapps.length === 0 && !erroWhatsapp && (
-              <Cartao icone={<WhatsAppIcon size={48} />} titulo="WhatsApp" subtitulo="Ainda não conectado">
-                <ul className="flex flex-col gap-3">
-                  <Beneficio titulo="Seus clientes recebem sozinhos">a confirmação do pedido, o PIX e cada mudança de status.</Beneficio>
-                  <Beneficio titulo="Você continua usando o app">WhatsApp Business no celular — as conversas aparecem nos dois.</Beneficio>
-                  <Beneficio titulo="Um número só.">Nada muda para os seus clientes.</Beneficio>
-                </ul>
-                <div className="mt-auto flex flex-col gap-2">
+              <Cartao icone={<WhatsAppIcon size={44} />} titulo="WhatsApp" subtitulo="Ainda não conectado" categoria="atendimento" ativo={false}>
+                <div className="mt-auto flex flex-col gap-2 border-t border-border-token pt-4">
                   <ConnectWhatsAppButton onConnected={carregar} />
                 </div>
               </Cartao>
@@ -275,19 +314,14 @@ export default function ConnectionsPage() {
               return (
                 <Cartao
                   key={conta.id}
-                  icone={<WhatsAppIcon size={48} />}
+                  icone={<WhatsAppIcon size={44} />}
                   titulo="WhatsApp"
+                  categoria="atendimento"
+                  ativo={estado === 'funcionando'}
                   subtitulo={[conta.name, conta.display_phone_number || conta.phone_number].filter(Boolean).join(' · ')}
                   selo={<SeloDoCanal estado={estado} />}
                 >
-                  <ul className="flex flex-col gap-3">
-                    <Beneficio titulo="Seus clientes recebem sozinhos">a confirmação do pedido, o PIX e cada mudança de status.</Beneficio>
-                    <Beneficio titulo="Você continua usando o app">WhatsApp Business no celular — as conversas aparecem nos dois.</Beneficio>
-                    {QUALIDADE_BOA.has(qualidade) && (
-                      <Beneficio titulo="Reputação do número: boa.">A Meta avalia se os clientes gostam das mensagens da loja.</Beneficio>
-                    )}
-                  </ul>
-                  <div className="mt-auto flex flex-wrap items-center gap-2">
+                  <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-border-token pt-4">
                     {estado === 'desconectado' && <ConnectWhatsAppButton rotulo="Conectar de novo" onConnected={carregar} />}
                     {estado === 'pausado' && (
                       <button type="button" className={botaoPrimario} onClick={() => reativarWhatsApp(conta)}>Reativar</button>
@@ -309,9 +343,11 @@ export default function ConnectionsPage() {
             {/* ── Instagram ── */}
             {instagramAtivo ? (
               <Cartao
-                icone={<InstagramIcon size={48} />}
+                icone={<InstagramIcon size={44} />}
                 titulo="Instagram"
-                subtitulo={instagramAtivo.name || 'Conta profissional'}
+                categoria="atendimento"
+                ativo={estadoIg !== 'desconectado'}
+                subtitulo={`@${instagramAtivo.handle}`}
                 selo={(
                   <SeloDoCanal
                     estado={estadoIg ?? 'funcionando'}
@@ -319,18 +355,13 @@ export default function ConnectionsPage() {
                   />
                 )}
               >
-                <p className="text-sm font-semibold text-fg-token">@{instagramAtivo.handle}</p>
                 {estadoIg === 'desconectado' && (
                   <p className="rounded-xl bg-danger-soft p-3 text-sm text-danger-token">
                     A Meta recusou o acesso desta conta — nada entra nem sai por aqui. Conecte de
                     novo para voltar a receber o direct e os comentários.
                   </p>
                 )}
-                <ul className="flex flex-col gap-3">
-                  <Beneficio titulo="Direct no mesmo lugar">que o WhatsApp — responda tudo numa tela só.</Beneficio>
-                  <Beneficio titulo="Comentários chegam aqui,">prontos para campanhas do tipo “comenta e recebe no direct”.</Beneficio>
-                </ul>
-                <div className="mt-auto flex flex-wrap items-center gap-2">
+                <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-border-token pt-4">
                   {estadoIg === 'desconectado' ? (
                     <button
                       type="button"
@@ -348,20 +379,15 @@ export default function ConnectionsPage() {
                 </div>
               </Cartao>
             ) : erroInstagram ? null : (
-              <Cartao icone={<InstagramIcon size={48} />} titulo="Instagram" subtitulo="Ainda não conectado">
-                <ul className="flex flex-col gap-3">
-                  <Beneficio titulo="Direct no mesmo lugar">que o WhatsApp — responda tudo numa tela só.</Beneficio>
-                  <Beneficio titulo="“Comenta e recebe no direct”:">quem comenta a palavra no post ganha o cupom ou o cardápio na hora.</Beneficio>
-                  <Beneficio titulo="Sorteios e concursos">com regras: marcar amigos, um comentário por pessoa, palavra certa.</Beneficio>
-                </ul>
-                <div className="mt-auto flex flex-col gap-2">
+              <Cartao icone={<InstagramIcon size={44} />} titulo="Instagram" subtitulo="Ainda não conectado" categoria="atendimento" ativo={false}>
+                <div className="mt-auto flex flex-col gap-2 border-t border-border-token pt-4">
                   {instagramIndisponivel ? (
                     <p role="status" className="rounded-xl bg-warning-soft px-4 py-3 text-sm text-fg-token">
                       Em breve: estamos liberando a conexão do Instagram para as lojas. Avisamos você por aqui.
                     </p>
                   ) : (
-                    <button type="button" className={`${botaoPrimario} h-12 text-base`} onClick={entrarComInstagram} disabled={conectandoInstagram}>
-                      <InstagramIcon size={22} />
+                    <button type="button" className={botaoPrimario} onClick={entrarComInstagram} disabled={conectandoInstagram}>
+                      <InstagramIcon size={18} />
                       {conectandoInstagram ? 'Aguardando o Instagram…' : 'Entrar com o Instagram'}
                     </button>
                   )}
@@ -407,6 +433,7 @@ export default function ConnectionsPage() {
           )}
         </div>
       )}
+      </FiltroDasIntegracoes.Provider>
       {ConfirmDialog}
     </PageShell>
   );
