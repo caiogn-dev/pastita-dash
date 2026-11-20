@@ -10,6 +10,7 @@ import { TrialBanner } from './TrialBanner';
 import { useIsMobileViewport } from '../../mobile/useIsMobileViewport';
 import { MobileShell } from '../../mobile/MobileShell';
 import { PedidosAoVivo } from '../realtime/PedidosAoVivo';
+import { WidgetDoIfood } from './WidgetDoIfood';
 import { useAuthStore } from '../../stores/authStore';
 import { classeDeAltura } from './alturaDaCasca';
 
@@ -154,6 +155,8 @@ const ConteudoDoLayout: React.FC = () => {
 export const MainLayout: React.FC = () => (
   <>
     <PedidosAoVivo />
+    {/* Bolinha do iFood: mesma lógica — fora dos ramos, init uma vez só. */}
+    <WidgetDoIfood />
     <ConteudoDoLayout />
   </>
 );

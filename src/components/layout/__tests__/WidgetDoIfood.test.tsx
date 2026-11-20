@@ -1,0 +1,54 @@
+/**
+ * Widget oficial do iFood (bolinha: chat com cliente, notificações, tracking,
+ * pausa). Regra da doc do iFood: init UMA vez, só com a lista certa — init com
+ * lista vazia derruba a sessão autorizada.
+ */
+import React from 'react';
+import { render, waitFor } from '@testing-library/react';
+
+const get = jest.fn();
+jest.mock('../../../services/api', () => ({ __esModule: true, default: { get: (...a: unknown[]) => get(...a) } }));
+
+import { WidgetDoIfood, WIDGET_DO_IFOOD_ID } from '../WidgetDoIfood';
+
+type W = typeof window & { iFoodWidget?: { init: jest.Mock } };
+
+beforeEach(() => {
+  get.mockReset();
+  document.head.querySelectorAll('script[data-ifood-widget]').forEach((s) => s.remove());
+  (window as W).iFoodWidget = { init: jest.fn() };
+  delete (window as W & { __ifoodWidgetIniciado?: boolean }).__ifoodWidgetIniciado;
+});
+
+const carregarScript = () => {
+  const s = document.head.querySelector('script[data-ifood-widget]') as HTMLScriptElement;
+  expect(s).not.toBeNull();
+  expect(s.src).toBe('https://widgets.ifood.com.br/widget.js');
+  s.dispatchEvent(new Event('load'));
+};
+
+it('com lojas no iFood: carrega o script e inicia uma vez com os merchants', async () => {
+  get.mockResolvedValue({ data: { merchant_ids: ['m-1', 'm-2'] } });
+  const { rerender } = render(<WidgetDoIfood />);
+  await waitFor(() => expect(document.head.querySelector('script[data-ifood-widget]')).not.toBeNull());
+  carregarScript();
+  rerender(<WidgetDoIfood />);
+  const init = (window as W).iFoodWidget!.init;
+  await waitFor(() => expect(init).toHaveBeenCalledTimes(1));
+  expect(init).toHaveBeenCalledWith({ widgetId: WIDGET_DO_IFOOD_ID, merchantIds: ['m-1', 'm-2'] });
+});
+
+it('sem loja no iFood: nem carrega o script', async () => {
+  get.mockResolvedValue({ data: { merchant_ids: [] } });
+  render(<WidgetDoIfood />);
+  await waitFor(() => expect(get).toHaveBeenCalledWith('/stores/integracoes/ifood/merchants/'));
+  expect(document.head.querySelector('script[data-ifood-widget]')).toBeNull();
+  expect((window as W).iFoodWidget!.init).not.toHaveBeenCalled();
+});
+
+it('falha na API: não inicia (init vazio derruba a sessão)', async () => {
+  get.mockRejectedValue(new Error('rede'));
+  render(<WidgetDoIfood />);
+  await waitFor(() => expect(get).toHaveBeenCalled());
+  expect(document.head.querySelector('script[data-ifood-widget]')).toBeNull();
+});
