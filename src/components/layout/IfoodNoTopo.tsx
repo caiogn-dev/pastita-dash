@@ -127,7 +127,7 @@ export const IfoodNoTopo: React.FC<{ storeSlug?: string | null }> = ({ storeSlug
         aria-label={`iFood: ${l.rotulo}${l.ate ? ` até ${l.ate}` : ''}`}
         className="inline-flex items-center gap-1.5 rounded-lg border border-chrome-border px-2 py-1.5 text-sm font-semibold text-chrome-fg transition-colors hover:bg-chrome-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
-        <span className="rounded bg-[#EA1D2C] px-1 text-[10px] font-black italic leading-4 text-white" aria-hidden>iFood</span>
+        <img src="/brand/ifood.svg" alt="" aria-hidden className="h-4 w-auto" />
         <span className={`h-1.5 w-1.5 rounded-full ${l.tom}`} aria-hidden />
         <span className="max-md:sr-only" aria-hidden>{l.rotulo}{l.ate && ` até ${l.ate}`}</span>
       </button>
