@@ -11,9 +11,19 @@ export interface Informativo {
   fim: string | null;
   ativo: boolean;
   estado: EstadoDoInformativo;
+  /** 'modal' abre ao entrar no cardápio; 'faixa' fica no topo. Antigos vêm sem. */
+  formato?: FormatoDoInformativo;
+  frequencia?: FrequenciaDoInformativo;
+  imagem_url?: string;
+  botao_texto?: string;
+  botao_link?: string;
 }
 
-export type InformativoInput = Partial<Pick<Informativo, 'titulo' | 'texto' | 'inicio' | 'fim' | 'ativo'>>;
+export type FormatoDoInformativo = 'modal' | 'faixa';
+export type FrequenciaDoInformativo = 'uma_vez' | 'toda_visita';
+
+export type InformativoInput = Partial<Pick<Informativo,
+  'titulo' | 'texto' | 'inicio' | 'fim' | 'ativo' | 'formato' | 'frequencia' | 'imagem_url' | 'botao_texto' | 'botao_link'>>;
 
 export const informativosService = {
   async listar(store: string): Promise<Informativo[]> {
@@ -26,6 +36,12 @@ export const informativosService = {
   },
   async editar(store: string, id: string, dados: InformativoInput): Promise<Informativo> {
     const { data } = await api.patch<Informativo>(`/stores/informativos/${id}/`, dados, { params: { store } });
+    return data;
+  },
+  async enviarImagem(store: string, id: string, arquivo: File): Promise<Informativo> {
+    const form = new FormData();
+    form.append('image', arquivo);
+    const { data } = await api.post<Informativo>(`/stores/informativos/${id}/imagem/`, form, { params: { store } });
     return data;
   },
   async apagar(store: string, id: string): Promise<void> {

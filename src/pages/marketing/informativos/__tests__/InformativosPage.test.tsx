@@ -12,7 +12,7 @@ jest.mock('react-hot-toast', () => ({
   __esModule: true,
   default: Object.assign(jest.fn(), { success: jest.fn(), error: jest.fn() }),
 }));
-const svc = { listar: jest.fn(), criar: jest.fn(), editar: jest.fn(), apagar: jest.fn() };
+const svc = { listar: jest.fn(), criar: jest.fn(), editar: jest.fn(), apagar: jest.fn(), enviarImagem: jest.fn() };
 jest.mock('../../../../services/informativos', () => ({
   __esModule: true,
   informativosService: {
@@ -20,6 +20,7 @@ jest.mock('../../../../services/informativos', () => ({
     criar: (...a: unknown[]) => svc.criar(...a),
     editar: (...a: unknown[]) => svc.editar(...a),
     apagar: (...a: unknown[]) => svc.apagar(...a),
+    enviarImagem: (...a: unknown[]) => svc.enviarImagem(...a),
   },
 }));
 jest.mock('../../../../hooks/useStore', () => ({
@@ -38,6 +39,8 @@ const renderizar = () => render(
 );
 
 beforeEach(() => jest.clearAllMocks());
+// jsdom não tem URL.createObjectURL (prévia da imagem escolhida).
+Object.assign(URL, { createObjectURL: jest.fn(() => 'blob:previa'), revokeObjectURL: jest.fn() });
 
 it('lista os informativos com o estado', async () => {
   svc.listar.mockResolvedValue([FERIADO]);
@@ -54,7 +57,7 @@ it('cria um informativo com título, texto e fim', async () => {
   fireEvent.click(await screen.findByRole('button', { name: /novo informativo/i }));
   const dialogo = await screen.findByRole('dialog');
   fireEvent.change(within(dialogo).getByLabelText(/título/i), { target: { value: 'Feriado' } });
-  fireEvent.change(within(dialogo).getByLabelText(/texto/i), { target: { value: 'Fechados dia 12/10.' } });
+  fireEvent.change(within(dialogo).getByLabelText(/^texto$/i), { target: { value: 'Fechados dia 12/10.' } });
   fireEvent.change(within(dialogo).getByLabelText(/termina/i), { target: { value: '2026-10-13T00:00' } });
   fireEvent.click(within(dialogo).getByRole('button', { name: /salvar/i }));
   await waitFor(() => expect(svc.criar).toHaveBeenCalledWith('ce-saladas', expect.objectContaining({
@@ -80,4 +83,33 @@ it('pausar manda ativo=false', async () => {
   renderizar();
   fireEvent.click((await screen.findAllByRole('switch', { name: /feriado/i }))[0]);
   await waitFor(() => expect(svc.editar).toHaveBeenCalledWith('ce-saladas', 'i1', { ativo: false }));
+});
+
+it('novo informativo nasce modal, uma vez por cliente, e manda botão', async () => {
+  svc.listar.mockResolvedValue([]);
+  svc.criar.mockResolvedValue({ ...FERIADO, id: 'n1' });
+  renderizar();
+  fireEvent.click(await screen.findByRole('button', { name: /novo informativo/i }));
+  const dialogo = await screen.findByRole('dialog');
+  fireEvent.change(within(dialogo).getByLabelText(/título/i), { target: { value: 'Black Friday' } });
+  fireEvent.change(within(dialogo).getByLabelText(/texto do botão/i), { target: { value: 'Ver promoções' } });
+  fireEvent.change(within(dialogo).getByLabelText(/link do botão/i), { target: { value: '/ce-saladas/promos' } });
+  fireEvent.click(within(dialogo).getByRole('button', { name: /salvar/i }));
+  await waitFor(() => expect(svc.criar).toHaveBeenCalledWith('ce-saladas', expect.objectContaining({
+    formato: 'modal', frequencia: 'uma_vez', botao_texto: 'Ver promoções', botao_link: '/ce-saladas/promos',
+  })));
+});
+
+it('imagem escolhida sobe depois de criar, no id novo', async () => {
+  svc.listar.mockResolvedValue([]);
+  svc.criar.mockResolvedValue({ ...FERIADO, id: 'n1' });
+  svc.enviarImagem.mockResolvedValue({});
+  renderizar();
+  fireEvent.click(await screen.findByRole('button', { name: /novo informativo/i }));
+  const dialogo = await screen.findByRole('dialog');
+  fireEvent.change(within(dialogo).getByLabelText(/título/i), { target: { value: 'X' } });
+  const arquivo = new File(['x'], 'a.png', { type: 'image/png' });
+  fireEvent.change(within(dialogo).getByLabelText(/imagem/i), { target: { files: [arquivo] } });
+  fireEvent.click(within(dialogo).getByRole('button', { name: /salvar/i }));
+  await waitFor(() => expect(svc.enviarImagem).toHaveBeenCalledWith('ce-saladas', 'n1', arquivo));
 });
