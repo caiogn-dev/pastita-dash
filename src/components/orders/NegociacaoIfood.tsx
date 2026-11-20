@@ -20,7 +20,7 @@ import {
   type RespostaDaDisputa,
 } from '../../services/ifoodPedido';
 import { formatCurrency } from '../../utils/formatters';
-import { Select } from '../ui';
+import { Button, Campo, Input, Select } from '../ui';
 import { ContagemRegressiva } from './ContagemRegressiva';
 
 const ATUALIZAR_A_CADA_MS = 30_000;
@@ -81,11 +81,6 @@ type Resposta =
   | { tipo: 'aceitar' }
   | { tipo: 'recusar' }
   | { tipo: 'alternativa'; alternativa: AlternativaDaDisputa };
-
-const botao =
-  'inline-flex h-9 items-center justify-center rounded-lg border border-border-token bg-surface px-3 text-xs font-semibold text-fg-token transition hover:bg-surface-2 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
-const botaoPrincipal =
-  'inline-flex h-9 items-center justify-center rounded-lg bg-brand px-3 text-xs font-semibold text-on-brand transition hover:bg-brand-hover disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
 
 /** Formulário curto de cada resposta; Confirmar só liga com o que o iFood exige. */
 const FormularioDeResposta: React.FC<{
@@ -163,26 +158,21 @@ const FormularioDeResposta: React.FC<{
         </>
       )}
       {alternativa && alternativa.type !== 'ADDITIONAL_TIME' && (
-        <div className="flex flex-col gap-1">
-          <label htmlFor={`valor-${alternativa.id}`} className="text-sm font-medium text-fg-token">Valor (R$)</label>
-          <input
-            id={`valor-${alternativa.id}`}
+        <Campo
+          rotulo="Valor (R$)"
+          dica={maxCentavos !== null ? `máx. ${formatCurrency(maxCentavos / 100)}` : undefined}
+          className="w-36"
+        >
+          <Input
             value={valor}
             onChange={(e) => setValor(e.target.value)}
             inputMode="decimal"
             autoComplete="off"
-            aria-describedby={maxCentavos !== null ? `max-${alternativa.id}` : undefined}
-            className="h-9 w-32 rounded-lg border border-border-token bg-surface px-2 text-sm text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           />
-          {maxCentavos !== null && (
-            <span id={`max-${alternativa.id}`} className="text-xs font-normal text-fg-muted-token">
-              máx. {formatCurrency(maxCentavos / 100)}
-            </span>
-          )}
-        </div>
+        </Campo>
       )}
-      <button type="submit" disabled={!corpo || enviando} className={botaoPrincipal}>Confirmar</button>
-      <button type="button" onClick={onVoltar} disabled={enviando} className={botao}>Voltar</button>
+      <Button type="submit" size="sm" disabled={!corpo || enviando}>Confirmar</Button>
+      <Button type="button" size="sm" variant="outline" onClick={onVoltar} disabled={enviando}>Voltar</Button>
     </form>
   );
 };
@@ -277,12 +267,12 @@ export const NegociacaoIfood: React.FC<Props> = ({ pedidoId, aoResponder }) => {
         />
       ) : (
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={() => setResposta({ tipo: 'aceitar' })} className={botaoPrincipal}>Aceitar</button>
-          <button type="button" onClick={() => setResposta({ tipo: 'recusar' })} className={botao}>Recusar</button>
+          <Button type="button" size="sm" onClick={() => setResposta({ tipo: 'aceitar' })}>Aceitar</Button>
+          <Button type="button" size="sm" variant="outline" onClick={() => setResposta({ tipo: 'recusar' })}>Recusar</Button>
           {(disputa.alternativas ?? []).map((a) => (
-            <button key={a.id} type="button" onClick={() => setResposta({ tipo: 'alternativa', alternativa: a })} className={botao}>
+            <Button key={a.id} type="button" size="sm" variant="outline" onClick={() => setResposta({ tipo: 'alternativa', alternativa: a })}>
               {ROTULO_DA_ALTERNATIVA[a.type] ?? a.type}
-            </button>
+            </Button>
           ))}
         </div>
       )}

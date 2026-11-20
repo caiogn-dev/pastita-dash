@@ -132,6 +132,8 @@ it('oferecer reembolso respeita o máximo e envia centavos', async () => {
   fireEvent.click(within(f).getByRole('button', { name: 'Oferecer reembolso' }));
   const valor = within(f).getByLabelText('Valor (R$)');
   expect(within(f).getByText(/máx\. R\$ 25,90/)).toBeInTheDocument();
+  // o limite é lido junto com o campo, não solto na tela
+  expect(valor).toHaveAccessibleDescription(/máx\. R\$ 25,90/);
   fireEvent.change(valor, { target: { value: '30' } });
   expect(within(f).getByRole('button', { name: 'Confirmar' })).toBeDisabled();
   fireEvent.change(valor, { target: { value: '12,50' } });
