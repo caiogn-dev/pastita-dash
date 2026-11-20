@@ -118,6 +118,7 @@ export const ComoOClienteRecebe: React.FC<{ loja: string }> = ({ loja }) => {
 
   return (
     <Secao
+      plana
       titulo="Como o cliente recebe"
       descricao={resumoDosModos(modos)}
       acoes={mudou ? (
@@ -142,7 +143,7 @@ export const ComoOClienteRecebe: React.FC<{ loja: string }> = ({ loja }) => {
         ))}
       </ul>
 
-      <div className="mt-4 grid max-w-xl grid-cols-3 items-start gap-4 border-t border-border-token pt-4 max-sm:grid-cols-1">
+      <div className="mt-4 grid grid-cols-2 items-start gap-4 border-t border-border-token pt-4">
         {/* A promessa que o cliente vê no cardápio, no checkout e no WhatsApp. */}
         <Campo rotulo="Prazo mínimo" erro={erro}>
           <Input

@@ -7,7 +7,7 @@
  * quer conferir.
  */
 import React, { useState } from 'react';
-import { Card, Button, Input } from '../../components/ui';
+import { Button, Input } from '../../components/ui';
 import { ordersService, type CalculatedDeliveryFee } from '../../services/orders';
 import { getErrorMessage } from '../../services/api';
 import { formatCurrency, formatNumber } from '../../utils/formatters';
@@ -81,8 +81,8 @@ export const SimuladorDeFreteCard: React.FC<Props> = ({ storeSlug, metadataAtual
   };
 
   return (
-    <Card className="p-4 md:p-6">
-      <h2 className="text-lg font-semibold text-fg-token">Simular taxa</h2>
+    <div className="flex flex-col">
+      <h2 className="text-sm font-bold text-fg-token">Simular taxa</h2>
       <form onSubmit={calcular} className="mt-3 flex flex-wrap items-end gap-2">
         <div className="min-w-0 flex-1 basis-64">
           <Input
@@ -114,6 +114,6 @@ export const SimuladorDeFreteCard: React.FC<Props> = ({ storeSlug, metadataAtual
           )}
         </div>
       )}
-    </Card>
+    </div>
   );
 };

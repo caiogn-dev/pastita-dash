@@ -12,7 +12,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Card, Button } from '../../components/ui';
+import { Button } from '../../components/ui';
 import { Switch } from '../../components/common/Switch';
 import { lerFormula } from './FormulaDeEntregaCard';
 import {
@@ -61,10 +61,10 @@ export const FreteGratisCard: React.FC<Props> = ({ metadataAtual, onSalvar, onRa
   };
 
   return (
-    <Card className="p-4 md:p-6">
+    <div className="flex flex-col">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-fg-token">Frete grátis</h2>
+          <h2 className="text-sm font-bold text-fg-token">Frete grátis</h2>
         </div>
         <Switch
           checked={promo.ativo}
@@ -150,7 +150,7 @@ export const FreteGratisCard: React.FC<Props> = ({ metadataAtual, onSalvar, onRa
           {salvando ? 'Salvando…' : 'Salvar'}
         </Button>
       </div>
-    </Card>
+    </div>
   );
 };
 

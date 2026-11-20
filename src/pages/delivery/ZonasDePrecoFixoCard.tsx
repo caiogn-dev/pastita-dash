@@ -18,7 +18,7 @@ import React, { useState } from 'react';
 import { PlusIcon, TrashIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
-import { Card, Button } from '../../components/ui';
+import { Button } from '../../components/ui';
 import {
   validarZona,
   zonaParaMetadata,
@@ -102,10 +102,10 @@ export const ZonasDePrecoFixoCard: React.FC<ZonasDePrecoFixoCardProps> = ({
   };
 
   return (
-    <Card className="p-4 md:p-6">
+    <div className="flex flex-col">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-fg-token">Endereços com preço combinado</h2>
+          <h2 className="text-sm font-bold text-fg-token">Endereços com preço combinado</h2>
         </div>
         <Button variant="secondary" leftIcon={<PlusIcon className="h-4 w-4" />} onClick={adicionar}>
           Adicionar zona
@@ -297,7 +297,7 @@ export const ZonasDePrecoFixoCard: React.FC<ZonasDePrecoFixoCardProps> = ({
           {salvando ? 'Salvando…' : 'Salvar zonas'}
         </Button>
       </div>
-    </Card>
+    </div>
   );
 };
 

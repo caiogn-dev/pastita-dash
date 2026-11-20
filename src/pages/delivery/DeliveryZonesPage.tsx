@@ -12,7 +12,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { Input, Modal, Loading } from '../../components/common';
-import { Aviso, Card, Button, Badge, StatCard, PageShell, PageTabs, RowActions, Tabela, SearchInput, Select, type PageTab } from '../../components/ui';
+import { Button, Badge, PageShell, PageTabs, RowActions, Tabela, SearchInput, type PageTab } from '../../components/ui';
 import DeliveryZonesMap, { COR_DA_PROMO, COR_DO_LIMITE, corDoAnel } from '../../components/maps/DeliveryZonesMap';
 import { zonasParaCirculos } from '../../components/maps/zonasParaCirculos';
 import {
@@ -56,12 +56,6 @@ const AoSair: React.FC<{ onSair: () => void; children: React.ReactNode }> = ({ o
   return <>{children}</>;
 };
 
-const ABAS_DA_ENTREGA: PageTab[] = [
-  { id: 'preco', rotulo: 'Preço' },
-  { id: 'excecoes', rotulo: 'Exceções' },
-  { id: 'simular', rotulo: 'Simular' },
-  { id: 'recebimento', rotulo: 'Prazo e retirada' },
-];
 
 export const DeliveryZonesPage: React.FC = () => {
   const { storeId: routeStoreId } = useParams<{ storeId?: string }>();
@@ -93,7 +87,7 @@ export const DeliveryZonesPage: React.FC = () => {
   // o efeito duas vezes). Só a mais recente pode escrever na tela.
   const requisicaoRef = useRef(0);
   const [search, setSearch] = useState('');
-  const [filterActive, setFilterActive] = useState<boolean | undefined>(undefined);
+  const [filterActive] = useState<boolean | undefined>(undefined);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -333,372 +327,313 @@ export const DeliveryZonesPage: React.FC = () => {
     zones.length > 0 || (stats?.total ?? 0) > 0 || Boolean(search) ||
     filterActive !== undefined || erroAoCarregar;
 
-  const excecoes = Array.isArray((storeMetadata ?? {}).fixed_price_zones)
-    ? ((storeMetadata ?? {}).fixed_price_zones as unknown[]).length
-    : 0;
   const salvarMetadata = async (novoMetadata: Record<string, unknown>) => {
     if (!storeId) return;
     await updateStore(storeId, { metadata: novoMetadata });
     setStoreMetadata(novoMetadata);
   };
 
+  const abas: PageTab[] = [
+    ...(temFaixas ? [{ id: 'faixas', rotulo: 'Faixas' }] : []),
+    { id: 'preco', rotulo: 'Preço' },
+    { id: 'gratis', rotulo: 'Grátis' },
+    { id: 'excecoes', rotulo: 'Exceções' },
+    { id: 'prazo', rotulo: 'Prazo' },
+    { id: 'simular', rotulo: 'Simular' },
+  ];
+
+  const resumo = [
+    { rotulo: 'Raio máximo', valor: `${formatNumber(formula.raioMaximoKm)} km` },
+    { rotulo: 'Taxa base', valor: formatCurrency(formula.taxaBase) },
+    { rotulo: 'Grátis até', valor: promo.ativo && promo.ateKm ? `${formatNumber(promo.ateKm)} km` : '—' },
+  ];
+
   return (
     <PageShell titulo="Entrega">
-      {/* Referência Prefiro (20/11): resumo em 3 números, configuração em
-          abas à esquerda e o mapa fixo à direita — mexe no preço e vê o
-          raio na mesma tela, sem rolar 4 cartões até o desenho. */}
-      {storeMetadata && (
-        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border-token bg-border-token md:grid-cols-4" aria-label="Resumo da entrega">
-          {[
-            { rotulo: 'Raio máximo', valor: `Até ${formatNumber(formula.raioMaximoKm)} km` },
-            { rotulo: 'Taxa base', valor: formatCurrency(formula.taxaBase) },
-            {
-              rotulo: 'Frete grátis',
-              valor: promo.ativo && promo.ateKm ? `Até ${formatNumber(promo.ateKm)} km` : 'Desligado',
-            },
-            { rotulo: 'Exceções', valor: String(excecoes) },
-          ].map((item) => (
-            <div key={item.rotulo} className="bg-surface-token px-4 py-3">
-              <dt className="text-xs font-semibold text-fg-muted-token">{item.rotulo}</dt>
-              <dd className="mt-0.5 text-base font-bold tabular-nums text-fg-token">{item.valor}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
-
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-        <div className="min-w-0">
-          <PageTabs abas={ABAS_DA_ENTREGA} ariaLabel="Configuração de entrega">
-            {(aba) => (
-              <div className="flex flex-col gap-5">
-                {aba === 'preco' && storeId && (
-                  <AoSair onSair={() => { setRascunhoFormula(null); setRascunhoPromo(null); }}>
-                    <FormulaDeEntregaCard
-                      key={storeId}
-                      metadataAtual={storeMetadata ?? {}}
-                      faixasAtivas={zones.filter((z) => z.is_active).length}
-                      onSalvar={salvarMetadata}
-                      onRascunho={setRascunhoFormula}
-                    />
-                    {/* A promoção SOBRESCREVE o preço: fica junto dele. */}
-                    <FreteGratisCard key={`promo-${storeId}`} metadataAtual={storeMetadata ?? {}} onSalvar={salvarMetadata} onRascunho={setRascunhoPromo} />
-                  </AoSair>
-                )}
-                {aba === 'excecoes' && storeId && (
-                  <ZonasDePrecoFixoCard
-                    key={storeId}
-                    metadataAtual={storeMetadata}
-                    categorias={categoriasDaLoja}
-                    onSalvar={async (fixedPriceZones) => {
-                      await salvarMetadata({ ...(storeMetadata ?? {}), fixed_price_zones: fixedPriceZones });
-                    }}
-                  />
-                )}
-                {aba === 'simular' && storeSlug && (
-                  <SimuladorDeFreteCard key={storeSlug} storeSlug={storeSlug} metadataAtual={storeMetadata ?? {}} />
-                )}
-                {aba === 'recebimento' && (storeSlug || storeId) && (
-                  <ComoOClienteRecebe loja={(storeSlug || storeId)!} />
-                )}
-              </div>
-            )}
-          </PageTabs>
-        </div>
-
-        <div className="min-w-0 xl:sticky xl:top-20">
-                <Card className="p-4">
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h2 className="text-base font-bold text-fg-token">Área de entrega</h2>
-                {storeLocation?.address && (
-                  <p className="mt-0.5 truncate text-sm text-fg-muted-token">{storeLocation.address}</p>
-                )}
-              </div>
-              <Link
-                to={settingsPath}
-                aria-label="Editar localização"
-                title="Editar localização"
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border-token text-fg-muted-token transition-colors hover:text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-              >
-                <Cog6ToothIcon className="h-4 w-4" />
-              </Link>
-            </div>
-
-            {storeLocation ? (
-              <div className="space-y-4">
-                {temCoordenadas ? (
-                  <div className="space-y-3">
-                    {/* Mapa de verdade: pin na loja + um círculo por faixa.
-                        Configurar frete é abstrato — você digita "12 km, R$ 20" sem
-                        ver o que está vendendo. O desenho responde a pergunta que o
-                        formulário não responde: até onde eu entrego? */}
-                    <DeliveryZonesMap storeLocation={storeLocation} zones={zones} promo={anelPromo} limite={anelLimite} height="min(62vh, 620px)" />
-
-                    {/* Legenda ligando COR → faixa → taxa.
-                        Sem ela o mapa é bonito e mudo: você vê seis anéis
-                        coloridos e não sabe qual cobra quanto, então volta para a
-                        tabela e o desenho não serviu para nada. */}
-                    {(circulosDoMapa.length > 0 || anelPromo || anelLimite) && (
-                      <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
-                        {/* A promoção encabeça a legenda: ela SOBRESCREVE o preço
-                            das faixas dentro dela.
-
-                            O anel é um CÍRCULO e a regra é de ROTA — 3 km de rua
-                            cobrem menos chão que 3 km de reta. O rótulo diz isso
-                            em vez de o mapa prometer área que a cotação não honra. */}
-                        {anelPromo && (
-                          <li className="flex items-center gap-1.5 text-caption">
-                            <span
-                              aria-hidden
-                              className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-dashed"
-                              style={{ borderColor: COR_DA_PROMO }}
-                            />
-                            <span className="font-semibold" style={{ color: COR_DA_PROMO }}>
-                              {anelPromo.rotulo}
-                            </span>
-                          </li>
-                        )}
-                        {anelLimite && (
-                          <li className="flex items-center gap-1.5 text-caption">
-                            <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full border-2" style={{ borderColor: COR_DO_LIMITE }} />
-                            <span className="font-semibold text-fg-token">Entrega até {formatNumber(formula.raioMaximoKm)} km</span>
-                          </li>
-                        )}
-                        {circulosDoMapa.map((c, i) => {
-                          const zona = zones.find((z) => String(z.id) === c.id);
-                          return (
-                            <li key={c.id} className="flex items-center gap-1.5 text-caption">
-                              <span
-                                aria-hidden
-                                className="h-2.5 w-2.5 shrink-0 rounded-full border-2"
-                                style={{
-                                  borderColor: corDoAnel(i),
-                                  background: c.aberta ? 'transparent' : `${corDoAnel(i)}33`,
-                                }}
-                              />
-                              <span className="font-semibold text-fg-token">{c.nome}</span>
-                              {zona && (
-                                <span className="tabular-nums text-fg-muted-token">
-                                  {formatCurrency(zona.delivery_fee)}
-                                </span>
-                              )}
-                              {c.aberta && (
-                                <span className="text-fg-muted-token">(sem limite)</span>
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <a
-                        href={`https://www.google.com/maps?q=${storeLocation?.latitude},${storeLocation?.longitude}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-caption font-semibold text-brand-ink hover:underline"
-                      >
-                        Abrir no Google Maps →
-                      </a>
-                    </div>
-                  </div>
+      {/* Molde Prefiro (20/11, 2ª volta): o MAPA é a tela; a configuração é
+          UM painel por cima dele, com rolagem própria. Antes eram 4 cartões
+          empilhados ao lado de um mapa menor que eles — "bloco jogado". */}
+      <div className="relative overflow-hidden rounded-2xl bg-surface-2 ring-1 ring-border-token lg:h-[calc(100vh-170px)] lg:min-h-[600px]">
+        <div className="h-72 lg:absolute lg:inset-0 lg:h-full">
+          {storeLocation && temCoordenadas ? (
+            <DeliveryZonesMap storeLocation={storeLocation} zones={zones} promo={anelPromo} limite={anelLimite} height="100%" />
+          ) : (
+            <div className="grid h-full place-items-center p-6 text-center">
+              <div>
+                {locationError ? (
+                  <ExclamationTriangleIcon className="mx-auto mb-2 h-8 w-8 text-[var(--warning)]" />
                 ) : (
-                  <div className="mt-4 rounded border border-dashed border-border-token bg-surface-2 p-4">
-                    <p className="text-body text-fg-muted-token">
-                      Sem latitude e longitude não dá para desenhar o mapa nem calcular
-                      distância — o frete cai na faixa padrão.{' '}
-                      <Link to={settingsPath} className="font-semibold text-brand-ink hover:underline">
-                        Definir a localização
-                      </Link>
-                    </p>
-                  </div>
+                  <MapPinIcon className="mx-auto mb-2 h-8 w-8 text-fg-muted-token" />
+                )}
+                <p className="text-sm font-semibold text-fg-token">{locationError || 'Sem localização da loja'}</p>
+                {locationError ? (
+                  <Button variant="outline" size="sm" className="mt-3" onClick={loadData}>Tentar novamente</Button>
+                ) : (
+                  <Link to={settingsPath} className="mt-3 inline-block text-sm font-semibold text-brand-ink hover:underline">
+                    Definir a localização
+                  </Link>
                 )}
               </div>
-            ) : locationError ? (
-              <div className="py-8 text-center">
-                <ExclamationTriangleIcon className="mx-auto mb-3 h-10 w-10 text-[var(--warning)]" />
-                <p className="mb-1 text-body font-semibold text-fg-token">{locationError}</p>
-                <p className="mb-4 text-caption text-fg-muted-token">
-                  O endereço pode estar cadastrado — foi a leitura que falhou. As faixas
-                  abaixo continuam valendo.
-                </p>
-                <Button variant="outline" onClick={loadData}>Tentar novamente</Button>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <MapPinIcon className="w-12 h-12 text-fg-muted-token mx-auto mb-3" />
-                <p className="text-fg-muted-token mb-4">Localização não configurada</p>
-                <Link
-                  to={settingsPath}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-on-brand bg-brand rounded hover:bg-brand-hover transition-colors"
-                >
-                  <Cog6ToothIcon className="w-4 h-4" />
-                  Configurar Localização
-                </Link>
-              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Legenda flutuante no canto do mapa. */}
+        <div className="pointer-events-none hidden lg:absolute lg:right-4 lg:top-4 lg:block">
+          <div className="pointer-events-auto superficie px-3 py-2.5 shadow-lg">
+                    {(circulosDoMapa.length > 0 || anelPromo || anelLimite) && (
+              <ul className="flex flex-col gap-1.5">
+                {/* A promoção encabeça a legenda: ela SOBRESCREVE o preço
+                    das faixas dentro dela.
+
+                    O anel é um CÍRCULO e a regra é de ROTA — 3 km de rua
+                    cobrem menos chão que 3 km de reta. O rótulo diz isso
+                    em vez de o mapa prometer área que a cotação não honra. */}
+                {anelPromo && (
+                  <li className="flex items-center gap-1.5 text-caption">
+                    <span
+                      aria-hidden
+                      className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-dashed"
+                      style={{ borderColor: COR_DA_PROMO }}
+                    />
+                    <span className="font-semibold" style={{ color: COR_DA_PROMO }}>
+                      {anelPromo.rotulo}
+                    </span>
+                  </li>
+                )}
+                {anelLimite && (
+                  <li className="flex items-center gap-1.5 text-caption">
+                    <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full border-2" style={{ borderColor: COR_DO_LIMITE }} />
+                    <span className="font-semibold text-fg-token">Entrega até {formatNumber(formula.raioMaximoKm)} km</span>
+                  </li>
+                )}
+                {circulosDoMapa.map((c, i) => {
+                  const zona = zones.find((z) => String(z.id) === c.id);
+                  return (
+                    <li key={c.id} className="flex items-center gap-1.5 text-caption">
+                      <span
+                        aria-hidden
+                        className="h-2.5 w-2.5 shrink-0 rounded-full border-2"
+                        style={{
+                          borderColor: corDoAnel(i),
+                          background: c.aberta ? 'transparent' : `${corDoAnel(i)}33`,
+                        }}
+                      />
+                      <span className="font-semibold text-fg-token">{c.nome}</span>
+                      {zona && (
+                        <span className="tabular-nums text-fg-muted-token">
+                          {formatCurrency(zona.delivery_fee)}
+                        </span>
+                      )}
+                      {c.aberta && (
+                        <span className="text-fg-muted-token">(sem limite)</span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
             )}
-          </Card>
-        </div>
-      </div>
-
-      {temFaixas && (
-        <>
-          <Aviso
-            tom="atencao"
-            titulo="Faixas por distância valem no lugar da fórmula"
-          />
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-3 max-lg:grid-cols-2 gap-3 md:gap-4">
-          <StatCard label="Faixas" value={stats.total} />
-          <StatCard label="Ativas" value={stats.active} tone="brand" />
-          <StatCard label="Valor Médio" value={formatCurrency(stats.avg_fee)} />
-        </div>
-      )}
-
-      {/* Filters */}
-      <Card className="p-3 md:p-4">
-        <div className="flex flex-row max-sm:flex-col gap-3 md:gap-4">
-          <div className="flex-1">
-            <SearchInput
-              placeholder="Buscar por nome…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
           </div>
-          <Select
-            className="w-full sm:w-auto"
-            rotuloOculto="Filtrar por status"
-            vazio="Todos os status"
-            valor={filterActive === undefined ? '' : String(filterActive)}
-            onMudar={(v) => setFilterActive(v === '' ? undefined : v === 'true')}
-            opcoes={[
-              { valor: 'true', rotulo: 'Ativas' },
-              { valor: 'false', rotulo: 'Inativas' },
-            ]}
-          />
         </div>
-      </Card>
 
-      {/* Zones Table */}
-      <Tabela<DeliveryZone>
-        itens={zones}
-        chave={(z) => String(z.id)}
-        rotuloDaLinha={(z) => `Editar faixa ${z.name}`}
-        onAbrir={(z) => handleOpenModal(z)}
-        carregando={loading}
-        falhou={erroAoCarregar}
-        falha={{
-          titulo: 'Não foi possível carregar as faixas de entrega',
-          descricao: 'As faixas calculam o frete sozinho — elas podem continuar lá. Tente de novo.',
-        }}
-        onTentarDeNovo={loadData}
-        vazio={{
-          titulo: 'Nenhuma faixa cadastrada',
-          descricao: 'Cadastre faixas de quilometragem para o frete ser calculado sozinho.',
-          icone: <MapPinIcon className="h-12 w-12" />,
-          acao: (
-            <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="w-5 h-5" />}>
-              Nova faixa
-            </Button>
-          ),
-        }}
-        colunas={[
-          {
-            chave: 'nome',
-            cabecalho: 'Faixa',
-            render: (z) => (
-              <div className="flex items-center gap-2">
-                {/* A bolinha usa a MESMA cor do anel no mapa. Sem isso o
-                    desenho e a lista são dois objetos soltos: você vê seis
-                    anéis em cima e seis linhas embaixo, e precisa contar de
-                    fora para dentro para casar os dois. */}
-                <span
-                  aria-hidden
-                  className="h-2.5 w-2.5 shrink-0 rounded-full border-2"
-                  style={corDaFaixa(z.id)}
-                />
-                <span className="font-medium text-fg-token">{z.name}</span>
-              </div>
-            ),
-          },
-          {
-            chave: 'distancia',
-            cabecalho: 'Distância',
-            render: (z) => (
-              <span className="font-mono text-sm">
-                {z.distance_label
-                  ? z.distance_label
-                  : z.min_km !== null && z.min_km !== undefined
-                    ? `${formatKm(z.min_km)} a ${
-                        z.max_km !== null && z.max_km !== undefined ? formatKm(z.max_km) : '?'
-                      } km`
-                    : '—'}
-              </span>
-            ),
-          },
-          {
-            chave: 'frete',
-            cabecalho: 'Frete',
-            render: (z) => (
-              <span className="text-base font-semibold text-brand-ink">
-                {formatCurrency(z.delivery_fee)}
-              </span>
-            ),
-          },
-          {
-            chave: 'status',
-            cabecalho: 'Status',
-            render: (z) => (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleToggleActive(z);
+        {/* O painel: resumo → abas → conteúdo com rolagem própria. */}
+        <aside
+          aria-label="Configuração de entrega"
+          className="relative flex flex-col border-t border-border-token bg-surface-token lg:absolute lg:bottom-4 lg:left-4 lg:top-4 lg:w-[460px] lg:rounded-2xl lg:border lg:shadow-2xl"
+        >
+          <header className="flex items-center gap-3 border-b border-border-token px-5 py-4">
+            <MapPinIcon className="h-5 w-5 shrink-0 text-brand-ink" aria-hidden />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-fg-token">{storeLocation?.name || 'Loja'}</p>
+              <p className="truncate text-xs text-fg-muted-token">{storeLocation?.address || 'Endereço não cadastrado'}</p>
+            </div>
+            <Link
+              to={settingsPath}
+              aria-label="Editar localização"
+              title="Editar localização"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg-muted-token hover:bg-surface-2 hover:text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              <Cog6ToothIcon className="h-4 w-4" />
+            </Link>
+          </header>
+
+          {storeMetadata && (
+            <dl className="mx-5 mt-4 grid grid-cols-3 divide-x divide-border-token rounded-xl bg-surface-2 py-2.5 text-center" aria-label="Resumo da entrega">
+              {resumo.map((item) => (
+                <div key={item.rotulo} className="px-2">
+                  <dt className="text-xs font-medium text-fg-muted-token">{item.rotulo}</dt>
+                  <dd className="mt-0.5 text-sm font-bold tabular-nums text-fg-token">{item.valor}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+
+          <div className="flex min-h-0 flex-1 flex-col px-5 pt-3">
+            <PageTabs abas={abas} ariaLabel="Seções da entrega" className="flex min-h-0 flex-1 flex-col gap-0 [&_[role=tab]]:px-2.5 [&_[role=tab]]:text-sm [&>[role=tabpanel]]:min-h-0 [&>[role=tabpanel]]:flex-1 [&>[role=tabpanel]]:overflow-y-auto [&>[role=tabpanel]]:pb-5 [&>[role=tabpanel]]:pt-4">
+              {(aba) => (
+                <>
+                  {aba === 'faixas' && (
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center gap-2">
+                        <div className="min-w-0 flex-1">
+                          <SearchInput
+                            placeholder="Buscar por nome…"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                          />
+                        </div>
+                        <Button size="sm" onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="h-4 w-4" />}>
+                          Faixa
+                        </Button>
+                      </div>
+              <Tabela<DeliveryZone>
+                itens={zones}
+                chave={(z) => String(z.id)}
+                rotuloDaLinha={(z) => `Editar faixa ${z.name}`}
+                onAbrir={(z) => handleOpenModal(z)}
+                carregando={loading}
+                falhou={erroAoCarregar}
+                falha={{
+                  titulo: 'Não foi possível carregar as faixas de entrega',
+                  descricao: 'As faixas calculam o frete sozinho — elas podem continuar lá. Tente de novo.',
                 }}
-                aria-label={`${z.is_active ? 'Desativar' : 'Ativar'} faixa ${z.name}`}
-                className="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-              >
-                {/* 'Inativa' era vermelho, a mesma cor de "excluir" e de erro.
-                    Faixa desligada não é falha — é escolha sua. Vermelho ali
-                    gasta o sinal que deveria alarmar. */}
-                <Badge tone={z.is_active ? 'success' : 'neutral'}>
-                  {z.is_active ? 'Ativa' : 'Inativa'}
-                </Badge>
-              </button>
-            ),
-          },
-          {
-            chave: 'acoes',
-            cabecalho: 'Ações',
-            alinhamento: 'direita',
-            render: (z) => (
-              <RowActions
-                rotulo={`Ações da faixa ${z.name}`}
-                acoes={[
+                onTentarDeNovo={loadData}
+                vazio={{
+                  titulo: 'Nenhuma faixa cadastrada',
+                  descricao: 'Cadastre faixas de quilometragem para o frete ser calculado sozinho.',
+                  icone: <MapPinIcon className="h-12 w-12" />,
+                  acao: (
+                    <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="w-5 h-5" />}>
+                      Nova faixa
+                    </Button>
+                  ),
+                }}
+                colunas={[
                   {
-                    rotulo: 'Editar',
-                    icone: <PencilIcon className="h-4 w-4" />,
-                    onClick: () => handleOpenModal(z),
+                    chave: 'nome',
+                    cabecalho: 'Faixa',
+                    render: (z) => (
+                      <div className="flex items-center gap-2">
+                        {/* A bolinha usa a MESMA cor do anel no mapa. Sem isso o
+                            desenho e a lista são dois objetos soltos: você vê seis
+                            anéis em cima e seis linhas embaixo, e precisa contar de
+                            fora para dentro para casar os dois. */}
+                        <span
+                          aria-hidden
+                          className="h-2.5 w-2.5 shrink-0 rounded-full border-2"
+                          style={corDaFaixa(z.id)}
+                        />
+                        <span className="min-w-0">
+                          <span className="block font-medium text-fg-token">{z.name}</span>
+                          <span className="block font-mono text-xs text-fg-muted-token">
+                            {z.distance_label
+                              ? z.distance_label
+                              : z.min_km !== null && z.min_km !== undefined
+                                ? `${formatKm(z.min_km)} a ${z.max_km !== null && z.max_km !== undefined ? formatKm(z.max_km) : '?'} km`
+                                : '—'}
+                          </span>
+                        </span>
+                      </div>
+                    ),
                   },
-                  { rotulo: z.is_active ? 'Desativar' : 'Ativar', onClick: () => handleToggleActive(z) },
                   {
-                    rotulo: 'Excluir',
-                    icone: <TrashIcon className="h-4 w-4" />,
-                    destrutiva: true,
-                    onClick: () => {
-                      setDeletingZone(z);
-                      setIsDeleteModalOpen(true);
-                    },
+                    chave: 'frete',
+                    cabecalho: 'Frete',
+                    render: (z) => (
+                      <span className="text-base font-semibold text-brand-ink">
+                        {formatCurrency(z.delivery_fee)}
+                      </span>
+                    ),
+                  },
+                  {
+                    chave: 'status',
+                    cabecalho: 'Status',
+                    render: (z) => (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleActive(z);
+                        }}
+                        aria-label={`${z.is_active ? 'Desativar' : 'Ativar'} faixa ${z.name}`}
+                        className="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      >
+                        {/* 'Inativa' era vermelho, a mesma cor de "excluir" e de erro.
+                            Faixa desligada não é falha — é escolha sua. Vermelho ali
+                            gasta o sinal que deveria alarmar. */}
+                        <Badge tone={z.is_active ? 'success' : 'neutral'}>
+                          {z.is_active ? 'Ativa' : 'Inativa'}
+                        </Badge>
+                      </button>
+                    ),
+                  },
+                  {
+                    chave: 'acoes',
+                    cabecalho: '',
+                    alinhamento: 'direita',
+                    render: (z) => (
+                      <RowActions
+                        rotulo={`Ações da faixa ${z.name}`}
+                        acoes={[
+                          {
+                            rotulo: 'Editar',
+                            icone: <PencilIcon className="h-4 w-4" />,
+                            onClick: () => handleOpenModal(z),
+                          },
+                          { rotulo: z.is_active ? 'Desativar' : 'Ativar', onClick: () => handleToggleActive(z) },
+                          {
+                            rotulo: 'Excluir',
+                            icone: <TrashIcon className="h-4 w-4" />,
+                            destrutiva: true,
+                            onClick: () => {
+                              setDeletingZone(z);
+                              setIsDeleteModalOpen(true);
+                            },
+                          },
+                        ]}
+                      />
+                    ),
                   },
                 ]}
               />
-            ),
-          },
-        ]}
-      />
-        </>
-      )}
+                    </div>
+                  )}
+                  {aba === 'preco' && storeId && (
+                    <AoSair onSair={() => setRascunhoFormula(null)}>
+                      <FormulaDeEntregaCard
+                        key={storeId}
+                        metadataAtual={storeMetadata ?? {}}
+                        faixasAtivas={zones.filter((z) => z.is_active).length}
+                        onSalvar={salvarMetadata}
+                        onRascunho={setRascunhoFormula}
+                      />
+                    </AoSair>
+                  )}
+                  {aba === 'gratis' && storeId && (
+                    <AoSair onSair={() => setRascunhoPromo(null)}>
+                      <FreteGratisCard key={storeId} metadataAtual={storeMetadata ?? {}} onSalvar={salvarMetadata} onRascunho={setRascunhoPromo} />
+                    </AoSair>
+                  )}
+                  {aba === 'excecoes' && storeId && (
+                    <ZonasDePrecoFixoCard
+                      key={storeId}
+                      metadataAtual={storeMetadata}
+                      categorias={categoriasDaLoja}
+                      onSalvar={async (fixedPriceZones) => {
+                        await salvarMetadata({ ...(storeMetadata ?? {}), fixed_price_zones: fixedPriceZones });
+                      }}
+                    />
+                  )}
+                  {aba === 'prazo' && (storeSlug || storeId) && <ComoOClienteRecebe loja={(storeSlug || storeId)!} />}
+                  {aba === 'simular' && storeSlug && (
+                    <SimuladorDeFreteCard key={storeSlug} storeSlug={storeSlug} metadataAtual={storeMetadata ?? {}} />
+                  )}
+                </>
+              )}
+            </PageTabs>
+          </div>
+        </aside>
+      </div>
 
       {/* Create/Edit Modal */}
       <Modal

@@ -13,7 +13,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Card, Button, Segmentado } from '../../components/ui';
+import { Button, Segmentado } from '../../components/ui';
 import {
   distanciasDaPrevia,
   fraseDoPreco,
@@ -213,9 +213,9 @@ export const FormulaDeEntregaCard: React.FC<Props> = ({
 
 
   return (
-    <Card className="p-4 md:p-6">
+    <div className="flex flex-col">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-fg-token">Preço da entrega</h2>
+        <h2 className="text-sm font-bold text-fg-token">Preço da entrega</h2>
       </div>
 
       {/* A precedência precisa estar dita na tela: enquanto houver faixa ativa,
@@ -232,7 +232,7 @@ export const FormulaDeEntregaCard: React.FC<Props> = ({
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="grid gap-6 ">
         <div className="space-y-5">
           {/* A regra em forma de frase. Eram sete campos técnicos ("taxa base",
               "raio plano") para dizer "R$ 5 até 5 km" — o dono não achava a
@@ -343,7 +343,7 @@ export const FormulaDeEntregaCard: React.FC<Props> = ({
           {salvando ? 'Salvando…' : 'Salvar preço'}
         </Button>
       </div>
-    </Card>
+    </div>
   );
 };
 
