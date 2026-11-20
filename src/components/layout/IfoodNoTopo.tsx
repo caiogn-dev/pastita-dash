@@ -136,7 +136,7 @@ export const IfoodNoTopo: React.FC<{ storeSlug?: string | null }> = ({ storeSlug
         <div
           role="dialog"
           aria-label="Loja no iFood"
-          className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-border-token bg-surface-token p-4 shadow-xl"
+          className="superficie absolute right-0 top-full z-50 mt-2 w-72 p-4 shadow-xl"
         >
           <div className="flex items-center gap-2">
             <span className={`h-2 w-2 rounded-full ${l.tom}`} aria-hidden />

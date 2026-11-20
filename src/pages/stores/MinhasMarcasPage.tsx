@@ -10,7 +10,8 @@ import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/24/outline';
 import api from '../../services/api';
 import { getErrorMessage } from '../../services';
 import { useStore } from '../../hooks';
-import { Button, EmptyState, PageShell } from '../../components/ui';
+import { Button, EmptyState, Input, PageShell } from '../../components/ui';
+import { Switch } from '../../components/common/Switch';
 import { cn } from '../../utils/cn';
 
 export interface Marca { slug: string; nome: string; logo_url: string; no_grupo: boolean; link: string }
@@ -80,22 +81,20 @@ export const MinhasMarcasPage: React.FC = () => {
                   ? <img src={m.logo_url} alt="" className="h-12 w-12 rounded-full object-cover ring-1 ring-border-token" />
                   : <span className="grid h-12 w-12 place-items-center rounded-full bg-surface-muted-token text-lg font-bold text-fg-token" aria-hidden>{m.nome.slice(0, 1)}</span>}
                 <p className="min-w-0 flex-1 truncate font-semibold text-fg-token">{m.nome}</p>
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input type="checkbox" className="peer sr-only" checked={m.no_grupo} onChange={() => alternar(i)} aria-label={`Mostrar ${m.nome}`} />
-                  <span className="h-6 w-11 rounded-full bg-border-token transition peer-checked:bg-brand peer-focus-visible:ring-2 peer-focus-visible:ring-brand" />
-                  <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-5" />
-                </label>
+                <Switch checked={m.no_grupo} onChange={() => alternar(i)} ariaLabel={`Mostrar ${m.nome}`} />
               </div>
               {m.no_grupo && (
                 <div className="flex items-center gap-2">
-                  <input
-                    type="url"
-                    value={m.link}
-                    onChange={(e) => link(i, e.target.value)}
-                    placeholder="Link externo (opcional)"
-                    aria-label={`Link de ${m.nome}`}
-                    className="h-9 min-w-0 flex-1 rounded-lg border border-border-token bg-surface-token px-3 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
-                  />
+                  <div className="min-w-0 flex-1">
+                    <Input
+                      type="url"
+                      value={m.link}
+                      onChange={(e) => link(i, e.target.value)}
+                      placeholder="Link externo (opcional)"
+                      aria-label={`Link de ${m.nome}`}
+                      size="sm"
+                    />
+                  </div>
                   <button type="button" onClick={() => mover(i, -1)} disabled={i === 0} aria-label={`Subir ${m.nome}`}
                     className="grid h-9 w-9 place-items-center rounded-lg border border-border-token text-fg-token hover:bg-surface-muted-token disabled:opacity-30">
                     <ArrowUpIcon className="h-4 w-4" />

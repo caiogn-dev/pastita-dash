@@ -14,6 +14,7 @@ jest.mock('../../../components/ui', () => ({
   PageShell: ({ titulo, acoes, children }: { titulo: string; acoes?: React.ReactNode; children: React.ReactNode }) => <div><h1>{titulo}</h1>{acoes}{children}</div>,
   Button: (p: React.ButtonHTMLAttributes<HTMLButtonElement>) => <button {...p} />,
   EmptyState: ({ titulo, descricao }: { titulo: string; descricao?: string }) => <p>{titulo} {descricao}</p>,
+  Input: ({ size: _s, ...p }: React.InputHTMLAttributes<HTMLInputElement> & { size?: string }) => <input {...p} />,
 }));
 
 import { MinhasMarcasPage } from '../MinhasMarcasPage';

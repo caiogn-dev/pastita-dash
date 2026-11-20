@@ -11,7 +11,6 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../hooks';
 import * as whatsappService from '../../services/whatsapp';
@@ -19,7 +18,7 @@ import { instagramAccountService } from '../../services/instagram';
 import { channelsApi } from '../../features/channels';
 import { ConnectWhatsAppButton } from '../../components/whatsapp/ConnectWhatsAppButton';
 import { InstagramIcon, WhatsAppIcon } from '../../components/brand/BrandIcons';
-import { PageShell } from '../../components/ui';
+import { PageShell, SearchInput } from '../../components/ui';
 import { estadoDoInstagram } from './estadoDoInstagram';
 import { useAuthStore } from '../../stores/authStore';
 import { CanaisDaLoja } from './CanaisDaLoja';
@@ -263,17 +262,14 @@ export default function ConnectionsPage() {
       )}
 
       <div className="mb-6 flex flex-col gap-3">
-        <label className="relative block max-w-sm">
-          <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted-token" aria-hidden />
-          <input
-            type="search"
+        <div className="max-w-sm">
+          <SearchInput
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar integração"
             aria-label="Buscar integração"
-            className="h-10 w-full rounded-xl border border-border-token bg-surface-token pl-9 pr-3 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
           />
-        </label>
+        </div>
         <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar integrações">
           {FILTROS.map((f) => (
             <button
