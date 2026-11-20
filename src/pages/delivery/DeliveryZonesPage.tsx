@@ -12,8 +12,8 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { Input, Modal, Loading } from '../../components/common';
-import { Aviso, Card, Button, Badge, StatCard, PageShell, RowActions, Tabela, SearchInput, Select } from '../../components/ui';
-import DeliveryZonesMap, { COR_DA_PROMO, corDoAnel } from '../../components/maps/DeliveryZonesMap';
+import { Aviso, Card, Button, Badge, StatCard, PageShell, PageTabs, RowActions, Tabela, SearchInput, Select, type PageTab } from '../../components/ui';
+import DeliveryZonesMap, { COR_DA_PROMO, COR_DO_LIMITE, corDoAnel } from '../../components/maps/DeliveryZonesMap';
 import { zonasParaCirculos } from '../../components/maps/zonasParaCirculos';
 import {
   deliveryService,
@@ -25,10 +25,11 @@ import {
 } from '../../services/delivery';
 import { useStore } from '../../hooks';
 import { ZonasDePrecoFixoCard, type CategoriaDaLoja } from './ZonasDePrecoFixoCard';
-import { FormulaDeEntregaCard } from './FormulaDeEntregaCard';
+import { FormulaDeEntregaCard, lerFormula } from './FormulaDeEntregaCard';
+import type { FormulaDeEntrega } from './precoDaEntrega';
 import { FreteGratisCard } from './FreteGratisCard';
 import { SimuladorDeFreteCard } from './SimuladorDeFreteCard';
-import { anelDaPromo, lerPromo } from './freteGratis';
+import { anelDaPromo, lerPromo, type PromoDeFrete } from './freteGratis';
 import { getCategories, getStore, updateStore } from '../../services/storesApi';
 import { formatCurrency, formatNumber } from '../../utils/formatters';
 
@@ -45,6 +46,21 @@ const DISTANCE_BANDS = [
   { value: '8_12', label: '8 - 12 km' },
   { value: '12_15', label: '12 - 15 km' },
   { value: '15_20', label: '15 - 20 km' },
+];
+
+/** Esquece o rascunho quando a aba sai da tela (o cartão desmonta sem salvar). */
+const AoSair: React.FC<{ onSair: () => void; children: React.ReactNode }> = ({ onSair, children }) => {
+  const ref = useRef(onSair);
+  ref.current = onSair;
+  useEffect(() => () => ref.current(), []);
+  return <>{children}</>;
+};
+
+const ABAS_DA_ENTREGA: PageTab[] = [
+  { id: 'preco', rotulo: 'Preço' },
+  { id: 'excecoes', rotulo: 'Exceções' },
+  { id: 'simular', rotulo: 'Simular' },
+  { id: 'recebimento', rotulo: 'Prazo e retirada' },
 ];
 
 export const DeliveryZonesPage: React.FC = () => {
@@ -106,9 +122,17 @@ export const DeliveryZonesPage: React.FC = () => {
 
   // O anel da promoção sai do MESMO metadata que o card de frete grátis
   // edita: salvar no card redesenha o mapa sem recarregar a tela.
-  const anelPromo = useMemo(
-    () => anelDaPromo(lerPromo(storeMetadata ?? {})),
-    [storeMetadata],
+  // Rascunho dos cartões (20/11): o mapa e o resumo mudam a cada tecla, não
+  // só depois de salvar — "não está atualizando de forma dinâmica".
+  const [rascunhoFormula, setRascunhoFormula] = useState<FormulaDeEntrega | null>(null);
+  const [rascunhoPromo, setRascunhoPromo] = useState<PromoDeFrete | null>(null);
+  useEffect(() => { setRascunhoFormula(null); setRascunhoPromo(null); }, [storeMetadata]);
+  const formula = rascunhoFormula ?? lerFormula(storeMetadata ?? {});
+  const promo = rascunhoPromo ?? lerPromo(storeMetadata ?? {});
+  const anelPromo = useMemo(() => anelDaPromo(promo), [promo]);
+  const anelLimite = useMemo(
+    () => (formula.raioMaximoKm > 0 ? { raioMetros: formula.raioMaximoKm * 1000 } : null),
+    [formula.raioMaximoKm],
   );
 
   /**
@@ -309,213 +333,213 @@ export const DeliveryZonesPage: React.FC = () => {
     zones.length > 0 || (stats?.total ?? 0) > 0 || Boolean(search) ||
     filterActive !== undefined || erroAoCarregar;
 
+  const excecoes = Array.isArray((storeMetadata ?? {}).fixed_price_zones)
+    ? ((storeMetadata ?? {}).fixed_price_zones as unknown[]).length
+    : 0;
+  const salvarMetadata = async (novoMetadata: Record<string, unknown>) => {
+    if (!storeId) return;
+    await updateStore(storeId, { metadata: novoMetadata });
+    setStoreMetadata(novoMetadata);
+  };
+
   return (
     <PageShell titulo="Entrega">
-      {(storeSlug || storeId) && <ComoOClienteRecebe loja={(storeSlug || storeId)!} />}
-
-      {/* O PREÇO mora aqui, não nas 16 faixas. Cada loja tinha uma faixa por
-          quilômetro — três números digitados dezesseis vezes, com uma
-          irregularidade escondida (a faixa 3-5km cobria 2 km). E a fórmula que
-          o dono editava em Configurações não valia nada, porque as faixas têm
-          precedência: duas telas discordando sobre o mesmo número. */}
-      {storeId && (
-        <FormulaDeEntregaCard
-          key={storeId}
-          metadataAtual={storeMetadata ?? {}}
-          faixasAtivas={zones.filter((z) => z.is_active).length}
-          onSalvar={async (novoMetadata) => {
-            await updateStore(storeId, { metadata: novoMetadata });
-            setStoreMetadata(novoMetadata);
-          }}
-        />
-      )}
-
-      {/* A promoção vem logo abaixo do preço porque ela SOBRESCREVE o preço:
-          quem lê a fórmula precisa ver, na mesma rolagem, que existe um raio
-          onde ela não vale. */}
-      {storeId && (
-        <FreteGratisCard
-          key={storeId}
-          metadataAtual={storeMetadata ?? {}}
-          onSalvar={async (novoMetadata) => {
-            await updateStore(storeId, { metadata: novoMetadata });
-            setStoreMetadata(novoMetadata);
-          }}
-        />
-      )}
-
-      {/* Confere o preço que o cliente vai ver, pelo cálculo do checkout. */}
-      {storeSlug && (
-        <SimuladorDeFreteCard key={storeSlug} storeSlug={storeSlug} metadataAtual={storeMetadata ?? {}} />
-      )}
-
-      {/* Exceções (condomínio longe, portaria demorada). No servidor valem ANTES
-          da fórmula, mas na tela vêm depois: a regra geral é o que se ajusta
-          todo dia, a exceção é cadastrada uma vez (reordenado 13/11). */}
-      {storeId && (
-        <ZonasDePrecoFixoCard
-          key={storeId}
-          metadataAtual={storeMetadata}
-          categorias={categoriasDaLoja}
-          onSalvar={async (fixedPriceZones) => {
-            const atual = storeMetadata ?? {};
-            const novo = { ...atual, fixed_price_zones: fixedPriceZones };
-            await updateStore(storeId, { metadata: novo });
-            setStoreMetadata(novo);
-          }}
-        />
-      )}
-
-      {/* O mapa vem depois do preço: é conferência, não configuração. */}
-      <Card className="p-4 md:p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-semibold text-fg-token">Área de entrega</h2>
-            <p className="text-sm text-fg-muted-token mt-1">
-              A localização é usada para calcular a distância de entrega.
-            </p>
-          </div>
-          <Link
-            to={settingsPath}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand-ink bg-brand-soft rounded hover:bg-brand-soft/80 transition-colors"
-          >
-            <Cog6ToothIcon className="w-4 h-4" />
-            Editar Localização
-          </Link>
-        </div>
-
-        {storeLocation ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
-              <div className="sm:col-span-2">
-                <p className="text-sm font-medium text-fg-muted-token">Nome da Loja</p>
-                <p className="text-base text-fg-token">{storeLocation.name || '-'}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-fg-muted-token">CEP</p>
-                <p className="text-base text-fg-token">{storeLocation.zip_code || '-'}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-fg-muted-token">Cidade/Estado</p>
-                <p className="text-base text-fg-token">
-                  {storeLocation.city && storeLocation.state 
-                    ? `${storeLocation.city}/${storeLocation.state}` 
-                    : '-'}
-                </p>
-              </div>
+      {/* Referência Prefiro (20/11): resumo em 3 números, configuração em
+          abas à esquerda e o mapa fixo à direita — mexe no preço e vê o
+          raio na mesma tela, sem rolar 4 cartões até o desenho. */}
+      {storeMetadata && (
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border-token bg-border-token md:grid-cols-4" aria-label="Resumo da entrega">
+          {[
+            { rotulo: 'Raio máximo', valor: `Até ${formatNumber(formula.raioMaximoKm)} km` },
+            { rotulo: 'Taxa base', valor: formatCurrency(formula.taxaBase) },
+            {
+              rotulo: 'Frete grátis',
+              valor: promo.ativo && promo.ateKm ? `Até ${formatNumber(promo.ateKm)} km` : 'Desligado',
+            },
+            { rotulo: 'Exceções', valor: String(excecoes) },
+          ].map((item) => (
+            <div key={item.rotulo} className="bg-surface-token px-4 py-3">
+              <dt className="text-xs font-semibold text-fg-muted-token">{item.rotulo}</dt>
+              <dd className="mt-0.5 text-base font-bold tabular-nums text-fg-token">{item.valor}</dd>
             </div>
-            
-            <div>
-              <p className="text-sm font-medium text-fg-muted-token">Endereço</p>
-              <p className="text-base text-fg-token">{storeLocation.address || '-'}</p>
-            </div>
+          ))}
+        </dl>
+      )}
 
-            {temCoordenadas ? (
-              <div className="mt-4 space-y-2">
-                {/* Mapa de verdade: pin na loja + um círculo por faixa.
-                    Configurar frete é abstrato — você digita "12 km, R$ 20" sem
-                    ver o que está vendendo. O desenho responde a pergunta que o
-                    formulário não responde: até onde eu entrego? */}
-                <DeliveryZonesMap storeLocation={storeLocation} zones={zones} promo={anelPromo} />
-
-                {/* Legenda ligando COR → faixa → taxa.
-                    Sem ela o mapa é bonito e mudo: você vê seis anéis
-                    coloridos e não sabe qual cobra quanto, então volta para a
-                    tabela e o desenho não serviu para nada. */}
-                {(circulosDoMapa.length > 0 || anelPromo) && (
-                  <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
-                    {/* A promoção encabeça a legenda: ela SOBRESCREVE o preço
-                        das faixas dentro dela.
-
-                        O anel é um CÍRCULO e a regra é de ROTA — 3 km de rua
-                        cobrem menos chão que 3 km de reta. O rótulo diz isso
-                        em vez de o mapa prometer área que a cotação não honra. */}
-                    {anelPromo && (
-                      <li className="flex items-center gap-1.5 text-caption">
-                        <span
-                          aria-hidden
-                          className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-dashed"
-                          style={{ borderColor: COR_DA_PROMO }}
-                        />
-                        <span className="font-semibold" style={{ color: COR_DA_PROMO }}>
-                          {anelPromo.rotulo}
-                        </span>
-                      </li>
-                    )}
-                    {circulosDoMapa.map((c, i) => {
-                      const zona = zones.find((z) => String(z.id) === c.id);
-                      return (
-                        <li key={c.id} className="flex items-center gap-1.5 text-caption">
-                          <span
-                            aria-hidden
-                            className="h-2.5 w-2.5 shrink-0 rounded-full border-2"
-                            style={{
-                              borderColor: corDoAnel(i),
-                              background: c.aberta ? 'transparent' : `${corDoAnel(i)}33`,
-                            }}
-                          />
-                          <span className="font-semibold text-fg-token">{c.nome}</span>
-                          {zona && (
-                            <span className="tabular-nums text-fg-muted-token">
-                              {formatCurrency(zona.delivery_fee)}
-                            </span>
-                          )}
-                          {c.aberta && (
-                            <span className="text-fg-muted-token">(sem limite)</span>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        <div className="min-w-0">
+          <PageTabs abas={ABAS_DA_ENTREGA} ariaLabel="Configuração de entrega">
+            {(aba) => (
+              <div className="flex flex-col gap-5">
+                {aba === 'preco' && storeId && (
+                  <AoSair onSair={() => { setRascunhoFormula(null); setRascunhoPromo(null); }}>
+                    <FormulaDeEntregaCard
+                      key={storeId}
+                      metadataAtual={storeMetadata ?? {}}
+                      faixasAtivas={zones.filter((z) => z.is_active).length}
+                      onSalvar={salvarMetadata}
+                      onRascunho={setRascunhoFormula}
+                    />
+                    {/* A promoção SOBRESCREVE o preço: fica junto dele. */}
+                    <FreteGratisCard key={`promo-${storeId}`} metadataAtual={storeMetadata ?? {}} onSalvar={salvarMetadata} onRascunho={setRascunhoPromo} />
+                  </AoSair>
                 )}
-
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <a
-                    href={`https://www.google.com/maps?q=${storeLocation?.latitude},${storeLocation?.longitude}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-caption font-semibold text-brand-ink hover:underline"
-                  >
-                    Abrir no Google Maps →
-                  </a>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-4 rounded border border-dashed border-border-token bg-surface-2 p-4">
-                <p className="text-body text-fg-muted-token">
-                  Sem latitude e longitude não dá para desenhar o mapa nem calcular
-                  distância — o frete cai na faixa padrão.{' '}
-                  <Link to={settingsPath} className="font-semibold text-brand-ink hover:underline">
-                    Definir a localização
-                  </Link>
-                </p>
+                {aba === 'excecoes' && storeId && (
+                  <ZonasDePrecoFixoCard
+                    key={storeId}
+                    metadataAtual={storeMetadata}
+                    categorias={categoriasDaLoja}
+                    onSalvar={async (fixedPriceZones) => {
+                      await salvarMetadata({ ...(storeMetadata ?? {}), fixed_price_zones: fixedPriceZones });
+                    }}
+                  />
+                )}
+                {aba === 'simular' && storeSlug && (
+                  <SimuladorDeFreteCard key={storeSlug} storeSlug={storeSlug} metadataAtual={storeMetadata ?? {}} />
+                )}
+                {aba === 'recebimento' && (storeSlug || storeId) && (
+                  <ComoOClienteRecebe loja={(storeSlug || storeId)!} />
+                )}
               </div>
             )}
-          </div>
-        ) : locationError ? (
-          <div className="py-8 text-center">
-            <ExclamationTriangleIcon className="mx-auto mb-3 h-10 w-10 text-[var(--warning)]" />
-            <p className="mb-1 text-body font-semibold text-fg-token">{locationError}</p>
-            <p className="mb-4 text-caption text-fg-muted-token">
-              O endereço pode estar cadastrado — foi a leitura que falhou. As faixas
-              abaixo continuam valendo.
-            </p>
-            <Button variant="outline" onClick={loadData}>Tentar novamente</Button>
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <MapPinIcon className="w-12 h-12 text-fg-muted-token mx-auto mb-3" />
-            <p className="text-fg-muted-token mb-4">Localização não configurada</p>
-            <Link
-              to={settingsPath}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-on-brand bg-brand rounded hover:bg-brand-hover transition-colors"
-            >
-              <Cog6ToothIcon className="w-4 h-4" />
-              Configurar Localização
-            </Link>
-          </div>
-        )}
-      </Card>
+          </PageTabs>
+        </div>
+
+        <div className="min-w-0 xl:sticky xl:top-20">
+                <Card className="p-4">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-base font-bold text-fg-token">Área de entrega</h2>
+                {storeLocation?.address && (
+                  <p className="mt-0.5 truncate text-sm text-fg-muted-token">{storeLocation.address}</p>
+                )}
+              </div>
+              <Link
+                to={settingsPath}
+                aria-label="Editar localização"
+                title="Editar localização"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border-token text-fg-muted-token transition-colors hover:text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                <Cog6ToothIcon className="h-4 w-4" />
+              </Link>
+            </div>
+
+            {storeLocation ? (
+              <div className="space-y-4">
+                {temCoordenadas ? (
+                  <div className="space-y-3">
+                    {/* Mapa de verdade: pin na loja + um círculo por faixa.
+                        Configurar frete é abstrato — você digita "12 km, R$ 20" sem
+                        ver o que está vendendo. O desenho responde a pergunta que o
+                        formulário não responde: até onde eu entrego? */}
+                    <DeliveryZonesMap storeLocation={storeLocation} zones={zones} promo={anelPromo} limite={anelLimite} height="min(62vh, 620px)" />
+
+                    {/* Legenda ligando COR → faixa → taxa.
+                        Sem ela o mapa é bonito e mudo: você vê seis anéis
+                        coloridos e não sabe qual cobra quanto, então volta para a
+                        tabela e o desenho não serviu para nada. */}
+                    {(circulosDoMapa.length > 0 || anelPromo || anelLimite) && (
+                      <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
+                        {/* A promoção encabeça a legenda: ela SOBRESCREVE o preço
+                            das faixas dentro dela.
+
+                            O anel é um CÍRCULO e a regra é de ROTA — 3 km de rua
+                            cobrem menos chão que 3 km de reta. O rótulo diz isso
+                            em vez de o mapa prometer área que a cotação não honra. */}
+                        {anelPromo && (
+                          <li className="flex items-center gap-1.5 text-caption">
+                            <span
+                              aria-hidden
+                              className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-dashed"
+                              style={{ borderColor: COR_DA_PROMO }}
+                            />
+                            <span className="font-semibold" style={{ color: COR_DA_PROMO }}>
+                              {anelPromo.rotulo}
+                            </span>
+                          </li>
+                        )}
+                        {anelLimite && (
+                          <li className="flex items-center gap-1.5 text-caption">
+                            <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full border-2" style={{ borderColor: COR_DO_LIMITE }} />
+                            <span className="font-semibold text-fg-token">Entrega até {formatNumber(formula.raioMaximoKm)} km</span>
+                          </li>
+                        )}
+                        {circulosDoMapa.map((c, i) => {
+                          const zona = zones.find((z) => String(z.id) === c.id);
+                          return (
+                            <li key={c.id} className="flex items-center gap-1.5 text-caption">
+                              <span
+                                aria-hidden
+                                className="h-2.5 w-2.5 shrink-0 rounded-full border-2"
+                                style={{
+                                  borderColor: corDoAnel(i),
+                                  background: c.aberta ? 'transparent' : `${corDoAnel(i)}33`,
+                                }}
+                              />
+                              <span className="font-semibold text-fg-token">{c.nome}</span>
+                              {zona && (
+                                <span className="tabular-nums text-fg-muted-token">
+                                  {formatCurrency(zona.delivery_fee)}
+                                </span>
+                              )}
+                              {c.aberta && (
+                                <span className="text-fg-muted-token">(sem limite)</span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <a
+                        href={`https://www.google.com/maps?q=${storeLocation?.latitude},${storeLocation?.longitude}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-caption font-semibold text-brand-ink hover:underline"
+                      >
+                        Abrir no Google Maps →
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-4 rounded border border-dashed border-border-token bg-surface-2 p-4">
+                    <p className="text-body text-fg-muted-token">
+                      Sem latitude e longitude não dá para desenhar o mapa nem calcular
+                      distância — o frete cai na faixa padrão.{' '}
+                      <Link to={settingsPath} className="font-semibold text-brand-ink hover:underline">
+                        Definir a localização
+                      </Link>
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : locationError ? (
+              <div className="py-8 text-center">
+                <ExclamationTriangleIcon className="mx-auto mb-3 h-10 w-10 text-[var(--warning)]" />
+                <p className="mb-1 text-body font-semibold text-fg-token">{locationError}</p>
+                <p className="mb-4 text-caption text-fg-muted-token">
+                  O endereço pode estar cadastrado — foi a leitura que falhou. As faixas
+                  abaixo continuam valendo.
+                </p>
+                <Button variant="outline" onClick={loadData}>Tentar novamente</Button>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <MapPinIcon className="w-12 h-12 text-fg-muted-token mx-auto mb-3" />
+                <p className="text-fg-muted-token mb-4">Localização não configurada</p>
+                <Link
+                  to={settingsPath}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-on-brand bg-brand rounded hover:bg-brand-hover transition-colors"
+                >
+                  <Cog6ToothIcon className="w-4 h-4" />
+                  Configurar Localização
+                </Link>
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
 
       {temFaixas && (
         <>

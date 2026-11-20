@@ -10,9 +10,10 @@
  * cliente vai ler. Sem isso o dono digita "grátis até 10 km" sem perceber que
  * está dando R$ 15 por entrega.
  */
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Card, Button } from '../../components/ui';
+import { Switch } from '../../components/common/Switch';
 import { lerFormula } from './FormulaDeEntregaCard';
 import {
   custoPorPedidoNoRaio,
@@ -27,10 +28,12 @@ import {
 interface Props {
   metadataAtual: Record<string, unknown>;
   onSalvar: (novoMetadata: Record<string, unknown>) => Promise<void>;
+  onRascunho?: (promo: PromoDeFrete) => void;
 }
 
-export const FreteGratisCard: React.FC<Props> = ({ metadataAtual, onSalvar }) => {
+export const FreteGratisCard: React.FC<Props> = ({ metadataAtual, onSalvar, onRascunho }) => {
   const [promo, setPromo] = useState<PromoDeFrete>(() => lerPromo(metadataAtual));
+  useEffect(() => { onRascunho?.(promo); }, [promo, onRascunho]);
   const [salvando, setSalvando] = useState(false);
 
   const formula = useMemo(() => lerFormula(metadataAtual), [metadataAtual]);
@@ -63,15 +66,11 @@ export const FreteGratisCard: React.FC<Props> = ({ metadataAtual, onSalvar }) =>
         <div>
           <h2 className="text-lg font-semibold text-fg-token">Frete grátis</h2>
         </div>
-        <label className="flex flex-none items-center gap-2 text-sm text-fg-token">
-          <input
-            type="checkbox"
-            checked={promo.ativo}
-            onChange={(e) => setPromo((p) => ({ ...p, ativo: e.target.checked }))}
-            className="h-4 w-4 rounded border-border-token"
-          />
-          Ligado
-        </label>
+        <Switch
+          checked={promo.ativo}
+          onChange={(v) => setPromo((p) => ({ ...p, ativo: v }))}
+          ariaLabel="Frete grátis ligado"
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

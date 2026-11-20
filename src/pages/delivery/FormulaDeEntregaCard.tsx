@@ -11,7 +11,7 @@
  * plano e R$/km não dizem nada sozinhos: o dono pensa em "quanto custa entregar
  * no Plano Diretor", não em coeficientes. Ele digita e vê o preço mudar.
  */
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Card, Button, Segmentado } from '../../components/ui';
 import {
@@ -149,6 +149,8 @@ const Campo: React.FC<CampoProps> = ({
 interface Props {
   metadataAtual: Record<string, unknown>;
   onSalvar: (novoMetadata: Record<string, unknown>) => Promise<void>;
+  /** Rascunho a cada tecla: o mapa e o resumo da página mudam antes de salvar. */
+  onRascunho?: (formula: FormulaDeEntrega) => void;
   /** Quantas faixas antigas ainda existem — só para avisar sobre a precedência. */
   faixasAtivas?: number;
 }
@@ -162,7 +164,7 @@ const OPCOES_DEPOIS: { valor: Depois; rotulo: string }[] = [
 ];
 
 export const FormulaDeEntregaCard: React.FC<Props> = ({
-  metadataAtual, onSalvar, faixasAtivas = 0,
+  metadataAtual, onSalvar, faixasAtivas = 0, onRascunho,
 }) => {
   const [formula, setFormula] = useState<FormulaDeEntrega>(() => lerFormula(metadataAtual));
   const [depois, setDepois] = useState<Depois>(() =>
@@ -184,6 +186,7 @@ export const FormulaDeEntregaCard: React.FC<Props> = ({
   };
 
   const efetiva = useMemo(() => formulaEfetiva(formula, depois), [formula, depois]);
+  useEffect(() => { onRascunho?.(efetiva); }, [efetiva, onRascunho]);
   const problemas = useMemo(() => {
     if (depois === 'naoEntrega' && !(Number(formula.raioPlanoKm) > 0)) {
       return ['Diga até quantos km vale o valor fixo.'];

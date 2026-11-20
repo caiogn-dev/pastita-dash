@@ -19,12 +19,16 @@ const COLORS = [
  * cadastrou uma faixa a mais.
  */
 export const COR_DA_PROMO = '#16A34A';
+/** Área máxima de entrega da fórmula. */
+export const COR_DO_LIMITE = '#c9a227';
 
 export type DeliveryZonesMapProps = {
   storeLocation?: StoreLocation | null;
   zones?: DeliveryZone[];
   /** Anel da promoção de frete grátis, se houver (ver `anelDaPromo`). */
   promo?: { raioMetros: number; rotulo: string } | null;
+  /** Raio máximo da fórmula: até onde a loja entrega (contorno da marca). */
+  limite?: { raioMetros: number } | null;
   height?: string;
 };
 
@@ -35,6 +39,7 @@ const DeliveryZonesMap: React.FC<DeliveryZonesMapProps> = ({
   storeLocation,
   zones = [],
   promo = null,
+  limite = null,
   // 480px: com 360 os 17 km de raio viravam um retângulo baixo e largo onde
   // não se distinguem as faixas internas. Altura é o que falta, não largura.
   height = '480px',
@@ -135,6 +140,21 @@ const DeliveryZonesMap: React.FC<DeliveryZonesMapProps> = ({
         objectsRef.current.push(circle);
       });
 
+      if (limite && limite.raioMetros > 0) {
+        const area = new maps.Circle({
+          center: { lat, lng },
+          radius: limite.raioMetros,
+          map,
+          strokeColor: COR_DO_LIMITE,
+          strokeOpacity: 0.9,
+          strokeWeight: 2,
+          fillColor: COR_DO_LIMITE,
+          fillOpacity: 0.08,
+          clickable: false,
+        });
+        objectsRef.current.push(area);
+      }
+
       // A promoção vai por ÚLTIMO: é a informação que se quer ler por cima do
       // resto. Tracejada e sem preenchimento para não somar opacidade com as
       // faixas embaixo — com preenchimento, a área mais próxima da loja (a que
@@ -191,13 +211,14 @@ const DeliveryZonesMap: React.FC<DeliveryZonesMapProps> = ({
       const maiorRaio = Math.max(
         circulos[0]?.raioMetros ?? 0,
         promo?.raioMetros ?? 0,
+        limite?.raioMetros ?? 0,
       );
       if (maiorRaio > 0) {
         const limites = new maps.Circle({ center: { lat, lng }, radius: maiorRaio });
         map.fitBounds(limites.getBounds());
       }
     }
-  }, [mapReady, storeLocation, zones, promo?.raioMetros]);
+  }, [mapReady, storeLocation, zones, promo?.raioMetros, limite?.raioMetros]);
 
   if (!GOOGLE_MAPS_KEY) {
     return (
