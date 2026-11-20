@@ -19,7 +19,7 @@ import api from '../../services/api';
 import { useStore } from '../../hooks/useStore';
 import { IfoodIcon, MercadoPagoIcon, NinetyNineFoodIcon } from '../../components/brand/BrandIcons';
 import { Switch } from '../../components/common/Switch';
-import { Select } from '../../components/ui';
+import { Campo, Input, Select } from '../../components/ui';
 import { LojaNoIfood } from './LojaNoIfood';
 import { Beneficio, Cartao, Grupo, Selo, botaoDiscreto, botaoPrimario, botaoSecundario } from './pecasDeIntegracao';
 
@@ -58,9 +58,6 @@ const quando = (iso: string | null) => {
 const motivo = (erro: unknown) =>
   (erro as { response?: { data?: { detail?: string } } })?.response?.data?.detail
   || 'Não deu certo. Tente de novo.';
-
-const campo =
-  'h-11 w-full rounded-xl border border-border-token bg-surface-token px-3 text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
 
 /** POST no iFood da loja com aviso de erro e trava de clique duplo. */
 const useSalvarIfood = (storeId: string, aoMudar: (novo: EstadoIfood) => void) => {
@@ -107,16 +104,15 @@ const ConexaoDoIfood: React.FC<{
           if (limpo && mudou) enviar('/stores/integracoes/ifood/', { merchant_id: limpo });
         }}
       >
-        <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-semibold text-fg-token">
-          ID da loja no iFood
-          <input
+        <Campo rotulo="ID da loja no iFood" className="min-w-[16rem] flex-1">
+          <Input
             value={id}
             onChange={(e) => setId(e.target.value)}
             autoComplete="off"
             spellCheck={false}
-            className={`${campo} min-w-[16rem] font-mono text-sm`}
+            className="font-mono"
           />
-        </label>
+        </Campo>
         <button type="submit" disabled={ocupado || !limpo || !mudou} className={botaoPrimario}>Salvar</button>
         {ifood.merchant_id && (
           <button
@@ -204,16 +200,14 @@ const EntregasDoIfood: React.FC<{
       </div>
 
       {frete && (
-        <label className="flex flex-col gap-1 text-sm font-semibold text-fg-token">
-          Acréscimo no frete (R$)
-          <input
+        <Campo rotulo="Acréscimo no frete (R$)" className="max-w-[10rem]">
+          <Input
             value={acrescimo}
             onChange={(e) => setAcrescimo(e.target.value)}
             inputMode="decimal"
             autoComplete="off"
-            className={`${campo} max-w-[10rem]`}
           />
-        </label>
+        </Campo>
       )}
 
       <Select
@@ -225,18 +219,16 @@ const EntregasDoIfood: React.FC<{
       />
 
       {chamar === 'confirmado' && (
-        <label className="flex flex-col gap-1 text-sm font-semibold text-fg-token">
-          Tempo de preparo (min)
-          <input
+        <Campo rotulo="Tempo de preparo (min)" className="max-w-[10rem]">
+          <Input
             type="number"
             min={1}
             step={1}
             value={preparo}
             onChange={(e) => setPreparo(e.target.value)}
             inputMode="numeric"
-            className={`${campo} max-w-[10rem]`}
           />
-        </label>
+        </Campo>
       )}
 
       <div className="flex flex-wrap items-center gap-2">
