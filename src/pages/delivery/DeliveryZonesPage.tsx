@@ -444,9 +444,9 @@ export const DeliveryZonesPage: React.FC = () => {
         {/* O painel: resumo → abas → conteúdo com rolagem própria. */}
         <aside
           aria-label="Configuração de entrega"
-          className="relative flex flex-col border-t border-border-token bg-surface-token lg:absolute lg:bottom-4 lg:left-4 lg:top-4 lg:w-[400px] lg:rounded-2xl lg:border lg:shadow-xl"
+          className="relative flex flex-col border-t border-border-token bg-surface-token lg:absolute lg:left-4 lg:top-4 lg:max-h-[min(580px,calc(100%-2rem))] lg:w-[400px] lg:rounded-2xl lg:border lg:shadow-xl"
         >
-          <header className="flex items-center gap-2.5 border-b border-border-token px-4 py-3">
+          <header className="flex shrink-0 items-center gap-2.5 border-b border-border-token px-4 py-3">
             <MapPinIcon className="h-5 w-5 shrink-0 text-brand-ink" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-bold text-fg-token">{storeLocation?.name || 'Loja'}</p>
@@ -463,7 +463,7 @@ export const DeliveryZonesPage: React.FC = () => {
           </header>
 
           {storeMetadata && (
-            <dl className="mx-4 mt-3 grid grid-cols-3 divide-x divide-border-token rounded-xl bg-surface-2 py-2 text-center" aria-label="Resumo da entrega">
+            <dl className="mx-4 mt-3 grid shrink-0 grid-cols-3 divide-x divide-border-token rounded-xl bg-surface-2 py-2 text-center" aria-label="Resumo da entrega">
               {resumo.map((item) => (
                 <div key={item.rotulo} className="px-2">
                   <dt className="text-xs font-medium text-fg-muted-token">{item.rotulo}</dt>
@@ -474,7 +474,7 @@ export const DeliveryZonesPage: React.FC = () => {
           )}
 
           <div className="flex min-h-0 flex-1 flex-col px-4 pt-2">
-            <PageTabs abas={abas} ariaLabel="Seções da entrega" className="flex min-h-0 flex-1 flex-col gap-0 [&_[role=tab]]:px-2 [&_[role=tab]]:text-[13px] [&>[role=tabpanel]]:min-h-0 [&>[role=tabpanel]]:flex-1 [&>[role=tabpanel]]:overflow-y-auto [&>[role=tabpanel]]:pb-4 [&>[role=tabpanel]]:pt-3">
+            <PageTabs abas={abas} ariaLabel="Seções da entrega" className="flex min-h-0 flex-1 flex-col gap-0 [&>[role=tablist]]:shrink-0 [&_[role=tab]]:px-2 [&_[role=tab]]:text-[13px] [&>[role=tabpanel]]:min-h-0 [&>[role=tabpanel]]:flex-1 [&>[role=tabpanel]]:overflow-y-auto [&>[role=tabpanel]]:pb-4 [&>[role=tabpanel]]:pt-3">
               {(aba) => (
                 <>
                   {aba === 'faixas' && (
