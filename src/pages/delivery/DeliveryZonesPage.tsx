@@ -333,13 +333,18 @@ export const DeliveryZonesPage: React.FC = () => {
     setStoreMetadata(novoMetadata);
   };
 
+  // Faixa ATIVA manda no preço (passa por cima da fórmula): aí ela abre
+  // primeiro. Faixas todas desligadas são histórico — vão para o fim.
+  const faixasMandam = (stats?.active ?? 0) > 0 || zones.some((z) => z.is_active) || erroAoCarregar || Boolean(search);
+  const abaFaixas: PageTab = { id: 'faixas', rotulo: 'Faixas' };
   const abas: PageTab[] = [
-    ...(temFaixas ? [{ id: 'faixas', rotulo: 'Faixas' }] : []),
+    ...(temFaixas && faixasMandam ? [abaFaixas] : []),
     { id: 'preco', rotulo: 'Preço' },
     { id: 'gratis', rotulo: 'Grátis' },
     { id: 'excecoes', rotulo: 'Exceções' },
     { id: 'prazo', rotulo: 'Prazo' },
     { id: 'simular', rotulo: 'Simular' },
+    ...(temFaixas && !faixasMandam ? [abaFaixas] : []),
   ];
 
   const resumo = [
