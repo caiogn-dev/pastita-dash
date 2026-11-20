@@ -16,6 +16,7 @@ import { useAccountStore } from '../../stores/accountStore';
 import { StoreSelector } from './StoreSelector';
 import { LojaAtivaNoTopo } from './LojaAtivaNoTopo';
 import { CentralDePedidosLink } from './CentralDePedidosLink';
+import { IfoodNoTopo } from './IfoodNoTopo';
 import { ThemeToggle } from '../theme';
 import { NotificationDropdown } from '../notifications';
 import { type NavSection } from './navSections';
@@ -414,6 +415,8 @@ export const Navbar: React.FC<NavbarProps> = ({ semNavegacaoDesktop = false, onA
           {/* Ação DA LOJA, logo depois dela. No meio dos ícones utilitários
               da direita viraria mais um botãozinho de sistema. */}
           <CentralDePedidosLink storeSlug={storeKey} />
+          {/* Loja no iFood: pausar/reabrir é operação do turno, não configuração. */}
+          <IfoodNoTopo storeSlug={storeKey} />
 
           {/* Desktop nav — itens que não cabem caem no dropdown "Mais" (nunca corta).
               Com a coluna lateral na tela, some: duas navegações para os mesmos
