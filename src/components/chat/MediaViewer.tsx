@@ -1,5 +1,5 @@
 // MediaViewer - Versão simplificada
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import './MediaViewer.css';
 import { urlSegura } from '../../utils/urlSegura';
 
@@ -22,6 +22,25 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
   const isVideo = type.startsWith('video/') || type === 'video';
   const isAudio = type.startsWith('audio/') || type === 'audio';
 
+  const fecharRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  // Cobre a tela inteira: Esc fecha, o foco entra no visualizador e volta
+  // para quem o abriu.
+  useEffect(() => {
+    const anterior = document.activeElement as HTMLElement | null;
+    fecharRef.current?.focus();
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCloseRef.current();
+    };
+    document.addEventListener('keydown', aoTeclar);
+    return () => {
+      document.removeEventListener('keydown', aoTeclar);
+      anterior?.focus?.();
+    };
+  }, []);
+
   const handleDownload = () => {
     if (!url) return;
     const link = document.createElement('a');
@@ -31,7 +50,13 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
   };
 
   return (
-    <div className="media-viewer-overlay" onClick={onClose}>
+    <div
+      className="media-viewer-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label={fileName || 'Visualizar mídia'}
+      onClick={onClose}
+    >
       <div className="media-viewer-content" onClick={(e) => e.stopPropagation()}>
         <div className="media-viewer-header">
           <button
@@ -44,6 +69,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
             ⬇️
           </button>
           <button
+            ref={fecharRef}
             type="button"
             onClick={onClose}
             className="viewer-btn"
