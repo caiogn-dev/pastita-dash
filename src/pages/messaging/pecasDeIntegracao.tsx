@@ -56,9 +56,9 @@ export const Cartao: React.FC<{
         <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl [&>svg]:h-11 [&>svg]:w-11">{icone}</span>
         <div className="min-w-0 flex-1">
           <h2 className="text-base font-bold leading-tight text-fg-token">{titulo}</h2>
-          <p className="mt-0.5 truncate text-sm text-fg-muted-token">{subtitulo}</p>
+          <p className="mt-0.5 truncate text-sm text-fg-muted-token" title={subtitulo}>{subtitulo}</p>
+          {selo && <div className="mt-2">{selo}</div>}
         </div>
-        {selo}
       </header>
       {children}
     </section>
