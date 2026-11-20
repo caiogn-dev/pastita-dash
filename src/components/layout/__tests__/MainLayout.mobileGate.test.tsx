@@ -15,6 +15,9 @@ jest.mock('../useNavSections', () => ({ useNavSections: () => [] }));
 
 import { useAuthStore } from '../../../stores/authStore';
 import { MainLayout } from '../MainLayout';
+jest.mock('../IfoodNoTopo', () => ({ __esModule: true, IfoodNoTopo: () => null, default: () => null }));
+jest.mock('../WidgetDoIfood', () => ({ __esModule: true, WidgetDoIfood: () => null, default: () => null }));
+
 
 function renderAt(path = '/') {
   return render(<MemoryRouter initialEntries={[path]}><MainLayout /></MemoryRouter>);

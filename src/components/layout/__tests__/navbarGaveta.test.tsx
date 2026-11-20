@@ -37,6 +37,9 @@ jest.mock('../useNavSections', () => {
 });
 
 import { Navbar } from '../Navbar';
+jest.mock('../IfoodNoTopo', () => ({ __esModule: true, IfoodNoTopo: () => null, default: () => null }));
+jest.mock('../WidgetDoIfood', () => ({ __esModule: true, WidgetDoIfood: () => null, default: () => null }));
+
 
 const abrirGaveta = () => {
   render(

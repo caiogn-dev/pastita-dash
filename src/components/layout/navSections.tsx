@@ -265,7 +265,7 @@ export function buildNavSections({ storeHref, unreadBadge, automationEnabled, ca
         { name: 'Entrega',    href: storeHref('delivery'),   icon: MapPinIcon, tambem: ['frete', 'zonas', 'raio'] },
         // Era um extrato (26/10); agora configura como a loja recebe.
         { name: 'Pagamentos', href: storeHref('payments'),   icon: CreditCardIcon, tambem: ['mercado pago', 'pix', 'vale', 'recebimento', 'caixa'] },
-        { name: 'Aparência da loja', href: storeHref('aparencia'), icon: BuildingStorefrontIcon, tambem: ['storefront', 'vitrine', 'cores', 'logo', 'capa', 'tema'] },
+        { name: 'Aparência da loja', href: storeHref('aparencia'), icon: BuildingStorefrontIcon, tambem: ['storefront', 'vitrine', 'cores', 'logo', 'capa', 'tema', 'minhas marcas', 'outras lojas'] },
         // Saiu de Etiquetas: a mesma tela configura a COMANDA do pedido.
         { name: 'Impressoras e comanda', href: storeHref('printing'), icon: PrinterIcon, tambem: ['impressora', 'comanda', 'print agent'] },
         // Quem tem login e quem entrega (26/10: entregadores saíram de Pedidos).

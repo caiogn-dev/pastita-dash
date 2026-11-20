@@ -56,6 +56,7 @@ const ImportarCardapioPage = lazy(() => import('./pages/products/importar/Import
 
 // Stores Pages
 const StoresPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StoresPage })));
+const MinhasMarcasPage = lazy(() => import('./pages/stores/MinhasMarcasPage'));
 const StoreDetailPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StoreDetailPage })));
 const StoreSettingsPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StoreSettingsPage })));
 const StorefrontPage = lazy(() => import('./pages/stores').then(m => ({ default: m.StorefrontPage })));
@@ -256,6 +257,7 @@ const AppContent: React.FC = () => {
           <Route path="pagamentos-recebidos" element={<PageBoundary><PaymentsPage /></PageBoundary>} />
           <Route path="settings" element={<PageBoundary><StoreSettingsPage /></PageBoundary>} />
           <Route path="aparencia" element={<PageBoundary><StorefrontPage /></PageBoundary>} />
+          <Route path="marcas" element={<PageBoundary><MinhasMarcasPage /></PageBoundary>} />
           {/* Endereço antigo: favoritos e links de suporte continuam abrindo. */}
           <Route path="storefront" element={<PageBoundary><StorefrontPage /></PageBoundary>} />
           <Route path="delivery" element={<PageBoundary><DeliveryZonesPage /></PageBoundary>} />

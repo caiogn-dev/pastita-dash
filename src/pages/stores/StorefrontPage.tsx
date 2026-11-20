@@ -1,7 +1,7 @@
 import React, { Fragment, useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import {
+import { Squares2X2Icon,
   ArrowTopRightOnSquareIcon,
   CheckCircleIcon,
   ComputerDesktopIcon,
@@ -397,6 +397,14 @@ export const StorefrontPage: React.FC = () => {
               Publicado
             </span>
           )}
+          <Link
+            to="../marcas"
+            relative="path"
+            className="ml-1 inline-flex h-8 items-center gap-1 rounded-lg border border-border-token px-3 text-body font-medium text-fg-token hover:bg-surface-2"
+          >
+            <Squares2X2Icon className="h-4 w-4" aria-hidden />
+            Minhas marcas
+          </Link>
           {urlPublica && (
             <a
               href={urlPublica}
