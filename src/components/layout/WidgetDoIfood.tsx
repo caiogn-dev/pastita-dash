@@ -10,6 +10,13 @@
  *   selecionada, para trocar de loja no painel não reiniciar o widget;
  * - não mexer em estilo/posição: é overlay do iFood (posição no portal).
  *
+ * TELA BRANCA (20/11): o iframe do widget cobre a tela inteira (fixed, sem
+ * clique) e deveria ser transparente. Com o painel em `color-scheme: dark` e
+ * a página do iFood clara, o navegador pinta um fundo OPACO atrás do iframe
+ * (regra do CSS Color Adjust para esquemas diferentes) — sobrava só a bolinha.
+ * Correção sem tocar no widget: ele nasce num contêiner nosso
+ * (`containerSelector`, opção oficial) com `color-scheme: light`.
+ *
  * No 1º uso o próprio widget pede "Autorizar" no Portal do Parceiro (login do
  * dono da loja no iFood). A sessão fica em cookie de terceiro, por máquina.
  */
@@ -20,7 +27,21 @@ import api from '../../services/api';
 export const WIDGET_DO_IFOOD_ID = 'a203e725-c866-4992-99fd-005eae8097e9';
 const SCRIPT = 'https://widgets.ifood.com.br/widget.js';
 
-type IfoodWidgetApi = { init: (c: { widgetId: string; merchantIds: string[] }) => void };
+type Config = { widgetId: string; merchantIds: string[]; containerSelector: string };
+type IfoodWidgetApi = { init: (c: Config) => void };
+export const CONTEINER_ID = 'cardapidex-widget-ifood';
+
+/** Contêiner com esquema claro: sem ele o iframe do iFood vira uma tela branca no tema escuro. */
+const conteiner = () => {
+  let el = document.getElementById(CONTEINER_ID);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = CONTEINER_ID;
+    el.style.colorScheme = 'light';
+    document.body.appendChild(el);
+  }
+  return `#${CONTEINER_ID}`;
+};
 type ComWidget = typeof window & { iFoodWidget?: IfoodWidgetApi; __ifoodWidgetIniciado?: boolean };
 
 const carregarScript = () => new Promise<void>((pronto, falhou) => {
@@ -55,7 +76,7 @@ export const WidgetDoIfood: React.FC = () => {
       .then(() => {
         if (w.__ifoodWidgetIniciado || !w.iFoodWidget) return;
         w.__ifoodWidgetIniciado = true;
-        w.iFoodWidget.init({ widgetId: WIDGET_DO_IFOOD_ID, merchantIds: merchants });
+        w.iFoodWidget.init({ widgetId: WIDGET_DO_IFOOD_ID, merchantIds: merchants, containerSelector: conteiner() });
       })
       .catch(() => { /* sem widget: o painel segue igual */ });
   }, [merchants]);

@@ -9,7 +9,7 @@ import { render, waitFor } from '@testing-library/react';
 const get = jest.fn();
 jest.mock('../../../services/api', () => ({ __esModule: true, default: { get: (...a: unknown[]) => get(...a) } }));
 
-import { WidgetDoIfood, WIDGET_DO_IFOOD_ID } from '../WidgetDoIfood';
+import { CONTEINER_ID, WidgetDoIfood, WIDGET_DO_IFOOD_ID } from '../WidgetDoIfood';
 
 type W = typeof window & { iFoodWidget?: { init: jest.Mock } };
 
@@ -35,7 +35,11 @@ it('com lojas no iFood: carrega o script e inicia uma vez com os merchants', asy
   rerender(<WidgetDoIfood />);
   const init = (window as W).iFoodWidget!.init;
   await waitFor(() => expect(init).toHaveBeenCalledTimes(1));
-  expect(init).toHaveBeenCalledWith({ widgetId: WIDGET_DO_IFOOD_ID, merchantIds: ['m-1', 'm-2'] });
+  expect(init).toHaveBeenCalledWith({
+    widgetId: WIDGET_DO_IFOOD_ID, merchantIds: ['m-1', 'm-2'], containerSelector: `#${CONTEINER_ID}`,
+  });
+  // Tema escuro + iframe claro = fundo opaco (tela branca). O contêiner fixa o esquema claro.
+  expect(document.getElementById(CONTEINER_ID)?.style.colorScheme).toBe('light');
 });
 
 it('sem loja no iFood: nem carrega o script', async () => {
