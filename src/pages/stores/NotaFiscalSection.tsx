@@ -199,6 +199,7 @@ export const NotaFiscalSection: React.FC<NotaFiscalSectionProps> = ({ storeId })
         <div>
           <label className="text-sm font-medium text-fg-muted-token">Ambiente</label>
           <select
+            aria-label="Ambiente"
             value={config.ambiente}
             onChange={e =>
               setConfig(prev => ({ ...prev, ambiente: e.target.value as ConfigFiscal['ambiente'] }))

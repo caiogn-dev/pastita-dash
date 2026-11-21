@@ -300,6 +300,7 @@ const PrintSettingsPage: React.FC = () => {
               render: (a) =>
                 (a.available_printers?.length ?? 0) > 0 ? (
                   <select
+                    aria-label={`Impressora de ${a.host_name || 'este computador'}`}
                     value={a.printer_name || ''}
                     onChange={(e) => handleSelectPrinter(a, e.target.value)}
                     className="controle h-9 max-w-[220px] px-2 text-sm"

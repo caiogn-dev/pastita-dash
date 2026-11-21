@@ -333,6 +333,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
       case 'select':
         return (
           <select
+            aria-label={field.label}
             value={String(value)}
             onChange={(e) => updateField(e.target.value)}
             className="w-full px-3 py-2 border border-border-token rounded bg-surface text-fg-token focus:ring-2 focus:ring-brand"
@@ -607,6 +608,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     Categoria
                   </label>
                   <select
+                    aria-label="Categoria"
                     value={formData.category || ''}
                     onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value || null }))}
                     className="w-full px-3 py-2 border border-border-token rounded bg-surface text-fg-token focus:ring-2 focus:ring-brand"
@@ -623,6 +625,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     Tipo de Produto
                   </label>
                   <select
+                    aria-label="Tipo de produto"
                     value={formData.product_type || ''}
                     onChange={(e) =>
                       setFormData((prev) => ({
