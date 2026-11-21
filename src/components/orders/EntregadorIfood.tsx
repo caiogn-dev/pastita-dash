@@ -6,7 +6,7 @@
  * Some quando a loja não tem iFood Entrega ligado — ou quando o estado não
  * carrega: um botão de chamar que talvez não funcione é pior que nenhum.
  * Enquanto a entrega está em andamento, relê a cada 30 s (o modal aberto é o
- * único consumidor; nada de polling em segundo plano).
+ * único consumidor; com a aba escondida não consulta).
  *
  * Cancelar exige um dos motivos que o iFood devolve para a entrega; lista
  * vazia = o iFood não deixa mais cancelar. Quando o cliente pede outro
@@ -24,6 +24,7 @@ import {
 } from '../../services/entregaIfood';
 import { formatCurrency } from '../../utils/formatters';
 import { IfoodIcon } from '../brand/BrandIcons';
+import { usePolling } from '../../hooks/usePolling';
 import { Button, Modal } from '../common';
 import { ContagemRegressiva } from './ContagemRegressiva';
 
@@ -108,11 +109,8 @@ export const EntregadorIfood: React.FC<Props> = ({ pedidoId, aoMudarPedido }) =>
   }, [pedidoId]);
 
   const ativo = !!entrega?.ativo;
-  useEffect(() => {
-    if (!ativo) return undefined;
-    const id = window.setInterval(carregar, ATUALIZAR_A_CADA_MS);
-    return () => window.clearInterval(id);
-  }, [ativo, carregar]);
+  // Aba escondida não consulta; ao voltar, atualiza na hora.
+  usePolling(carregar, ATUALIZAR_A_CADA_MS, ativo);
 
   if (!entrega?.disponivel) return null;
 

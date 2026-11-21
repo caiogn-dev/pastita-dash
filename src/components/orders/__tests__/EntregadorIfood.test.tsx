@@ -283,6 +283,26 @@ it('em andamento atualiza a cada 30 s; parado não', async () => {
   unmount();
 });
 
+it('com a aba escondida não consulta; ao voltar, atualiza na hora', async () => {
+  const aba = (v: 'visible' | 'hidden') => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => v });
+    document.dispatchEvent(new Event('visibilitychange'));
+  };
+  jest.useFakeTimers();
+  estado.mockResolvedValue(emAndamento);
+  const { unmount } = render(<EntregadorIfood pedidoId="p1" />);
+  await act(async () => { await Promise.resolve(); });
+  expect(estado).toHaveBeenCalledTimes(1);
+  aba('hidden');
+  await act(async () => { jest.advanceTimersByTime(120_000); });
+  expect(estado).toHaveBeenCalledTimes(1);
+  aba('visible');
+  await act(async () => { await Promise.resolve(); });
+  expect(estado).toHaveBeenCalledTimes(2);
+  unmount();
+  aba('visible');
+});
+
 it('quem decide "Chamar de novo" é pode_chamar, não o texto do status', async () => {
   estado.mockResolvedValue(entrega({ chamado: true, pode_chamar: true, status: 'XYZ', status_texto: 'Sem entregador' }));
   render(<EntregadorIfood pedidoId="p1" />);
