@@ -1,4 +1,4 @@
-import { urlSegura } from '../urlSegura';
+import { exigirUrlSegura, urlSegura } from '../urlSegura';
 
 describe('urlSegura', () => {
   it('aceita http, https e caminho relativo', () => {
@@ -18,5 +18,14 @@ describe('urlSegura', () => {
     expect(urlSegura('')).toBeUndefined();
     expect(urlSegura(null)).toBeUndefined();
     expect(urlSegura(undefined)).toBeUndefined();
+  });
+});
+
+describe('exigirUrlSegura', () => {
+  it('devolve a URL segura e recusa a perigosa ou vazia', () => {
+    expect(exigirUrlSegura('https://mp.com/auth')).toBe('https://mp.com/auth');
+    expect(() => exigirUrlSegura('javascript:alert(1)')).toThrow();
+    expect(() => exigirUrlSegura(undefined)).toThrow();
+    expect(() => exigirUrlSegura('')).toThrow();
   });
 });

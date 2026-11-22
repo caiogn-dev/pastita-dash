@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import { Aviso, Card, Button } from '../../components/ui';
 import { paymentsService } from '../../services/payments';
 import logger from '../../services/logger';
+import { exigirUrlSegura } from '../../utils/urlSegura';
 
 interface GatewayDaLoja {
   id: string;
@@ -118,7 +119,7 @@ export const RecebimentoSection: React.FC<RecebimentoSectionProps> = ({
       const url = await paymentsService.getMercadoPagoAuthUrl(storeId);
       // Mesma aba de propósito: o Mercado Pago devolve o lojista por
       // redirecionamento, e popup bloqueado deixaria o fluxo travado sem aviso.
-      window.location.href = url;
+      window.location.href = exigirUrlSegura(url);
     } catch (erro: unknown) {
       logger.error('Erro ao iniciar conexão com o Mercado Pago:', erro);
       const status = (erro as { response?: { status?: number } })?.response?.status;

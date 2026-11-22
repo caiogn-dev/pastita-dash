@@ -27,6 +27,7 @@ import CartaoDePlano from '../../components/billing/CartaoDePlano';
 import { nomeDoPlano } from './nomeDoPlano';
 import { formatarReais, quantoOMarketplaceLevaria, type Ciclo } from './ofertaDoPlano';
 import { PageShell } from '../../components/ui';
+import { exigirUrlSegura } from '../../utils/urlSegura';
 
 const STATUS_LABEL: Record<string, string> = {
   none:      'Sem assinatura',
@@ -221,7 +222,7 @@ export default function SubscriptionManagementPage() {
         return;
       }
       const r = await changePlan(slug, plan.key);
-      window.location.href = r.init_point;
+      window.location.href = exigirUrlSegura(r.init_point);
     } catch {
       setError('Falha ao trocar de plano.');
       setBusy(false);
