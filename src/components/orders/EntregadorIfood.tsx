@@ -14,7 +14,7 @@
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { ArrowTopRightOnSquareIcon, PhoneIcon } from '@heroicons/react/24/outline';
+import { MapPinIcon, PhoneIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 import { getErrorMessage } from '../../services';
 import {
@@ -31,6 +31,11 @@ const ATUALIZAR_A_CADA_MS = 30_000;
 
 const botao =
   'inline-flex items-center gap-1.5 rounded-lg border border-border-token px-3 py-2 text-xs font-medium text-fg-token transition hover:bg-surface-2 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
+
+const CANCELANDO = new Set(['CANCELLATION_REQUESTED', 'DELIVERY_CANCELLATION_REQUESTED']);
+
+const icone =
+  'inline-flex h-7 w-7 items-center justify-center rounded-md text-fg-muted-token transition hover:bg-surface-2 hover:text-fg-token disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
 
 const SEM_CANCELAMENTO = 'O iFood não permite mais cancelar esta entrega';
 
@@ -164,7 +169,7 @@ export const EntregadorIfood: React.FC<Props> = ({ pedidoId, aoMudarPedido }) =>
     <span
       aria-label="Código de coleta"
       title="Código de coleta"
-      className="inline-flex items-center gap-1.5 rounded-md bg-surface-2 px-2 py-0.5 text-xs text-fg-muted-token"
+      className="inline-flex items-center gap-1.5 rounded-md bg-surface-2 px-2 py-0.5 text-[11px] uppercase tracking-wide text-fg-muted-token"
     >
       Coleta
       <span className="font-mono text-sm font-bold tracking-widest text-fg-token">{entrega.codigo_coleta}</span>
@@ -185,6 +190,7 @@ export const EntregadorIfood: React.FC<Props> = ({ pedidoId, aoMudarPedido }) =>
   }
 
   const { entregador, mudanca_endereco: mudanca } = entrega;
+  const podeCancelar = entrega.ativo && !CANCELANDO.has(entrega.status);
 
   return (
     <>
@@ -216,14 +222,14 @@ export const EntregadorIfood: React.FC<Props> = ({ pedidoId, aoMudarPedido }) =>
     <div
       role="group"
       aria-label="Entregador iFood"
-      className="inline-flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-border-token px-3 py-1.5 text-xs text-fg-token"
+      className="inline-flex flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-lg border border-border-token py-1 pl-2.5 pr-1 text-xs text-fg-token"
     >
-      <span className="inline-flex items-center gap-1.5 font-semibold">
-        <IfoodIcon size={16} />
-        Entregador iFood
-      </span>
+      <IfoodIcon size={16} />
 
-      <span aria-live="polite" className="font-medium">{entrega.status_texto}</span>
+      <span aria-live="polite" className="inline-flex items-center gap-1.5 font-semibold">
+        {entrega.ativo && <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />}
+        {entrega.status_texto}
+      </span>
 
       {entregador && (
         <span className="inline-flex items-center gap-1">
@@ -257,27 +263,33 @@ export const EntregadorIfood: React.FC<Props> = ({ pedidoId, aoMudarPedido }) =>
 
       {entrega.erro && <span className="text-danger-token">{entrega.erro}</span>}
 
-      {entrega.rastreio_url && (
-        <a
-          href={entrega.rastreio_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 font-semibold underline-offset-2 hover:underline"
-        >
-          Rastrear
-          <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" aria-hidden />
-        </a>
-      )}
-
-      {entrega.ativo && (
-        <button
-          type="button"
-          onClick={pedirCancelamento}
-          disabled={ocupado}
-          className="font-semibold text-danger-token underline-offset-2 hover:underline disabled:opacity-50"
-        >
-          Cancelar entregador
-        </button>
+      {(entrega.rastreio_url || podeCancelar) && (
+        <span className="inline-flex items-center">
+          {entrega.rastreio_url && (
+            <a
+              href={entrega.rastreio_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Rastrear"
+              title="Rastrear"
+              className={icone}
+            >
+              <MapPinIcon className="h-4 w-4" aria-hidden />
+            </a>
+          )}
+          {podeCancelar && (
+            <button
+              type="button"
+              onClick={pedirCancelamento}
+              disabled={ocupado}
+              aria-label="Cancelar entregador"
+              title="Cancelar entregador"
+              className={`${icone} hover:!text-danger-token`}
+            >
+              <XMarkIcon className="h-4 w-4" aria-hidden />
+            </button>
+          )}
+        </span>
       )}
 
       {entrega.pode_chamar && (

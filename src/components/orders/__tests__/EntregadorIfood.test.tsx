@@ -325,3 +325,22 @@ describe('código de coleta (pickupCode)', () => {
     expect(screen.queryByRole('button', { name: 'Chamar entregador iFood' })).toBeNull();
   });
 });
+
+describe('enxuto: ícone fala, sem texto repetido', () => {
+  it('sem rótulo "Entregador iFood" escrito; rastrear e cancelar são ícones', async () => {
+    estado.mockResolvedValue(emAndamento);
+    render(<EntregadorIfood pedidoId="p1" />);
+    const bloco = await screen.findByRole('group', { name: 'Entregador iFood' });
+    expect(within(bloco).queryByText('Entregador iFood')).toBeNull();
+    expect(within(bloco).queryByText('Rastrear')).toBeNull();
+    expect(within(bloco).queryByText('Cancelar entregador')).toBeNull();
+    expect(within(bloco).getByRole('link', { name: 'Rastrear' })).toBeInTheDocument();
+  });
+
+  it('cancelamento já pedido: sem botão de cancelar de novo', async () => {
+    estado.mockResolvedValue({ ...emAndamento, status: 'CANCELLATION_REQUESTED', status_texto: 'Cancelando…' });
+    render(<EntregadorIfood pedidoId="p1" />);
+    await screen.findByText('Cancelando…');
+    expect(screen.queryByRole('button', { name: 'Cancelar entregador' })).toBeNull();
+  });
+});
