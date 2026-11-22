@@ -45,7 +45,7 @@ it('atribui o entregador e esconde quem foi desligado', async () => {
 
 it('loja sem entregador não mostra nada', async () => {
   entregadores.mockResolvedValue([]);
-  const { container } = render(<EntregadorDoPedido storeSlug="loja" pedidoId="p1" origem="ifood" />);
+  const { container } = render(<EntregadorDoPedido storeSlug="loja" pedidoId="p1" origem="99food" />);
   await waitFor(() => expect(entregadores).toHaveBeenCalled());
   expect(container).toBeEmptyDOMElement();
 });
@@ -69,8 +69,13 @@ describe('entregador iFood', () => {
     expect(await screen.findByTestId('entregador-ifood')).toBeInTheDocument();
   });
 
-  it.each(['ifood', '99food'])('pedido vindo do %s não chama entregador iFood', async (origem) => {
-    render(<EntregadorDoPedido storeSlug="loja" pedidoId="p1" origem={origem} />);
+  it('pedido do iFood ganha o bloco (entrega própria pede entregador iFood; o servidor decide)', async () => {
+    render(<EntregadorDoPedido storeSlug="loja" pedidoId="p1" origem="ifood" />);
+    expect(await screen.findByTestId('entregador-ifood')).toBeInTheDocument();
+  });
+
+  it('pedido vindo do 99food não chama entregador iFood', async () => {
+    render(<EntregadorDoPedido storeSlug="loja" pedidoId="p1" origem="99food" />);
     await screen.findByLabelText('Entregador');
     expect(screen.queryByTestId('entregador-ifood')).toBeNull();
   });

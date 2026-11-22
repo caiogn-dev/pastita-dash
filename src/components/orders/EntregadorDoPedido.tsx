@@ -15,8 +15,9 @@ import { copyToClipboard } from '../../utils/clipboard';
 import { operacaoService, type Entregador } from '../../services/operacao';
 import { EntregadorIfood } from './EntregadorIfood';
 
-/** Pedido de marketplace: a entrega é do próprio marketplace. */
-const ORIGEM_COM_ENTREGA_PROPRIA = new Set(['ifood', '99food']);
+/** Pedido do 99: a entrega é do 99. Pedido do iFood entra — com entrega da
+ * loja ela pode pedir o entregador iFood, e o servidor decide (`pode_chamar`). */
+const ORIGEM_COM_ENTREGA_PROPRIA = new Set(['99food']);
 
 interface Props {
   storeSlug: string;

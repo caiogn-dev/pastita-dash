@@ -33,6 +33,7 @@ const entrega = (over: Record<string, unknown> = {}) => ({
   ativo: false,
   rastreio_url: '',
   codigo_entrega: '',
+  codigo_coleta: '',
   entregador: null,
   valor: null,
   erro: '',
@@ -301,4 +302,26 @@ it('sem entrega e sem pode_chamar não mostra o botão de chamar', async () => {
   const { container } = render(<EntregadorIfood pedidoId="p1" />);
   await waitFor(() => expect(estado).toHaveBeenCalled());
   expect(container).toBeEmptyDOMElement();
+});
+
+describe('código de coleta (pickupCode)', () => {
+  it('aparece antes de chamar o entregador', async () => {
+    estado.mockResolvedValue(entrega({ codigo_coleta: '1234' }));
+    render(<EntregadorIfood pedidoId="p1" />);
+    expect(await screen.findByLabelText('Código de coleta')).toHaveTextContent('1234');
+    expect(screen.getByRole('button', { name: 'Chamar entregador iFood' })).toBeInTheDocument();
+  });
+
+  it('aparece com o entregador em andamento', async () => {
+    estado.mockResolvedValue({ ...emAndamento, codigo_coleta: '5678' });
+    render(<EntregadorIfood pedidoId="p1" />);
+    expect(await screen.findByLabelText('Código de coleta')).toHaveTextContent('5678');
+  });
+
+  it('pedido que o iFood já entrega mostra só o código', async () => {
+    estado.mockResolvedValue(entrega({ pode_chamar: false, codigo_coleta: '9012' }));
+    render(<EntregadorIfood pedidoId="p1" />);
+    expect(await screen.findByLabelText('Código de coleta')).toHaveTextContent('9012');
+    expect(screen.queryByRole('button', { name: 'Chamar entregador iFood' })).toBeNull();
+  });
 });

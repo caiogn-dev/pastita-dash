@@ -20,6 +20,8 @@ export interface EntregaIfood {
   rastreio_url: string;
   /** O entregador pede ao cliente na entrega. */
   codigo_entrega: string;
+  /** pickupCode do iFood: o entregador mostra na loja para retirar. */
+  codigo_coleta: string;
   entregador: { nome: string; telefone: string } | null;
   /** Quanto o iFood cobra da loja pela entrega. */
   valor: number | null;

@@ -160,13 +160,27 @@ export const EntregadorIfood: React.FC<Props> = ({ pedidoId, aoMudarPedido }) =>
     if (ok && aceitar) aoMudarPedido?.();
   };
 
+  const coleta = entrega.codigo_coleta ? (
+    <span
+      aria-label="Código de coleta"
+      title="Código de coleta"
+      className="inline-flex items-center gap-1.5 rounded-md bg-surface-2 px-2 py-0.5 text-xs text-fg-muted-token"
+    >
+      Coleta
+      <span className="font-mono text-sm font-bold tracking-widest text-fg-token">{entrega.codigo_coleta}</span>
+    </span>
+  ) : null;
+
   if (!entrega.chamado) {
-    if (!entrega.pode_chamar) return null;
+    if (!entrega.pode_chamar) return coleta;
     return (
-      <button type="button" onClick={chamar} disabled={ocupado} className={botao}>
-        <IfoodIcon size={16} />
-        <span className={ocupado ? 'animate-pulse' : undefined}>Chamar entregador iFood</span>
-      </button>
+      <span className="inline-flex flex-wrap items-center gap-2">
+        <button type="button" onClick={chamar} disabled={ocupado} className={botao}>
+          <IfoodIcon size={16} />
+          <span className={ocupado ? 'animate-pulse' : undefined}>Chamar entregador iFood</span>
+        </button>
+        {coleta}
+      </span>
     );
   }
 
@@ -238,6 +252,8 @@ export const EntregadorIfood: React.FC<Props> = ({ pedidoId, aoMudarPedido }) =>
           {entrega.codigo_entrega}
         </span>
       )}
+
+      {coleta}
 
       {entrega.erro && <span className="text-danger-token">{entrega.erro}</span>}
 
