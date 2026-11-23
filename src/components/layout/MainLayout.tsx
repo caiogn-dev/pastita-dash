@@ -11,6 +11,7 @@ import { useIsMobileViewport } from '../../mobile/useIsMobileViewport';
 import { MobileShell } from '../../mobile/MobileShell';
 import { PedidosAoVivo } from '../realtime/PedidosAoVivo';
 import { WidgetDoIfood } from './WidgetDoIfood';
+import { BolinhaDoWhatsApp } from './BolinhaDoWhatsApp';
 import { useAuthStore } from '../../stores/authStore';
 import { classeDeAltura } from './alturaDaCasca';
 
@@ -157,6 +158,8 @@ export const MainLayout: React.FC = () => (
     <PedidosAoVivo />
     {/* Bolinha do iFood: mesma lógica — fora dos ramos, init uma vez só. */}
     <WidgetDoIfood />
+    {/* Bolinha do WhatsApp: responder o cliente sem sair da tela. */}
+    <BolinhaDoWhatsApp />
     <ConteudoDoLayout />
   </>
 );

@@ -30,7 +30,8 @@ import { useChatStore } from '../../stores/chatStore';
 import { useStore } from '../../hooks/useStore';
 import { useConfirm } from '../../hooks/useConfirm';
 import { useRootStore } from '../../stores/rootStore';
-import { MessageBubble, MessageBubbleProps } from '../../components/chat/MessageBubble';
+import { MessageBubble } from '../../components/chat/MessageBubble';
+import { messageToBubbleProps } from '../../components/chat/messageToBubbleProps';
 import { MediaViewer } from '../../components/chat/MediaViewer';
 import toast from 'react-hot-toast';
 import { EmptyState, SeloDeEstado, estadoDeConversa } from '../../components/ui';
@@ -46,24 +47,6 @@ import { FaixaDoBot } from './FaixaDoBot';
 function ensureArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? value : [];
 }
-
-const messageToBubbleProps = (msg: Message): MessageBubbleProps => ({
-  id: msg.id,
-  direction: msg.direction as 'inbound' | 'outbound',
-  messageType: msg.message_type,
-  status: msg.status as 'pending' | 'sent' | 'delivered' | 'read' | 'failed',
-  textBody: msg.text_body || msg.media_caption || msg.caption,
-  content: msg.content,
-  mediaUrl: msg.media_url,
-  mediaType: msg.media_mime_type || msg.media_type,
-  mimeType: msg.media_mime_type,
-  fileName: msg.media_filename || msg.file_name,
-  createdAt: msg.created_at,
-  sentAt: msg.sent_at ?? undefined,
-  deliveredAt: msg.delivered_at ?? undefined,
-  readAt: msg.read_at ?? undefined,
-  errorMessage: msg.error_message,
-});
 
 interface ConversationWithMessages extends Omit<Conversation, 'last_message'> {
   last_message?: Message | string;

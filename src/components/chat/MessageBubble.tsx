@@ -668,6 +668,9 @@ const MessageBubbleImpl: React.FC<MessageBubbleProps> = ({
             nem já impresso pelo preview de um tipo especial que ecoa texto) */}
         {textBody && !hasLocation && !previewEchoesText && !(hasMedia && ['image', 'video', 'document'].includes(messageType)) && (
           <div className="px-3 py-2">
+            {messageType === 'audio' && (
+              <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide opacity-60">Transcrição</p>
+            )}
             <p className="text-sm whitespace-pre-wrap break-words">{textBody}</p>
           </div>
         )}

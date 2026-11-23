@@ -39,6 +39,7 @@ jest.mock('../useNavSections', () => {
 import { Navbar } from '../Navbar';
 jest.mock('../IfoodNoTopo', () => ({ __esModule: true, IfoodNoTopo: () => null, default: () => null }));
 jest.mock('../WidgetDoIfood', () => ({ __esModule: true, WidgetDoIfood: () => null, default: () => null }));
+jest.mock('../BolinhaDoWhatsApp', () => ({ __esModule: true, BolinhaDoWhatsApp: () => null, default: () => null }));
 
 
 const abrirGaveta = () => {
