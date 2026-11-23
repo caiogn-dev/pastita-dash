@@ -29,6 +29,7 @@ import { fiscalService, type NotaDaLoja, type NotasDaLoja } from '../../services
 import { estadoDaLista } from '../../utils/estadoDaLista';
 import { formatarDocumento } from '../../utils/documento';
 import { formatCurrency } from '../../utils/formatters';
+import { urlSegura } from '../../utils/urlSegura';
 import EmitirNota from './EmitirNota';
 
 const NOME_MODELO: Record<string, string> = { '65': 'NFC-e', '55': 'NF-e' };
@@ -182,18 +183,20 @@ export const NotasFiscaisPage: React.FC = () => {
 
   const acoesDa = (nota: NotaDaLoja): RowAction[] => {
     const acoes: RowAction[] = [];
-    if (nota.danfe_url) {
+    const danfe = urlSegura(nota.danfe_url);
+    const xml = urlSegura(nota.xml_url);
+    if (danfe) {
       acoes.push({
         rotulo: 'Abrir DANFE',
         icone: <ArrowTopRightOnSquareIcon className="h-4 w-4" />,
-        onClick: () => window.open(nota.danfe_url, '_blank', 'noopener'),
+        onClick: () => window.open(danfe, '_blank', 'noopener'),
       });
     }
-    if (nota.xml_url) {
+    if (xml) {
       acoes.push({
         rotulo: 'Baixar XML',
         icone: <ArrowDownTrayIcon className="h-4 w-4" />,
-        onClick: () => window.open(nota.xml_url, '_blank', 'noopener'),
+        onClick: () => window.open(xml, '_blank', 'noopener'),
       });
     }
     if (nota.status === 'authorized') {
