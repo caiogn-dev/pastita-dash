@@ -10,7 +10,7 @@
  * Fica fora do Inbox (lá seria a mesma tela duas vezes) e do celular (lá o
  * Inbox já é uma aba).
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { Component, useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowLeftIcon,
@@ -37,6 +37,60 @@ import type { Conversation, Message } from '../../types';
 const QUANTAS = 30;
 const SEM_MENSAGENS: Message[] = [];
 
+// Posição: distância do canto inferior direito. Começa à ESQUERDA da bolinha
+// do iFood (que fica no canto, 23/11: "está no mesmo lugar da do iFood") e o
+// lojista arrasta para onde quiser — fica gravado neste navegador.
+const CHAVE_POSICAO = 'bolinha-whatsapp-posicao';
+const POSICAO_INICIAL = { direita: 100, baixo: 20 };
+const TAMANHO = 56;
+type Posicao = typeof POSICAO_INICIAL;
+
+const lerPosicao = (): Posicao => {
+  try {
+    const p = JSON.parse(localStorage.getItem(CHAVE_POSICAO) || 'null');
+    if (p && Number.isFinite(p.direita) && Number.isFinite(p.baixo)) return p;
+  } catch { /* sem storage: posição inicial */ }
+  return POSICAO_INICIAL;
+};
+
+const dentroDaTela = ({ direita, baixo }: Posicao): Posicao => ({
+  direita: Math.min(Math.max(8, direita), Math.max(8, window.innerWidth - TAMANHO - 8)),
+  baixo: Math.min(Math.max(8, baixo), Math.max(8, window.innerHeight - TAMANHO - 8)),
+});
+
+/** Arrastar a bolinha. Movimento acima de 5 px é arrasto, não clique. */
+function useArrastavel() {
+  const [posicao, setPosicao] = useState<Posicao>(() => dentroDaTela(lerPosicao()));
+  const arrasto = useRef<{ x: number; y: number; inicio: Posicao; moveu: boolean } | null>(null);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    arrasto.current = { x: e.clientX, y: e.clientY, inicio: posicao, moveu: false };
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const a = arrasto.current;
+    if (!a) return;
+    const dx = e.clientX - a.x;
+    const dy = e.clientY - a.y;
+    if (!a.moveu && Math.hypot(dx, dy) < 5) return;
+    a.moveu = true;
+    setPosicao(dentroDaTela({ direita: a.inicio.direita - dx, baixo: a.inicio.baixo - dy }));
+  };
+  const onPointerUp = () => {
+    const a = arrasto.current;
+    arrasto.current = null;
+    if (a?.moveu) {
+      setPosicao((p) => {
+        try { localStorage.setItem(CHAVE_POSICAO, JSON.stringify(p)); } catch { /* ok */ }
+        return p;
+      });
+    }
+    return Boolean(a?.moveu);
+  };
+  return { posicao, onPointerDown, onPointerMove, onPointerUp };
+}
+
 const nomeDe = (c: Conversation) => c.contact_name || formatPhone(c.phone_number);
 
 export const BolinhaDoWhatsApp: React.FC = () => {
@@ -44,13 +98,27 @@ export const BolinhaDoWhatsApp: React.FC = () => {
   const isMobile = useIsMobileViewport();
   const noInbox = pathname.startsWith('/inbox');
   if (noInbox || isMobile) return null;
-  return <Bolinha />;
+  return <SemDerrubarOPainel><Bolinha /></SemDerrubarOPainel>;
 };
+
+/** Erro dentro da bolinha some com ela, não com o painel inteiro. */
+class SemDerrubarOPainel extends Component<{ children: React.ReactNode }, { quebrou: boolean }> {
+  state = { quebrou: false };
+  static getDerivedStateFromError() { return { quebrou: true }; }
+  componentDidCatch(error: unknown) { console.error('[BolinhaDoWhatsApp]', error); }
+  render() { return this.state.quebrou ? null : this.props.children; }
+}
 
 const Bolinha: React.FC = () => {
   const navigate = useNavigate();
   const { storeSlug } = useStore();
+  // O provider assina o store inteiro e entrega um objeto NOVO a cada mudança.
+  // Com `ws` nas deps do efeito abaixo, o efeito mexia na seleção do store →
+  // provider renderizava → `ws` novo → efeito de novo: loop infinito que
+  // derrubou o painel ao clicar numa conversa (23/11). Ref, não dependência.
   const ws = useWhatsAppWsContext();
+  const wsRef = useRef(ws);
+  wsRef.current = ws;
   const conversas = useChatStore((s) => s.conversations);
   const [aberta, setAberta] = useState(false);
   const [conversaId, setConversaId] = useState<string | null>(null);
@@ -58,6 +126,10 @@ const Bolinha: React.FC = () => {
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
   const fimRef = useRef<HTMLDivElement>(null);
+  const { posicao, onPointerDown, onPointerMove, onPointerUp } = useArrastavel();
+  const acabouDeArrastar = useRef(false);
+  // Bolinha na metade esquerda da tela: a janela abre para a direita.
+  const ancoraEsquerda = typeof window !== 'undefined' && posicao.direita > window.innerWidth / 2;
 
   const naoLidas = conversas.reduce((t, c) => t + (c.unread_count || 0), 0);
   const conversa = conversas.find((c) => c.id === conversaId) ?? null;
@@ -79,14 +151,14 @@ const Bolinha: React.FC = () => {
   useEffect(() => {
     if (!conversaId) return;
     useChatStore.getState().setSelectedConversation(conversaId);
-    ws.subscribeToConversation(conversaId);
+    wsRef.current.subscribeToConversation(conversaId);
     return () => {
-      ws.unsubscribeFromConversation(conversaId);
+      wsRef.current.unsubscribeFromConversation(conversaId);
       if (useChatStore.getState().selectedConversationId === conversaId) {
         useChatStore.getState().setSelectedConversation(null);
       }
     };
-  }, [conversaId, ws]);
+  }, [conversaId]);
 
   useEffect(() => {
     fimRef.current?.scrollIntoView?.({ block: 'end' });
@@ -142,7 +214,13 @@ const Bolinha: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-5 right-5 z-[70] flex flex-col items-end gap-3">
+    // z-index no teto: o iframe da bolinha do iFood cobre a tela e engolia o clique.
+    <div
+      className={`fixed z-[2147483646] flex flex-col gap-3 ${ancoraEsquerda ? 'items-start' : 'items-end'}`}
+      style={ancoraEsquerda
+        ? { left: window.innerWidth - posicao.direita - TAMANHO, bottom: posicao.baixo }
+        : { right: posicao.direita, bottom: posicao.baixo }}
+    >
       {aberta && (
         <section
           aria-label="WhatsApp"
@@ -236,8 +314,15 @@ const Bolinha: React.FC = () => {
         type="button"
         aria-label={naoLidas ? `WhatsApp, ${naoLidas} não lidas` : 'WhatsApp'}
         aria-expanded={aberta}
-        onClick={() => (aberta ? fechar() : setAberta(true))}
-        className="relative grid h-14 w-14 place-items-center rounded-full bg-[#25D366] text-white shadow-xl transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        title="Arraste para mudar de lugar"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={() => { acabouDeArrastar.current = onPointerUp(); }}
+        onClick={() => {
+          if (acabouDeArrastar.current) { acabouDeArrastar.current = false; return; }
+          if (aberta) fechar(); else setAberta(true);
+        }}
+        className="relative grid h-14 w-14 touch-none cursor-grab active:cursor-grabbing place-items-center rounded-full bg-[#25D366] text-white shadow-xl transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
         {aberta ? <XMarkIcon className="h-6 w-6" /> : <ChatBubbleLeftRightIcon className="h-7 w-7" />}
         {!aberta && naoLidas > 0 && (

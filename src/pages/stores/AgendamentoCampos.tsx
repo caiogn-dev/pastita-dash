@@ -6,7 +6,7 @@
 import React from 'react';
 import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 import { Card, Campo, Segmentado } from '../../components/ui';
-import { ANTECEDENCIAS, INTERVALOS, faixasDoDia, type Agendamento, type OperatingHours } from './horarios';
+import { ANTECEDENCIAS, HORIZONTES, INTERVALOS, faixasDoDia, type Agendamento, type OperatingHours } from './horarios';
 
 const duracao = (min: number) => (min < 60 ? `${min} min` : min % 60 ? `${Math.floor(min / 60)}h${min % 60}` : `${min / 60} h`);
 
@@ -46,6 +46,16 @@ export const AgendamentoCampos: React.FC<Props> = ({ valor, onChange, horas }) =
             valor={String(valor.antecedencia)}
             onChange={(v) => onChange({ ...valor, antecedencia: Number(v) })}
             opcoes={ANTECEDENCIAS.map((m) => ({ valor: String(m), rotulo: duracao(m) }))}
+          />
+        </Campo>
+      </div>
+      <div className="mt-4">
+        <Campo rotulo="Aceitar pedidos para até">
+          <Segmentado
+            rotulo="Aceitar pedidos para até"
+            valor={String(valor.dias)}
+            onChange={(v) => onChange({ ...valor, dias: Number(v) })}
+            opcoes={HORIZONTES.map((d) => ({ valor: String(d), rotulo: `${d} dias` }))}
           />
         </Campo>
       </div>

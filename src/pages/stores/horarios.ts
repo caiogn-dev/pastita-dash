@@ -116,13 +116,16 @@ export function problemaDaPausa(p: Pausa): string | null {
 
 // ── Agendamento ──────────────────────────────────────────────────────────
 // Contrato do server2 (`services/agendamento.py`):
-//   metadata.agendamento = { intervalo: 30|60|90|120, antecedencia: minutos }
+//   metadata.agendamento = { intervalo: 30|60|90|120, antecedencia: minutos, dias: 1..90 }
+// `dias` = até quantos dias com horário o cliente pode escolher (banqueteria
+// encomenda festa semanas antes; acima de 14 o cardápio mostra calendário).
 // As faixas que o cliente vê saem dos turnos do dia nesse intervalo; a sobra
 // do turno vira uma faixa menor (08–17 de 2 em 2 h termina em 16–17).
 
-export interface Agendamento { intervalo: number; antecedencia: number }
+export interface Agendamento { intervalo: number; antecedencia: number; dias: number }
 
-export const AGENDAMENTO_PADRAO: Agendamento = { intervalo: 60, antecedencia: 60 };
+export const AGENDAMENTO_PADRAO: Agendamento = { intervalo: 60, antecedencia: 60, dias: 7 };
+export const HORIZONTES = [7, 15, 30, 60, 90];
 export const INTERVALOS = [30, 60, 90, 120];
 export const ANTECEDENCIAS = [30, 60, 120, 180];
 
@@ -132,6 +135,7 @@ export function lerAgendamento(metadata?: Record<string, unknown> | null): Agend
     intervalo: INTERVALOS.includes(Number(bruto.intervalo)) ? Number(bruto.intervalo) : AGENDAMENTO_PADRAO.intervalo,
     antecedencia: Number.isInteger(bruto.antecedencia) && Number(bruto.antecedencia) >= 0
       ? Number(bruto.antecedencia) : AGENDAMENTO_PADRAO.antecedencia,
+    dias: typeof bruto.dias === 'number' && HORIZONTES.includes(bruto.dias) ? bruto.dias : AGENDAMENTO_PADRAO.dias,
   };
 }
 

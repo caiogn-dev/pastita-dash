@@ -24,14 +24,26 @@ jest.mock('../../../services/conversations', () => ({
 }));
 jest.mock('../../../services', () => ({ getErrorMessage: () => '' }));
 jest.mock('../../../services/whatsapp', () => ({ sendMessage: (...a: unknown[]) => sendMessage(...a) }));
-jest.mock('../../../context/WhatsAppWsContext', () => ({
-  useWhatsAppWsContext: () => ({ subscribeToConversation, unsubscribeFromConversation }),
-}));
+// Como o provider real: assina o store INTEIRO e entrega um objeto novo a cada
+// render. Com o mock estável de antes, o loop que derrubou o painel (23/11:
+// "ao clicar em qualquer conversa, quebra a tela inteira") passava nos testes.
+jest.mock('../../../context/WhatsAppWsContext', () => {
+  const { useChatStore: store } = jest.requireActual('../../../stores/chatStore');
+  return {
+    useWhatsAppWsContext: () => {
+      store();
+      return { subscribeToConversation, unsubscribeFromConversation };
+    },
+  };
+});
 jest.mock('../../../hooks/useStore', () => ({ useStore: () => ({ storeSlug: 'ce-saladas' }) }));
 jest.mock('../../../mobile/useIsMobileViewport', () => ({ useIsMobileViewport: () => mobile }));
 jest.mock('react-hot-toast', () => ({ __esModule: true, default: { error: jest.fn(), success: jest.fn() } }));
 jest.mock('../../chat/MessageBubble', () => ({
-  MessageBubble: ({ textBody }: { textBody?: string }) => <div data-testid="balao">{textBody}</div>,
+  MessageBubble: ({ textBody }: { textBody?: string }) => {
+    if (textBody === 'BOOM') throw new Error('balão quebrado');
+    return <div data-testid="balao">{textBody}</div>;
+  },
 }));
 
 import { BolinhaDoWhatsApp } from '../BolinhaDoWhatsApp';
@@ -103,6 +115,32 @@ it('responde pelo WhatsApp com Enter, como no Inbox', async () => {
     text: 'Já vou te mandar o cardápio',
   }));
   expect(campo).toHaveValue('');
+});
+
+it('entrar na conversa não entra em loop com o WebSocket (assina uma vez só)', async () => {
+  montar();
+  fireEvent.click(await screen.findByRole('button', { name: /whatsapp/i }));
+  fireEvent.click(screen.getByRole('button', { name: /Maria/ }));
+  await screen.findByTestId('balao');
+  await act(async () => {});
+  expect(subscribeToConversation).toHaveBeenCalledTimes(1);
+  expect(unsubscribeFromConversation).not.toHaveBeenCalled();
+});
+
+it('erro dentro da bolinha não derruba o painel', async () => {
+  const erro = jest.spyOn(console, 'error').mockImplementation(() => {});
+  getMessages.mockResolvedValue({ results: [{ id: 'x', direction: 'inbound', message_type: 'text', text_body: 'BOOM', created_at: '' }] });
+  render(
+    <MemoryRouter initialEntries={['/orders']}>
+      <BolinhaDoWhatsApp />
+      <p>resto do painel</p>
+    </MemoryRouter>,
+  );
+  fireEvent.click(await screen.findByRole('button', { name: /whatsapp/i }));
+  fireEvent.click(screen.getByRole('button', { name: /Maria/ }));
+  await waitFor(() => expect(screen.queryByText('BOOM')).not.toBeInTheDocument());
+  expect(screen.getByText('resto do painel')).toBeInTheDocument();
+  erro.mockRestore();
 });
 
 it('Shift+Enter não envia', async () => {

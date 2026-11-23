@@ -170,7 +170,7 @@ describe('Configurações: agendamento (21/10)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
     await waitFor(() => expect(api.updateStore).toHaveBeenCalledTimes(1));
     const [, payload] = (api.updateStore as jest.Mock).mock.calls[0];
-    expect(payload.metadata).toEqual({ google_review_url: '', outro: 1, agendamento: { intervalo: 30, antecedencia: 60 } });
+    expect(payload.metadata).toEqual({ google_review_url: '', outro: 1, agendamento: { intervalo: 30, antecedencia: 60, dias: 7 } });
   });
 });
 
