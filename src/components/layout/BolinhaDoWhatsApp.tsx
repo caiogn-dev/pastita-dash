@@ -91,6 +91,31 @@ function useArrastavel() {
   return { posicao, onPointerDown, onPointerMove, onPointerUp };
 }
 
+// Tamanho da janela: o lojista puxa pela alça do canto (23/11: "não consigo
+// mudar de altura"). Fica gravado; a tela manda — nunca passa dela.
+const CHAVE_TAMANHO = 'bolinha-whatsapp-tamanho';
+const TAMANHO_INICIAL = { largura: 380, altura: 600 };
+const MINIMO = { largura: 320, altura: 360 };
+type Tamanho = typeof TAMANHO_INICIAL;
+
+const lerTamanho = (): Tamanho => {
+  try {
+    const t = JSON.parse(localStorage.getItem(CHAVE_TAMANHO) || 'null');
+    if (t && Number.isFinite(t.largura) && Number.isFinite(t.altura)) return t;
+  } catch { /* sem storage: tamanho inicial */ }
+  return TAMANHO_INICIAL;
+};
+
+/** Cabe na tela: largura com 16 px de cada lado; altura acima da bolinha. */
+const caberNaTela = (t: Tamanho, baixo: number): Tamanho => {
+  const maxL = Math.max(240, window.innerWidth - 32);
+  const maxA = Math.max(240, window.innerHeight - baixo - TAMANHO - 12 - 16);
+  return {
+    largura: Math.round(Math.min(maxL, Math.max(Math.min(MINIMO.largura, maxL), t.largura))),
+    altura: Math.round(Math.min(maxA, Math.max(Math.min(MINIMO.altura, maxA), t.altura))),
+  };
+};
+
 const nomeDe = (c: Conversation) => c.contact_name || formatPhone(c.phone_number);
 
 export const BolinhaDoWhatsApp: React.FC = () => {
@@ -130,6 +155,41 @@ const Bolinha: React.FC = () => {
   const acabouDeArrastar = useRef(false);
   // Bolinha na metade esquerda da tela: a janela abre para a direita.
   const ancoraEsquerda = typeof window !== 'undefined' && posicao.direita > window.innerWidth / 2;
+
+  const [tamanhoDesejado, setTamanhoDesejado] = useState<Tamanho>(lerTamanho);
+  const [, setTela] = useState(0);
+  useEffect(() => {
+    const aoMudar = () => setTela((n) => n + 1);
+    window.addEventListener('resize', aoMudar);
+    return () => window.removeEventListener('resize', aoMudar);
+  }, []);
+  const tamanho = caberNaTela(tamanhoDesejado, posicao.baixo);
+  const redimensionando = useRef<{ x: number; y: number; inicio: Tamanho } | null>(null);
+  const aoPuxarAlca = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    redimensionando.current = { x: e.clientX, y: e.clientY, inicio: tamanho };
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+  };
+  const aoMoverAlca = (e: React.PointerEvent) => {
+    const r = redimensionando.current;
+    if (!r) return;
+    const dx = e.clientX - r.x;
+    const dy = e.clientY - r.y;
+    // Alça no canto de cima, do lado oposto à bolinha: puxar para fora aumenta.
+    setTamanhoDesejado(caberNaTela({
+      largura: r.inicio.largura + (ancoraEsquerda ? dx : -dx),
+      altura: r.inicio.altura - dy,
+    }, posicao.baixo));
+  };
+  const aoSoltarAlca = () => {
+    if (!redimensionando.current) return;
+    redimensionando.current = null;
+    setTamanhoDesejado((t) => {
+      try { localStorage.setItem(CHAVE_TAMANHO, JSON.stringify(t)); } catch { /* ok */ }
+      return t;
+    });
+  };
 
   const naoLidas = conversas.reduce((t, c) => t + (c.unread_count || 0), 0);
   const conversa = conversas.find((c) => c.id === conversaId) ?? null;
@@ -224,8 +284,24 @@ const Bolinha: React.FC = () => {
       {aberta && (
         <section
           aria-label="WhatsApp"
-          className="flex h-[min(600px,calc(100vh-7rem))] w-[380px] flex-col overflow-hidden rounded-2xl border border-border-token bg-surface shadow-2xl"
+          className="relative flex flex-col overflow-hidden rounded-2xl border border-border-token bg-surface shadow-2xl"
+          style={{ width: tamanho.largura, height: tamanho.altura }}
         >
+          <div
+            role="separator"
+            aria-label="Redimensionar"
+            title="Arraste para mudar o tamanho · duplo clique volta ao padrão"
+            onPointerDown={aoPuxarAlca}
+            onPointerMove={aoMoverAlca}
+            onPointerUp={aoSoltarAlca}
+            onDoubleClick={() => {
+              setTamanhoDesejado(TAMANHO_INICIAL);
+              try { localStorage.removeItem(CHAVE_TAMANHO); } catch { /* ok */ }
+            }}
+            className={`absolute top-0 z-10 h-5 w-5 touch-none ${ancoraEsquerda ? 'right-0 cursor-nesw-resize' : 'left-0 cursor-nwse-resize'}`}
+          >
+            <span className={`absolute top-1 h-2.5 w-2.5 border-t-2 border-fg-muted-token opacity-50 ${ancoraEsquerda ? 'right-1 border-r-2 rounded-tr' : 'left-1 border-l-2 rounded-tl'}`} />
+          </div>
           <header className="flex items-center gap-2 border-b border-border-token px-3 py-2.5">
             {conversa ? (
               <button type="button" aria-label="Voltar" onClick={() => setConversaId(null)} className="rounded-lg p-1.5 text-fg-muted-token hover:bg-chrome-hover">

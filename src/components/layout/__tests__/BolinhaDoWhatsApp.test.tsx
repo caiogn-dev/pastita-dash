@@ -174,6 +174,65 @@ it('"Abrir no Inbox" leva para a conversa completa e fecha a janela', async () =
   expect(screen.queryByRole('textbox', { name: /mensagem/i })).not.toBeInTheDocument();
 });
 
+describe('tamanho da janela (23/11: "não consigo mudar de altura")', () => {
+  // jsdom não tem PointerEvent: sem isto o evento chega sem clientX/clientY.
+  beforeAll(() => {
+    if (!('PointerEvent' in window)) {
+      class PE extends MouseEvent {
+        pointerId: number;
+        constructor(type: string, init: PointerEventInit = {}) { super(type, init); this.pointerId = init.pointerId ?? 0; }
+      }
+      (window as unknown as { PointerEvent: unknown }).PointerEvent = PE;
+    }
+  });
+  beforeEach(() => {
+    localStorage.clear();
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1440 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 900 });
+  });
+
+  const janela = () => screen.getByRole('region', { name: 'WhatsApp' });
+  const arrastar = (alca: HTMLElement, dx: number, dy: number) => {
+    fireEvent.pointerDown(alca, { button: 0, clientX: 500, clientY: 300, pointerId: 1 });
+    fireEvent.pointerMove(alca, { clientX: 500 + dx, clientY: 300 + dy, pointerId: 1 });
+    fireEvent.pointerUp(alca, { clientX: 500 + dx, clientY: 300 + dy, pointerId: 1 });
+  };
+
+  it('puxar a alça para cima e para a esquerda aumenta a janela e o tamanho fica guardado', async () => {
+    montar();
+    fireEvent.click(await screen.findByRole('button', { name: /whatsapp/i }));
+    const antes = { w: parseInt(janela().style.width), h: parseInt(janela().style.height) };
+    arrastar(screen.getByRole('separator', { name: /redimensionar/i }), -100, -120);
+    expect(parseInt(janela().style.width)).toBe(antes.w + 100);
+    expect(parseInt(janela().style.height)).toBe(antes.h + 120);
+    expect(JSON.parse(localStorage.getItem('bolinha-whatsapp-tamanho') || '{}')).toEqual({
+      largura: antes.w + 100, altura: antes.h + 120,
+    });
+  });
+
+  it('não passa do mínimo nem da tela', async () => {
+    montar();
+    fireEvent.click(await screen.findByRole('button', { name: /whatsapp/i }));
+    const alca = screen.getByRole('separator', { name: /redimensionar/i });
+    arrastar(alca, 2000, 2000);
+    expect(parseInt(janela().style.width)).toBe(320);
+    expect(parseInt(janela().style.height)).toBe(360);
+    arrastar(alca, -5000, -5000);
+    expect(parseInt(janela().style.width)).toBeLessThanOrEqual(1440 - 32);
+    expect(parseInt(janela().style.height)).toBeLessThanOrEqual(900);
+  });
+
+  it('tela pequena: a janela encolhe para caber, mesmo com tamanho guardado grande', async () => {
+    localStorage.setItem('bolinha-whatsapp-tamanho', JSON.stringify({ largura: 900, altura: 900 }));
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 800 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 600 });
+    montar();
+    fireEvent.click(await screen.findByRole('button', { name: /whatsapp/i }));
+    expect(parseInt(janela().style.width)).toBeLessThanOrEqual(800 - 32);
+    expect(parseInt(janela().style.height)).toBeLessThan(600);
+  });
+});
+
 it('Esc fecha a janela', async () => {
   montar();
   fireEvent.click(await screen.findByRole('button', { name: /whatsapp/i }));
