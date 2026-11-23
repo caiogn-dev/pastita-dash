@@ -1,8 +1,8 @@
 import { render, act } from '@testing-library/react';
 import { usePolling } from '../usePolling';
 
-const Probe = ({ fn, ms = 1000 }: { fn: () => void; ms?: number }) => {
-  usePolling(fn, ms);
+const Probe = ({ fn, ms = 1000, ativo = true }: { fn: () => void; ms?: number; ativo?: boolean }) => {
+  usePolling(fn, ms, ativo);
   return null;
 };
 
@@ -59,5 +59,15 @@ describe('usePolling', () => {
     unmount();
     act(() => { jest.advanceTimersByTime(5000); });
     expect(nova).toHaveBeenCalledTimes(1);
+  });
+
+  it('desligado não roda; ligado depois, passa a rodar', () => {
+    const fn = jest.fn();
+    const { rerender } = render(<Probe fn={fn} ativo={false} />);
+    act(() => { jest.advanceTimersByTime(5000); });
+    expect(fn).not.toHaveBeenCalled();
+    rerender(<Probe fn={fn} ativo />);
+    act(() => { jest.advanceTimersByTime(2000); });
+    expect(fn).toHaveBeenCalledTimes(2);
   });
 });

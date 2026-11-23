@@ -6,14 +6,16 @@
  * visível; ao voltar, atualiza na hora se passou do intervalo.
  *
  * Não faz a busca inicial: quem usa continua chamando a função uma vez no mount.
+ * `ativo=false` desliga o relógio (ex.: entrega já concluída).
  */
 import { useEffect, useRef } from 'react';
 
-export const usePolling = (tarefa: () => unknown, intervaloMs: number): void => {
+export const usePolling = (tarefa: () => unknown, intervaloMs: number, ativo = true): void => {
   const ref = useRef(tarefa);
   ref.current = tarefa;
 
   useEffect(() => {
+    if (!ativo) return undefined;
     let ultimo = Date.now();
     const rodar = () => {
       ultimo = Date.now();
@@ -29,5 +31,5 @@ export const usePolling = (tarefa: () => unknown, intervaloMs: number): void => 
       clearInterval(t);
       document.removeEventListener('visibilitychange', aoVoltar);
     };
-  }, [intervaloMs]);
+  }, [intervaloMs, ativo]);
 };
