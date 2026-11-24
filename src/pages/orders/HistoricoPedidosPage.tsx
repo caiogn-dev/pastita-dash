@@ -151,6 +151,10 @@ export const HistoricoPedidosPage: React.FC = () => {
   /* Sem frete no período (só retirada/balcão), a subtração seria uma linha de
      zero e o "=" sugeriria um desconto que não existe. */
   const temFrete = Math.round(Number(resumo?.frete ?? 0) * 100) > 0;
+  /* Desconto que a 99/iFood paga ao cliente: é venda da loja e não entra no
+     caixa. Sem esta linha, "310,14 − 3,98 = 716,46" (Cê Saladas, 24/11). */
+  const temDescontoApp = Math.round(Number(resumo?.desconto_app ?? 0) * 100) > 0;
+  const temAjuste = temFrete || temDescontoApp;
   const invertida = janelaInvertida(janela);
 
   // Anterior/próximo dentro do modal seguem a ORDEM DA LISTA filtrada. Sem
@@ -416,9 +420,19 @@ export const HistoricoPedidosPage: React.FC = () => {
                 </span>
               </div>
             )}
+            {temDescontoApp && (
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="text-sm text-fg-muted-token">
+                  + Desconto <span className="text-xs">(pago pelo app de entrega)</span>
+                </span>
+                <span className="text-sm text-fg-muted-token tabular-nums">
+                  {formatCurrency(resumo.desconto_app)}
+                </span>
+              </div>
+            )}
             <div className="flex items-baseline justify-between gap-4">
               <span className="text-sm font-semibold text-fg-token">
-                {temFrete ? '= Faturamento' : 'Faturamento'}
+                {temAjuste ? '= Faturamento' : 'Faturamento'}
               </span>
               <span className="text-base font-bold text-brand-ink tabular-nums">
                 {formatCurrency(resumo.faturamento)}

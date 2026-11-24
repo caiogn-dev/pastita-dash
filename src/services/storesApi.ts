@@ -1190,6 +1190,12 @@ export interface ResumoDePedidos {
    * fecha a conta entre a quebra por pagamento e o KPI de faturamento.
    */
   frete: string;
+  /**
+   * Desconto bancado pelo app de entrega (99Food/iFood). É venda da loja mas
+   * não passa pelo caixa: recebido − frete + desconto_app = faturamento.
+   * Opcional para não quebrar com backend antigo.
+   */
+  desconto_app?: string;
   /** `null` quando nada faturou — "R$ 0,00" leria como venda de graça. */
   ticket_medio: string | null;
   por_pagamento: QuebraDeResumo[];

@@ -113,3 +113,27 @@ test('reembolsado aparece ao lado do cancelado, fora do faturamento', () => {
   expect(screen.getByText('Cancelados e reembolsados')).toBeInTheDocument();
   expect(screen.getByText('15')).toBeInTheDocument();
 });
+
+test('desconto bancado pela 99 entra na conta e ela fecha', () => {
+  // Cê Saladas 24/11: "Total recebido R$ 310,14 − Frete R$ 3,98 =
+  // Faturamento R$ 716,46". Faltava a linha do subsídio do app.
+  resumoState = {
+    data: {
+      ...RESUMO_REAL,
+      faturamento: '716.46',
+      frete: '3.98',
+      desconto_app: '410.30',
+      por_pagamento: [{ chave: '99food', pedidos: 15, total: '310.14' }],
+    },
+    isLoading: false,
+    isError: false,
+  };
+  renderPagina();
+  expect(screen.getByText(/R\$ 410,30/)).toBeInTheDocument();
+  expect(screen.getByText(/pago pelo app/i)).toBeInTheDocument();
+});
+
+test('sem desconto de app, não inventa a linha', () => {
+  renderPagina();
+  expect(screen.queryByText(/pago pelo app/i)).not.toBeInTheDocument();
+});
