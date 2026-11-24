@@ -350,7 +350,7 @@ export const CanaisDaLoja: React.FC = () => {
 
       {configurandoIfood && ifoodLigavel && (
         <Gaveta ariaLabel="iFood" onClose={() => setConfigurandoIfood(false)} className="max-w-xl">
-          <div className="flex flex-col gap-6 p-6">
+          <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain p-6">
             <header className="flex items-center gap-3">
               <IfoodIcon size={40} />
               <div className="min-w-0 flex-1">

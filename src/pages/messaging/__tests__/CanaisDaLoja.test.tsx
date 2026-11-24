@@ -246,6 +246,15 @@ describe('Entregas iFood', () => {
   });
 });
 
+it('gaveta do iFood rola: horários e entregas passam da altura da tela (24/11)', async () => {
+  get.mockResolvedValue({ data: estado({ ifood: ifoodBase({ disponivel: true, merchant_id: 'm-1', conectado: true }) }) });
+  renderizar();
+  await screen.findByRole('heading', { name: 'iFood' });
+  const corpo = abrirGavetaDoIfood().firstElementChild as HTMLElement;
+  expect(corpo.className).toMatch(/overflow-y-auto/);
+  expect(corpo.className).toMatch(/min-h-0/);
+});
+
 describe('Loja no iFood', () => {
   const abrir = async (ifood: Record<string, unknown>) => {
     get.mockResolvedValue({ data: estado({ ifood: ifoodBase({ disponivel: true, ...ifood }) }) });
