@@ -344,3 +344,64 @@ describe('enxuto: ícone fala, sem texto repetido', () => {
     expect(screen.queryByRole('button', { name: 'Cancelar entregador' })).toBeNull();
   });
 });
+
+describe('como cartão (corpo do pedido, não a barra de baixo)', () => {
+  // Dono 24/11: "parece que só tem um espacinho pro iFood" — o bloco vivia
+  // espremido na barra de ações, ao lado de Imprimir/Editar/Fidelidade.
+  it('em andamento: cartão próprio com status, entregador e códigos em destaque', async () => {
+    estado.mockResolvedValue({ ...emAndamento, codigo_coleta: '5678' });
+    render(<EntregadorIfood pedidoId="p1" comoCartao />);
+    const cartao = await screen.findByRole('region', { name: 'Entrega iFood' });
+    expect(within(cartao).getByText('Entregador a caminho da loja')).toBeInTheDocument();
+    expect(within(cartao).getByText('Marcos')).toBeInTheDocument();
+    expect(within(cartao).getByRole('link', { name: 'Ligar para Marcos' })).toBeInTheDocument();
+    expect(within(cartao).getByLabelText('Código de entrega')).toHaveTextContent('4821');
+    expect(within(cartao).getByLabelText('Código de coleta')).toHaveTextContent('5678');
+    expect(within(cartao).getByRole('link', { name: 'Rastrear' })).toBeInTheDocument();
+    expect(within(cartao).getByRole('button', { name: 'Cancelar entregador' })).toBeInTheDocument();
+  });
+
+  it('mudança de endereço aparece dentro do cartão, com aceitar e recusar', async () => {
+    estado.mockResolvedValue({
+      ...emAndamento,
+      mudanca_endereco: { status: 'PEDIDA', texto: 'Rua Nova, 10', prazo: '', endereco: {} },
+    });
+    render(<EntregadorIfood pedidoId="p1" comoCartao />);
+    const cartao = await screen.findByRole('region', { name: 'Entrega iFood' });
+    expect(within(cartao).getByText('Rua Nova, 10')).toBeInTheDocument();
+    expect(within(cartao).getByRole('button', { name: 'Aceitar' })).toBeInTheDocument();
+    expect(within(cartao).getByRole('button', { name: 'Recusar' })).toBeInTheDocument();
+  });
+
+  it('antes de chamar: cartão com o botão de chamar e a coleta', async () => {
+    estado.mockResolvedValue(entrega({ codigo_coleta: '1234' }));
+    render(<EntregadorIfood pedidoId="p1" comoCartao />);
+    const cartao = await screen.findByRole('region', { name: 'Entrega iFood' });
+    expect(within(cartao).getByRole('button', { name: 'Chamar entregador iFood' })).toBeInTheDocument();
+    expect(within(cartao).getByLabelText('Código de coleta')).toHaveTextContent('1234');
+  });
+
+  it('nada a mostrar: sem cartão vazio', async () => {
+    estado.mockResolvedValue(entrega({ pode_chamar: false }));
+    const { container } = render(<EntregadorIfood pedidoId="p1" comoCartao />);
+    await waitFor(() => expect(estado).toHaveBeenCalled());
+    expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe('loja que chama o entregador sozinha', () => {
+  it('mostra quando vai chamar e deixa antecipar', async () => {
+    estado.mockResolvedValue(entrega({ automatico: 'pronto' }));
+    render(<EntregadorIfood pedidoId="p1" comoCartao />);
+    const cartao = await screen.findByRole('region', { name: 'Entrega iFood' });
+    expect(within(cartao).getByText('Automático ao ficar pronto')).toBeInTheDocument();
+    expect(within(cartao).getByRole('button', { name: 'Chamar agora' })).toBeInTheDocument();
+    expect(within(cartao).queryByRole('button', { name: 'Chamar entregador iFood' })).toBeNull();
+  });
+
+  it('ao confirmar', async () => {
+    estado.mockResolvedValue(entrega({ automatico: 'confirmado' }));
+    render(<EntregadorIfood pedidoId="p1" comoCartao />);
+    expect(await screen.findByText('Automático ao confirmar')).toBeInTheDocument();
+  });
+});

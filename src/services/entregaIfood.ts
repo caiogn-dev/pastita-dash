@@ -8,6 +8,8 @@ import api from './api';
 export interface EntregaIfood {
   /** A loja tem iFood Entrega ligado. Falso = o bloco não aparece. */
   disponivel: boolean;
+  /** A loja chama sozinha: 'confirmado' | 'pronto'; '' = o operador chama. */
+  automatico?: '' | 'confirmado' | 'pronto';
   /** Já existe entrega iFood para o pedido. */
   chamado: boolean;
   /** O servidor permite (re)chamar agora: "Chamar entregador iFood" / "Chamar de novo". */

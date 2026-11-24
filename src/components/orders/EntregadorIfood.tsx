@@ -43,7 +43,25 @@ interface Props {
   pedidoId: string;
   /** O pedido mudou no servidor (endereço novo aceito): relê sem piscar. */
   aoMudarPedido?: () => void;
+  /**
+   * Cartão próprio no corpo do pedido, em vez do bloco na barra de ações.
+   * Dono 24/11: "parece que só tem um espacinho pro iFood".
+   */
+  comoCartao?: boolean;
 }
+
+const QUANDO_CHAMA: Record<string, string> = {
+  confirmado: 'Automático ao confirmar',
+  pronto: 'Automático ao ficar pronto',
+};
+
+/** Um dado do cartão: rótulo pequeno em cima, valor grande embaixo. */
+const Dado: React.FC<{ rotulo: string; children: React.ReactNode }> = ({ rotulo, children }) => (
+  <div className="min-w-0">
+    <p className="text-xs text-fg-muted-token">{rotulo}</p>
+    <div className="mt-0.5 text-fg-token">{children}</div>
+  </div>
+);
 
 /** Escolher o motivo do iFood e cancelar o entregador. */
 const CancelarEntregador: React.FC<{
@@ -90,7 +108,7 @@ const CancelarEntregador: React.FC<{
   );
 };
 
-export const EntregadorIfood: React.FC<Props> = ({ pedidoId, aoMudarPedido }) => {
+export const EntregadorIfood: React.FC<Props> = ({ pedidoId, aoMudarPedido, comoCartao = false }) => {
   const [entrega, setEntrega] = useState<EntregaIfood | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [motivos, setMotivos] = useState<MotivoDeCancelamentoDaEntrega[] | null>(null);
@@ -175,6 +193,117 @@ export const EntregadorIfood: React.FC<Props> = ({ pedidoId, aoMudarPedido }) =>
       <span className="font-mono text-sm font-bold tracking-widest text-fg-token">{entrega.codigo_coleta}</span>
     </span>
   ) : null;
+
+  if (comoCartao) {
+    const { entregador: quem, mudanca_endereco: pedidoDeEndereco } = entrega;
+    const automatico = QUANDO_CHAMA[entrega.automatico ?? ''];
+    if (!entrega.chamado && !entrega.pode_chamar && !entrega.codigo_coleta) return null;
+    const cancelavel = entrega.chamado && entrega.ativo && !CANCELANDO.has(entrega.status);
+    const codigoGrande = 'font-mono text-2xl font-bold tracking-[0.2em] text-fg-token';
+    const iconeGrande =
+      'inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border-token text-fg-muted-token transition hover:bg-surface-2 hover:text-fg-token disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
+
+    return (
+      <section aria-label="Entrega iFood" className="superficie p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <IfoodIcon size={28} />
+            <p aria-live="polite" className="flex items-center gap-2 text-base font-semibold text-fg-token">
+              {entrega.ativo && <span aria-hidden className="h-2 w-2 animate-pulse rounded-full bg-brand" />}
+              {entrega.chamado ? entrega.status_texto : automatico ?? 'Entrega iFood'}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {entrega.valor != null && (
+              <span className="text-sm tabular-nums text-fg-muted-token">{formatCurrency(entrega.valor)}</span>
+            )}
+            {entrega.chamado && entrega.rastreio_url && (
+              <a href={entrega.rastreio_url} target="_blank" rel="noopener noreferrer" aria-label="Rastrear" title="Rastrear" className={iconeGrande}>
+                <MapPinIcon className="h-5 w-5" aria-hidden />
+              </a>
+            )}
+            {cancelavel && (
+              <button type="button" onClick={pedirCancelamento} disabled={ocupado} aria-label="Cancelar entregador" title="Cancelar entregador" className={`${iconeGrande} hover:!text-danger-token`}>
+                <XMarkIcon className="h-5 w-5" aria-hidden />
+              </button>
+            )}
+            {entrega.pode_chamar && (
+              <button
+                type="button"
+                onClick={chamar}
+                disabled={ocupado}
+                className={entrega.chamado || automatico ? botao
+                  : 'inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-on-brand transition hover:bg-brand-hover disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'}
+              >
+                <span className={ocupado ? 'animate-pulse' : undefined}>
+                  {entrega.chamado ? 'Chamar de novo' : automatico ? 'Chamar agora' : 'Chamar entregador iFood'}
+                </span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {pedidoDeEndereco && (
+          <div
+            role="group"
+            aria-label="Cliente pediu outro endereço"
+            className="mt-4 flex flex-wrap items-center gap-4 rounded-xl border border-warning-token bg-warning-soft px-4 py-3 text-fg-token"
+          >
+            <MapPinIcon className="h-6 w-6 shrink-0 text-[var(--warning)]" aria-hidden />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-fg-muted-token">Novo endereço</p>
+              {pedidoDeEndereco.texto && <p className="text-base font-semibold">{pedidoDeEndereco.texto}</p>}
+            </div>
+            {pedidoDeEndereco.prazo && <ContagemRegressiva ate={pedidoDeEndereco.prazo} className="font-mono text-xl font-bold tabular-nums" />}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => responderEndereco(true)}
+                disabled={ocupado}
+                className="inline-flex items-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-on-brand transition hover:bg-brand-hover disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                Aceitar
+              </button>
+              <button type="button" onClick={() => responderEndereco(false)} disabled={ocupado} className={`${botao} px-4 text-sm`}>
+                Recusar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {(quem || entrega.codigo_entrega || entrega.codigo_coleta) && (
+          <div className="mt-4 grid gap-4 border-t border-border-token pt-4 sm:grid-cols-3">
+            {quem && (
+              <Dado rotulo="Entregador">
+                <p className="flex items-center gap-2 text-base font-semibold">
+                  <span className="truncate">{quem.nome}</span>
+                  {quem.telefone && (
+                    <a href={`tel:${quem.telefone}`} aria-label={`Ligar para ${quem.nome}`} title={quem.telefone} className={iconeGrande}>
+                      <PhoneIcon className="h-4 w-4" aria-hidden />
+                    </a>
+                  )}
+                </p>
+              </Dado>
+            )}
+            {entrega.codigo_entrega && (
+              <Dado rotulo="Entrega">
+                <p aria-label="Código de entrega" className={codigoGrande}>{entrega.codigo_entrega}</p>
+              </Dado>
+            )}
+            {entrega.codigo_coleta && (
+              <Dado rotulo="Coleta">
+                <p aria-label="Código de coleta" className={codigoGrande}>{entrega.codigo_coleta}</p>
+              </Dado>
+            )}
+          </div>
+        )}
+
+        {entrega.erro && <p className="mt-3 text-sm text-danger-token">{entrega.erro}</p>}
+
+        <CancelarEntregador motivos={motivos} enviando={ocupado} onConfirmar={cancelar} onFechar={() => setMotivos(null)} />
+      </section>
+    );
+  }
 
   if (!entrega.chamado) {
     if (!entrega.pode_chamar) return coleta;

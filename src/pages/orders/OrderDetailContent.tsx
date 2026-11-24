@@ -43,6 +43,7 @@ import { Button, Modal, PageLoading } from '../../components/common';
 import { ordersService, paymentsService, getErrorMessage } from '../../services';
 import NotaFiscalPedido from './NotaFiscalPedido';
 import { EntregadorDoPedido } from '../../components/orders/EntregadorDoPedido';
+import { EntregadorIfood } from '../../components/orders/EntregadorIfood';
 import { NegociacaoIfood } from '../../components/orders/NegociacaoIfood';
 import { Order, Payment, OrderComboItem } from '../../types';
 import { linhasDasEscolhas } from '../../utils/escolhasDoCombo';
@@ -653,6 +654,12 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
           <LinhaDoTempoDoPedido pedido={order} />
         </div>
 
+        {/* Entrega iFood com espaço próprio: vivia espremida na barra de
+            ações (dono 24/11). Some sozinho em loja sem iFood Entrega. */}
+        {order.delivery_method === 'delivery' && !isCancelled && order.source !== '99food' && (
+          <EntregadorIfood pedidoId={order.id} aoMudarPedido={recarregarSemPiscar} comoCartao />
+        )}
+
         {/* ── Cliente e entrega: uma faixa horizontal, largura inteira ─────
             Estas três coisas respondem UMA pergunta — para quem e para onde —
             e viviam em três lugares: telefone num cartão, "Delivery" em outro,
@@ -1149,6 +1156,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
                 atualNome={order.entregador_nome}
                 origem={order.source}
                 aoMudarPedido={recarregarSemPiscar}
+                semIfood
               />
             )}
 

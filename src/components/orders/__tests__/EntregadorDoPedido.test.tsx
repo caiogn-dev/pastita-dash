@@ -74,6 +74,12 @@ describe('entregador iFood', () => {
     expect(await screen.findByTestId('entregador-ifood')).toBeInTheDocument();
   });
 
+  it('semIfood: o cartão do iFood mora no corpo do pedido, não na barra', async () => {
+    render(<EntregadorDoPedido storeSlug="loja" pedidoId="p1" origem="ifood" semIfood />);
+    await screen.findByLabelText('Entregador');
+    expect(screen.queryByTestId('entregador-ifood')).toBeNull();
+  });
+
   it('pedido vindo do 99food não chama entregador iFood', async () => {
     render(<EntregadorDoPedido storeSlug="loja" pedidoId="p1" origem="99food" />);
     await screen.findByLabelText('Entregador');

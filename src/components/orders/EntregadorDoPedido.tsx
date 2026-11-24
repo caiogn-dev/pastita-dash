@@ -28,9 +28,11 @@ interface Props {
   origem?: string | null;
   /** O pedido mudou no servidor por ação do iFood (ex.: endereço novo aceito). */
   aoMudarPedido?: () => void;
+  /** O cartão do iFood é desenhado no corpo do pedido (OrderDetailContent). */
+  semIfood?: boolean;
 }
 
-export const EntregadorDoPedido: React.FC<Props> = ({ storeSlug, pedidoId, atual = null, atualNome = null, origem = null, aoMudarPedido }) => {
+export const EntregadorDoPedido: React.FC<Props> = ({ storeSlug, pedidoId, atual = null, atualNome = null, origem = null, aoMudarPedido, semIfood = false }) => {
   const [lista, setLista] = useState<Entregador[]>([]);
   const [escolhido, setEscolhido] = useState<string>(atual ?? '');
   const [enviando, setEnviando] = useState(false);
@@ -45,7 +47,7 @@ export const EntregadorDoPedido: React.FC<Props> = ({ storeSlug, pedidoId, atual
 
   // Desligado continua aparecendo se for o deste pedido: o histórico não muda.
   const opcoes = lista.filter((e) => e.is_active || e.id === atual);
-  const ifood = ORIGEM_COM_ENTREGA_PROPRIA.has(origem ?? '') ? null : <EntregadorIfood pedidoId={pedidoId} aoMudarPedido={aoMudarPedido} />;
+  const ifood = semIfood || ORIGEM_COM_ENTREGA_PROPRIA.has(origem ?? '') ? null : <EntregadorIfood pedidoId={pedidoId} aoMudarPedido={aoMudarPedido} />;
   // Mesma árvore com ou sem seletor: trocar a forma do retorno remontava o
   // bloco do iFood (e refazia o GET) quando a lista de entregadores chegava.
   const semSeletor = opcoes.length === 0 && !atual;
