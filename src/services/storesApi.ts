@@ -655,6 +655,25 @@ export const updateStore = async (id: string, data: Partial<StoreInput>): Promis
   }
 };
 
+/** Forma que o cardápio pode oferecer + interruptor do lojista (25/11). */
+export interface FormaDePagamento {
+  metodo: string;
+  rotulo: string;
+  /** Há gateway/config para ela — sem isso não há o que ligar. */
+  disponivel: boolean;
+  ligada: boolean;
+}
+
+export const getFormasDePagamento = async (id: string): Promise<{ formas: FormaDePagamento[] }> => {
+  const response = await api.get(`${STORES_ADMIN_URL}/${id}/formas-de-pagamento/`, { skipAutoLogout: true });
+  return response.data;
+};
+
+export const updateFormasDePagamento = async (id: string, desligadas: string[]): Promise<{ formas: FormaDePagamento[] }> => {
+  const response = await api.patch(`${STORES_ADMIN_URL}/${id}/formas-de-pagamento/`, { desligadas }, { skipAutoLogout: true });
+  return response.data;
+};
+
 export const getStoreMetaTracking = async (id: string): Promise<StoreMetaTracking> => {
   const response = await api.get(`${STORES_ADMIN_URL}/${id}/meta-tracking/`, { skipAutoLogout: true });
   return response.data;

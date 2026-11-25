@@ -24,6 +24,7 @@ import VoucherSection from '../stores/VoucherSection';
 import ValePorLinkSection from '../stores/ValePorLinkSection';
 import AcrescimoDoValeSection from '../stores/AcrescimoDoValeSection';
 import CaixaDinheiroSection from '../stores/CaixaDinheiroSection';
+import FormasNoCardapioSection from '../stores/FormasNoCardapioSection';
 import { SalvarJunto, useSalvarJunto } from '../stores/salvarJunto';
 
 type CamposExtras = {
@@ -86,6 +87,7 @@ export const PagamentosDaLojaPage: React.FC = () => {
       ) : (
         <SalvarJunto registro={juntas.registro}>
           <div className="flex flex-col gap-6">
+            <FormasNoCardapioSection storeId={loja.id} />
             <RecebimentoSection storeId={loja.id} usaGatewayDaPlataforma={Boolean(extras.usa_gateway_da_plataforma)} />
             <VoucherSection storeId={loja.id} />
             <ValePorLinkSection
