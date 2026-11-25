@@ -212,6 +212,8 @@ export interface StoreCategory {
   name: string;
   slug: string;
   description: string;
+  /** Selo de prazo/urgência no cardápio ("Pedidos até dia 15/12"), até 80 caracteres. */
+  aviso?: string;
   image?: string;
   image_url?: string;
   parent?: string | null;
@@ -236,6 +238,7 @@ export interface StoreCategoryInput {
   name: string;
   slug?: string;
   description?: string;
+  aviso?: string;
   image?: File | null;
   parent?: string | null;
   sort_order?: number;

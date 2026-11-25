@@ -508,6 +508,17 @@ export const ProductsPage: React.FC = () => {
                 }
               }
             }}
+            onSaveAviso={async (aviso) => {
+              if (g.id) {
+                try {
+                  await storesApi.updateCategory(g.id, { aviso });
+                  setCategories((cs) => cs.map((c) => (c.id === g.id ? { ...c, aviso } : c)));
+                  toast.success(aviso ? 'Aviso no cardápio' : 'Aviso removido');
+                } catch (e) {
+                  onError(e);
+                }
+              }
+            }}
             onAddItem={(catId) => setModalProduct({ category: catId })}
           />
           </div>

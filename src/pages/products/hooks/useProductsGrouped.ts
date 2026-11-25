@@ -7,6 +7,7 @@ export interface CategoryGroup {
   is_active: boolean;
   sort_order: number;
   products: Product[];
+  aviso?: string;
 }
 
 const bySortOrder = <T extends { sort_order?: number }>(a: T, b: T) =>
@@ -19,6 +20,7 @@ export function groupProducts(products: Product[], categories: StoreCategory[]):
     name: c.name,
     is_active: c.is_active,
     sort_order: c.sort_order,
+    aviso: c.aviso || '',
     products: products
       .filter((p) => p.category === c.id)
       .sort(bySortOrder),
