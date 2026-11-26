@@ -28,6 +28,7 @@ import { ZonasDePrecoFixoCard, type CategoriaDaLoja } from './ZonasDePrecoFixoCa
 import { FormulaDeEntregaCard, lerFormula } from './FormulaDeEntregaCard';
 import type { FormulaDeEntrega } from './precoDaEntrega';
 import { FreteGratisCard } from './FreteGratisCard';
+import { DescontoRetiradaCard } from './DescontoRetiradaCard';
 import { SimuladorDeFreteCard } from './SimuladorDeFreteCard';
 import { anelDaPromo, lerPromo, type PromoDeFrete } from './freteGratis';
 import { getCategories, getStore, updateStore } from '../../services/storesApi';
@@ -341,6 +342,7 @@ export const DeliveryZonesPage: React.FC = () => {
     ...(temFaixas && faixasMandam ? [abaFaixas] : []),
     { id: 'preco', rotulo: 'Preço' },
     { id: 'gratis', rotulo: 'Grátis' },
+    { id: 'retirada', rotulo: 'Retirada' },
     { id: 'excecoes', rotulo: 'Exceções' },
     { id: 'prazo', rotulo: 'Prazo' },
     { id: 'simular', rotulo: 'Simular' },
@@ -618,6 +620,9 @@ export const DeliveryZonesPage: React.FC = () => {
                     <AoSair onSair={() => setRascunhoPromo(null)}>
                       <FreteGratisCard key={storeId} metadataAtual={storeMetadata ?? {}} onSalvar={salvarMetadata} onRascunho={setRascunhoPromo} />
                     </AoSair>
+                  )}
+                  {aba === 'retirada' && storeId && (
+                    <DescontoRetiradaCard key={storeId} metadataAtual={storeMetadata ?? {}} onSalvar={salvarMetadata} />
                   )}
                   {aba === 'excecoes' && storeId && (
                     <ZonasDePrecoFixoCard
