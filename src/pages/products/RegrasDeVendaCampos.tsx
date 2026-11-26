@@ -67,6 +67,11 @@ export const RegrasDeVendaCampos: React.FC<Props> = ({ valor, onChange }) => {
         <Switch ligado={!!valor.so_retirada} onMudar={(v) => mudar({ so_retirada: v })} rotulo="Só retirada na loja" />
         <span className="text-sm">Só retirada na loja</span>
       </div>
+
+      <div className="flex items-center gap-2">
+        <Switch ligado={!!valor.so_hoje} onMudar={(v) => mudar({ so_hoje: v })} rotulo="Só para pedidos de hoje" />
+        <span className="text-sm">Só para pedidos de hoje (sem agendamento)</span>
+      </div>
     </fieldset>
   );
 };

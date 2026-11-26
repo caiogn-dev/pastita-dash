@@ -12,6 +12,8 @@ export interface RegrasDeVenda {
   de?: string;
   ate?: string;
   so_retirada?: boolean;
+  /** Só pedido para hoje: sobra do dia em promoção não vai para amanhã. */
+  so_hoje?: boolean;
   minimo?: number;
   maximo?: number;
 }
@@ -48,6 +50,7 @@ export function regrasParaGravar(r: RegrasDeVenda | undefined): RegrasDeVenda {
     limpo.ate = r.ate.trim();
   }
   if (r.so_retirada) limpo.so_retirada = true;
+  if (r.so_hoje) limpo.so_hoje = true;
   if (r.minimo && r.minimo > 1) limpo.minimo = r.minimo;
   if (r.maximo) limpo.maximo = r.maximo;
   return limpo;
@@ -67,6 +70,7 @@ export function resumoDasRegras(r: RegrasDeVenda | undefined): string {
   }
   if (g.de) partes.push(`${g.de}–${g.ate}`);
   if (g.so_retirada) partes.push('só retirada');
+  if (g.so_hoje) partes.push('só hoje');
   if (g.minimo) partes.push(`mín. ${g.minimo}`);
   if (g.maximo) partes.push(`máx. ${g.maximo}`);
   return partes.join(' · ');

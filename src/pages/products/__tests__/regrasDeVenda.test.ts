@@ -27,3 +27,13 @@ describe('regras de venda do produto', () => {
     expect(resumoDasRegras({})).toBe('');
   });
 });
+
+describe('só para hoje (sobra do dia, 26/11)', () => {
+  it('grava so_hoje e mostra no selo', () => {
+    expect(regrasParaGravar({ so_hoje: true })).toEqual({ so_hoje: true });
+    expect(resumoDasRegras({ so_hoje: true })).toBe('só hoje');
+  });
+  it('desligado não vai para o servidor', () => {
+    expect(regrasParaGravar({ so_hoje: false })).toEqual({});
+  });
+});
