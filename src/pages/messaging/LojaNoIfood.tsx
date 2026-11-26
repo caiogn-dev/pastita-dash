@@ -9,6 +9,7 @@ import { ArrowPathIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 import api from '../../services/api';
 import { getErrorMessage } from '../../services';
+import { Input } from '../../components/ui/input';
 import { Selo, botaoPrimario } from './pecasDeIntegracao';
 
 type Dia = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
@@ -69,8 +70,6 @@ const botaoPequeno =
   'inline-flex h-9 items-center justify-center rounded-lg border border-border-token px-3 text-xs font-semibold text-fg-token transition hover:bg-surface-muted-token disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
 const botaoIcone =
   'inline-flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted-token transition hover:bg-surface-muted-token hover:text-fg-token disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
-const campoHora =
-  'h-9 rounded-lg border bg-surface-token px-2 text-sm text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
 
 export const LojaNoIfood: React.FC<{ storeId: string }> = ({ storeId }) => {
   const [estado, setEstado] = useState<EstadoDaLojaNoIfood | null>(null);
@@ -206,25 +205,28 @@ export const LojaNoIfood: React.FC<{ storeId: string }> = ({ storeId }) => {
                     {grade[dia].map((t, i) => {
                       const rotulo = `${nome}, turno ${i + 1}`;
                       const ruim = conferir && !turnoValido(t);
-                      const borda = ruim ? 'border-danger-token' : 'border-border-token';
                       return (
                         <div key={i} className="flex flex-wrap items-center gap-2">
-                          <input
+                          <Input
+                            size="sm"
                             type="time"
                             value={t.inicio}
                             onChange={(e) => mudarTurno(dia, i, 'inicio', e.target.value)}
                             aria-label={`${rotulo}, início`}
                             aria-invalid={ruim || undefined}
-                            className={`${campoHora} ${borda}`}
+                            error={ruim ? ' ' : undefined}
+                            className="w-28"
                           />
                           <span aria-hidden className="text-fg-muted-token">–</span>
-                          <input
+                          <Input
+                            size="sm"
                             type="time"
                             value={t.fim}
                             onChange={(e) => mudarTurno(dia, i, 'fim', e.target.value)}
                             aria-label={`${rotulo}, fim`}
                             aria-invalid={ruim || undefined}
-                            className={`${campoHora} ${borda}`}
+                            error={ruim ? ' ' : undefined}
+                            className="w-28"
                           />
                           <button
                             type="button"

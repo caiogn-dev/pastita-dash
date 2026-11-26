@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, Pencil, SlidersHorizontal, Check, X, Trash2, Clock } from 'lucide-react';
+import { Input } from '../../../components/ui/input';
 import { StatusToggle } from './InlineToggle';
 import type { CategoryGroup } from '../hooks/useProductsGrouped';
 
@@ -46,7 +47,9 @@ export const CategoryHeader: React.FC<Props> = ({ group, collapsed, onToggleColl
       <div className="flex items-center gap-2 px-3 py-2">
         {dragHandle}
         <Clock size={16} className="text-brand" aria-hidden="true" />
-        <input
+        <div className="flex-1">
+        <Input
+          size="sm"
           autoFocus
           value={aviso}
           maxLength={80}
@@ -54,9 +57,9 @@ export const CategoryHeader: React.FC<Props> = ({ group, collapsed, onToggleColl
           onKeyDown={(e) => { if (e.key === 'Enter') void salvarAviso(); if (e.key === 'Escape') setEditandoAviso(false); }}
           disabled={saving}
           placeholder="Pedidos até dia 15/12"
-          className="flex-1 rounded border border-border-token bg-surface px-2 py-1 text-sm text-fg-token focus:outline-none focus:ring-1 focus:ring-brand"
           aria-label={`Aviso no cardápio de ${group.name}`}
         />
+        </div>
         <button type="button" onClick={() => void salvarAviso()} disabled={saving} aria-label="Salvar aviso" className="text-[var(--success)] disabled:opacity-50">
           <Check size={16} />
         </button>
@@ -71,15 +74,18 @@ export const CategoryHeader: React.FC<Props> = ({ group, collapsed, onToggleColl
     return (
       <div className="flex items-center gap-2 px-3 py-2">
         {dragHandle}
-        <input
+        <div className="flex-1">
+        <Input
+          size="sm"
           autoFocus
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') void save(); if (e.key === 'Escape') cancel(); }}
           disabled={saving}
-          className="flex-1 rounded border border-border-token bg-surface px-2 py-1 text-sm font-semibold text-fg-token focus:outline-none focus:ring-1 focus:ring-brand"
+          className="font-semibold"
           aria-label="Nome da categoria"
         />
+        </div>
         <button type="button" onClick={() => void save()} disabled={saving} aria-label="Salvar nome" className="text-[var(--success)] disabled:opacity-50">
           <Check size={16} />
         </button>
