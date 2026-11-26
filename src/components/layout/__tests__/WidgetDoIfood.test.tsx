@@ -4,7 +4,7 @@
  * lista vazia derruba a sessão autorizada.
  */
 import React from 'react';
-import { render, waitFor } from '@testing-library/react';
+import { act, render, waitFor } from '@testing-library/react';
 
 const get = jest.fn();
 jest.mock('../../../services/api', () => ({ __esModule: true, default: { get: (...a: unknown[]) => get(...a) } }));
@@ -55,4 +55,19 @@ it('falha na API: não inicia (init vazio derruba a sessão)', async () => {
   render(<WidgetDoIfood />);
   await waitFor(() => expect(get).toHaveBeenCalled());
   expect(document.head.querySelector('script[data-ifood-widget]')).toBeNull();
+});
+
+it('API lenta/fora no carregamento: tenta de novo sozinho e o widget aparece', async () => {
+  jest.useFakeTimers();
+  try {
+    get.mockRejectedValueOnce(new Error('timeout')).mockResolvedValue({ data: { merchant_ids: ['m-1'] } });
+    render(<WidgetDoIfood />);
+    await waitFor(() => expect(get).toHaveBeenCalledTimes(1));
+    expect(document.head.querySelector('script[data-ifood-widget]')).toBeNull();
+    await act(async () => { jest.advanceTimersByTime(20_000); });
+    await waitFor(() => expect(get).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(document.head.querySelector('script[data-ifood-widget]')).not.toBeNull());
+  } finally {
+    jest.useRealTimers();
+  }
 });

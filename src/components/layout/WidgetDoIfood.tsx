@@ -62,11 +62,19 @@ export const WidgetDoIfood: React.FC = () => {
   const [merchants, setMerchants] = useState<string[] | null>(null);
 
   useEffect(() => {
+    // API lenta no carregamento (timeout) não pode sumir com o widget até o F5:
+    // tenta de novo, espaçando, até a lista chegar.
     let vivo = true;
-    api.get('/stores/integracoes/ifood/merchants/')
-      .then((r) => { if (vivo) setMerchants(((r.data as { merchant_ids?: string[] }).merchant_ids ?? []).slice(0, 10)); })
-      .catch(() => { if (vivo) setMerchants([]); });
-    return () => { vivo = false; };
+    let espera: ReturnType<typeof setTimeout> | undefined;
+    const buscar = (tentativa: number) => {
+      api.get('/stores/integracoes/ifood/merchants/')
+        .then((r) => { if (vivo) setMerchants(((r.data as { merchant_ids?: string[] }).merchant_ids ?? []).slice(0, 10)); })
+        .catch(() => {
+          if (vivo && tentativa < 6) espera = setTimeout(() => buscar(tentativa + 1), 15_000 * tentativa);
+        });
+    };
+    buscar(1);
+    return () => { vivo = false; clearTimeout(espera); };
   }, []);
 
   useEffect(() => {
