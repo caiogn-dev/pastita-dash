@@ -14,6 +14,7 @@ import {
   Badge,
   Button,
   FalhaAoCarregar,
+  Input,
   Modal,
   ModalBody,
   ModalFooter,
@@ -242,11 +243,8 @@ export const InformativosPage: React.FC = () => {
         {edicao && (
           <>
             <ModalBody className="space-y-4">
-              <label className="flex flex-col gap-1 text-sm text-fg-muted-token">
-                Título
-                <input className="rounded border px-3 py-2 text-fg-token" maxLength={60} value={edicao.titulo}
+              <Input label="Título" maxLength={60} value={edicao.titulo}
                   onChange={(e) => setEdicao({ ...edicao, titulo: e.target.value })} />
-              </label>
               <Textarea label="Texto" rows={3} maxLength={280} value={edicao.texto}
                 onChange={(e) => setEdicao({ ...edicao, texto: e.target.value })} />
               <Segmentado rotulo="Como aparece" opcoes={FORMATOS} valor={edicao.formato}
@@ -275,32 +273,20 @@ export const InformativosPage: React.FC = () => {
                     )}
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="flex flex-col gap-1 text-sm text-fg-muted-token">
-                      Texto do botão
-                      <input className="rounded border px-3 py-2 text-fg-token" maxLength={30} value={edicao.botao_texto}
+                    <Input label="Texto do botão" maxLength={30} value={edicao.botao_texto}
                         placeholder="Ver promoções"
                         onChange={(e) => setEdicao({ ...edicao, botao_texto: e.target.value })} />
-                    </label>
-                    <label className="flex flex-col gap-1 text-sm text-fg-muted-token">
-                      Link do botão
-                      <input className="rounded border px-3 py-2 text-fg-token" value={edicao.botao_link}
+                    <Input label="Link do botão" value={edicao.botao_link}
                         placeholder="https://… ou /sua-loja/promos"
                         onChange={(e) => setEdicao({ ...edicao, botao_link: e.target.value })} />
-                    </label>
                   </div>
                 </>
               )}
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="flex flex-col gap-1 text-sm text-fg-muted-token">
-                  Começa
-                  <input type="datetime-local" className="rounded border px-3 py-2 text-fg-token" value={edicao.inicio}
+                <Input label="Começa" type="datetime-local" value={edicao.inicio}
                     onChange={(e) => setEdicao({ ...edicao, inicio: e.target.value })} />
-                </label>
-                <label className="flex flex-col gap-1 text-sm text-fg-muted-token">
-                  Termina
-                  <input type="datetime-local" className="rounded border px-3 py-2 text-fg-token" value={edicao.fim}
+                <Input label="Termina" type="datetime-local" value={edicao.fim}
                     onChange={(e) => setEdicao({ ...edicao, fim: e.target.value })} />
-                </label>
               </div>
               {erro && <p role="alert" className="text-sm text-danger-token">{erro}</p>}
             </ModalBody>

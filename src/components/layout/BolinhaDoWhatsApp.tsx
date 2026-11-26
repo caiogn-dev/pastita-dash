@@ -33,6 +33,7 @@ import { messageToBubbleProps } from '../chat/messageToBubbleProps';
 import { formatConversationTime } from '../../utils/chatTime';
 import { formatPhone } from '../../utils/formatters';
 import type { Conversation, Message } from '../../types';
+import { Textarea } from '../ui/Textarea';
 
 const QUANTAS = 30;
 const SEM_MENSAGENS: Message[] = [];
@@ -284,7 +285,7 @@ const Bolinha: React.FC = () => {
       {aberta && (
         <section
           aria-label="WhatsApp"
-          className="relative flex flex-col overflow-hidden rounded-2xl border border-border-token bg-surface shadow-2xl"
+          className="relative flex flex-col overflow-hidden superficie rounded-2xl shadow-2xl"
           style={{ width: tamanho.largura, height: tamanho.altura }}
         >
           <div
@@ -332,7 +333,8 @@ const Bolinha: React.FC = () => {
                 className="flex items-end gap-2 border-t border-border-token p-2"
                 onSubmit={(e) => { e.preventDefault(); void enviar(); }}
               >
-                <textarea
+                <div className="flex-1">
+                <Textarea
                   aria-label="Mensagem"
                   rows={1}
                   value={texto}
@@ -341,8 +343,9 @@ const Bolinha: React.FC = () => {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void enviar(); }
                   }}
-                  className="max-h-32 min-h-[40px] flex-1 resize-none rounded-xl border border-border-token bg-transparent px-3 py-2 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand"
+                  className="max-h-32 min-h-[40px] resize-none rounded-xl px-3 py-2"
                 />
+                </div>
                 <button
                   type="submit"
                   aria-label="Enviar"
@@ -369,12 +372,12 @@ const Bolinha: React.FC = () => {
                     <span className="min-w-0 flex-1">
                       <span className="flex items-baseline justify-between gap-2">
                         <span className={`truncate text-sm text-fg-token ${c.unread_count ? 'font-bold' : 'font-medium'}`}>{nomeDe(c)}</span>
-                        <span className="shrink-0 text-[11px] text-fg-muted-token">{formatConversationTime(c.last_message_at)}</span>
+                        <span className="shrink-0 text-badge text-fg-muted-token">{formatConversationTime(c.last_message_at)}</span>
                       </span>
                       <span className="flex items-center justify-between gap-2">
                         <span className="truncate text-xs text-fg-muted-token">{c.last_message_preview}</span>
                         {!!c.unread_count && (
-                          <span className="shrink-0 rounded-full bg-[#25D366] px-1.5 text-[11px] font-bold text-white">{c.unread_count}</span>
+                          <span className="shrink-0 rounded-full bg-[#25D366] px-1.5 text-badge font-bold text-white">{c.unread_count}</span>
                         )}
                       </span>
                     </span>
@@ -402,7 +405,7 @@ const Bolinha: React.FC = () => {
       >
         {aberta ? <XMarkIcon className="h-6 w-6" /> : <ChatBubbleLeftRightIcon className="h-7 w-7" />}
         {!aberta && naoLidas > 0 && (
-          <span className="absolute -right-1 -top-1 min-w-[22px] rounded-full bg-red-600 px-1.5 text-center text-xs font-bold leading-[22px]">
+          <span className="absolute -right-1 -top-1 min-w-[22px] rounded-full bg-danger-token px-1.5 text-center text-xs font-bold leading-[22px]">
             {naoLidas > 99 ? '99+' : naoLidas}
           </span>
         )}

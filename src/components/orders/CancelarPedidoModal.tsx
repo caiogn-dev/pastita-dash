@@ -14,6 +14,7 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Button, Modal } from '../common';
+import { Input } from '../ui/input';
 import { getErrorMessage } from '../../services';
 import { ifoodPedidoService, type MotivoDeCancelamentoIfood } from '../../services/ifoodPedido';
 
@@ -47,7 +48,6 @@ const opcao = (marcada: boolean) =>
     marcada ? 'border-brand bg-brand-soft text-fg-token' : 'border-border-token text-fg-token hover:bg-surface-2'
   }`;
 
-const campo = 'mt-1 w-full superficie px-3 py-2 text-sm text-fg-token focus:outline-none focus:ring-2 focus:ring-brand';
 
 const CancelarNoIfood: React.FC<Omit<Props, 'onConfirm' | 'loading' | 'origem'> & { pedidoId: string }> = ({
   open, orderNumber, onClose, pedidoId, onCancelado,
@@ -108,10 +108,7 @@ const CancelarNoIfood: React.FC<Omit<Props, 'onConfirm' | 'loading' | 'origem'> 
             ))}
           </div>
         )}
-        <label className="block text-sm text-fg-token">
-          Detalhe
-          <input type="text" value={detalhe} maxLength={140} onChange={(e) => setDetalhe(e.target.value)} className={campo} />
-        </label>
+        <Input label="Detalhe" type="text" value={detalhe} maxLength={140} onChange={(e) => setDetalhe(e.target.value)} />
         <p className="text-sm text-danger-token">O cancelamento não pode ser desfeito.</p>
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="secondary" onClick={onClose}>Voltar</Button>
@@ -161,17 +158,14 @@ const CancelarDaLoja: React.FC<Props> = ({ open, orderNumber, loading, onClose, 
           ))}
         </div>
         {escolha === OUTRO && (
-          <label className="block text-sm text-fg-token">
-            Qual o motivo?
-            <input
-              type="text"
-              value={texto}
-              maxLength={140}
-              onChange={(e) => setTexto(e.target.value)}
-              className={campo}
-              autoFocus
-            />
-          </label>
+          <Input
+            label="Qual o motivo?"
+            type="text"
+            value={texto}
+            maxLength={140}
+            onChange={(e) => setTexto(e.target.value)}
+            autoFocus
+          />
         )}
         <p className="text-sm text-danger-token">O cancelamento não pode ser desfeito.</p>
         <div className="flex justify-end gap-3 pt-2">

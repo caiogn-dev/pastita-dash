@@ -474,7 +474,7 @@ export const DeliveryZonesPage: React.FC = () => {
           )}
 
           <div className="flex min-h-0 flex-1 flex-col px-4 pt-2">
-            <PageTabs abas={abas} ariaLabel="Seções da entrega" className="flex min-h-0 flex-1 flex-col gap-0 [&>[role=tablist]]:shrink-0 [&_[role=tab]]:px-2 [&_[role=tab]]:text-[13px] [&>[role=tabpanel]]:min-h-0 [&>[role=tabpanel]]:flex-1 [&>[role=tabpanel]]:overflow-y-auto [&>[role=tabpanel]]:pb-4 [&>[role=tabpanel]]:pt-3">
+            <PageTabs abas={abas} ariaLabel="Seções da entrega" className="flex min-h-0 flex-1 flex-col gap-0 [&>[role=tablist]]:shrink-0 [&_[role=tab]]:px-2 [&_[role=tab]]:text-sm [&>[role=tabpanel]]:min-h-0 [&>[role=tabpanel]]:flex-1 [&>[role=tabpanel]]:overflow-y-auto [&>[role=tabpanel]]:pb-4 [&>[role=tabpanel]]:pt-3">
               {(aba) => (
                 <>
                   {aba === 'faixas' && (
