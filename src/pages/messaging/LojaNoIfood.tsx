@@ -72,14 +72,14 @@ const botaoIcone =
 const campoHora =
   'h-9 rounded-lg border bg-surface-token px-2 text-sm text-fg-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
 
-export const LojaNoIfood: React.FC<{ storeId: string }> = ({ storeId }) => {
+export const LojaNoIfood: React.FC<{ storeId: string; marca?: string }> = ({ storeId, marca }) => {
   const [estado, setEstado] = useState<EstadoDaLojaNoIfood | null>(null);
   const [grade, setGrade] = useState<Grade>(() => paraGrade([]));
   const [carregando, setCarregando] = useState(true);
   const [ocupado, setOcupado] = useState(false);
   const [conferir, setConferir] = useState(false);
 
-  const params = { params: { store: storeId } };
+  const params = { params: marca ? { store: storeId, marca } : { store: storeId } };
 
   const aplicar = (novo: EstadoDaLojaNoIfood) => {
     setEstado(novo);
@@ -90,14 +90,14 @@ export const LojaNoIfood: React.FC<{ storeId: string }> = ({ storeId }) => {
   const carregar = useCallback(async () => {
     setCarregando(true);
     try {
-      const r = await api.get('/stores/integracoes/ifood/loja/', { params: { store: storeId } });
+      const r = await api.get('/stores/integracoes/ifood/loja/', { params: marca ? { store: storeId, marca } : { store: storeId } });
       aplicar(r.data as EstadoDaLojaNoIfood);
     } catch (e) {
       toast.error(getErrorMessage(e));
     } finally {
       setCarregando(false);
     }
-  }, [storeId]);
+  }, [storeId, marca]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -265,6 +265,52 @@ export const LojaNoIfood: React.FC<{ storeId: string }> = ({ storeId }) => {
         </>
       )}
     </section>
+  );
+};
+
+type Marca = { id: string; nome: string; status: EstadoDaLojaNoIfood['status'] | null };
+
+/**
+ * Rede no mesmo CNPJ (ex.: Agrião + Santa Parmê, Estro…): cada marca é um
+ * restaurante no iFood com status, pausa e horário próprios. Uma marca só =
+ * a tela de sempre, sem seletor.
+ */
+export const RedeNoIfood: React.FC<{ storeId: string }> = ({ storeId }) => {
+  const [marcas, setMarcas] = useState<Marca[]>([]);
+  const [escolhida, setEscolhida] = useState('');
+
+  useEffect(() => {
+    let vivo = true;
+    api.get('/stores/integracoes/ifood/loja/rede/', { params: { store: storeId } })
+      .then((r) => { if (vivo) setMarcas(((r.data as { marcas?: Marca[] }).marcas) ?? []); })
+      .catch(() => { /* sem rede: só a loja principal */ });
+    return () => { vivo = false; };
+  }, [storeId]);
+
+  if (marcas.length < 2) return <LojaNoIfood storeId={storeId} />;
+  const atual = escolhida || marcas[0].id;
+  return (
+    <div className="flex flex-col gap-3">
+      <div role="tablist" aria-label="Marcas no iFood" className="flex flex-wrap gap-2 border-t border-border-token pt-5">
+        {marcas.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            role="tab"
+            aria-selected={m.id === atual}
+            onClick={() => setEscolhida(m.id)}
+            className={`${botaoPequeno} inline-flex items-center gap-1.5 ${m.id === atual ? 'ring-2 ring-[var(--brand)]' : ''}`}
+          >
+            <span
+              aria-hidden
+              className={`h-2 w-2 rounded-full ${m.status?.aberta ? 'bg-[var(--success)]' : 'bg-[var(--danger)]'}`}
+            />
+            {m.nome}
+          </button>
+        ))}
+      </div>
+      <LojaNoIfood key={atual} storeId={storeId} marca={atual === marcas[0].id ? undefined : atual} />
+    </div>
   );
 };
 

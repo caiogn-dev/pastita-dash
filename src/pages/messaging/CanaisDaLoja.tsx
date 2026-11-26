@@ -20,7 +20,7 @@ import { useStore } from '../../hooks/useStore';
 import { IfoodIcon, MercadoPagoIcon, NinetyNineFoodIcon } from '../../components/brand/BrandIcons';
 import { Switch } from '../../components/common/Switch';
 import { Gaveta, Input, Select } from '../../components/ui';
-import { LojaNoIfood } from './LojaNoIfood';
+import { RedeNoIfood } from './LojaNoIfood';
 import { Acoes, Cartao, Grupo, Selo, botaoDiscreto, botaoPrimario, botaoSecundario } from './pecasDeIntegracao';
 
 type ChamarEntregador = 'manual' | 'confirmado' | 'pronto';
@@ -360,7 +360,7 @@ export const CanaisDaLoja: React.FC = () => {
               {seloDoIfood(ifood)}
             </header>
             <ConexaoDoIfood storeId={storeId} ifood={ifood} aoMudar={mudarIfood} />
-            {ifood.merchant_id && ifood.conectado && <LojaNoIfood storeId={storeId} />}
+            {ifood.merchant_id && ifood.conectado && <RedeNoIfood storeId={storeId} />}
             {ifood.entregas_disponivel && ifood.merchant_id && (
               <EntregasDoIfood storeId={storeId} ifood={ifood} aoMudar={mudarIfood} />
             )}

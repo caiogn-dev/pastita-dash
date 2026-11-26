@@ -173,3 +173,35 @@ describe('horários', () => {
     await waitFor(() => expect(toast().error).toHaveBeenCalledWith('Horário recusado pelo iFood'));
   });
 });
+
+describe('RedeNoIfood', () => {
+  const { RedeNoIfood } = jest.requireActual('../LojaNoIfood') as typeof import('../LojaNoIfood');
+  beforeEach(() => { get.mockReset(); post.mockReset(); });
+
+  it('com várias marcas, pausa vai para a marca escolhida', async () => {
+    get.mockImplementation((url: string) => Promise.resolve({
+      data: url.endsWith('/rede/')
+        ? { marcas: [
+          { id: 'principal', nome: 'Agrião', status: { aberta: true } },
+          { id: 'santa', nome: 'Santa Parmê', status: { aberta: false } },
+        ] }
+        : loja(),
+    }));
+    post.mockResolvedValue({ data: loja() });
+    render(<RedeNoIfood storeId="id-1" />);
+    fireEvent.click(await screen.findByRole('tab', { name: /Santa Parmê/ }));
+    await waitFor(() => expect(get).toHaveBeenCalledWith('/stores/integracoes/ifood/loja/', { params: { store: 'id-1', marca: 'santa' } }));
+    const pausar = await screen.findByRole('group', { name: 'Pausar' });
+    fireEvent.click(within(pausar).getAllByRole('button')[0]);
+    await waitFor(() => expect(post.mock.calls[0][2]).toEqual({ params: { store: 'id-1', marca: 'santa' } }));
+  });
+
+  it('uma marca só não mostra seletor', async () => {
+    get.mockImplementation((url: string) => Promise.resolve({
+      data: url.endsWith('/rede/') ? { marcas: [{ id: 'p', nome: 'Cê', status: { aberta: true } }] } : loja(),
+    }));
+    render(<RedeNoIfood storeId="id-1" />);
+    await screen.findByRole('group', { name: 'Pausar' });
+    expect(screen.queryByRole('tablist')).toBeNull();
+  });
+});

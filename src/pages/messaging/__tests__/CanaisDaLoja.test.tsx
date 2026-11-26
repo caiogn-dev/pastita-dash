@@ -16,7 +16,7 @@ jest.mock('../../../services/api', () => ({
 
 jest.mock('../LojaNoIfood', () => ({
   __esModule: true,
-  LojaNoIfood: ({ storeId }: { storeId: string }) => <div data-testid="loja-no-ifood">{storeId}</div>,
+  RedeNoIfood: ({ storeId }: { storeId: string }) => <div data-testid="loja-no-ifood">{storeId}</div>,
 }));
 
 let loja: { storeId: string | null; storeSlug: string | null } = { storeId: 'id-1', storeSlug: 'ce' };
