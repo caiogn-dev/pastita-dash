@@ -16,6 +16,8 @@ type MetadataDoApp = {
   codigo_entrega?: string;
   codigo_retirada?: string;
   ultimo_erro?: string;
+  /** Marca da rede (mesma cozinha, outro restaurante no iFood); vazio = a própria loja. */
+  marca?: string;
 };
 
 export type DadosDoApp = {
@@ -27,6 +29,7 @@ export type DadosDoApp = {
   codigoEntrega: string;
   codigoRetirada: string;
   erro: string;
+  marca: string;
 };
 
 export function ehApp(source?: string | null): source is AppDeEntrega {
@@ -44,10 +47,11 @@ export function dadosDoApp(pedido: PedidoComOrigem): DadosDoApp | null {
     app,
     nome,
     numero,
-    rotulo: numero ? `${prefixo} #${numero}` : nome,
+    rotulo: `${numero ? `${prefixo} #${numero}` : nome}${m.marca ? ` · ${m.marca}` : ''}`,
     quemEntrega: m.quem_entrega ?? '',
     codigoEntrega: m.codigo_entrega ?? '',
     codigoRetirada: m.codigo_retirada ?? '',
     erro: m.ultimo_erro ?? '',
+    marca: m.marca ?? '',
   };
 }

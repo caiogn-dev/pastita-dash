@@ -9,6 +9,8 @@ import { act, render, waitFor } from '@testing-library/react';
 const get = jest.fn();
 jest.mock('../../../services/api', () => ({ __esModule: true, default: { get: (...a: unknown[]) => get(...a) } }));
 
+jest.mock('../../../hooks/useStore', () => ({ useStore: () => ({ storeSlug: 'ce-saladas' }) }));
+
 import { CONTEINER_ID, WidgetDoIfood, WIDGET_DO_IFOOD_ID } from '../WidgetDoIfood';
 
 type W = typeof window & { iFoodWidget?: { init: jest.Mock } };
@@ -45,7 +47,7 @@ it('com lojas no iFood: carrega o script e inicia uma vez com os merchants', asy
 it('sem loja no iFood: nem carrega o script', async () => {
   get.mockResolvedValue({ data: { merchant_ids: [] } });
   render(<WidgetDoIfood />);
-  await waitFor(() => expect(get).toHaveBeenCalledWith('/stores/integracoes/ifood/merchants/'));
+  await waitFor(() => expect(get).toHaveBeenCalledWith('/stores/integracoes/ifood/merchants/', { params: { store: 'ce-saladas' } }));
   expect(document.head.querySelector('script[data-ifood-widget]')).toBeNull();
   expect((window as W).iFoodWidget!.init).not.toHaveBeenCalled();
 });

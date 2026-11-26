@@ -23,6 +23,7 @@
 import { useEffect, useState } from 'react';
 
 import api from '../../services/api';
+import { useStore } from '../../hooks/useStore';
 
 export const WIDGET_DO_IFOOD_ID = 'a203e725-c866-4992-99fd-005eae8097e9';
 const SCRIPT = 'https://widgets.ifood.com.br/widget.js';
@@ -60,14 +61,18 @@ const carregarScript = () => new Promise<void>((pronto, falhou) => {
 
 export const WidgetDoIfood: React.FC = () => {
   const [merchants, setMerchants] = useState<string[] | null>(null);
+  // Só a loja aberta (e as marcas da rede dela): o login do iFood costuma ter
+  // acesso a UMA conta. O widget inicia uma vez; trocar de loja vale no próximo F5.
+  const { storeSlug } = useStore();
 
   useEffect(() => {
+    if (!storeSlug || (window as ComWidget).__ifoodWidgetIniciado) return undefined;
     // API lenta no carregamento (timeout) não pode sumir com o widget até o F5:
     // tenta de novo, espaçando, até a lista chegar.
     let vivo = true;
     let espera: ReturnType<typeof setTimeout> | undefined;
     const buscar = (tentativa: number) => {
-      api.get('/stores/integracoes/ifood/merchants/')
+      api.get('/stores/integracoes/ifood/merchants/', { params: { store: storeSlug } })
         .then((r) => { if (vivo) setMerchants(((r.data as { merchant_ids?: string[] }).merchant_ids ?? []).slice(0, 10)); })
         .catch(() => {
           if (vivo && tentativa < 6) espera = setTimeout(() => buscar(tentativa + 1), 15_000 * tentativa);
@@ -75,7 +80,7 @@ export const WidgetDoIfood: React.FC = () => {
     };
     buscar(1);
     return () => { vivo = false; clearTimeout(espera); };
-  }, []);
+  }, [storeSlug]);
 
   useEffect(() => {
     const w = window as ComWidget;

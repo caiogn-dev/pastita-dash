@@ -611,6 +611,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({
               <h1 className="truncate text-lg font-semibold tracking-[-0.02em] text-fg-token">
                 {order.customer_name || 'Cliente sem nome'}
               </h1>
+              {doApp?.marca && <p className="truncate text-xs font-semibold text-fg-muted-token">{doApp.marca}</p>}
               {doApp && (
                 <p className="text-sm font-bold text-fg-token" data-testid="numero-app">
                   {doApp.numero ? <>Pedido {doApp.nome} <span className="font-mono">#{doApp.numero}</span></> : `Pedido ${doApp.nome}`}

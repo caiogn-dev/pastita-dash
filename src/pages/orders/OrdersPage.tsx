@@ -206,6 +206,7 @@ const OrderCardBase: React.FC<CardProps> = ({
           <span className="flex min-w-0 items-center gap-1.5" data-testid="selo-app" title={`Pedido ${order.order_number}`}>
             <MarcaDoApp app={doApp.app} numero={doApp.numero} tamanho="md" />
             {!doApp.numero && <span className="text-badge font-bold text-fg-token">{doApp.nome}</span>}
+            {doApp.marca && <span className="truncate text-badge font-semibold text-fg-muted-token">{doApp.marca}</span>}
           </span>
         ) : (
           <span className="font-mono text-badge font-bold text-fg-muted-token">

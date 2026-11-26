@@ -13,7 +13,7 @@ describe('dadosDoApp', () => {
       } },
     })).toEqual({
       app: '99food', nome: '99Food', numero: 16, rotulo: '99 #16', quemEntrega: 'entregador da 99',
-      codigoEntrega: '5000', codigoRetirada: '', erro: 'confirm: 99 recusou',
+      codigoEntrega: '5000', codigoRetirada: '', erro: 'confirm: 99 recusou', marca: '',
     });
   });
 
@@ -46,4 +46,10 @@ describe('MarcaDoApp', () => {
     expect(screen.getByRole('img', { name: 'iFood' })).toBeInTheDocument();
     expect(screen.queryByText(/#/)).toBeNull();
   });
+});
+
+it('pedido de marca da rede leva a marca no rótulo', () => {
+  const d = dadosDoApp({ source: 'ifood', metadata: { ifood: { numero: '8421', marca: 'Santa Parmê' } } });
+  expect(d?.marca).toBe('Santa Parmê');
+  expect(d?.rotulo).toBe('iFood #8421 · Santa Parmê');
 });
