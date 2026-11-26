@@ -19,6 +19,15 @@ jest.mock('../../../services/payments', () => ({
 }));
 
 import VoucherSection from '../VoucherSection';
+import { SalvarJunto, useSalvarJunto } from '../salvarJunto';
+
+/** As chaves ficam atrás de "Chaves do Pagar.me", que só existe com bandeira marcada. */
+const abrirChaves = async (bandeira = 'VR Benefícios') => {
+  const caixa = await screen.findByLabelText(bandeira);
+  if (!(caixa as HTMLInputElement).checked) fireEvent.click(caixa);
+  const botao = screen.getByRole('button', { name: /chaves do pagar\.me/i });
+  if (botao.getAttribute('aria-expanded') !== 'true') fireEvent.click(botao);
+};
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -38,6 +47,7 @@ beforeEach(() => {
 describe('VoucherSection', () => {
   it('tem campo para as DUAS chaves', async () => {
     render(<VoucherSection storeId="s1" />);
+    await abrirChaves();
     expect(await screen.findByLabelText(/chave secreta/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/chave p[úu]blica/i)).toBeInTheDocument();
   });
@@ -68,11 +78,11 @@ describe('VoucherSection', () => {
 
   it('salva as chaves e as bandeiras marcadas', async () => {
     render(<VoucherSection storeId="s1" />);
+    await abrirChaves();
     fireEvent.change(await screen.findByLabelText(/chave secreta/i),
       { target: { value: 'sk_test_x' } });
     fireEvent.change(screen.getByLabelText(/chave p[úu]blica/i),
       { target: { value: 'pk_test_y' } });
-    fireEvent.click(screen.getByLabelText('VR Benefícios'));
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
 
     await waitFor(() => expect(criar).toHaveBeenCalledTimes(1));
@@ -86,6 +96,7 @@ describe('VoucherSection', () => {
 
   it('avisa quando as chaves são de ambientes diferentes', async () => {
     render(<VoucherSection storeId="s1" />);
+    await abrirChaves();
     fireEvent.change(await screen.findByLabelText(/chave secreta/i),
       { target: { value: 'sk_test_x' } });
     fireEvent.change(screen.getByLabelText(/chave p[úu]blica/i),
@@ -96,10 +107,12 @@ describe('VoucherSection', () => {
 
   it('não salva sem nenhuma bandeira marcada', async () => {
     render(<VoucherSection storeId="s1" />);
+    await abrirChaves();
     fireEvent.change(await screen.findByLabelText(/chave secreta/i),
       { target: { value: 'sk_test_x' } });
     fireEvent.change(screen.getByLabelText(/chave p[úu]blica/i),
       { target: { value: 'pk_test_y' } });
+    fireEvent.click(screen.getByLabelText('VR Benefícios'));
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
 
     await waitFor(() =>
@@ -108,50 +121,115 @@ describe('VoucherSection', () => {
   });
 });
 
-describe('VoucherSection — desligar o vale', () => {
+describe('VoucherSection — aninhada no interruptor do vale', () => {
   const GATEWAY_LIGADO = {
-    id: 'g1', gateway_type: 'pagarme', is_enabled: true,
+    id: 'g1', gateway_type: 'pagarme', is_enabled: true, tem_credencial: true,
     public_key: 'pk_x', configuration: { voucher_brands: ['vr'] },
   };
 
-  it('quando o vale já está ligado, existe um jeito de desligar', async () => {
+  /** A seção como a página monta: dentro do salvar único, seguindo a linha. */
+  const Pagina: React.FC<{ ligada: boolean; toques: number }> = ({ ligada, toques }) => {
+    const juntas = useSalvarJunto();
+    return (
+      <SalvarJunto registro={juntas.registro}>
+        <VoucherSection storeId="s1" interruptor={{ ligada, toques }} />
+        <span data-testid="mudancas">{juntas.mudancas}</span>
+        <button type="button" onClick={() => void juntas.salvar()}>Salvar tudo</button>
+      </SalvarJunto>
+    );
+  };
+
+  it('não existe mais um segundo "Aceitar vale" — liga e desliga é a linha', async () => {
     listar.mockResolvedValue({ results: [GATEWAY_LIGADO] });
-    render(<VoucherSection storeId="s1" />);
-    expect(await screen.findByLabelText(/aceitar vale nesta loja/i)).toBeChecked();
+    render(<Pagina ligada toques={0} />);
+    await screen.findByLabelText('VR Benefícios');
+    expect(screen.queryByLabelText(/aceitar vale/i)).not.toBeInTheDocument();
   });
 
-  it('desmarcar e salvar desliga o gateway em vez de apagar a configuração', async () => {
+  it('com o vale desligado, a configuração não é desenhada', async () => {
     listar.mockResolvedValue({ results: [GATEWAY_LIGADO] });
-    render(<VoucherSection storeId="s1" />);
+    render(<Pagina ligada={false} toques={0} />);
+    await waitFor(() => expect(listar).toHaveBeenCalled());
+    expect(screen.queryByText('Bandeiras')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('VR Benefícios')).not.toBeInTheDocument();
+  });
 
-    fireEvent.click(await screen.findByLabelText(/aceitar vale nesta loja/i));
-    fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+  it('as chaves ficam escondidas até abrir "Chaves do Pagar.me"', async () => {
+    listar.mockResolvedValue({ results: [GATEWAY_LIGADO] });
+    render(<Pagina ligada toques={0} />);
+    const botao = await screen.findByRole('button', { name: /chaves do pagar\.me/i });
+    expect(botao).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByLabelText(/chave secreta/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/chave p[úu]blica/i)).not.toBeInTheDocument();
+    expect(botao).toHaveTextContent(/configurado/i);
 
+    fireEvent.click(botao);
+    expect(botao).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByLabelText(/chave secreta/i)).toBeInTheDocument();
+  });
+
+  it('sem bandeira do Pagar.me marcada, nem o botão das chaves aparece', async () => {
+    render(<Pagina ligada toques={0} />);
+    await screen.findByLabelText('VR Benefícios');
+    expect(screen.queryByRole('button', { name: /chaves do pagar\.me/i })).not.toBeInTheDocument();
+  });
+
+  it('recarga da página não inventa alteração', async () => {
+    listar.mockResolvedValue({ results: [{ ...GATEWAY_LIGADO, is_enabled: false }] });
+    const { rerender } = render(<Pagina ligada={false} toques={0} />);
+    await waitFor(() => expect(listar).toHaveBeenCalled());
+    rerender(<Pagina ligada toques={0} />);
+    await screen.findByLabelText('VR Benefícios');
+    expect(screen.getByTestId('mudancas')).toHaveTextContent('0');
+  });
+
+  it('ligar o vale reativa o gateway desligado, sem recadastrar', async () => {
+    listar.mockResolvedValue({ results: [{ ...GATEWAY_LIGADO, is_enabled: false }] });
+    const { rerender } = render(<Pagina ligada={false} toques={0} />);
+    await waitFor(() => expect(listar).toHaveBeenCalled());
+    rerender(<Pagina ligada toques={1} />);
+    await waitFor(() => expect(screen.getByTestId('mudancas')).toHaveTextContent('1'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar tudo' }));
     await waitFor(() => expect(atualizar).toHaveBeenCalled());
-    expect(atualizar.mock.calls[0][1]).toMatchObject({ is_enabled: false });
-    // As bandeiras continuam gravadas: religar nao pode exigir remarcar tudo.
-    expect(atualizar.mock.calls[0][1].configuration).toMatchObject({ voucher_brands: ['vr'] });
+    expect(atualizar.mock.calls[0][1]).toMatchObject({
+      is_enabled: true,
+      configuration: { voucher_brands: ['vr'] },
+    });
+    expect(atualizar.mock.calls[0][1]).not.toHaveProperty('api_key');
   });
 
-  it('desligando, não exige bandeira marcada', async () => {
+  it('desligar não mexe no gateway: o cardápio esconde pelo interruptor e as chaves ficam', async () => {
+    listar.mockResolvedValue({ results: [GATEWAY_LIGADO] });
+    const { rerender } = render(<Pagina ligada toques={0} />);
+    await screen.findByLabelText('VR Benefícios');
+    rerender(<Pagina ligada={false} toques={1} />);
+    expect(screen.getByTestId('mudancas')).toHaveTextContent('0');
+    expect(atualizar).not.toHaveBeenCalled();
+  });
+
+  it('ligar numa loja sem nada configurado pede uma bandeira antes de salvar', async () => {
+    const { rerender } = render(<Pagina ligada={false} toques={0} />);
+    rerender(<Pagina ligada toques={1} />);
+    await screen.findByLabelText('VR Benefícios');
+    await waitFor(() => expect(screen.getByTestId('mudancas')).toHaveTextContent('1'));
+  });
+
+  it('bandeira marcada sem chave pública: avisa e abre as chaves', async () => {
+    render(<VoucherSection storeId="s1" />);
+    fireEvent.click(await screen.findByLabelText('VR Benefícios'));
+    fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
+    expect(await screen.findByText(/chave pública do pagar\.me/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/chave p[úu]blica/i)).toBeInTheDocument();
+    expect(criar).not.toHaveBeenCalled();
+  });
+
+  it('com o gateway gravado, continua exigindo bandeira', async () => {
     listar.mockResolvedValue({
       results: [{ ...GATEWAY_LIGADO, configuration: { voucher_brands: [] } }],
     });
     render(<VoucherSection storeId="s1" />);
-
-    fireEvent.click(await screen.findByLabelText(/aceitar vale nesta loja/i));
-    fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
-
-    await waitFor(() => expect(atualizar).toHaveBeenCalled());
-    expect(screen.queryByText(/ao menos uma bandeira/i)).not.toBeInTheDocument();
-  });
-
-  it('ligado, continua exigindo bandeira', async () => {
-    listar.mockResolvedValue({
-      results: [{ ...GATEWAY_LIGADO, configuration: { voucher_brands: [] } }],
-    });
-    render(<VoucherSection storeId="s1" />);
-    await screen.findByLabelText(/aceitar vale nesta loja/i);
+    await screen.findByLabelText('VR Benefícios');
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
 
     await waitFor(() =>
@@ -161,23 +239,21 @@ describe('VoucherSection — desligar o vale', () => {
 });
 
 describe('VoucherSection — aviso de credenciamento', () => {
-  it('avisa que a conta precisa estar habilitada nas bandeiras', async () => {
+  it('avisa, em uma linha, que cada operadora precisa credenciar o CNPJ', async () => {
     render(<VoucherSection storeId="s1" />);
-    expect(await screen.findByText(/habilitad/i)).toBeInTheDocument();
+    expect(await screen.findByText(/credencie o cnpj/i)).toBeInTheDocument();
+    // O perigo nao e "nao funciona" — e falhar no pagamento.
+    expect(screen.getByText(/recusad/i)).toBeInTheDocument();
   });
 
-  it('diz o que acontece se o lojista pular esse passo', async () => {
+  it('com a conta já configurada, o aviso sai da frente', async () => {
+    listar.mockResolvedValue({ results: [{
+      id: 'g1', gateway_type: 'pagarme', is_enabled: true, tem_credencial: true,
+      public_key: 'pk_x', configuration: { voucher_brands: ['vr'] },
+    }] });
     render(<VoucherSection storeId="s1" />);
-    // O perigo nao e "nao funciona" — e aparecer no cardapio e falhar no clique.
-    expect(await screen.findByText(/aparece no card[áa]pio/i)).toBeInTheDocument();
-    expect(screen.getByText(/recusad|falha/i)).toBeInTheDocument();
-  });
-
-  it('o aviso aparece mesmo antes de colar qualquer chave', async () => {
-    listar.mockResolvedValue({ results: [] });
-    render(<VoucherSection storeId="s1" />);
-    // Avisar so depois de configurar seria avisar tarde demais.
-    expect(await screen.findByText(/habilitad/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText('VR Benefícios')).toBeChecked());
+    expect(screen.queryByText(/credencie o cnpj/i)).not.toBeInTheDocument();
   });
 });
 
@@ -205,6 +281,7 @@ describe('VoucherSection — estado do que já está configurado', () => {
 
   it('mostra a chave pública que está salva', async () => {
     render(<VoucherSection storeId="s1" />);
+    await abrirChaves();
     await waitFor(() => expect(screen.getByLabelText(/chave pública/i))
       .toHaveValue('pk_test_publica'));
   });
@@ -214,8 +291,10 @@ describe('VoucherSection — estado do que já está configurado', () => {
     // achar que perdeu a configuração e digitar de novo (ou pior: achar que
     // nunca salvou).
     render(<VoucherSection storeId="s1" />);
-    expect(await screen.findByText(/chave secreta j[áa] (est[áa] )?(salva|configurada|guardada)/i))
-      .toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText('VR Benefícios')).toBeChecked());
+    expect(screen.getByRole('button', { name: /chaves do pagar\.me/i })).toHaveTextContent(/configurado/i);
+    await abrirChaves();
+    expect(screen.getByLabelText(/chave secreta/i)).toHaveAttribute('placeholder', expect.stringMatching(/j[áa] salva/i));
   });
 
   it('salvar sem retocar o segredo NÃO troca o ambiente da conta', async () => {
@@ -233,6 +312,7 @@ describe('VoucherSection — estado do que já está configurado', () => {
   it('digitando um segredo novo, o ambiente volta a ser recalculado', async () => {
     render(<VoucherSection storeId="s1" />);
     await waitFor(() => expect(screen.getByLabelText('VR Benefícios')).toBeChecked());
+    await abrirChaves();
     fireEvent.change(screen.getByLabelText(/chave secreta/i),
       { target: { value: 'sk_live_nova' } });
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));

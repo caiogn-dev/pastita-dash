@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BanknotesIcon } from '@heroicons/react/24/outline';
-
-import { Card } from '../../components/ui';
-import { Switch } from '../../components/common';
+import { Secao, Switch } from '../../components/ui';
 import { updateStore, type Store } from '../../services/storesApi';
 import { useRootStore } from '../../stores/rootStore';
 import logger from '../../services/logger';
@@ -51,25 +48,18 @@ export const CaixaDinheiroSection: React.FC<CaixaDinheiroSectionProps> = ({ loja
   };
 
   return (
-    <Card className="p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <BanknotesIcon className="w-6 h-6 text-fg-muted-token shrink-0 mt-0.5" aria-hidden="true" />
-          <div>
-            <h3 id="caixa-dinheiro-titulo" className="text-lg font-medium text-fg-token">
-              Uso caixa com dinheiro vivo
-            </h3>
-            {erro && <p className="mt-2 text-sm text-[var(--danger)]">{erro}</p>}
-          </div>
-        </div>
+    <Secao titulo="Caixa">
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-sm font-medium text-fg-token">Uso caixa com dinheiro vivo</span>
         <Switch
-          checked={ligado}
-          disabled={salvando}
-          onChange={alternar}
-          ariaLabelledby="caixa-dinheiro-titulo"
+          ligado={ligado}
+          desabilitado={salvando}
+          onMudar={alternar}
+          rotulo="Uso caixa com dinheiro vivo"
         />
       </div>
-    </Card>
+      {erro && <p role="alert" className="mt-2 text-sm text-danger-token">{erro}</p>}
+    </Secao>
   );
 };
 

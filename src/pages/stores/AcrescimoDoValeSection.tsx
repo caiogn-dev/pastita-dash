@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ReceiptPercentIcon } from '@heroicons/react/24/outline';
-
-import { Card, Button, Input } from '../../components/ui';
+import { Button, Input, Secao } from '../../components/ui';
 import { updateStore } from '../../services/storesApi';
 import logger from '../../services/logger';
 import { useParteDoSalvar } from './salvarJunto';
@@ -81,14 +79,7 @@ export const AcrescimoDoValeSection: React.FC<AcrescimoDoValeSectionProps> = ({
     : null;
 
   return (
-    <Card className="p-6">
-      <div className="flex items-start gap-3 mb-4">
-        <ReceiptPercentIcon className="w-6 h-6 text-fg-muted-token shrink-0 mt-0.5" />
-        <div>
-          <h3 className="text-lg font-medium text-fg-token">Acréscimo para pagar com vale</h3>
-        </div>
-      </div>
-
+    <Secao titulo="Acréscimo do vale">
       <div className="max-w-[12rem]">
         <Input
           id="acrescimo-vale"
@@ -105,7 +96,7 @@ export const AcrescimoDoValeSection: React.FC<AcrescimoDoValeSectionProps> = ({
         </p>
       )}
 
-      {erro && <p role="alert" className="mt-3 text-sm text-danger-500">{erro}</p>}
+      {erro && <p role="alert" className="mt-3 text-sm text-danger-token">{erro}</p>}
       {salvo && !erro && <p role="status" className="mt-3 text-sm text-fg-muted-token">Salvo.</p>}
 
       {!noSalvarUnico && (
@@ -113,7 +104,7 @@ export const AcrescimoDoValeSection: React.FC<AcrescimoDoValeSectionProps> = ({
           {salvando ? 'Salvando...' : 'Salvar'}
         </Button>
       )}
-    </Card>
+    </Secao>
   );
 };
 

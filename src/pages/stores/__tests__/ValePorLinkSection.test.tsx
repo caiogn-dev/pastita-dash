@@ -60,13 +60,25 @@ describe('ValePorLinkSection', () => {
 
   it('sem WhatsApp na loja, avisa que a opção não vai aparecer', async () => {
     montar({ whatsapp: '' });
-    expect(await screen.findByRole('alert')).toHaveTextContent(/WhatsApp/i);
+    expect(await screen.findByText(/cadastre o whatsapp/i)).toBeInTheDocument();
   });
 
   it('com WhatsApp não fica alertando à toa', async () => {
     montar();
     await screen.findByLabelText('Volus');
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByText(/whatsapp/i)).not.toBeInTheDocument();
+  });
+
+  it('aninhada no interruptor: desligado, não desenha nada', async () => {
+    montar({ interruptor: { ligada: false, toques: 0 } });
+    await waitFor(() => expect(catalogo).toHaveBeenCalled());
+    expect(screen.queryByLabelText('Volus')).not.toBeInTheDocument();
+  });
+
+  it('aninhada e ligada: só as bandeiras, sem título próprio', async () => {
+    montar({ interruptor: { ligada: true, toques: 0 } });
+    expect(await screen.findByLabelText('Volus')).toBeInTheDocument();
+    expect(screen.queryByText('Vale cobrado por QR Code')).not.toBeInTheDocument();
   });
 
   it('erro ao salvar aparece na tela, não só no console', async () => {

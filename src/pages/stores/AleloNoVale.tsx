@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-import { Button, Input } from '../../components/ui';
+import { Button, Input, Recolhivel, SeloDeEstado } from '../../components/ui';
 import { paymentsService, type BandeiraDeVale, type DadosDoGateway } from '../../services/payments';
 import logger from '../../services/logger';
+import { useParteDoSalvar } from './salvarJunto';
 
 interface GatewayDaCielo {
   id: string;
@@ -32,22 +33,39 @@ interface AleloNoValeProps {
   storeId: string;
   /** As bandeiras que o backend diz que a Cielo cobra — hoje, só a Alelo. */
   bandeiras: BandeiraDeVale[];
+  /** Avisa o vale se a Alelo está marcada (basta ela para o vale ter bandeira). */
+  onAceitaMudar?: (aceita: boolean) => void;
 }
 
+interface Gravado {
+  merchantId: string;
+  clientId: string;
+  aceita: boolean;
+  teste: boolean;
+}
+
+const VAZIO: Gravado = { merchantId: '', clientId: '', aceita: false, teste: false };
+
 /**
- * A Alelo dentro do mesmo cartão do vale. Ela é cobrada pela Cielo, não pelo
- * Pagar.me, então tem as chaves dela — com os nomes que o site da Cielo usa,
- * para o lojista copiar sem traduzir.
+ * A Alelo dentro do vale, como mais uma bandeira. Ela é cobrada pela Cielo,
+ * não pelo Pagar.me, então tem as chaves dela — com os nomes que o site da
+ * Cielo usa, para o lojista copiar sem traduzir — atrás de "Chaves da Cielo",
+ * que só existe com a Alelo marcada.
+ *
+ * Entra no Salvar da página (26/11); sozinha, desenha "Salvar Alelo".
  */
-export const AleloNoVale: React.FC<AleloNoValeProps> = ({ storeId, bandeiras }) => {
+export const AleloNoVale: React.FC<AleloNoValeProps> = ({ storeId, bandeiras, onAceitaMudar }) => {
   const [gatewayId, setGatewayId] = useState<string | null>(null);
   const [jaTemSegredo, setJaTemSegredo] = useState(false);
   const [merchantId, setMerchantId] = useState('');
   const [merchantKey, setMerchantKey] = useState('');
   const [clientId, setClientId] = useState('');
   const [clientSecret, setClientSecret] = useState('');
-  const [aceita, setAceita] = useState(true);
+  // Sem conexão gravada, a Alelo nasce desmarcada: marcada seria mentira.
+  const [aceita, setAceita] = useState(false);
   const [teste, setTeste] = useState(false);
+  const [base, setBase] = useState<Gravado>(VAZIO);
+  const [aberto, setAberto] = useState(false);
   const [erro, setErro] = useState('');
   const [salvo, setSalvo] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -60,11 +78,18 @@ export const AleloNoVale: React.FC<AleloNoValeProps> = ({ storeId, bandeiras }) 
       const linhas = (pagina?.results ?? []) as unknown as GatewayDaCielo[];
       const cielo = linhas.find((g) => g.gateway_type === 'cielo');
       if (!cielo) return;
+      const gravado: Gravado = {
+        merchantId: cielo.public_key || '',
+        clientId: cielo.configuration?.sop_client_id || '',
+        aceita: cielo.is_enabled !== false,
+        teste: Boolean(cielo.is_sandbox),
+      };
       setGatewayId(cielo.id);
-      setMerchantId(cielo.public_key || '');
-      setClientId(cielo.configuration?.sop_client_id || '');
-      setAceita(cielo.is_enabled !== false);
-      setTeste(Boolean(cielo.is_sandbox));
+      setMerchantId(gravado.merchantId);
+      setClientId(gravado.clientId);
+      setAceita(gravado.aceita);
+      setTeste(gravado.teste);
+      setBase(gravado);
       setJaTemSegredo(Boolean(cielo.tem_credencial));
     }).catch((erroGateway) => {
       logger.error('Erro ao carregar a conexão da Cielo:', erroGateway);
@@ -72,31 +97,37 @@ export const AleloNoVale: React.FC<AleloNoValeProps> = ({ storeId, bandeiras }) 
     return () => { vivo = false; };
   }, [storeId]);
 
-  const salvar = useCallback(async () => {
-    setErro('');
-    setSalvo(false);
+  useEffect(() => { onAceitaMudar?.(aceita); }, [aceita]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const nomes = bandeiras.map((b) => b.label).join(', ');
+
+  /** O problema que impede salvar, ou null. Abre as chaves para mostrar onde. */
+  const validar = (): string | null => {
     const mid = merchantId.trim();
     const cid = clientId.trim();
     const chave = merchantKey.trim();
     const faltaSegredo = !jaTemSegredo && (!chave || !clientSecret.trim());
+    let problema: string | null = null;
     if (aceita && (!mid || !cid || faltaSegredo)) {
-      setErro('Preencha as quatro chaves da Cielo para receber com Alelo.');
-      return;
+      problema = `Preencha as quatro chaves da Cielo para receber com ${nomes}.`;
+    } else if (mid && !GUID.test(mid)) {
+      problema = 'Merchant ID inválido: são 36 caracteres no formato xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.';
+    } else if (chave && !MERCHANT_KEY.test(chave)) {
+      problema = 'Merchant Key inválida: são 40 letras e números.';
+    } else if (cid && !GUID.test(cid)) {
+      problema = 'Client ID inválido: são 36 caracteres no formato xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.';
     }
-    if (mid && !GUID.test(mid)) {
-      setErro('Merchant ID inválido: são 36 caracteres no formato xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.');
-      return;
-    }
-    if (chave && !MERCHANT_KEY.test(chave)) {
-      setErro('Merchant Key inválida: são 40 letras e números.');
-      return;
-    }
-    if (cid && !GUID.test(cid)) {
-      setErro('Client ID inválido: são 36 caracteres no formato xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.');
-      return;
-    }
+    setErro(problema || '');
+    if (problema) setAberto(true);
+    return problema;
+  };
 
-    setSalvando(true);
+  const gravar = async () => {
+    // Desmarcada e nunca conectada: não há o que gravar.
+    if (!gatewayId && !aceita) return;
+    const mid = merchantId.trim();
+    const cid = clientId.trim();
+    const chave = merchantKey.trim();
     try {
       const corpo: DadosDoGateway = {
         store: storeId,
@@ -123,86 +154,132 @@ export const AleloNoVale: React.FC<AleloNoValeProps> = ({ storeId, bandeiras }) 
       setJaTemSegredo(true);
       setMerchantKey('');
       setClientSecret('');
-      setSalvo(true);
+      setMerchantId(mid);
+      setClientId(cid);
+      setBase({ merchantId: mid, clientId: cid, aceita, teste });
     } catch (erroSalvar) {
       logger.error('Erro ao salvar a conexão da Cielo:', erroSalvar);
       setErro(erroDoServidor(erroSalvar) || 'Não consegui salvar. Confira as chaves e tente de novo.');
+      setAberto(true);
+      throw erroSalvar;
+    }
+  };
+
+  const noSalvarUnico = useParteDoSalvar('vale-cielo', {
+    mudancas: [
+      merchantId !== base.merchantId,
+      clientId !== base.clientId,
+      aceita !== base.aceita,
+      teste !== base.teste,
+      Boolean(merchantKey),
+      Boolean(clientSecret),
+    ].filter(Boolean).length,
+    validar,
+    salvar: async () => { setSalvo(false); await gravar(); },
+    descartar: () => {
+      setMerchantId(base.merchantId);
+      setClientId(base.clientId);
+      setAceita(base.aceita);
+      setTeste(base.teste);
+      setMerchantKey('');
+      setClientSecret('');
+      setErro('');
+    },
+  });
+
+  // Só fora do salvar único (bloco usado sozinho).
+  const salvar = async () => {
+    setSalvo(false);
+    if (validar()) return;
+    setSalvando(true);
+    try {
+      await gravar();
+      setSalvo(true);
+    } catch {
+      // motivo já está na tela
     } finally {
       setSalvando(false);
     }
-  }, [aceita, bandeiras, clientId, clientSecret, gatewayId, jaTemSegredo, merchantId, merchantKey, storeId, teste]);
+  };
 
-  const manter = jaTemSegredo ? 'Deixe em branco para manter a atual' : undefined;
-  const nomes = bandeiras.map((b) => b.label).join(', ');
+  const manter = jaTemSegredo ? 'Já salva. Preencha só para trocar.' : undefined;
+  const configurado = jaTemSegredo && Boolean(merchantId.trim()) && Boolean(clientId.trim());
 
   return (
-    <section aria-label={nomes} className="mt-6 border-t border-border-token pt-6">
-      <h4 className="text-base font-medium text-fg-token">{nomes}</h4>
-      <p className="text-sm text-fg-muted-token">Cobrada pela Cielo</p>
-
-      <label htmlFor="cielo-alelo-aceita" className="mt-3 flex items-center gap-2 py-1 text-sm text-fg-token">
+    <section aria-label={nomes} className="space-y-3">
+      <label htmlFor="cielo-alelo-aceita" className="flex min-h-[2.25rem] items-center gap-2 text-sm text-fg-token">
         <input
           id="cielo-alelo-aceita"
           type="checkbox"
           className="h-4 w-4 accent-[var(--color-brand)]"
           checked={aceita}
-          onChange={() => setAceita((v) => !v)}
+          onChange={() => { setAceita((v) => !v); setErro(''); }}
         />
-        <span>Aceitar {nomes} nesta loja</span>
+        <span>{nomes}</span>
       </label>
 
-      <div className="mt-2 space-y-4">
-        <Input
-          id="cielo-merchant-id"
-          label="Código do estabelecimento (Merchant ID)"
-          autoComplete="off"
-          value={merchantId}
-          onChange={(e) => setMerchantId(e.target.value)}
-        />
-        <Input
-          id="cielo-merchant-key"
-          label="Chave do estabelecimento (Merchant Key)"
-          type="password"
-          autoComplete="off"
-          placeholder={manter}
-          value={merchantKey}
-          onChange={(e) => setMerchantKey(e.target.value)}
-        />
-        <Input
-          id="cielo-sop-client-id"
-          label="Código do cartão (Client ID)"
-          autoComplete="off"
-          value={clientId}
-          onChange={(e) => setClientId(e.target.value)}
-        />
-        <Input
-          id="cielo-sop-client-secret"
-          label="Senha do cartão (Client Secret)"
-          type="password"
-          autoComplete="off"
-          placeholder={manter}
-          value={clientSecret}
-          onChange={(e) => setClientSecret(e.target.value)}
-        />
-
-        <label htmlFor="cielo-alelo-teste" className="flex items-center gap-2 text-sm text-fg-token">
-          <input
-            id="cielo-alelo-teste"
-            type="checkbox"
-            className="h-4 w-4 accent-[var(--color-brand)]"
-            checked={teste}
-            onChange={() => setTeste((v) => !v)}
+      {aceita && (
+        <Recolhivel
+          titulo="Chaves da Cielo"
+          aberto={aberto}
+          onAbertoMudar={setAberto}
+          selo={configurado
+            ? <SeloDeEstado tone="success" ponto>Configurado</SeloDeEstado>
+            : <SeloDeEstado tone="warning" ponto>Falta configurar</SeloDeEstado>}
+        >
+          <Input
+            id="cielo-merchant-id"
+            label="Código do estabelecimento (Merchant ID)"
+            autoComplete="off"
+            value={merchantId}
+            onChange={(e) => setMerchantId(e.target.value)}
           />
-          <span>Conta de teste</span>
-        </label>
+          <Input
+            id="cielo-merchant-key"
+            label="Chave do estabelecimento (Merchant Key)"
+            type="password"
+            autoComplete="off"
+            placeholder={manter}
+            value={merchantKey}
+            onChange={(e) => setMerchantKey(e.target.value)}
+          />
+          <Input
+            id="cielo-sop-client-id"
+            label="Código do cartão (Client ID)"
+            autoComplete="off"
+            value={clientId}
+            onChange={(e) => setClientId(e.target.value)}
+          />
+          <Input
+            id="cielo-sop-client-secret"
+            label="Senha do cartão (Client Secret)"
+            type="password"
+            autoComplete="off"
+            placeholder={manter}
+            value={clientSecret}
+            onChange={(e) => setClientSecret(e.target.value)}
+          />
+          <label htmlFor="cielo-alelo-teste" className="flex items-center gap-2 text-sm text-fg-token">
+            <input
+              id="cielo-alelo-teste"
+              type="checkbox"
+              className="h-4 w-4 accent-[var(--color-brand)]"
+              checked={teste}
+              onChange={() => setTeste((v) => !v)}
+            />
+            <span>Conta de teste</span>
+          </label>
+        </Recolhivel>
+      )}
 
-        {erro && <p role="alert" className="text-sm text-danger-500">{erro}</p>}
-        {salvo && <p role="status" className="text-sm text-fg-muted-token">Salvo.</p>}
+      {erro && <p role="alert" className="text-sm text-danger-token">{erro}</p>}
+      {salvo && !erro && <p role="status" className="text-sm text-fg-muted-token">Salvo.</p>}
 
+      {!noSalvarUnico && (
         <Button onClick={salvar} disabled={salvando}>
           {salvando ? 'Salvando...' : `Salvar ${nomes}`}
         </Button>
-      </div>
+      )}
     </section>
   );
 };

@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { LinkIcon } from '@heroicons/react/24/outline';
 
-import { Card, Button } from '../../components/ui';
+import { Aviso, Card, Button } from '../../components/ui';
 import { paymentsService } from '../../services/payments';
 import { updateStore } from '../../services/storesApi';
 import logger from '../../services/logger';
 import { useParteDoSalvar } from './salvarJunto';
+import type { InterruptorDaForma } from './FormasNoCardapioSection';
+
+const MARQUE_UMA = 'Marque ao menos uma bandeira por QR Code.';
 
 interface Bandeira {
   value: string;
@@ -20,6 +22,12 @@ interface ValePorLinkSectionProps {
   ligadas?: string[];
   /** Sem WhatsApp a opção não aparece no cardápio: o backend não a oferece. */
   whatsapp?: string;
+  /**
+   * O interruptor "Vale-refeição por link" de Como o cliente paga. Com ele, a
+   * seção é a configuração aninhada na linha e some com ele desligado (as
+   * bandeiras ficam guardadas). Sem ele, é um cartão próprio.
+   */
+  interruptor?: InterruptorDaForma;
 }
 
 /**
@@ -33,11 +41,15 @@ interface ValePorLinkSectionProps {
  *
  * A lista vem do backend, como todas as outras. Bandeira nova entra lá e
  * aparece aqui, sem deploy do painel.
+ *
+ * Fica aninhada na linha "Vale-refeição por link" de Como o cliente paga
+ * (26/11): ligar e desligar é o interruptor da linha; aqui só as bandeiras.
  */
 export const ValePorLinkSection: React.FC<ValePorLinkSectionProps> = ({
   storeId,
   ligadas = [],
   whatsapp = '',
+  interruptor,
 }) => {
   const [catalogo, setCatalogo] = useState<Bandeira[]>([]);
   const [marcadas, setMarcadas] = useState<string[]>(ligadas);
@@ -75,8 +87,16 @@ export const ValePorLinkSection: React.FC<ValePorLinkSectionProps> = ({
   };
 
   const mudou = marcadas.length !== ligadas.length || marcadas.some((v) => !ligadas.includes(v));
+  // Ligou agora sem bandeira: o cardápio não teria o que oferecer.
+  const ligouSemBandeira = Boolean(interruptor?.ligada && interruptor.toques > 0 && marcadas.length === 0);
+  const validar = () => {
+    const problema = ligouSemBandeira ? MARQUE_UMA : null;
+    setErro(problema || '');
+    return problema;
+  };
   const noSalvarUnico = useParteDoSalvar('vale-por-link', {
-    mudancas: mudou ? 1 : 0,
+    mudancas: mudou || ligouSemBandeira ? 1 : 0,
+    validar,
     salvar: async () => { setErro(''); await gravar(); },
     descartar: () => { setMarcadas(ligadas); setErro(''); },
   });
@@ -97,32 +117,24 @@ export const ValePorLinkSection: React.FC<ValePorLinkSectionProps> = ({
 
   const semWhatsapp = !String(whatsapp || '').trim();
 
-  return (
-    <Card className="p-6">
-      <div className="flex items-start gap-3 mb-4">
-        <LinkIcon className="w-6 h-6 text-fg-muted-token shrink-0 mt-0.5" />
-        <div>
-          <h3 className="text-lg font-medium text-fg-token">Vale cobrado por QR Code</h3>
-        </div>
-      </div>
+  if (interruptor && !interruptor.ligada) return null;
 
+  const corpo = (
+    <div className="space-y-3">
       {semWhatsapp && (
-        <p role="alert" className="mb-4 rounded-lg border border-warning-300 bg-warning-50 p-3 text-sm text-fg-token dark:border-warning-700 dark:bg-warning-900/25">
-          Esta loja não tem WhatsApp cadastrado. Sem ele a opção não aparece no
-          cardápio — seria mandar o cliente para lugar nenhum.
-        </p>
+        <Aviso tom="atencao" titulo="Cadastre o WhatsApp da loja">
+          Sem ele, o vale por QR Code não aparece no cardápio.
+        </Aviso>
       )}
 
       <fieldset>
-        <legend className="text-sm font-medium text-fg-token mb-2">
-          Bandeiras aceitas por QR Code
-        </legend>
-        <div className="space-y-2">
+        <legend className="mb-2 text-sm font-medium text-fg-token">Bandeiras por QR Code</legend>
+        <div className="flex flex-wrap gap-x-5 gap-y-2">
           {catalogo.map(({ value, label, logo }) => (
             <label
               key={value}
               htmlFor={`vale-link-${value}`}
-              className="flex items-center gap-2 text-sm text-fg-token"
+              className="flex min-h-[2.25rem] items-center gap-2 text-sm text-fg-token"
             >
               <input
                 id={`vale-link-${value}`}
@@ -138,16 +150,25 @@ export const ValePorLinkSection: React.FC<ValePorLinkSectionProps> = ({
         </div>
       </fieldset>
 
-      {erro && <p role="alert" className="mt-3 text-sm text-danger-500">{erro}</p>}
-      {salvo && !erro && (
-        <p role="status" className="mt-3 text-sm text-fg-muted-token">Salvo.</p>
-      )}
+      {erro && <p role="alert" className="text-sm text-danger-token">{erro}</p>}
+      {salvo && !erro && <p role="status" className="text-sm text-fg-muted-token">Salvo.</p>}
 
       {!noSalvarUnico && (
-        <Button className="mt-4" onClick={salvar} disabled={salvando}>
+        <Button onClick={salvar} disabled={salvando}>
           {salvando ? 'Salvando...' : 'Salvar'}
         </Button>
       )}
+    </div>
+  );
+
+  if (interruptor) {
+    return <div className="mt-3 border-l-2 border-border-token pl-4">{corpo}</div>;
+  }
+
+  return (
+    <Card className="p-6">
+      <h3 className="mb-4 text-lg font-medium text-fg-token">Vale cobrado por QR Code</h3>
+      {corpo}
     </Card>
   );
 };

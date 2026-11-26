@@ -108,3 +108,6 @@ export { EnvioDeImagem } from './EnvioDeImagem';
 export type { EnvioDeImagemProps } from './EnvioDeImagem';
 export { Gaveta } from './Gaveta';
 export type { GavetaProps } from './Gaveta';
+// Configuração técnica atrás de um clique (26/11): credenciais não ficam na tela.
+export { Recolhivel } from './Recolhivel';
+export type { RecolhivelProps } from './Recolhivel';

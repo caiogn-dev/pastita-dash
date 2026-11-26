@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { CreditCardIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Card, Button, Input } from '../../components/ui';
+import { Aviso, Button, Card, Input, Recolhivel, SeloDeEstado } from '../../components/ui';
 import { paymentsService, type BandeiraDeVale, type DadosDoGateway } from '../../services/payments';
 import AleloNoVale from './AleloNoVale';
 import logger from '../../services/logger';
 import { useParteDoSalvar } from './salvarJunto';
+import type { InterruptorDaForma } from './FormasNoCardapioSection';
 
 type Bandeira = BandeiraDeVale;
 
@@ -27,19 +27,36 @@ interface GatewayDeVale {
 // Alelo voltar, ou entrar uma bandeira nova, seriam três deploys em vez de um.
 const ehTeste = (chave: string) => chave.includes('_test_');
 
+const MARQUE_UMA = 'Marque ao menos uma bandeira de vale.';
+const FALTA_PUBLICA = 'Preencha a chave pública do Pagar.me.';
+
 interface VoucherSectionProps {
   storeId: string;
+  /**
+   * O interruptor "Vale-refeição" de Como o cliente paga. Com ele, a seção é
+   * a configuração aninhada na linha: some com o vale desligado e liga o
+   * Pagar.me quando o lojista liga o vale. Sem ele (uso isolado), é um cartão
+   * próprio.
+   */
+  interruptor?: InterruptorDaForma;
 }
 
 /**
- * Onde a loja diz em qual conta do Pagar.me cai o dinheiro dos pedidos pagos
- * com vale-refeição/vale-alimentação, e quais bandeiras aceita.
+ * Vale-refeição: bandeiras aceitas e, atrás de um clique, as chaves de quem
+ * cobra cada uma — Pagar.me (VR, Pluxee, Ticket…) e Cielo (Alelo).
  *
- * As duas chaves (secreta e pública) têm campo desde o início — do lado do
- * Mercado Pago a pública nunca entrou no painel manual, e isso já quebrou o
- * cartão em produção (token de uma conta, cobrança tentada em outra).
+ * As duas chaves do Pagar.me (secreta e pública) têm campo desde o início —
+ * do lado do Mercado Pago a pública nunca entrou no painel manual, e isso já
+ * quebrou o cartão em produção (token de uma conta, cobrança em outra).
+ *
+ * Ligar/desligar o vale é UM interruptor, o da linha (26/11). Antes havia um
+ * segundo, "Aceitar vale nesta loja", que mexia no `is_enabled` do gateway: o
+ * mesmo conceito controlado em dois lugares. Agora desligar tira o vale do
+ * cardápio (formas desligadas) e guarda chaves e bandeiras; ligar reativa o
+ * gateway se ele estava desligado.
  */
-export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
+export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId, interruptor }) => {
+  const embutida = interruptor !== undefined;
   const [gatewayId, setGatewayId] = useState<string | null>(null);
   // O segredo NUNCA volta do backend — e está certo. Mas um campo em branco faz
   // o lojista achar que a configuração se perdeu. Guardamos só o ESTADO dele.
@@ -47,7 +64,7 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
   const [secreta, setSecreta] = useState('');
   const [publica, setPublica] = useState('');
   // O catálogo inteiro vem numa resposta só; cada bandeira diz qual conexão a
-  // cobra. As do Pagar.me viram toggles aqui; as da Cielo vão para o bloco dela.
+  // cobra. As do Pagar.me viram caixas aqui; as da Cielo vão para o bloco dela.
   const [todas, setTodas] = useState<Bandeira[]>([]);
   const catalogo = useMemo(
     () => todas.filter((b) => !b.gateway || b.gateway === 'pagarme'),
@@ -55,9 +72,10 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
   );
   const daCielo = useMemo(() => todas.filter((b) => b.gateway === 'cielo'), [todas]);
   const [marcadas, setMarcadas] = useState<string[]>([]);
-  // Liga/desliga o recebimento por vale SEM perder a configuracao. O lojista
-  // que para de aceitar hoje precisa poder voltar amanha sem recadastrar.
+  // `is_enabled` do gateway. Guardado à parte para religar sem recadastrar.
   const [aceitaVale, setAceitaVale] = useState(true);
+  const [aleloLigada, setAleloLigada] = useState(false);
+  const [chavesAbertas, setChavesAbertas] = useState(false);
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
   /** O que está gravado — para saber o que mudou e voltar no Descartar. */
@@ -99,6 +117,18 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
     return () => { vivo = false; };
   }, [storeId]);
 
+  // O lojista mexeu no interruptor da linha. Só o TOQUE conta: recarga da
+  // página muda `ligada` sem toque, e não pode virar alteração inventada.
+  // Ligar reativa o gateway; desligar devolve ao gravado (o cardápio já
+  // esconde o vale pelas formas desligadas).
+  const ultimoToque = useRef(interruptor?.toques ?? 0);
+  useEffect(() => {
+    if (!interruptor || interruptor.toques === ultimoToque.current) return;
+    ultimoToque.current = interruptor.toques;
+    setAceitaVale(interruptor.ligada ? true : base.aceitaVale);
+    if (!interruptor.ligada) setErro('');
+  }, [interruptor?.toques]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Chave de teste com chave de produção tokeniza numa conta e cobra na
   // outra: o pagamento falha de um jeito que não dá para diagnosticar de fora.
   const ambientesDivergem = useMemo(
@@ -111,17 +141,30 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
       (atuais.includes(valor) ? atuais.filter((x) => x !== valor) : [...atuais, valor]));
   }, []);
 
+  // Vale ligado sem nenhuma bandeira (nem do Pagar.me, nem da Cielo) não
+  // oferece nada ao cliente. Só a Alelo marcada basta: o Pagar.me fica de fora.
+  const semBandeira = aceitaVale && marcadas.length === 0 && !aleloLigada;
+  // Ligou o vale agora, numa loja sem nada configurado: há o que resolver
+  // antes do Salvar, e a barra precisa dizer isso.
+  const ligouSemNada = Boolean(interruptor?.ligada && interruptor.toques > 0 && semBandeira);
+  const temAlgo = Boolean(gatewayId || secreta || publica);
+
   const validar = () => {
-    // Desligando, a bandeira nao importa — a exigencia existe para nao ligar o
-    // vale no cardapio sem nada para o cliente escolher.
-    const problema = aceitaVale && marcadas.length === 0
-      ? 'Marque ao menos uma bandeira para começar a receber com vale.'
-      : null;
+    let problema: string | null = null;
+    if (semBandeira && (temAlgo || ligouSemNada)) problema = MARQUE_UMA;
+    // Sem a pública o backend não anuncia o vale: gravaria e não apareceria.
+    else if (aceitaVale && marcadas.length > 0 && !publica.trim()) {
+      problema = FALTA_PUBLICA;
+      setChavesAbertas(true);
+    }
     setErro(problema || '');
     return problema;
   };
 
   const gravar = async () => {
+    // Nada do Pagar.me para gravar (loja só com Alelo, ou sem nada): não cria
+    // conexão vazia.
+    if (!gatewayId && !secreta && !publica && marcadas.length === 0) return;
     // Ordem do catálogo do backend, não a ordem de clique do lojista.
     const ordenadas = catalogo
       .map((b) => b.value)
@@ -141,7 +184,8 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
         name: 'Pagar.me (vale)',
         gateway_type: 'pagarme',
         public_key: publica,
-        is_enabled: aceitaVale,
+        // Sem bandeira do Pagar.me (só Alelo), ele não cobra nada: fica desligado.
+        is_enabled: aceitaVale && ordenadas.length > 0,
         configuration: { voucher_brands: ordenadas },
       };
       if (secreta) {
@@ -156,7 +200,8 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
       }
       if (secreta) setJaTemSegredo(true);
       setSecreta('');
-      setBase({ publica, marcadas: ordenadas, aceitaVale });
+      setAceitaVale(corpo.is_enabled as boolean);
+      setBase({ publica, marcadas: ordenadas, aceitaVale: corpo.is_enabled as boolean });
     } catch (erroSalvar) {
       logger.error('Erro ao salvar gateway de vale:', erroSalvar);
       setErro('Não consegui salvar. Confira as chaves e tente de novo.');
@@ -167,8 +212,14 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
   const marcadasMudaram = marcadas.length !== base.marcadas.length
     || marcadas.some((v) => !base.marcadas.includes(v));
   const noSalvarUnico = useParteDoSalvar('vale-pagarme', {
-    mudancas: [publica !== base.publica, marcadasMudaram, aceitaVale !== base.aceitaVale, Boolean(secreta)]
-      .filter(Boolean).length,
+    mudancas: [
+      publica !== base.publica,
+      marcadasMudaram,
+      // Sem conexão gravada, ligar/desligar não tem onde gravar.
+      Boolean(gatewayId) && aceitaVale !== base.aceitaVale,
+      Boolean(secreta),
+      ligouSemNada,
+    ].filter(Boolean).length,
     validar,
     salvar: gravar,
     descartar: () => {
@@ -193,123 +244,97 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({ storeId }) => {
     }
   };
 
-  return (
-    <Card className="p-6">
-      <div className="flex items-start gap-3 mb-4">
-        <CreditCardIcon className="w-6 h-6 text-fg-muted-token shrink-0 mt-0.5" />
-        <div>
-          <h3 className="text-lg font-medium text-fg-token">
-            Vale-refeição e vale-alimentação
-          </h3>
-        </div>
-      </div>
+  // Vale desligado na linha: a configuração some, mas o estado fica (a parte
+  // do Salvar continua registrada e o religar não perde nada).
+  if (interruptor && !interruptor.ligada) return null;
 
-      {/* O credenciamento e o passo que ninguem lembra e que quebra tudo: as
-          chaves passam na validacao, o vale aparece no cardapio, e so o
-          cliente descobre que nao funciona — ja com o cartao digitado. Nao da
-          para verificar isso por API, entao avisamos ANTES de configurar. */}
-      <div
-        role="note"
-        className="rounded-lg border border-warning-300 bg-warning-50 p-3 text-sm text-fg-token dark:border-warning-700 dark:bg-warning-900/25"
-      >
-        <strong className="block font-medium">
-          Antes de ligar: sua conta precisa estar habilitada em cada bandeira.
-        </strong>
-        <span className="text-fg-muted-token">
-          O credenciamento para venda pela internet é pedido a cada operadora
-          (VR, Pluxee, Ticket), com o CNPJ da loja. Sem ele, o vale aparece no
-          cardápio normalmente e a cobrança é recusada na hora do pagamento —
-          com o cliente já tendo digitado o cartão.
-        </span>
-      </div>
+  const pagarmeConfigurado = jaTemSegredo && Boolean(publica);
 
-      <label
-        htmlFor="pagarme-vale-aceita"
-        className="flex items-center gap-2 py-1 text-sm text-fg-token"
-      >
-        <input
-          id="pagarme-vale-aceita"
-          type="checkbox"
-          className="h-4 w-4 accent-[var(--color-brand)]"
-          checked={aceitaVale}
-          onChange={() => setAceitaVale((v) => !v)}
-        />
-        <span>Aceitar vale nesta loja</span>
-      </label>
-      {!aceitaVale && (
-        <p role="status" className="text-sm text-fg-muted-token">Vale desligado no cardápio. Chaves e bandeiras ficam guardadas.</p>
+  const corpo = (
+    <div className="space-y-4">
+      {!jaTemSegredo && (
+        <Aviso tom="atencao" titulo="Credencie o CNPJ em cada operadora">
+          Sem isso, o pagamento com vale é recusado.
+        </Aviso>
       )}
 
-      <div className="space-y-4">
-        <Input
-          id="pagarme-vale-sk"
-          label="Chave secreta"
-          type="password"
-          autoComplete="off"
-          placeholder={jaTemSegredo ? 'Deixe em branco para manter a atual' : undefined}
-          value={secreta}
-          onChange={(e) => setSecreta(e.target.value)}
-        />
-        {jaTemSegredo && !secreta && (
-          <p role="status" className="-mt-2 text-sm text-fg-muted-token">Chave secreta já configurada. Preencha só para trocar.</p>
+      <fieldset className="space-y-3">
+        <legend className="mb-2 text-sm font-medium text-fg-token">Bandeiras</legend>
+        <div className="flex flex-wrap gap-x-5 gap-y-2">
+          {catalogo.map(({ value, label }) => (
+            <label
+              key={value}
+              htmlFor={`bandeira-vale-${value}`}
+              className="flex min-h-[2.25rem] items-center gap-2 text-sm text-fg-token"
+            >
+              <input
+                id={`bandeira-vale-${value}`}
+                type="checkbox"
+                checked={marcadas.includes(value)}
+                onChange={() => alternar(value)}
+                className="h-4 w-4 accent-[var(--color-brand)]"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+
+        {marcadas.length > 0 && (
+          <Recolhivel
+            titulo="Chaves do Pagar.me"
+            aberto={chavesAbertas}
+            onAbertoMudar={setChavesAbertas}
+            selo={pagarmeConfigurado
+              ? <SeloDeEstado tone="success" ponto>Configurado</SeloDeEstado>
+              : <SeloDeEstado tone="warning" ponto>Falta configurar</SeloDeEstado>}
+          >
+            <Input
+              id="pagarme-vale-sk"
+              label="Chave secreta"
+              type="password"
+              autoComplete="off"
+              placeholder={jaTemSegredo ? 'Já salva. Preencha só para trocar.' : undefined}
+              value={secreta}
+              onChange={(e) => setSecreta(e.target.value)}
+            />
+            <Input
+              id="pagarme-vale-pk"
+              label="Chave pública"
+              autoComplete="off"
+              value={publica}
+              onChange={(e) => setPublica(e.target.value)}
+            />
+            {ambientesDivergem && (
+              <Aviso tom="erro" titulo="Chaves de ambientes diferentes">
+                Uma é de teste e a outra de produção. O pagamento vai falhar.
+              </Aviso>
+            )}
+          </Recolhivel>
         )}
 
-        <Input
-          id="pagarme-vale-pk"
-          label="Chave pública"
-          value={publica}
-          onChange={(e) => setPublica(e.target.value)}
-        />
-
-        {ambientesDivergem && (
-          <div role="alert" className="flex items-start gap-2 p-3 rounded bg-warning-soft ">
-            <ExclamationTriangleIcon className="w-5 h-5 text-warning-token shrink-0 mt-0.5" />
-            <p className="text-sm text-warning-token ">
-              As duas chaves parecem ser de ambientes diferentes (uma de teste e
-              outra de produção). Assim o cartão é lido numa conta e a
-              cobrança tentada em outra, e o pagamento falha.
-            </p>
-          </div>
+        {daCielo.length > 0 && (
+          <AleloNoVale storeId={storeId} bandeiras={daCielo} onAceitaMudar={setAleloLigada} />
         )}
+      </fieldset>
 
-        <fieldset>
-          <legend className="text-sm font-medium text-fg-token mb-2">
-            Bandeiras aceitas
-          </legend>
-          <div className="space-y-2">
-            {catalogo.map(({ value, label }) => (
-              <label
-                key={value}
-                htmlFor={`bandeira-vale-${value}`}
-                className="flex items-center gap-2 text-sm text-fg-token"
-              >
-                <input
-                  id={`bandeira-vale-${value}`}
-                  type="checkbox"
-                  checked={marcadas.includes(value)}
-                  onChange={() => alternar(value)}
-                  className="h-4 w-4 accent-[var(--color-brand)]"
-                />
-                {label}
-              </label>
-            ))}
-          </div>
-        </fieldset>
+      {erro && <p role="alert" className="text-sm text-danger-token">{erro}</p>}
 
-        {erro && (
-          <p role="alert" className="text-sm text-danger-500">
-            {erro}
-          </p>
-        )}
+      {!noSalvarUnico && (
+        <Button onClick={salvar} disabled={salvando}>
+          {salvando ? 'Salvando...' : 'Salvar'}
+        </Button>
+      )}
+    </div>
+  );
 
-        {!noSalvarUnico && (
-          <Button onClick={salvar} disabled={salvando}>
-            {salvando ? 'Salvando...' : 'Salvar'}
-          </Button>
-        )}
-      </div>
+  if (embutida) {
+    return <div className="mt-3 border-l-2 border-border-token pl-4">{corpo}</div>;
+  }
 
-      {daCielo.length > 0 && <AleloNoVale storeId={storeId} bandeiras={daCielo} />}
+  return (
+    <Card className="p-6">
+      <h3 className="mb-4 text-lg font-medium text-fg-token">Vale-refeição e vale-alimentação</h3>
+      {corpo}
     </Card>
   );
 };

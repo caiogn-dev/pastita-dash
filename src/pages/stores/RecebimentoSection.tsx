@@ -1,15 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {
-  BanknotesIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  ArrowTopRightOnSquareIcon,
-} from '@heroicons/react/24/outline';
+import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { Aviso, Card, Button } from '../../components/ui';
+import { Aviso, Button, Recolhivel, Secao, Skeleton } from '../../components/ui';
 import { paymentsService } from '../../services/payments';
 import logger from '../../services/logger';
+import { useParteDoSalvar } from './salvarJunto';
 
 interface GatewayDaLoja {
   id: string;
@@ -60,6 +56,9 @@ const MOTIVOS: Record<string, string> = {
  * o cartão é tokenizado com a chave de uma conta e cobrado com o token de
  * outra, combinação que o Mercado Pago recusa. Por isso o campo manual ficou
  * como plano B, escondido.
+ *
+ * O token colado entra no Salvar da página (26/11); sozinha, a seção desenha
+ * o próprio botão.
  */
 export const RecebimentoSection: React.FC<RecebimentoSectionProps> = ({
   storeId,
@@ -70,7 +69,6 @@ export const RecebimentoSection: React.FC<RecebimentoSectionProps> = ({
   const [salvando, setSalvando] = useState(false);
   const [conectando, setConectando] = useState(false);
   const [token, setToken] = useState('');
-  const [mostrarManual, setMostrarManual] = useState(false);
   const [params, setParams] = useSearchParams();
 
   const carregar = useCallback(async () => {
@@ -131,10 +129,9 @@ export const RecebimentoSection: React.FC<RecebimentoSectionProps> = ({
     }
   };
 
-  const salvar = async () => {
+  const gravar = async () => {
     const valor = token.trim();
     if (!valor) return;
-    setSalvando(true);
     try {
       if (gateway) {
         await paymentsService.updateGateway(gateway.id, { access_token: valor } as never);
@@ -150,10 +147,27 @@ export const RecebimentoSection: React.FC<RecebimentoSectionProps> = ({
       }
       setToken('');
       await carregar();
-      toast.success('Conta de recebimento salva. Os pagamentos passam a cair nela.');
     } catch (erro) {
       logger.error('Erro ao salvar gateway:', erro);
       toast.error('Não consegui salvar a conta. Confira o token e tente de novo.');
+      throw erro;
+    }
+  };
+
+  const noSalvarUnico = useParteDoSalvar('mercado-pago-token', {
+    mudancas: token.trim() ? 1 : 0,
+    salvar: gravar,
+    descartar: () => setToken(''),
+  });
+
+  // Só fora do salvar único (seção usada sozinha).
+  const salvar = async () => {
+    setSalvando(true);
+    try {
+      await gravar();
+      toast.success('Conta de recebimento salva.');
+    } catch {
+      // motivo já foi mostrado
     } finally {
       setSalvando(false);
     }
@@ -186,7 +200,7 @@ export const RecebimentoSection: React.FC<RecebimentoSectionProps> = ({
         height={126}
         className="w-9 h-auto shrink-0"
       />
-      <span>{conectando ? 'Abrindo o Mercado Pago...' : 'Conectar conta do Mercado Pago'}</span>
+      <span>{conectando ? 'Abrindo o Mercado Pago...' : configurado ? 'Conectar outra conta do Mercado Pago' : 'Conectar conta do Mercado Pago'}</span>
       {!conectando && (
         <ArrowTopRightOnSquareIcon className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
       )}
@@ -194,77 +208,52 @@ export const RecebimentoSection: React.FC<RecebimentoSectionProps> = ({
   );
 
   return (
-    <Card className="p-6">
-      <div className="flex items-start gap-3 mb-4">
-        <BanknotesIcon className="w-6 h-6 text-fg-muted-token shrink-0 mt-0.5" />
-        <div>
-          <h3 className="text-lg font-medium text-fg-token">Conta de recebimento</h3>
-        </div>
-      </div>
-
+    <Secao titulo="Onde o dinheiro cai">
       {carregando ? (
-        <div className="h-20 bg-surface-2 rounded animate-pulse" />
+        <Skeleton className="h-20 w-full rounded-lg" />
       ) : (
-        <>
+        <div className="space-y-4">
           {configurado ? (
-            <Aviso tom={gateway?.token_expirado ? 'atencao' : 'sucesso'} className="mb-4"
-              titulo={gateway?.token_expirado ? 'Autorização do Mercado Pago expirou' : 'Conta própria configurada'}>
-              {gateway?.token_expirado ? 'Reconecte para voltar a receber.' : 'Os pagamentos desta loja caem na conta dela.'}
-              {viaOauth && gateway?.external_account_id ? ` Conta ${gateway.external_account_id}.` : ''}
+            <Aviso tom={gateway?.token_expirado ? 'atencao' : 'sucesso'}
+              titulo={gateway?.token_expirado ? 'Autorização do Mercado Pago expirou' : 'Conta própria conectada'}>
+              {gateway?.token_expirado
+                ? 'Reconecte para voltar a receber.'
+                : viaOauth && gateway?.external_account_id ? `Conta ${gateway.external_account_id}` : null}
             </Aviso>
           ) : usaGatewayDaPlataforma ? (
-            <Aviso tom="info" titulo="Recebe na conta da plataforma" className="mb-4">
-              Os pagamentos caem na conta configurada no servidor.
-            </Aviso>
+            <Aviso tom="info" titulo="Recebe na conta da plataforma" />
           ) : (
-            <Aviso tom="atencao" titulo="Sem conta própria" className="mb-4">
+            <Aviso tom="atencao" titulo="Sem conta própria">
               Pagamento online fica desligado até conectar.
             </Aviso>
           )}
 
-          <div className="flex flex-col items-start gap-2">
-            {botaoMercadoPago}
-            <p className="text-xs text-fg-muted-token max-w-md">
-              {configurado
-                ? 'Conectar de novo troca a conta que recebe — o dinheiro dos próximos pedidos passa a cair na conta autorizada agora.'
-                : 'Você entra na sua conta do Mercado Pago e autoriza o Cardapidex. Não precisa copiar nenhuma credencial, e o PIX e o cartão passam a cair direto na sua conta.'}
-            </p>
-          </div>
+          {botaoMercadoPago}
 
-          <div className="mt-5 pt-4 border-t border-border-token">
-            <button
-              type="button"
-              onClick={() => setMostrarManual(v => !v)}
-              className="text-xs text-fg-muted-token hover:text-fg-token underline underline-offset-2"
-            >
-              {mostrarManual ? 'Esconder' : 'Prefiro colar o token manualmente'}
-            </button>
-
-            {mostrarManual && (
-              <div className="mt-3">
-                <label className="block text-sm font-medium text-fg-token mb-1" htmlFor="mp-token">
-                  {configurado ? 'Substituir o token' : 'Access token do Mercado Pago'}
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    id="mp-token"
-                    type="password"
-                    value={token}
-                    onChange={e => setToken(e.target.value)}
-                    placeholder="APP_USR-..."
-                    autoComplete="off"
-                    className={CAMPO}
-                  />
-                  <Button onClick={salvar} disabled={!token.trim() || salvando}>
-                    {salvando ? 'Salvando...' : 'Salvar'}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </>
+          <Recolhivel titulo="Colar token manualmente">
+            <label className="block text-sm font-medium text-fg-token" htmlFor="mp-token">
+              {configurado ? 'Substituir o token' : 'Access token do Mercado Pago'}
+            </label>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input
+                id="mp-token"
+                type="password"
+                value={token}
+                onChange={e => setToken(e.target.value)}
+                placeholder="APP_USR-..."
+                autoComplete="off"
+                className={CAMPO}
+              />
+              {!noSalvarUnico && (
+                <Button onClick={salvar} disabled={!token.trim() || salvando}>
+                  {salvando ? 'Salvando...' : 'Salvar'}
+                </Button>
+              )}
+            </div>
+          </Recolhivel>
+        </div>
       )}
-    </Card>
+    </Secao>
   );
 };
 

@@ -13,26 +13,26 @@ beforeEach(() => { jest.clearAllMocks(); salvarLoja.mockResolvedValue({ id: 's1'
 describe('AcrescimoDoValeSection', () => {
   it('mostra o percentual que a loja já cobra', () => {
     render(<AcrescimoDoValeSection storeId="s1" percentualAtual={10} />);
-    expect(screen.getByLabelText(/acréscimo/i)).toHaveValue('10');
+    expect(screen.getByLabelText('Acréscimo (%)')).toHaveValue('10');
   });
 
   it('salva a taxa que o dono digitou, pelo campo próprio', async () => {
     render(<AcrescimoDoValeSection storeId="s1" />);
-    fireEvent.change(screen.getByLabelText(/acréscimo/i), { target: { value: '7,5' } });
+    fireEvent.change(screen.getByLabelText('Acréscimo (%)'), { target: { value: '7,5' } });
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
     await waitFor(() => expect(salvarLoja).toHaveBeenCalledWith('s1', { voucher_fee_percent: 7.5 }));
   });
 
   it('campo vazio desliga (salva zero)', async () => {
     render(<AcrescimoDoValeSection storeId="s1" percentualAtual={10} />);
-    fireEvent.change(screen.getByLabelText(/acréscimo/i), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText('Acréscimo (%)'), { target: { value: '' } });
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
     await waitFor(() => expect(salvarLoja).toHaveBeenCalledWith('s1', { voucher_fee_percent: 0 }));
   });
 
   it('recusa acima de 100 sem chamar a API', async () => {
     render(<AcrescimoDoValeSection storeId="s1" />);
-    fireEvent.change(screen.getByLabelText(/acréscimo/i), { target: { value: '150' } });
+    fireEvent.change(screen.getByLabelText('Acréscimo (%)'), { target: { value: '150' } });
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/entre 0 e 100/);
     expect(salvarLoja).not.toHaveBeenCalled();

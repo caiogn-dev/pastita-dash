@@ -16,6 +16,7 @@ jest.mock('../../../services/payments', () => ({
 }));
 
 import VoucherSection from '../VoucherSection';
+import { SalvarJunto, useSalvarJunto } from '../salvarJunto';
 
 const COM_ALELO = {
   brands: [
@@ -33,7 +34,15 @@ beforeEach(() => {
   catalogo.mockResolvedValue(COM_ALELO);
 });
 
-const blocoAlelo = async () => within(await screen.findByRole('region', { name: 'Alelo' }));
+/** Marca a Alelo (se preciso) e abre "Chaves da Cielo". */
+const blocoAlelo = async () => {
+  const bloco = within(await screen.findByRole('region', { name: 'Alelo' }));
+  const caixa = bloco.getByRole('checkbox', { name: 'Alelo' });
+  if (!(caixa as HTMLInputElement).checked) fireEvent.click(caixa);
+  const botao = bloco.getByRole('button', { name: /chaves da cielo/i });
+  if (botao.getAttribute('aria-expanded') !== 'true') fireEvent.click(botao);
+  return bloco;
+};
 
 const preencher = (bloco: ReturnType<typeof within>) => {
   fireEvent.change(bloco.getByLabelText(/Merchant ID/), { target: { value: ' d55454c7-f324-4fcd-a618-4f61c92013d8 ' } });
@@ -50,11 +59,62 @@ describe('Alelo no mesmo cartão do vale', () => {
     expect(screen.getByText(/vale-refeição e vale-alimentação/i)).toBeInTheDocument();
   });
 
-  it('Alelo NÃO vira toggle do Pagar.me — ele não sabe cobrá-la', async () => {
+  it('Alelo é bandeira da Cielo, fora das caixas do Pagar.me', async () => {
     render(<VoucherSection storeId="s1" />);
-    await screen.findByLabelText('VR Benefícios');
-    expect(screen.queryByRole('checkbox', { name: 'Alelo' })).not.toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: 'Ticket' })).toBeInTheDocument();
+    const bloco = within(await screen.findByRole('region', { name: 'Alelo' }));
+    expect(bloco.getByRole('checkbox', { name: 'Alelo' })).toBeInTheDocument();
+    expect(bloco.queryByRole('checkbox', { name: 'Ticket' })).not.toBeInTheDocument();
+  });
+
+  it('sem conexão gravada, a Alelo nasce desmarcada e sem chaves na tela', async () => {
+    render(<VoucherSection storeId="s1" />);
+    const bloco = within(await screen.findByRole('region', { name: 'Alelo' }));
+    expect(bloco.getByRole('checkbox', { name: 'Alelo' })).not.toBeChecked();
+    expect(bloco.queryByRole('button', { name: /chaves da cielo/i })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Merchant ID/)).not.toBeInTheDocument();
+  });
+
+  it('marcada, as chaves continuam fechadas até abrir', async () => {
+    render(<VoucherSection storeId="s1" />);
+    const bloco = within(await screen.findByRole('region', { name: 'Alelo' }));
+    fireEvent.click(bloco.getByRole('checkbox', { name: 'Alelo' }));
+    const botao = bloco.getByRole('button', { name: /chaves da cielo/i });
+    expect(botao).toHaveAttribute('aria-expanded', 'false');
+    expect(botao).toHaveTextContent(/falta configurar/i);
+    expect(bloco.queryByLabelText(/Merchant Key/)).not.toBeInTheDocument();
+    fireEvent.click(botao);
+    expect(bloco.getByLabelText(/Merchant Key/)).toBeInTheDocument();
+  });
+
+  it('no salvar único não tem botão próprio: entra na barra da página', async () => {
+    const Pagina = () => {
+      const juntas = useSalvarJunto();
+      return (
+        <SalvarJunto registro={juntas.registro}>
+          <VoucherSection storeId="s1" />
+          <span data-testid="mudancas">{juntas.mudancas}</span>
+          <button type="button" onClick={() => { if (!juntas.validar()) void juntas.salvar(); }}>Salvar tudo</button>
+        </SalvarJunto>
+      );
+    };
+    render(<Pagina />);
+    const bloco = await blocoAlelo();
+    expect(bloco.queryByRole('button', { name: /salvar alelo/i })).not.toBeInTheDocument();
+    preencher(bloco);
+    expect(Number(screen.getByTestId('mudancas').textContent)).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar tudo' }));
+    await waitFor(() => expect(criar).toHaveBeenCalledTimes(1));
+    expect(criar.mock.calls[0][0]).toMatchObject({ gateway_type: 'cielo', is_enabled: true });
+  });
+
+  it('erro de chave com o bloco fechado abre as chaves para mostrar onde', async () => {
+    render(<VoucherSection storeId="s1" />);
+    const bloco = await blocoAlelo();
+    fireEvent.click(bloco.getByRole('button', { name: /chaves da cielo/i }));
+    expect(bloco.queryByLabelText(/Merchant ID/)).not.toBeInTheDocument();
+    fireEvent.click(bloco.getByRole('button', { name: /salvar alelo/i }));
+    expect(await bloco.findByRole('alert')).toHaveTextContent(/quatro chaves/i);
+    expect(bloco.getByLabelText(/Merchant ID/)).toBeInTheDocument();
   });
 
   it('sem bandeira da Cielo no catálogo, o bloco não existe', async () => {
@@ -112,6 +172,7 @@ describe('Alelo no mesmo cartão do vale', () => {
   it('salvar o Pagar.me não manda Alelo nas bandeiras dele', async () => {
     render(<VoucherSection storeId="s1" />);
     fireEvent.click(await screen.findByLabelText('VR Benefícios'));
+    fireEvent.click(screen.getByRole('button', { name: /chaves do pagar\.me/i }));
     fireEvent.change(screen.getByLabelText(/chave secreta/i), { target: { value: 'sk_test_x' } });
     fireEvent.change(screen.getByLabelText(/chave p[úu]blica/i), { target: { value: 'pk_test_y' } });
     fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
