@@ -78,6 +78,9 @@ const normalizeOrder = (order: Order): Order => ({
 
 export interface CalculatedDeliveryFee {
   fee: number;
+  /** Ponto usado na cotação — o servidor resolve link curto do Maps que o navegador não segue. */
+  lat?: number | null;
+  lng?: number | null;
   distance_km?: number | null;
   duration_minutes?: number | null;
   is_within_area?: boolean;

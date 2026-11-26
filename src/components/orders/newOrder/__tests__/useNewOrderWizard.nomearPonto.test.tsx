@@ -82,3 +82,14 @@ it('o nome do lugar nunca atrasa o frete: a cotação vale mesmo se ele falhar',
 
   expect(result.current.routeQuote?.fee).toBe(10);
 });
+
+it('link CURTO do Maps (só o servidor resolve) também vira endereço na tela', async () => {
+  // O navegador não segue maps.app.goo.gl; o servidor segue e devolve o ponto.
+  calculateDeliveryFee.mockResolvedValue({ fee: 18.96, distance_km: 8.5, duration_minutes: 13, lat: -10.18314, lng: -48.33626 });
+  const { result } = montar();
+  await digitarECalcular(result, 'https://maps.app.goo.gl/AbCdEf123');
+
+  expect(nomeDoLugar).toHaveBeenCalledWith(-10.18314, -48.33626);
+  expect(result.current.freeAddressText).toBe(ENDERECO);
+  expect(result.current.routeQuote?.fee).toBe(18.96);
+});

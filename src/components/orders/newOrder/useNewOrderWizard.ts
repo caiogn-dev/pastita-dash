@@ -151,8 +151,12 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     try {
       const data = await ordersService.calculateDeliveryFee(storeSlug, address, coords);
       setRouteQuote({ fee: data.fee, distance_km: data.distance_km, duration_minutes: data.duration_minutes });
-      setRouteCoords(coords);
-      await nomearSeForPonto(address, coords);
+      // Link curto (maps.app.goo.gl) só o servidor resolve: o ponto volta na
+      // cotação. Sem isto o pedido saía só com o link, sem rua nem coordenada.
+      const doServidor = data.lat != null && data.lng != null ? { lat: Number(data.lat), lng: Number(data.lng) } : null;
+      const ponto = coords ?? (eSoUmPontoNoMapa(address) ? doServidor : null);
+      setRouteCoords(ponto);
+      await nomearSeForPonto(address, ponto);
     } catch (err) {
       console.error('[NewOrderWizard] handleCalculateRoute:', err);
       toast.error(getErrorMessage(err) || 'Erro ao calcular a taxa de entrega');
