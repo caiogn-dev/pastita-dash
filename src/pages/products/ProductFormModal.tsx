@@ -829,7 +829,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     <CampoDeDinheiro
                       rotulo="Preço no dia"
                       valor={formData.promo_price ?? null}
-                      onMudar={(v) => setFormData((prev) => ({ ...prev, promo_price: v ?? undefined }))}
+                      // null, não undefined: undefined some no JSON e o servidor mantinha a promo (26/11).
+                      onMudar={(v) => setFormData((prev) => ({ ...prev, promo_price: v ?? null }))}
                     />
                     <div>
                       <label className="block text-xs font-medium text-fg-token mb-1" htmlFor="promo_weekday">
@@ -841,7 +842,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         onChange={(e) =>
                           setFormData((prev) => ({
                             ...prev,
-                            promo_weekday: e.target.value === '' ? undefined : Number(e.target.value),
+                            promo_weekday: e.target.value === '' ? null : Number(e.target.value),
                           }))
                         }
                         className="w-full px-3 py-2 border border-border-token rounded bg-surface text-fg-token focus:ring-2 focus:ring-brand"

@@ -592,10 +592,18 @@ const isFile = (value: unknown): value is File => {
   return typeof File !== 'undefined' && value instanceof File;
 };
 
+const CAMPOS_ANULAVEIS_NO_MULTIPART = new Set(['promo_price', 'promo_weekday']);
+
 const buildFormData = (data: Record<string, unknown>, includeFile = true): FormData => {
   const formData = new FormData();
   Object.entries(data).forEach(([key, value]) => {
-    if (value === null || value === undefined) return;
+    if (value === undefined) return;
+    // Campo anulável zerado (tirar a promoção): '' vira null no DRF. Pular o
+    // null fazia o servidor manter o valor antigo quando junto ia foto (26/11).
+    if (value === null) {
+      if (CAMPOS_ANULAVEIS_NO_MULTIPART.has(key)) formData.append(key, '');
+      return;
+    }
     if (isFile(value) && includeFile) {
       formData.append(key, value);
       return;

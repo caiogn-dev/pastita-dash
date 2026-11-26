@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ProductFormModal } from '../ProductFormModal';
 import storesApi from '../../../services/storesApi';
 
@@ -270,6 +270,24 @@ describe('promoção semanal', () => {
 
     expect(screen.queryByText(/não vale nunca/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/precisa ser menor/i)).not.toBeInTheDocument();
+  });
+
+  it('tirar a promoção e salvar MANDA null — senão o servidor mantém preço e dia (26/11)', async () => {
+    const comPromo = { ...flat[0], promo_price: 30.75, promo_weekday: 2 } as typeof flat[0];
+    const { container } = render(
+      <ProductFormModal isOpen product={comPromo} categories={[]} flatProducts={[comPromo, ...flat.slice(1)]}
+        onClose={jest.fn()} onSaved={jest.fn()} storeId="store1" />,
+    );
+    fireEvent.click(screen.getByText('Preços'));
+
+    fireEvent.change(screen.getByLabelText(/preço no dia/i), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText(/dia da semana/i), { target: { value: '' } });
+    fireEvent.submit(container.querySelector('form')!);
+
+    await waitFor(() => expect(storesApi.updateProduct).toHaveBeenCalled());
+    const dados = (storesApi.updateProduct as jest.Mock).mock.calls.at(-1)[1];
+    expect(dados.promo_price).toBeNull();
+    expect(dados.promo_weekday).toBeNull();
   });
 });
 
