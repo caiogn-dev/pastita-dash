@@ -1,5 +1,5 @@
 import { copyToClipboard } from '../../../utils/clipboard';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { ordersService } from '../../../services/orders';
 import { getErrorMessage } from '../../../services/api';
@@ -11,6 +11,8 @@ import { parseCoords, type Coords } from './parseCoords';
 import { enderecoParaOPedido, rotuloDoEndereco, eSoUmPontoNoMapa } from './enderecoDoPedido';
 import { precoVigenteDoProduto } from '../../../utils/precoVigente';
 import type { RascunhoDePedido } from './rascunhoDaConversa';
+
+export interface PinDoWhatsapp { lat: number; lng: number; name?: string; address?: string; shared_at?: string }
 
 export interface UseNewOrderWizardOpts {
   storeSlug: string;
@@ -28,6 +30,8 @@ export interface NewOrderWizard {
   freeAddressText: string; setFreeAddressText: (v: string) => void;
   routeQuote: RouteQuote | null; calculatingRoute: boolean; handleCalculateRoute: (address: string, coords?: Coords | null) => Promise<void>;
   handleUseSharedLocation: () => Promise<void>; customerHasPhone: boolean;
+  /** Último pin que o cliente mandou no WhatsApp; buscado ao escolher o cliente. */
+  pinDoWhatsapp: PinDoWhatsapp | null; usarPinDoWhatsapp: () => Promise<void>; pinEmUso: boolean;
   cart: CartItem[]; addToCart: (p: Product) => void; addComboToCart: (linha: CartItem) => void; changeQty: (id: string, qty: number) => void; removeFromCart: (id: string) => void;
   discountType: DiscountType; setDiscountType: (v: DiscountType) => void;
   discountValue: string; setDiscountValue: (v: string) => void; discountReason: string; setDiscountReason: (v: string) => void;
@@ -73,6 +77,26 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
   const [cupom, setCupom] = useState<CupomValidado | null>(null);
   const [trocoPara, setTrocoPara] = useState<number | null>(null);
   const [bandeiraDoVale, setBandeiraDoVale] = useState('');
+  const [pinDoWhatsapp, setPinDoWhatsapp] = useState<PinDoWhatsapp | null>(null);
+
+  // O pin vem junto com o cliente: atrás de um botão só com ícone ninguém o
+  // achava, e o operador colava o link do Maps (Cê, 26/11 — o pedido saiu
+  // sem rua nem coordenada). Falhar aqui não trava nada: só não mostra o cartão.
+  const telefoneDoCliente = (customer?.phone_number_edited || customer?.phone_number || '').replace(/\D/g, '');
+  useEffect(() => {
+    setPinDoWhatsapp(null);
+    if (!telefoneDoCliente || !storeSlug) return;
+    let vale = true;
+    (async () => {
+      try {
+        const loc = await ordersService.getSharedLocation(storeSlug, { phone: telefoneDoCliente });
+        if (vale) setPinDoWhatsapp(loc ?? null);
+      } catch {
+        // Sem pin na tela; o botão do mapa continua lá.
+      }
+    })();
+    return () => { vale = false; };
+  }, [telefoneDoCliente, storeSlug]);
 
   const reset = () => {
     setStep(0); setCustomer(null); setDeliveryMethod('delivery'); setSelectedAddress(null);
@@ -141,23 +165,28 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
 
   // Puxa a última localização que o cliente mandou no WhatsApp e calcula o
   // frete pelo pin — sem redigitar. Usa o telefone do cliente selecionado.
+  const aplicarPin = async (loc: PinDoWhatsapp) => {
+    const label = (loc.address || '').trim() || `Localização enviada (${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)})`;
+    setSelectedAddress(null);
+    setFreeAddressText(label);
+    const data = await ordersService.calculateDeliveryFee(storeSlug, label, { lat: loc.lat, lng: loc.lng });
+    setRouteQuote({ fee: data.fee, distance_km: data.distance_km, duration_minutes: data.duration_minutes });
+    setRouteCoords({ lat: loc.lat, lng: loc.lng });
+    // O pin vem sem nome quase sempre: o WhatsApp manda só a coordenada.
+    await nomearSeForPonto(label, { lat: loc.lat, lng: loc.lng });
+  };
+
   const handleUseSharedLocation = async () => {
-    const phone = (customer?.phone_number_edited || customer?.phone_number || '').replace(/\D/g, '');
-    if (!phone || !storeSlug) return;
+    if (!telefoneDoCliente || !storeSlug) return;
     setCalculatingRoute(true);
     try {
-      const loc = await ordersService.getSharedLocation(storeSlug, { phone });
+      const loc = pinDoWhatsapp ?? await ordersService.getSharedLocation(storeSlug, { phone: telefoneDoCliente });
       if (!loc) {
         toast.error('Esse cliente não enviou localização no WhatsApp.');
         return;
       }
-      const label = (loc.address || '').trim() || `Localização enviada (${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)})`;
-      setFreeAddressText(label);
-      const data = await ordersService.calculateDeliveryFee(storeSlug, label, { lat: loc.lat, lng: loc.lng });
-      setRouteQuote({ fee: data.fee, distance_km: data.distance_km, duration_minutes: data.duration_minutes });
-      setRouteCoords({ lat: loc.lat, lng: loc.lng });
-      // O pin vem sem nome quase sempre: o WhatsApp manda só a coordenada.
-      await nomearSeForPonto(label, { lat: loc.lat, lng: loc.lng });
+      setPinDoWhatsapp(loc);
+      await aplicarPin(loc);
     } catch (err) {
       toast.error(getErrorMessage(err) || 'Erro ao puxar a localização');
     } finally {
@@ -301,7 +330,9 @@ export function useNewOrderWizard(opts: UseNewOrderWizardOpts): NewOrderWizard {
     escolherEnderecoSalvo,
     freeAddressText, setFreeAddressText: updateAddress, routeQuote, calculatingRoute, handleCalculateRoute,
     handleUseSharedLocation,
-    customerHasPhone: Boolean((customer?.phone_number_edited || customer?.phone_number || '').replace(/\D/g, '')),
+    pinDoWhatsapp, usarPinDoWhatsapp: handleUseSharedLocation,
+    pinEmUso: Boolean(pinDoWhatsapp && routeCoords && routeCoords.lat === pinDoWhatsapp.lat && routeCoords.lng === pinDoWhatsapp.lng),
+    customerHasPhone: Boolean(telefoneDoCliente),
     cart, addToCart, addComboToCart, changeQty, removeFromCart,
     discountType, setDiscountType, discountValue, setDiscountValue, discountReason, setDiscountReason,
     surchargeValue, setSurchargeValue, surchargeReason, setSurchargeReason,

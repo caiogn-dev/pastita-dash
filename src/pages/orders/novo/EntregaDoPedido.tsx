@@ -8,7 +8,7 @@ import { BuildingStorefrontIcon, MapPinIcon, TruckIcon } from '@heroicons/react/
 import { Button, Input, Segmentado } from '../../../components/ui';
 import { SeletorDeFaixa } from '../../../components/orders/agendamento/SeletorDeFaixa';
 import { cn } from '../../../utils/cn';
-import { formatCurrency } from '../../../utils/formatters';
+import { formatCurrency, formatRelativeTime } from '../../../utils/formatters';
 import { rotuloDoEndereco } from '../../../components/orders/newOrder/enderecoDoPedido';
 import type { NewOrderWizard } from '../../../components/orders/newOrder/useNewOrderWizard';
 
@@ -23,6 +23,7 @@ function Secao({ titulo, children }: { titulo: string; children: React.ReactNode
 
 export function EntregaDoPedido({ wiz }: { wiz: NewOrderWizard }) {
   const enderecos = wiz.customer?.addresses ?? [];
+  const pin = wiz.pinDoWhatsapp;
   const entrega = wiz.deliveryMethod === 'delivery';
 
   const calcular = () => {
@@ -45,8 +46,31 @@ export function EntregaDoPedido({ wiz }: { wiz: NewOrderWizard }) {
 
       {entrega && (
         <Secao titulo="Endereço">
-          {enderecos.length > 0 && (
+          {(pin || enderecos.length > 0) && (
             <div className="grid gap-2 md:grid-cols-2" role="group" aria-label="Endereços do cliente">
+              {pin && (
+                <button
+                  type="button"
+                  aria-pressed={wiz.pinEmUso}
+                  disabled={wiz.calculatingRoute}
+                  onClick={() => void wiz.usarPinDoWhatsapp()}
+                  className={cn(
+                    'flex items-start gap-3 rounded-lg border p-3 text-left transition-colors',
+                    wiz.pinEmUso ? 'border-brand bg-brand-soft' : 'border-success-token bg-success-soft hover:border-brand',
+                  )}
+                >
+                  <MapPinIcon className={cn('mt-0.5 h-4 w-4 shrink-0', wiz.pinEmUso ? 'text-brand-ink' : 'text-success-token')} />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-fg-token">Localização do WhatsApp</span>
+                    <span className="line-clamp-2 text-sm text-fg-muted-token">
+                      {pin.address?.trim() || `${pin.lat.toFixed(5)}, ${pin.lng.toFixed(5)}`}
+                    </span>
+                    {pin.shared_at && (
+                      <span className="block text-xs text-fg-muted-token">{formatRelativeTime(pin.shared_at)}</span>
+                    )}
+                  </span>
+                </button>
+              )}
               {enderecos.map((e) => {
                 const escolhido = wiz.selectedAddress?.id === e.id;
                 return (
@@ -86,7 +110,7 @@ export function EntregaDoPedido({ wiz }: { wiz: NewOrderWizard }) {
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); calcular(); } }}
               />
             </div>
-            {wiz.customerHasPhone && (
+            {wiz.customerHasPhone && !pin && (
               <Button
                 variant="outline"
                 aria-label="Usar localização enviada no WhatsApp"
